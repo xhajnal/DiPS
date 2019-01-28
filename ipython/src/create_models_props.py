@@ -1178,3 +1178,57 @@ def create_properties(N):
         file.write("]\n")
     file.write("R=? [ F b=1] \n")
     file.close()
+
+
+def create_data_informed_properties(N,data,alpha,n_samples,multiparam,seq):
+    """ Creates property file of reaching each BSCC of the model of *N* agents as prop_<N>.pctl file.
+    For more information see paper.
+    
+    Parameters
+    ----------
+    N: int number of agents  
+    data: map of data    
+    alpha : confidence interval to compute noise
+    n_samples : number of samples to compute noise
+    multiparam: if True multiparam model is used
+    """    
+    
+    if multiparam:
+        model="_multiparam"   
+    else:
+        model=""
+        
+    if seq:
+        conjuction="\n"
+        seq="_seq"
+    else:
+        conjuction=" & "
+        seq=""
+
+    file = open("prop{}_{}_{}_{}{}.pctl".format(model,N,alpha,n_samples,seq),"w") 
+    print("prop{}_{}_{}_{}{}.pm created".format(model,N,alpha,n_samples,seq))
+
+    for i in range(len(data[N])):
+        if data[N][i]-noise(alpha,n_samples,data[N][i])>0:
+            if i>0:
+                file.write("P>{} [ F (a0=1)".format(data[N][i]-noise(alpha,n_samples,data[N][i])))   
+            else:
+                #print(("P>{} [ F (a0=0)".format(data[N][i]-noise(alpha,n_samples,data[N][i]))))
+                #print(alpha,n_samples,data[N][i])
+                file.write("P>{} [ F (a0=0)".format(data[N][i]-noise(alpha,n_samples,data[N][i]))) 
+
+            for j in range(1,N):
+                file.write("&(a"+str(j)+"="+str( 1 if j<i else 0 )+")")
+            file.write("]{}".format(conjuction))        
+        if data[N][i]+noise(alpha,n_samples,data[N][i])<1:
+            if i>0:
+                file.write("P<{} [ F (a0=1)".format(data[N][i]+noise(alpha,n_samples,data[N][i])))   
+            else:
+                file.write("P<{} [ F (a0=0)".format(data[N][i]+noise(alpha,n_samples,data[N][i]))) 
+
+            for j in range(1,N):
+                file.write("&(a"+str(j)+"="+str( 1 if j<i else 0 )+")")
+            file.write("]{}".format(conjuction))
+    if seq is not "_seq":
+        file.write(" true ")
+    file.close()
