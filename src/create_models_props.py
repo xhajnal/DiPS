@@ -309,7 +309,7 @@ def create_semisynchronous_model(file,N):
     file.write("endrewards \n")
     file.close()
 
- def create_asynchronous_model(file,N):
+def create_asynchronous_model(file,N):
     """ Creates aynchronous model of *N* agents to a *file* with probabilities p and q in [0,1]. For more information see paper.
     
     Parameters
