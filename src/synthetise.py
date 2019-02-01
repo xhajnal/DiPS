@@ -1,5 +1,17 @@
 from src.load import find_param
+from src.load import noise
 import struct, os
+
+
+z3_path = "C:/z3py/z3-4.6.0-x64-win/bin/python"  #THUNDER
+#z3_path = "C:/z3-4.6.0-x86-win/bin/python"  #SPICY
+# z3_path = "C:/z3/z3-4.6.0-x64-win/bin/python" # NELEUS
+#z3_path = "/home/matej/z3/build/python" #Freya
+
+os.chdir(z3_path)
+from z3 import *
+
+
 
 def check(thresh,prop,data,alpha,n_samples,silent=False):
     """ Check if the given region is safe, unsafe, or neither one
