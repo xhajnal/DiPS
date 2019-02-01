@@ -1,6 +1,12 @@
 from src.load import find_param
 from src.load import noise
-import struct, os
+from numpy import prod
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
+from matplotlib.collections import PatchCollection
+import struct, os, time, socket
+
+#import redis
 
 
 z3_path = "C:/z3py/z3-4.6.0-x64-win/bin/python"  #THUNDER
@@ -10,6 +16,9 @@ z3_path = "C:/z3py/z3-4.6.0-x64-win/bin/python"  #THUNDER
 
 os.chdir(z3_path)
 from z3 import *
+
+#non_white_area=0
+#whole_area=0
 
 
 
