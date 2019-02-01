@@ -1,3 +1,7 @@
+import glob, re,sys
+sys.path.append("..")
+
+
 def load_all_prism(path,factorize=True, rewards_only=False, f_only=False):
     """ Loads all results of parameter synthesis in *path* folder into two maps - f list of rational functions for each property, and rewards list of rational functions for each reward
     

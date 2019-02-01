@@ -1,3 +1,6 @@
+from src.load import find_param
+import struct, os
+
 def check(thresh,prop,data,alpha,n_samples,silent=False):
     """ Check if the given region is safe, unsafe, or neither one
 
