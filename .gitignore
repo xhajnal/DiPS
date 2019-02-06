@@ -106,7 +106,7 @@ venv.bak/
 
 ##MY
 ipython/*
-!ipython/data*
+#!ipython/data*
 !ipython/*.ipynb
 !ipython/*.md
 
