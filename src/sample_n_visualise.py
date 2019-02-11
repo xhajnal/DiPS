@@ -1,7 +1,8 @@
 import numpy as np
 import pylab as pl
 from matplotlib import collections  as mc
-
+from src.load import find_param
+import matplotlib.pyplot as plt
 
 def cartesian_product(*arrays):
     la = len(arrays)
@@ -11,14 +12,49 @@ def cartesian_product(*arrays):
         arr[...,i] = a
     return arr.reshape(-1, la)
 
- def sample(dic_fun,size_q):
+def eval_and_show(fun_list,parameter_value):
+    """ Creates bar plot of probabilities of i successes for given parametrisation
+
+    Parameters
+    ----------
+    fun_list : list of polynomes
+    N: dictionary key
+    parameter_value: array of param values 
+    """
+    for polynome in fun_list:
+        parameters=set()
+        parameters.update(find_param(polynome))
+    parameters= sorted(list(parameters))
+    #print(parameters)
+
+    title=""
+    a=[]
+    for param in range(len(parameters)):
+        #print(parameters[param])
+        #print(parameter_value[param])
+        globals()[parameters[param]]= parameter_value[param]
+        title = "{}{}={} ".format(title,parameters[param],parameter_value[param])
+    #print("eval ", polynome, eval(polynome))
+    for polynome in fun_list:
+        a.append(eval(polynome))
+    #print(a)
+    fig, ax = plt.subplots()
+    width = 0.2
+    ax.set_ylabel('Probability')
+    ax.set_xlabel('i')
+    ax.set_title('{}'.format(title))
+    rects1 = ax.bar(range(len(fun_list)), a, width, color='b')
+    plt.show()
+    return a
+
+def sample(dic_fun,agents_quantities,size_q):
     """ Samples probabilities of i successes for sampled parametrisation
 
     Parameters
     ----------
     dic_fun : dictionary N -> list of polynomes
     size_q : sample size in each parameter
-    
+
     Returns array of [N,i,parameters,value]
     """
     arr = []
@@ -51,7 +87,7 @@ def cartesian_product(*arrays):
                 arr.append(a)
     return arr
 
-def visualise(dic_fun,size_q):
+def visualise(dic_fun,agents_quantities,size_q):
     """ Creates bar plot of probabilities of i successes for sampled parametrisation
 
     Parameters

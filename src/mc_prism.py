@@ -1,5 +1,21 @@
-import time
-import glob,os
+import time,glob,os,re,sys,subprocess,socket
+
+import configparser
+config = configparser.ConfigParser()
+print(os.getcwd())
+config.read("../config.ini")
+#config.sections()
+#prism_path = config.paths['prism_path'] 
+prism_path = config.get("paths", "prism_path")
+
+if "prism" not in os.environ["PATH"]:
+    print("prism was probably not in PATH, adding it there")
+    if "wind" in platform.system().lower():
+        os.environ["PATH"] = os.environ["PATH"]+";"+prism_path
+    else:
+        os.environ["PATH"] = os.environ["PATH"]+":"+prism_path
+
+
 def call_prism(args, seq):
     """  Solves problem of calling prism from another directory.
     
@@ -10,6 +26,7 @@ def call_prism(args, seq):
     """
     filename = args.split()[0].split(".")[0]+str(".txt")
     filename = os.path.join("prism_results",filename)
+    #os.chdir(config.get("paths","cwd"))
     curr_dir = os.getcwd()
     os.chdir(prism_path)
     #print(os.getcwd())
@@ -63,6 +80,7 @@ def call_prism(args, seq):
         os.chdir(curr_dir)
 
 def call_prism_files(file_prefix,multiparam,agents_quantities,seq=False,noprobchecks=False):
+    #os.chdir(config.get("paths","cwd"))
     if noprobchecks:
         noprobchecks='-noprobchecks '
     else:
@@ -70,7 +88,7 @@ def call_prism_files(file_prefix,multiparam,agents_quantities,seq=False,noprobch
     for N in agents_quantities:
         for file in glob.glob(file_prefix+str(N)+".pm"):
             start_time = time.time()
-            print("{} seq={}{}".format(file,seq,noprobchecks))
+            print("{} seq={}{} >> {}".format(file,seq,noprobchecks, "prism_results"))
             if multiparam:
                 q=""
                 for i in range(1,N):
