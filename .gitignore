@@ -110,4 +110,7 @@ ipython/*
 !ipython/*.ipynb
 !ipython/*.md
 
-
+models/*
+properties/*
+prism_results/*
+data/*

@@ -15,6 +15,9 @@ config.read("../config.ini")
 #config.sections()
 z3_path = config.get("paths", "z3_path")
 
+if not os.path.exists(z3_path):
+    raise OSError("Directory does not exist: "+str(z3_path))
+
 
 os.chdir(z3_path)
 from z3 import *

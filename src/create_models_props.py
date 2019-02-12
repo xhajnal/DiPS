@@ -1,4 +1,18 @@
-import math
+import os,math
+
+from pathlib import Path
+import configparser
+config = configparser.ConfigParser()
+#print(os.getcwd())
+config.read("../config.ini")
+#config.sections()
+model_path = Path(config.get("paths", "models"))
+if not os.path.exists(model_path):
+    os.makedirs(model_path)
+
+properties_path = Path(config.get("paths", "properties"))
+if not os.path.exists(properties_path):
+    os.makedirs(properties_path)
 
 def nCr(n,k):
     """ Return conbinatorial number n take k
@@ -20,8 +34,8 @@ def create_synchronous_model(file,N):
     file : string - filename with extesion
     N : int - agent quantity
     """
-    filename = file.split(".")[0] 
-    file = open(filename+".pm","w") 
+    filename = model_path / Path(file.split(".")[0]+".pm") 
+    file = open(filename,"w") 
     print(filename)
     
     first_attempt = []
@@ -159,8 +173,8 @@ def create_semisynchronous_model(file,N):
     file : string - filename with extesion
     N : int - agent quantity
     """
-    filename = file.split(".")[0] 
-    file = open(filename+".pm","w") 
+    filename = model_path / Path(file.split(".")[0]+".pm")  
+    file = open(filename,"w")  
     print(filename)
     
     first_attempt = []
@@ -326,8 +340,8 @@ def create_asynchronous_model(file,N):
     q - proprability to succeed when getting help
     ai - state of agent i:  -1:init, 0:total_failure, 1:succes, 2:failure_after_first_attempt
     """
-    filename = file.split(".")[0] 
-    file = open(filename+".pm","w") 
+    filename = model_path / Path(file.split(".")[0]+".pm")  
+    file = open(filename,"w")  
     print(filename)
     
     # start here 
@@ -583,8 +597,8 @@ def create_multiparam_synchronous_model(file,N):
     file : string - filename with extesion
     N : int - agent quantity
     """
-    filename = file.split(".")[0] 
-    file = open(filename+".pm","w") 
+    filename = model_path / Path(file.split(".")[0]+".pm")  
+    file = open(filename,"w")  
     print(filename)
     
     first_attempt = []
@@ -723,8 +737,8 @@ def create_multiparam_semisynchronous_model(file,N):
     file : string - filename with extesion
     N : int - agent quantity
     """
-    filename = file.split(".")[0] 
-    file = open(filename+".pm","w") 
+    filename = model_path / Path(file.split(".")[0]+".pm")  
+    file = open(filename,"w")  
     print(filename)
 
     first_attempt = []
@@ -889,8 +903,8 @@ def create_multiparam_asynchronous_model(file,N):
     file : string - filename with extesion
     N : int - agent quantity
     """
-    filename = file.split(".")[0] 
-    file = open(filename+".pm","w") 
+    filename = model_path / Path(file.split(".")[0]+".pm")  
+    file = open(filename,"w")  
     print(filename)
     
     first_attempt = []
@@ -1164,8 +1178,9 @@ def create_properties(N):
     N : int - agent quantity
     """
     
-    file = open("prop_"+str(N)+".pctl","w") 
-    print("prop_{}".format(str(N)))
+    filename = properties_path / Path("prop_"+str(N)+".pctl")
+    file = open(filename,"w") 
+    print(filename)
     
     for i in range(1,N+2):
         if i>1:
@@ -1177,58 +1192,4 @@ def create_properties(N):
             file.write("&(a"+str(j)+"="+str( 1 if i>j+1 else 0 )+")")
         file.write("]\n")
     file.write("R=? [ F b=1] \n")
-    file.close()
-
-
-def create_data_informed_properties(N,data,alpha,n_samples,multiparam,seq):
-    """ Creates property file of reaching each BSCC of the model of *N* agents as prop_<N>.pctl file.
-    For more information see paper.
-    
-    Parameters
-    ----------
-    N: int number of agents  
-    data: map of data    
-    alpha : confidence interval to compute noise
-    n_samples : number of samples to compute noise
-    multiparam: if True multiparam model is used
-    """    
-    
-    if multiparam:
-        model="_multiparam"   
-    else:
-        model=""
-        
-    if seq:
-        conjuction="\n"
-        seq="_seq"
-    else:
-        conjuction=" & "
-        seq=""
-
-    file = open("prop{}_{}_{}_{}{}.pctl".format(model,N,alpha,n_samples,seq),"w") 
-    print("prop{}_{}_{}_{}{}.pm created".format(model,N,alpha,n_samples,seq))
-
-    for i in range(len(data[N])):
-        if data[N][i]-noise(alpha,n_samples,data[N][i])>0:
-            if i>0:
-                file.write("P>{} [ F (a0=1)".format(data[N][i]-noise(alpha,n_samples,data[N][i])))   
-            else:
-                #print(("P>{} [ F (a0=0)".format(data[N][i]-noise(alpha,n_samples,data[N][i]))))
-                #print(alpha,n_samples,data[N][i])
-                file.write("P>{} [ F (a0=0)".format(data[N][i]-noise(alpha,n_samples,data[N][i]))) 
-
-            for j in range(1,N):
-                file.write("&(a"+str(j)+"="+str( 1 if j<i else 0 )+")")
-            file.write("]{}".format(conjuction))        
-        if data[N][i]+noise(alpha,n_samples,data[N][i])<1:
-            if i>0:
-                file.write("P<{} [ F (a0=1)".format(data[N][i]+noise(alpha,n_samples,data[N][i])))   
-            else:
-                file.write("P<{} [ F (a0=0)".format(data[N][i]+noise(alpha,n_samples,data[N][i]))) 
-
-            for j in range(1,N):
-                file.write("&(a"+str(j)+"="+str( 1 if j<i else 0 )+")")
-            file.write("]{}".format(conjuction))
-    if seq is not "_seq":
-        file.write(" true ")
     file.close()

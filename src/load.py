@@ -1,7 +1,23 @@
-import glob, re,sys,math
+import glob, os, re, sys, math
 from sympy import factor
 import scipy.stats as st
 sys.path.append("..")
+
+
+from pathlib import Path
+import configparser
+config = configparser.ConfigParser()
+print(os.getcwd())
+config.read("../config.ini")
+
+prism_results = config.get("paths", "prism_results")
+if not os.path.exists(prism_results):
+    raise OSError("Directory does not exist: "+str(prism_results))
+
+data_path = config.get("paths", "data")
+if not os.path.exists(data_path):
+    raise OSError("Directory does not exist: "+str(data_path))
+
 
 
 def load_all_prism(path,factorize=True, rewards_only=False, f_only=False):
@@ -19,14 +35,22 @@ def load_all_prism(path,factorize=True, rewards_only=False, f_only=False):
         f: dictionary N -> list of rational functions for each property
         rewards: dictionary N -> list of rational functions for each reward
     """
+    cwd=os.getcwd()
+    if not Path(path).is_absolute():
+        os.chdir(prism_results)
 
     here = False
     N = 0
     f = {}
     rewards = {}
-    for file in glob.glob(path):
-        #print(file)
-        N = int(re.findall('\d+', file )[0])  
+    #print(str(path))
+    if not  glob.glob(str(path)):
+        raise OSError("No valid files in the given directory "+ os.path.join(os.getcwd(),path))
+
+    
+    for file in glob.glob(str(path)):
+        print(os.path.join(os.getcwd(),file))
+        N = int(re.findall('\d+', file )[0]) 
         file=open(file,"r")
         i=-1
         here=""
@@ -58,6 +82,7 @@ def load_all_prism(path,factorize=True, rewards_only=False, f_only=False):
                         except:
                             print("Error while factorising rewards, used not factorised instead")
                             rewards[N].append(line[:-1])
+                            os.chdir(cwd)
                     else:
                         rewards[N]=line[:-1]
                 elif not here=="r" and not rewards_only:
@@ -69,8 +94,10 @@ def load_all_prism(path,factorize=True, rewards_only=False, f_only=False):
                         except:
                             print("Error while factorising polynome f[{}][{}], used not factorised instead".format(N,i))
                             f[N]=line[:-1]
+                            os.chdir(cwd)
                     else:
                         f[N].append(line[:-1])
+    os.chdir(cwd)
     return(f,rewards)
 
 def get_f(path,factorize):
@@ -89,8 +116,16 @@ def load_all_data(path):
     Returns:
         D: dictionary N -> list of propbabilities for respective property
     """
+    cwd=os.getcwd()
+    if not Path(path).is_absolute():
+        os.chdir(data_path)
+
     D = {}
-    for file in glob.glob(path):
+    if not  glob.glob(str(path)):
+        raise OSError("No valid files in the given directory "+ os.path.join(os.getcwd(),path))
+
+    for file in glob.glob(str(path)):
+        print(os.path.join(os.getcwd(),file))
         file=open(file,"r")
         N = 0
         for line in file:
@@ -113,6 +148,7 @@ def load_all_data(path):
             #D[N].append(1-sum(D[N]))
             break
             #print(D[N])
+    os.chdir(cwd)
     if D:
         return D
     else:
