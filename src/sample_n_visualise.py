@@ -1,8 +1,17 @@
 import numpy as np
 import pylab as pl
 from matplotlib import collections  as mc
-from src.load import find_param
+
+import os,sys
+workspace = os.path.dirname(__file__)
+sys.path.append(os.path.join(workspace, '../src/'))
+#sys.path.append(os.path.dirname(__file__))
+from load import find_param
+
 import matplotlib.pyplot as plt
+
+import pandas as pd
+import seaborn as sns
 
 def cartesian_product(*arrays):
     la = len(arrays)
@@ -48,7 +57,7 @@ def eval_and_show(fun_list,parameter_value):
     return a
 
 def sample(dic_fun,agents_quantities,size_q):
-    """ Samples probabilities of i successes for sampled parametrisation
+    """ Returns probabilities of i successes for sampled parametrisations
 
     Parameters
     ----------
@@ -167,3 +176,51 @@ def visualise_byparam(hyper_rectangles):
         ax.margins(0.1)
     else:
         print("No green areas to be visualised")
+
+def heatmap(fun,region,sampling_sizes):
+    """ Creates 2D heatmap plot of sampled points of given function
+
+    Parameters
+    ----------
+    dic_fun : dictionary N -> list of polynomes
+    region: boundaries of parameter space to be sampled
+    sampling_sizes : tuple of sample size of respective parameter
+
+    Example
+    ----------
+    heatmap("p+q",[[0,1],[3,4]],[5,5])
+    """
+
+    parameters = sorted(list(find_param(fun)))
+    #print(parameters)
+    if len(parameters) != 2:
+        raise InvalidFunction("Number of paramters of given function is not equal to 2 but",len(parameters))
+
+    arr = np.zeros((sampling_sizes[0]*sampling_sizes[1],3))
+
+    #f = lambda locals()[parameters[0]),locals()[parameters[1]): fun
+
+    ii=-1
+    jj=-1
+    for i in np.linspace(region[0][0], region[0][1], sampling_sizes[0], endpoint=True):
+        ii += 1
+        #print("ii: ",ii)
+        locals()[parameters[0]]=i
+        for j in np.linspace(region[1][0], region[1][1], sampling_sizes[1], endpoint=True):
+            jj += 1
+            #print("jj: ",jj)
+            locals()[parameters[1]]=j
+            arr[jj,0] = round(i,2)
+            arr[jj,1] = round(j,2)
+            arr[jj,2] = eval(fun)
+    #print(arr)
+    #d = pd.DataFrame(arr, columns=["p","q","E"])
+    d = pd.DataFrame(arr, columns=[parameters[0],parameters[1],"E"])
+    #d = d.pivot("p", "q", "E")  
+    d = d.pivot(parameters[0], parameters[1], "E")
+    ax = sns.heatmap(d)
+    plt.show()
+
+if __name__ == "__main__":
+    #heatmap("p+0*q",[[1,5],[1,5]],[6,6])
+    heatmap("p+q",[[0,1],[0,1]],[5,5])

@@ -4,7 +4,9 @@ import os,sys
 import configparser
 config = configparser.ConfigParser()
 #print(os.getcwd())
-config.read("../config.ini")
+workspace = os.path.dirname(__file__)
+#print("workspace",workspace)
+config.read(os.path.join(workspace,"../config.ini"))
 #os.chdir(config.get("paths", "properties"))
 
 properties_folder=config.get("paths", "properties")

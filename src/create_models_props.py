@@ -4,7 +4,9 @@ from pathlib import Path
 import configparser
 config = configparser.ConfigParser()
 #print(os.getcwd())
-config.read("../config.ini")
+workspace = os.path.dirname(__file__)
+#print("workspace",workspace)
+config.read(os.path.join(workspace,"../config.ini"))
 #config.sections()
 model_path = Path(config.get("paths", "models"))
 if not os.path.exists(model_path):

@@ -1,14 +1,17 @@
 import glob, os, re, sys, math
 from sympy import factor
 import scipy.stats as st
-sys.path.append("..")
 
 
 from pathlib import Path
 import configparser
 config = configparser.ConfigParser()
 print(os.getcwd())
-config.read("../config.ini")
+
+workspace = os.path.dirname(__file__)
+print("workspace",workspace)
+config.read(os.path.join(workspace,"../config.ini"))
+
 
 prism_results = config.get("paths", "prism_results")
 if not os.path.exists(prism_results):

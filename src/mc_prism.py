@@ -3,8 +3,10 @@ import time,glob,os,re,sys,subprocess,socket
 from pathlib import Path
 import configparser
 config = configparser.ConfigParser()
-print(os.getcwd())
-config.read("../config.ini")
+#print(os.getcwd())
+workspace = os.path.dirname(__file__)
+#print("workspace",workspace)
+config.read(os.path.join(workspace,"../config.ini"))
 #config.sections()
 #prism_path = config.paths['prism_path'] 
 
