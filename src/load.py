@@ -1,4 +1,5 @@
 import glob, os, re, sys, math
+import pickle
 from sympy import factor
 import scipy.stats as st
 
@@ -156,6 +157,18 @@ def load_all_data(path):
         return D
     else:
         print("Error, No data loaded, please check path")
+
+
+def load_pickled_data(file):
+    """ returns pickled experimental data for
+    
+    Parameters
+    ----------
+    file: filename of the data to be loaded
+    
+    """
+    return pickle.load(open(os.path.join(data_path, file+".p"), "rb" ))
+
 
 def catch_data_error(data,minimum,maximum):
     """ Corrects all data value to be in range min,max

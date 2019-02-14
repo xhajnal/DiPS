@@ -115,6 +115,7 @@ ipython/*
 models/*
 properties/*
 prism_results/*
+performance_results/*
 
 data/*
 

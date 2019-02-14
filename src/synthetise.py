@@ -1,10 +1,14 @@
-from src.load import find_param
-from src.load import noise
 from numpy import prod
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
-import struct, os, time, socket, re
+import struct, os,sys, time, socket, re
+import copy
+
+workspace = os.path.dirname(__file__)
+sys.path.append(workspace)
+from load import find_param
+from load import noise
 
 #import redis
 
@@ -18,13 +22,46 @@ z3_path = config.get("paths", "z3_path")
 if not os.path.exists(z3_path):
     raise OSError("Directory does not exist: "+str(z3_path))
 
-
+cwd=os.getcwd()
 os.chdir(z3_path)
-from z3 import *
+try:
+    from z3 import *
+    #print(os.getcwd())
+    #import subprocess
+    #subprocess.call(["python", "example.py"])
+except:
+    raise Exception("could not load z3 from: ",z3_path)
+finally:
+    os.chdir(cwd)
+
+try:
+    p = Real('p')
+except:
+    import platform
+    if '/' in z3_path:
+        z3_path_short= '/'.join(z3_path.split("/")[:-1])
+    elif '\\' in z3_path:
+        z3_path_short= '\\'.join(z3_path.split("\\")[:-1])
+    else:
+        print("Warning: Could not set path to add to the PATH, please add it manually")
+        
+    if z3_path_short not in os.environ["PATH"]:
+        if z3_path_short.replace("/","\\") not in os.environ["PATH"]:
+            if "wind" in platform.system().lower():
+                os.environ["PATH"] = os.environ["PATH"]+";"+z3_path_short
+            else:
+                os.environ["PATH"] = os.environ["PATH"]+":"+z3_path_short
+    os.environ["PYTHONPATH"]=z3_path
+    os.environ["Z3_LIBRARY_PATH"]=z3_path
+    os.environ["Z3_LIBRARY_DIRS"]=z3_path
+    try:
+        p = Real('p')
+    except:
+        raise Exception("z3 not loaded properly")
+
 
 #non_white_area=0
 #whole_area=0
-
 
 
 def check(thresh,prop,data,alpha,n_samples,silent=False,called=False):
@@ -284,6 +321,7 @@ def check_deeper(thresh,prop,data,alpha,n_samples,n,epsilon,cov,silent,version):
         pic.add_collection(pc)
         plt.show()
     print("result coverage is: ", globals()["non_white_area"]/globals()["whole_area"])
+    return (globals()["non_white_area"],globals()["whole_area"])
 
 
 def private_check_deeper(thresh,prop,data,alpha,n_samples,n,epsilon,coverage,silent):
