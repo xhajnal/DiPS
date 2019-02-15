@@ -2,6 +2,9 @@ import numpy as np
 import pylab as pl
 from matplotlib import collections  as mc
 
+import matplotlib.pyplot as plt
+import random
+
 import os,sys
 workspace = os.path.dirname(__file__)
 sys.path.append(os.path.join(workspace, '../src/'))
@@ -221,6 +224,84 @@ def heatmap(fun,region,sampling_sizes):
     ax = sns.heatmap(d)
     plt.show()
 
+def visualise_sampled_byparam(hyper_rectangles,sample_size):
+    """
+    Visualise sampled hyperspace by connecting the values in each dimension.
+    
+    Parameters
+    ----------
+    hyper_rectangles : list of hyperrectangles
+    sample_size: int of nuumber of points to be sampled
+    """
+    if hyper_rectangles:
+        fig, ax = plt.subplots()
+        #create values of the horizontal axis
+        x_axis=[]
+        i=0
+        for dimension in hyper_rectangles[0]:
+            i=i+1
+            x_axis.append(i)
+        #get values of the vertical axis for respective line
+        for sample in range(sample_size):
+            rectangle = random.randint(0,len(hyper_rectangles)-1)
+            #print(rectangle)
+            values = []
+            #print(hyper_rectangles[rectangle])
+            for dimension in range(len(hyper_rectangles[rectangle])):
+                #print(hyper_rectangles[rectangle][dimension])
+                values.append(random.uniform(hyper_rectangles[rectangle][dimension][0],hyper_rectangles[rectangle][dimension][1]))
+            ax.scatter(x_axis,values)
+            ax.plot(x_axis, values)
+        ax.set_xlabel('params')
+        ax.set_ylabel('parameter value')
+        ax.set_title("Sample points of the given hyperspace") 
+        ax.autoscale()
+        ax.margins(0.1)
+        plt.show()   
+    else:
+        print("Given space is empty")
+
+def visualise_sampled_byparam(hyper_rectangles,sample_size):
+    """
+    Visualise sampled hyperspace by connecting the values in each dimension.
+    
+    Parameters
+    ----------
+    hyper_rectangles : list of hyperrectangles
+    sample_size: int of nuumber of points to be sampled
+    """
+    if hyper_rectangles:
+        fig, ax = plt.subplots()
+        #create values of the horizontal axis
+        x_axis=[]
+        i=0
+        for dimension in hyper_rectangles[0]:
+            i=i+1
+            x_axis.append(i)
+        #get values of the vertical axis for respective line
+        for sample in range(sample_size):
+            rectangle = random.randint(0,len(hyper_rectangles)-1)
+            #print(rectangle)
+            values = []
+            #print(hyper_rectangles[rectangle])
+            for dimension in range(len(hyper_rectangles[rectangle])):
+                #print(hyper_rectangles[rectangle][dimension])
+                values.append(random.uniform(hyper_rectangles[rectangle][dimension][0],hyper_rectangles[rectangle][dimension][1]))
+            ax.scatter(x_axis,values)
+            ax.plot(x_axis, values)
+        ax.set_xlabel('params')
+        ax.set_ylabel('parameter value')
+        ax.set_title("Sample points of the given hyperspace") 
+        ax.autoscale()
+        ax.margins(0.1)
+        plt.show()   
+    else:
+        print("Given space is empty")
+
+
 if __name__ == "__main__":
     #heatmap("p+0*q",[[1,5],[1,5]],[6,6])
     heatmap("p+q",[[0,1],[0,1]],[5,5])
+    hyper_rectangles_sat= [[(0.5, 0.5625), (0.125, 0.25)], [(0.5, 0.5625), (0.0625, 0.125)], [(0.5625, 0.625), (0, 0.0625)], [(0.46875, 0.5), (0.125, 0.1875)], [(0.46875, 0.5), (0.1875, 0.25)]]
+    visualise_byparam(hyper_rectangles_sat)
+    visualise_sampled_byparam(hyper_rectangles_sat,8)
