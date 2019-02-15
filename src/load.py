@@ -24,7 +24,7 @@ if not os.path.exists(data_path):
 
 
 
-def load_all_prism(path,factorize=True, rewards_only=False, f_only=False):
+def load_all_prism(path, factorize=True, rewards_only=False, f_only=False):
     """ Loads all results of parameter synthesis in *path* folder into two maps - f list of rational functions for each property, and rewards list of rational functions for each reward
     
     Parameters
@@ -104,10 +104,10 @@ def load_all_prism(path,factorize=True, rewards_only=False, f_only=False):
     os.chdir(cwd)
     return(f,rewards)
 
-def get_f(path,factorize):
+def get_f(path, factorize):
     return load_all_prism(path,factorize,False,True)[0]
 
-def get_rewards(path,factorize):
+def get_rewards(path, factorize):
     return load_all_prism(path,factorize,True,False)[1]
 
 def load_all_data(path):
@@ -169,8 +169,7 @@ def load_pickled_data(file):
     """
     return pickle.load(open(os.path.join(data_path, file+".p"), "rb" ))
 
-
-def catch_data_error(data,minimum,maximum):
+def catch_data_error(data, minimum, maximum):
     """ Corrects all data value to be in range min,max
     
     Parameters
@@ -187,7 +186,34 @@ def catch_data_error(data,minimum,maximum):
             if data[n][i]>maximum:
                 data[n][i]=maximum
 
-def margin(alpha, n_samples, data):
+def create_intervals(alpha, n_samples, data):
+    """ Returns intervals of data_point +- margin
+
+    Parameters
+    ----------
+    alpha : confidence interval to compute margin
+    n_samples : number of samples to compute margin 
+    data: list of numbers, values to margined
+    """
+    foo=[]
+    for data_point in data:
+        foo.append(create_interval(alpha, n_samples, data_point))
+    return foo
+    
+
+def create_interval(alpha, n_samples, data_point):
+    """ Returns interval of data_point +- margin
+
+    Parameters
+    ----------
+    alpha : confidence interval to compute margin
+    n_samples : number of samples to compute margin 
+    data_point: number, the value to margined
+    """
+    change = margin(alpha, n_samples, data_point)
+    return (data_point - change, data_point + change)
+
+def margin(alpha, n_samples, data_point):
     """ Estimates expected interval with respect to parameters
     TBA shortly describe this type of margin
 
@@ -195,11 +221,11 @@ def margin(alpha, n_samples, data):
     ----------
     alpha : confidence interval to compute margin
     n_samples : number of samples to compute margin 
-    data: data point
+    data_point: number, the value to margined
     """
-    return st.norm.ppf(1-(1-alpha)/2)*math.sqrt(data*(1-data)/n_samples)+0.5/n_samples
+    return st.norm.ppf(1-(1-alpha)/2)*math.sqrt(data_point*(1-data_point)/n_samples)+0.5/n_samples
 
-def margin_experimental(alpha, n_samples, data):
+def margin_experimental(alpha, n_samples, data_point):
     """ Estimates expected interval with respect to parameters
     This margin was used to produce the visual outputs for hsb19 
 
@@ -207,9 +233,9 @@ def margin_experimental(alpha, n_samples, data):
     ----------
     alpha : confidence interval to compute margin
     n_samples : number of samples to compute margin 
-    data: data point
+    data_point: number, the value to margined
     """
-    return st.norm.ppf(1-(1-alpha)/2)*math.sqrt(data*(1-data)/n_samples)+0.5/n_samples+0.005
+    return st.norm.ppf(1-(1-alpha)/2)*math.sqrt(data_point*(1-data_point)/n_samples)+0.5/n_samples+0.005
 
 def find_param(polynome):
     """ Finds parameters of a polynomes
