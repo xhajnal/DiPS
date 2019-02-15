@@ -5,7 +5,7 @@ from matplotlib.collections import PatchCollection
 import struct, os,sys, time, socket, re
 
 from load import find_param
-from load import noise
+from load import margin
 
 from synthetise import *
 

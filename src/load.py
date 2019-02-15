@@ -187,26 +187,26 @@ def catch_data_error(data,minimum,maximum):
             if data[n][i]>maximum:
                 data[n][i]=maximum
 
-def noise(alpha, n_samples, data):
+def margin(alpha, n_samples, data):
     """ Estimates expected interval with respect to parameters
     TBA shortly describe this type of margin
 
     Parameters
     ----------
-    alpha : confidence interval to compute noise
-    n_samples : number of samples to compute noise 
+    alpha : confidence interval to compute margin
+    n_samples : number of samples to compute margin 
     data: data point
     """
     return st.norm.ppf(1-(1-alpha)/2)*math.sqrt(data*(1-data)/n_samples)+0.5/n_samples
 
-def noise_experimental(alpha, n_samples, data):
+def margin_experimental(alpha, n_samples, data):
     """ Estimates expected interval with respect to parameters
-    This noise was used to produce the visual outputs for hsb19 
+    This margin was used to produce the visual outputs for hsb19 
 
     Parameters
     ----------
-    alpha : confidence interval to compute noise
-    n_samples : number of samples to compute noise 
+    alpha : confidence interval to compute margin
+    n_samples : number of samples to compute margin 
     data: data point
     """
     return st.norm.ppf(1-(1-alpha)/2)*math.sqrt(data*(1-data)/n_samples)+0.5/n_samples+0.005

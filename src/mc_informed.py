@@ -1,4 +1,4 @@
-from src.load import noise
+from src.load import margin
 import os,sys
 
 import configparser
@@ -33,8 +33,8 @@ def create_data_informed_properties(N,data,alpha,n_samples,multiparam,seq):
     ----------
     N: int number of agents  
     data: map of data    
-    alpha : confidence interval to compute noise
-    n_samples : number of samples to compute noise
+    alpha : confidence interval to compute margin
+    n_samples : number of samples to compute margin
     multiparam: if True multiparam model is used
     """    
     
@@ -54,22 +54,22 @@ def create_data_informed_properties(N,data,alpha,n_samples,multiparam,seq):
     print(os.path.join(properties_folder,"prop{}_{}_{}_{}{}.pctl".format(model,N,alpha,n_samples,seq)))
 
     for i in range(len(data[N])):
-        if data[N][i]-noise(alpha,n_samples,data[N][i])>0:
+        if data[N][i]-margin(alpha,n_samples,data[N][i])>0:
             if i>0:
-                file.write("P>{} [ F (a0=1)".format(data[N][i]-noise(alpha,n_samples,data[N][i])))   
+                file.write("P>{} [ F (a0=1)".format(data[N][i]-margin(alpha,n_samples,data[N][i])))   
             else:
-                #print(("P>{} [ F (a0=0)".format(data[N][i]-noise(alpha,n_samples,data[N][i]))))
+                #print(("P>{} [ F (a0=0)".format(data[N][i]-margin(alpha,n_samples,data[N][i]))))
                 #print(alpha,n_samples,data[N][i])
-                file.write("P>{} [ F (a0=0)".format(data[N][i]-noise(alpha,n_samples,data[N][i]))) 
+                file.write("P>{} [ F (a0=0)".format(data[N][i]-margin(alpha,n_samples,data[N][i]))) 
 
             for j in range(1,N):
                 file.write("&(a"+str(j)+"="+str( 1 if j<i else 0 )+")")
             file.write("]{}".format(conjuction))        
-        if data[N][i]+noise(alpha,n_samples,data[N][i])<1:
+        if data[N][i]+margin(alpha,n_samples,data[N][i])<1:
             if i>0:
-                file.write("P<{} [ F (a0=1)".format(data[N][i]+noise(alpha,n_samples,data[N][i])))   
+                file.write("P<{} [ F (a0=1)".format(data[N][i]+margin(alpha,n_samples,data[N][i])))   
             else:
-                file.write("P<{} [ F (a0=0)".format(data[N][i]+noise(alpha,n_samples,data[N][i]))) 
+                file.write("P<{} [ F (a0=0)".format(data[N][i]+margin(alpha,n_samples,data[N][i]))) 
 
             for j in range(1,N):
                 file.write("&(a"+str(j)+"="+str( 1 if j<i else 0 )+")")
@@ -88,8 +88,8 @@ def call_data_informed_prism(N,parameters,data,alpha,n_samples,multiparam,seq):
     ----------
     N: int number of agents  
     data: map of data    
-    alpha : confidence interval to compute noise
-    n_samples : number of samples to compute noise
+    alpha : confidence interval to compute margin
+    n_samples : number of samples to compute margin
     multiparam: if True multiparam model is used
     """
 
@@ -105,8 +105,8 @@ def call_data_informed_prism(N,parameters,data,alpha,n_samples,multiparam,seq):
         j=1
         
         for i in range(len(data[N])):
-            #print(data[N][i], "noise: (", data[N][i]-noise(alpha, n_samples, data[N][i]),",",data[N][i]+noise(alpha, n_samples, data[N][i]),")")
-            if data[N][i]-noise(alpha,n_samples,data[N][i])>0:
+            #print(data[N][i], "margin: (", data[N][i]-margin(alpha, n_samples, data[N][i]),",",data[N][i]+margin(alpha, n_samples, data[N][i]),")")
+            if data[N][i]-margin(alpha,n_samples,data[N][i])>0:
                 sys.stdout.write('prism {}/{}_{}.pm '.format(model_folder,model,N)) 
                 sys.stdout.write('{}/prop{}_{}_{}_{}_seq.pctl '.format(properties_folder,prop,N,alpha,n_samples)) 
                 sys.stdout.write('-property {}'.format(j))
@@ -120,7 +120,7 @@ def call_data_informed_prism(N,parameters,data,alpha,n_samples,multiparam,seq):
                 print()       
                 print()
 
-            if data[N][i]+noise(alpha,n_samples,data[N][i])<1:
+            if data[N][i]+margin(alpha,n_samples,data[N][i])<1:
                 sys.stdout.write('prism {}/{}_{}.pm '.format(model_folder,model,N)) 
                 sys.stdout.write('{}/prop{}_{}_{}_{}_seq.pctl '.format(properties_folder,prop,N,alpha,n_samples)) 
                 sys.stdout.write('-property {}'.format(j)) 
@@ -154,8 +154,8 @@ def call_storm(N,parameters,data,alpha,n_samples,multiparam):
     ----------
     N: int number of agents  
     data: map of data    
-    alpha : confidence interval to compute noise
-    n_samples : number of samples to compute noise
+    alpha : confidence interval to compute margin
+    n_samples : number of samples to compute margin
     multiparam: if True multiparam model is used
     """
 
@@ -172,11 +172,11 @@ def call_storm(N,parameters,data,alpha,n_samples,multiparam):
     
     suffix=str(N)
     for i in range(len(data[N])):
-        # print(data[N][i], "noise: (", data[N][i]-noise(alpha, n_samples, data[N][i]),",",data[N][i]+noise(alpha, n_samples, data[N][i]),")")
+        # print(data[N][i], "margin: (", data[N][i]-margin(alpha, n_samples, data[N][i]),",",data[N][i]+margin(alpha, n_samples, data[N][i]),")")
         
-        if data[N][i]-noise(alpha,n_samples,data[N][i])>0:
+        if data[N][i]-margin(alpha,n_samples,data[N][i])>0:
             suffix="{}-low".format(i)
-            sys.stdout.write('./storm-pars --prism /{}/{}_{}.pm --prop "P>{}'.format(storm_models,model,N,data[N][i]-noise(alpha,n_samples,data[N][i]))) 
+            sys.stdout.write('./storm-pars --prism /{}/{}_{}.pm --prop "P>{}'.format(storm_models,model,N,data[N][i]-margin(alpha,n_samples,data[N][i]))) 
             if i>0:
                 sys.stdout.write("[ F (a0=1)")
             else:
@@ -194,9 +194,9 @@ def call_storm(N,parameters,data,alpha,n_samples,multiparam):
             print()       
             print()
         
-        if data[N][i]+noise(alpha,n_samples,data[N][i])<1:
+        if data[N][i]+margin(alpha,n_samples,data[N][i])<1:
             suffix="{}-high".format(i)
-            sys.stdout.write('./storm-pars --prism /{}/{}_{}.pm --prop "P<{}'.format(storm_models,model,N,data[N][i]+noise(alpha,n_samples,data[N][i])))
+            sys.stdout.write('./storm-pars --prism /{}/{}_{}.pm --prop "P<{}'.format(storm_models,model,N,data[N][i]+margin(alpha,n_samples,data[N][i])))
             if i>0:
                 sys.stdout.write("[ F (a0=1)")
             else:
