@@ -1,27 +1,28 @@
-import glob, os, re, sys, math
-import pickle
-from sympy import factor
-import scipy.stats as st
-
-
-from pathlib import Path
 import configparser
+import glob
+import math
+import os
+import pickle
+import re
+from pathlib import Path
+
+import scipy.stats as st
+from sympy import factor
+
 config = configparser.ConfigParser()
 print(os.getcwd())
 
 workspace = os.path.dirname(__file__)
-print("workspace",workspace)
-config.read(os.path.join(workspace,"../config.ini"))
-
+print("workspace", workspace)
+config.read(os.path.join(workspace, "../config.ini"))
 
 prism_results = config.get("paths", "prism_results")
 if not os.path.exists(prism_results):
-    raise OSError("Directory does not exist: "+str(prism_results))
+    raise OSError("Directory does not exist: " + str(prism_results))
 
 data_path = config.get("paths", "data")
 if not os.path.exists(data_path):
-    raise OSError("Directory does not exist: "+str(data_path))
-
+    raise OSError("Directory does not exist: " + str(data_path))
 
 
 def load_all_prism(path, factorize=True, rewards_only=False, f_only=False):
@@ -34,38 +35,36 @@ def load_all_prism(path, factorize=True, rewards_only=False, f_only=False):
     rewards_only: if true it compute only rewards
     f_only: if true it will compute only standard properties
     
-    Returns:
-        (f,reward), where
-        f: dictionary N -> list of rational functions for each property
-        rewards: dictionary N -> list of rational functions for each reward
+    Returns
+    ----------
+    (f,reward), where
+    f: dictionary N -> list of rational functions for each property
+    rewards: dictionary N -> list of rational functions for each reward
     """
-    cwd=os.getcwd()
+    cwd = os.getcwd()
     if not Path(path).is_absolute():
         os.chdir(prism_results)
 
-    here = False
-    N = 0
     f = {}
     rewards = {}
-    #print(str(path))
-    if not  glob.glob(str(path)):
-        raise OSError("No valid files in the given directory "+ os.path.join(os.getcwd(),path))
+    # print(str(path))
+    if not glob.glob(str(path)):
+        raise OSError("No valid files in the given directory " + os.path.join(os.getcwd(), path))
 
-    
     for file in glob.glob(str(path)):
-        print(os.path.join(os.getcwd(),file))
-        N = int(re.findall('\d+', file )[0]) 
-        file=open(file,"r")
-        i=-1
-        here=""
+        print(os.path.join(os.getcwd(), file))
+        N = int(re.findall('\d+', file)[0])
+        file = open(file, "r")
+        i = -1
+        here = ""
         f[N] = []
         rewards[N] = []
         for line in file:
-            if line.startswith( 'Parametric model checking:' ):
-                i=i+1 
-            if line.startswith( 'Parametric model checking: R=?' ):
-                here="r"
-            if i>=0 and line.startswith( 'Result' ):
+            if line.startswith('Parametric model checking:'):
+                i = i + 1
+            if line.startswith('Parametric model checking: R=?'):
+                here = "r"
+            if i >= 0 and line.startswith('Result'):
                 line = line.split(":")[2]
                 line = line.replace("{", "")
                 line = line.replace("}", "")
@@ -77,9 +76,9 @@ def load_all_prism(path, factorize=True, rewards_only=False, f_only=False):
                 line = line.replace("+ *", "+")
                 line = line.replace("^", "**")
                 line = line.replace(" ", "")
-                if line.startswith( '*' ):
-                    line=line[1:]
-                if here=="r" and not f_only:
+                if line.startswith('*'):
+                    line = line[1:]
+                if here == "r" and not f_only:
                     if factorize:
                         try:
                             rewards[N].append(str(factor(line[:-1])))
@@ -88,27 +87,31 @@ def load_all_prism(path, factorize=True, rewards_only=False, f_only=False):
                             rewards[N].append(line[:-1])
                             os.chdir(cwd)
                     else:
-                        rewards[N]=line[:-1]
-                elif not here=="r" and not rewards_only:
-                    #print(f[N])
-                    #print(line[:-1])
+                        rewards[N] = line[:-1]
+                elif not here == "r" and not rewards_only:
+                    # print(f[N])
+                    # print(line[:-1])
                     if factorize:
                         try:
                             f[N].append(str(factor(line[:-1])))
                         except:
-                            print("Error while factorising polynome f[{}][{}], used not factorised instead".format(N,i))
-                            f[N]=line[:-1]
+                            print(
+                                "Error while factorising polynome f[{}][{}], used not factorised instead".format(N, i))
+                            f[N] = line[:-1]
                             os.chdir(cwd)
                     else:
                         f[N].append(line[:-1])
     os.chdir(cwd)
-    return(f,rewards)
+    return (f, rewards)
+
 
 def get_f(path, factorize):
-    return load_all_prism(path,factorize,False,True)[0]
+    return load_all_prism(path, factorize, False, True)[0]
+
 
 def get_rewards(path, factorize):
-    return load_all_prism(path,factorize,True,False)[1]
+    return load_all_prism(path, factorize, True, False)[1]
+
 
 def load_all_data(path):
     """ loads all experimental data for respective property, returns as dictionary D
@@ -117,41 +120,42 @@ def load_all_data(path):
     ----------
     path: string - file name regex
     
-    Returns:
+    Returns
+    ----------
         D: dictionary N -> list of propbabilities for respective property
     """
-    cwd=os.getcwd()
+    cwd = os.getcwd()
     if not Path(path).is_absolute():
         os.chdir(data_path)
 
     D = {}
-    if not  glob.glob(str(path)):
-        raise OSError("No valid files in the given directory "+ os.path.join(os.getcwd(),path))
+    if not glob.glob(str(path)):
+        raise OSError("No valid files in the given directory " + os.path.join(os.getcwd(), path))
 
     for file in glob.glob(str(path)):
-        print(os.path.join(os.getcwd(),file))
-        file=open(file,"r")
+        print(os.path.join(os.getcwd(), file))
+        file = open(file, "r")
         N = 0
         for line in file:
-            #print("line: ",line)
+            # print("line: ",line)
             if re.search("n", line) is not None:
                 N = int(line.split(",")[0].split("=")[1])
-                #print("N, ",N)
+                # print("N, ",N)
                 D[N] = []
                 continue
             D[N] = line[:-1].split(",")
-            #print(D[N])
+            # print(D[N])
             for value in range(len(D[N])):
-                #print(D[N][value])
+                # print(D[N][value])
                 try:
-                    D[N][value]=float(D[N][value])
+                    D[N][value] = float(D[N][value])
                 except:
-                    print("error while parsing N=",N," i=",value," of value=",D[N][value])
-                    D[N][value]=0
-                #print(type(D[N][value]))
-            #D[N].append(1-sum(D[N]))
+                    print("error while parsing N=", N, " i=", value, " of value=", D[N][value])
+                    D[N][value] = 0
+                # print(type(D[N][value]))
+            # D[N].append(1-sum(D[N]))
             break
-            #print(D[N])
+            # print(D[N])
     os.chdir(cwd)
     if D:
         return D
@@ -167,7 +171,8 @@ def load_pickled_data(file):
     file: filename of the data to be loaded
     
     """
-    return pickle.load(open(os.path.join(data_path, file+".p"), "rb" ))
+    return pickle.load(open(os.path.join(data_path, file + ".p"), "rb"))
+
 
 def catch_data_error(data, minimum, maximum):
     """ Corrects all data value to be in range min,max
@@ -181,10 +186,11 @@ def catch_data_error(data, minimum, maximum):
     """
     for n in data.keys():
         for i in range(len(data[n])):
-            if data[n][i]<minimum:
-                data[n][i]=minimum
-            if data[n][i]>maximum:
-                data[n][i]=maximum
+            if data[n][i] < minimum:
+                data[n][i] = minimum
+            if data[n][i] > maximum:
+                data[n][i] = maximum
+
 
 def create_intervals(alpha, n_samples, data):
     """ Returns intervals of data_point +- margin
@@ -195,11 +201,11 @@ def create_intervals(alpha, n_samples, data):
     n_samples : number of samples to compute margin 
     data: list of numbers, values to margined
     """
-    foo=[]
+    foo = []
     for data_point in data:
         foo.append(create_interval(alpha, n_samples, data_point))
     return foo
-    
+
 
 def create_interval(alpha, n_samples, data_point):
     """ Returns interval of data_point +- margin
@@ -213,6 +219,7 @@ def create_interval(alpha, n_samples, data_point):
     change = margin(alpha, n_samples, data_point)
     return (data_point - change, data_point + change)
 
+
 def margin(alpha, n_samples, data_point):
     """ Estimates expected interval with respect to parameters
     TBA shortly describe this type of margin
@@ -223,7 +230,8 @@ def margin(alpha, n_samples, data_point):
     n_samples : number of samples to compute margin 
     data_point: number, the value to margined
     """
-    return st.norm.ppf(1-(1-alpha)/2)*math.sqrt(data_point*(1-data_point)/n_samples)+0.5/n_samples
+    return st.norm.ppf(1 - (1 - alpha) / 2) * math.sqrt(data_point * (1 - data_point) / n_samples) + 0.5 / n_samples
+
 
 def margin_experimental(alpha, n_samples, data_point):
     """ Estimates expected interval with respect to parameters
@@ -235,7 +243,9 @@ def margin_experimental(alpha, n_samples, data_point):
     n_samples : number of samples to compute margin 
     data_point: number, the value to margined
     """
-    return st.norm.ppf(1-(1-alpha)/2)*math.sqrt(data_point*(1-data_point)/n_samples)+0.5/n_samples+0.005
+    return st.norm.ppf(1 - (1 - alpha) / 2) * math.sqrt(
+        data_point * (1 - data_point) / n_samples) + 0.5 / n_samples + 0.005
+
 
 def find_param(polynome):
     """ Finds parameters of a polynomes
@@ -247,10 +257,10 @@ def find_param(polynome):
     Returns set of strings - parameters
     """
     parameters = polynome.replace('(', '').replace(')', '').replace('**', '*').replace(' ', '')
-    parameters = re.split('\+|\*|\-|/',parameters)
+    parameters = re.split('\+|\*|\-|/', parameters)
     parameters = [i for i in parameters if not i.isnumeric()]
     parameters = set(parameters)
     parameters.add("")
     parameters.remove("")
-    #print("hello",set(parameters))
+    # print("hello",set(parameters))
     return set(parameters)
