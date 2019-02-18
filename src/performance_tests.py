@@ -1,10 +1,6 @@
-import configparser
 import datetime
 import math
-import os
 import pickle
-import socket
-import time
 
 from synthetise import *
 

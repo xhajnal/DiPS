@@ -123,7 +123,7 @@ def load_all_data(path):
     
     Returns
     ----------
-        D: dictionary N -> list of propbabilities for respective property
+        D: dictionary N -> list of probabilities for respective property
     """
     cwd = os.getcwd()
     if not Path(path).is_absolute():

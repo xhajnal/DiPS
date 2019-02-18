@@ -277,7 +277,7 @@ def visualise_sampled_byparam(hyper_rectangles, sample_size):
     Parameters
     ----------
     hyper_rectangles : list of hyperrectangles
-    sample_size: int of nuumber of points to be sampled
+    sample_size: int -- number of points to be sampled
     """
     if hyper_rectangles:
         fig, ax = plt.subplots()

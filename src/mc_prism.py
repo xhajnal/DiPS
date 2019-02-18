@@ -47,7 +47,8 @@ def call_prism(args, seq, silent=True, model_path=model_path, properties_path=pr
     Parameters
     ----------
     args: string for executing prism
-    seq: if true it will take properties by one and append results (neccesary if out of the memory)
+    seq: if true it will take properties by one and append results (necessary if out of the memory)
+    silent: if silent the output si set to minimum
     model_path: path to models
     properties_path: path to properties
     output_path: path for the output

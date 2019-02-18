@@ -2,7 +2,9 @@ import configparser
 import os
 import sys
 
-from src.load import margin
+workspace = os.path.dirname(__file__)
+sys.path.append(os.path.join(workspace, '../src/'))
+from load import margin
 
 config = configparser.ConfigParser()
 # print(os.getcwd())

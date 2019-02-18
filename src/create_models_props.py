@@ -20,7 +20,7 @@ if not os.path.exists(properties_path):
 
 
 def nCr(n, k):
-    """ Return conbinatorial number n take k
+    """ Return combinatorial number n take k
     
     Parameters
     ----------
@@ -33,11 +33,12 @@ def nCr(n, k):
 
 
 def create_synchronous_model(file, N):
-    """ Creates synchronous model of *N* agents to a *file* with probabilities p and q in [0,1]. For more information see paper.
+    """ Creates synchronous model of *N* agents to a *file* with probabilities p and q in [0,1].
+    For more information see the paper.
     
     Parameters
     ----------
-    file : string - filename with extesion
+    file : string - filename with extension
     N : int - agent quantity
     """
     filename = model_path / Path(file.split(".")[0] + ".pm")
@@ -65,7 +66,7 @@ def create_synchronous_model(file, N):
 
     # module here 
     file.write("module bees_" + str(N) + "\n")
-    file.write("       // ai - state of agent i:  -1:init 0:total_failure 1:succes 2:failure_after_first_attempt\n")
+    file.write("       // ai - state of agent i:  -1:init 0:total_failure 1:success 2:failure_after_first_attempt\n")
     for i in range(N):
         file.write("       a" + str(i) + " : [-1..2] init -1; \n")
     file.write("       b : [0..1] init 0; \n")
@@ -120,16 +121,16 @@ def create_synchronous_model(file, N):
         twos = N - ones
         # file.write("twos: {}".format(twos))
 
-        for sucessses in range(0, twos + 1):
-            file.write(str(nCr(twos, sucessses)))
-            for ok in range(sucessses):
+        for successes in range(0, twos + 1):
+            file.write(str(nCr(twos, successes)))
+            for ok in range(successes):
                 file.write("*q")
-            for nok in range(twos - sucessses):
+            for nok in range(twos - successes):
                 file.write("*(1-q)")
             file.write(": ")
 
             for k in range(1, N + 1):
-                if k <= ones + sucessses:
+                if k <= ones + successes:
                     if k == N:
                         file.write("(a" + str(k - 1) + "'=1)")
                     else:
@@ -138,7 +139,7 @@ def create_synchronous_model(file, N):
                     file.write("(a" + str(k - 1) + "'=0)")
                 else:
                     file.write("(a" + str(k - 1) + "'=0) & ")
-            if sucessses < twos:
+            if successes < twos:
                 file.write(" + ")
 
         file.write(";\n")
@@ -737,7 +738,7 @@ def create_multiparam_semisynchronous_model(file, N):
     
     Parameters
     ----------
-    file : string - filename with extesion
+    file : string - filename with extension
     N : int - agent quantity
     """
     filename = model_path / Path(file.split(".")[0] + ".pm")
@@ -767,7 +768,7 @@ def create_multiparam_semisynchronous_model(file, N):
 
     # module here 
     file.write("module multiparam_bees_" + str(N) + "\n")
-    file.write("       // ai - state of agent i:  -1:init 0:total_failure 1:succes 2:failure_after_first_attempt\n")
+    file.write("       // ai - state of agent i:  -1:init 0:total_failure 1:success 2:failure_after_first_attempt\n")
     for i in range(N):
         file.write("       a" + str(i) + " : [-1..2] init -1; \n")
     file.write("       b : [0..1] init 0; \n")
@@ -899,7 +900,7 @@ def create_multiparam_asynchronous_model(file, N):
     
     Parameters
     ----------
-    file : string - filename with extesion
+    file : string - filename with extension
     N : int - agent quantity
     """
     filename = model_path / Path(file.split(".")[0] + ".pm")
@@ -929,7 +930,7 @@ def create_multiparam_asynchronous_model(file, N):
 
     # module here 
     file.write("module multiparam_bees_" + str(N) + "\n")
-    file.write("       // ai - state of agent i:  -1:init 0:total_failure 1:succes 2:failure_after_first_attempt\n")
+    file.write("       // ai - state of agent i:  -1:init 0:total_failure 1:success 2:failure_after_first_attempt\n")
     for i in range(N):
         file.write("       a" + str(i) + " : [-1..2] init -1; \n")
     file.write("       b : [0..1] init 0; \n")
