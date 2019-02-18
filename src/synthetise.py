@@ -1,13 +1,17 @@
-from numpy import prod
+import os
+import re
+import socket
+import sys
+import time
+
 import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
-import os, sys, time, socket, re
+from matplotlib.patches import Rectangle
+from numpy import prod
 
 workspace = os.path.dirname(__file__)
 sys.path.append(workspace)
 from load import find_param
-from load import margin
 
 import configparser
 config = configparser.ConfigParser()
@@ -67,7 +71,7 @@ except:
 # whole_area=0
 
 
-def check(region, prop, data, alpha, n_samples, silent=False, called=False):
+def check(region, prop, intervals, silent=False, called=False):
     """ Check if the given region is unsafe or not.
 
     It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given **interval** (called a model in SMT), otherwise it is unsafe. 
@@ -76,9 +80,7 @@ def check(region, prop, data, alpha, n_samples, silent=False, called=False):
     ----------
     region: array of pairs, low and high bound, defining the parameter space to be refined
     prop: array of functions (polynomes or general rational functions in the case of Markov Chains)
-    data: array of numbers to create intervals or the intervals inself
-    alpha: confidence interval to compute margin
-    n_samples: number of samples to compute margin 
+    intervals: array of numbers to create intervals or the intervals inself
     silent: if silent printed output is set to minimum
     """
     ## Initialisation
@@ -111,19 +113,16 @@ def check(region, prop, data, alpha, n_samples, silent=False, called=False):
 
     ## Adding property in the interval restrictions to solver
     for i in range(0, len(prop)):
-        # print("margin is: ", margin(alpha,n_samples,data[i]), "where i=",i)
 
-        # if data[i]<100/n_samples:
+        # if intervals[i]<100/n_samples:
         #    continue
 
         ## ALTERNATIVE HEURISTIC APPROACH COMMENTED HERE
-        # if  data[i]<0.01:
+        # if  intervals[i]<0.01:
         #    continue
 
-        s.add(eval(prop[i]) > data[i] - margin(alpha, n_samples, data[i]),
-              eval(prop[i]) < data[i] + margin(alpha, n_samples, data[i]))
-        # print(str(eval(prop[i]))+">"+str(data[i]-margin(alpha,n_samples,data[i]))+","+str(eval(prop[i]))+"<"+str(data[i]+margin(alpha,n_samples,data[i])))
-        # print(prop[i],data[i])
+        s.add(eval(prop[i]) > intervals[i][0], eval(prop[i]) < intervals[i][1])
+        # print(prop[i],intervals[i])
 
     if s.check() == sat:
         return s.model()
@@ -145,7 +144,7 @@ def check(region, prop, data, alpha, n_samples, silent=False, called=False):
         return ("unsafe")
 
 
-def check_safe(region, prop, data, alpha, n_samples, silent=False, called=False):
+def check_safe(region, prop, intervals, silent=False, called=False):
     """ Check if the given region is safe or not 
 
     It means whether for all parametrisations in **region** every property(prop) is evaluated within the given **interval**, otherwise it is not safe and counterexample is returned. 
@@ -154,9 +153,7 @@ def check_safe(region, prop, data, alpha, n_samples, silent=False, called=False)
     ----------
     region: array of pairs, low and high bound, defining the parameter space to be refined
     prop: array of functions (polynomes or general rational functions in the case of Markov Chains)
-    data: array of numbers to create intervals or the intervals inself
-    alpha: confidence interval to compute margin
-    n_samples: number of samples to compute margin
+    intervals: array of numbers to create intervals or the intervals inself
     silent: if silent printed output is set to minimum
     """
     # initialisation
@@ -183,24 +180,24 @@ def check_safe(region, prop, data, alpha, n_samples, silent=False, called=False)
         s.add(globals()[parameters[j]] < region[j][1])
 
     ## Adding property in the interval restrictions to solver
-    formula = Or(Not(eval(prop[0]) > data[0] - margin(alpha, n_samples, data[0])),
-                 Not(eval(prop[0]) < data[0] + margin(alpha, n_samples, data[0])))
+
+
+    formula = Or(Not(eval(prop[0]) > intervals[0][0]), Not(eval(prop[0]) < intervals[0][1]))
 
     ## ALTERNATIVE HEURISTIC APPROACH COMMENTED HERE
-    # if data[0]<0.01:
-    #    formula = Or(Not(eval(prop[0]) > data[0]-margin(alpha,n_samples,data[0])), Not(eval(prop[0]) < data[0]+margin(alpha,n_samples,data[0]))) 
+    # if intervals[0]<0.01:
+    #    formula = Or(Not(eval(prop[0]) > intervals[0][0])), Not(eval(prop[0]) < intervals[0][1]))) 
     # else:
     #    formula = False
 
     for i in range(1, len(prop)):
-        # if data[i]<100/n_samples:
+        # if intervals[i]<100/n_samples:
         #    continue       
 
         ## ALTERNATIVE HEURISTIC APPROACH COMMENTED HERE
-        # if  data[i]<0.01:
+        # if  intervals[i]<0.01:
         #    continue
-        formula = Or(formula, Or(Not(eval(prop[i]) > data[i] - margin(alpha, n_samples, data[i])),
-                                 Not(eval(prop[i]) < data[i] + margin(alpha, n_samples, data[i]))))
+        formula = Or(formula, Or(Not(eval(prop[i]) > intervals[i][0]), Not(eval(prop[i]) < intervals[i][1])))
     s.add(formula)
     # print(s.check())
     # return s.check()
@@ -253,19 +250,18 @@ class Queue:
         return self.queue
 
 
-def check_deeper(region, prop, data, alpha, n_samples, n, epsilon, cov, silent, version):
+def check_deeper(region, prop, intervals, n, epsilon, cov, silent, version):
     """Splitting the parameter space into safe and unsafe regions with respective alg/method
     Parameters
     ----------
     region: array of pairs, low and high bound, defining the parameter space to be refined
     prop: array of polynomes
-    data: array of numbers to create intervals or the intervals inself    
-    alpha: confidence interval to compute margin
-    n_samples: number of samples to compute margin
+    intervals: array of numbers to create intervals or the intervals inself    
     n : max number of recursions to do
     epsilon: minimal size of rectangle to be checked
     cov: coverage threshold to stop computattion
     silent: if silent printed output is set to minimum
+    version: version of the algoritm to be used
     """
 
     # initialisation
@@ -306,18 +302,18 @@ def check_deeper(region, prop, data, alpha, n_samples, n, epsilon, cov, silent, 
     # choosing from versions
     start_time = time.time()
     if version == 1:
-        private_check_deeper(region, prop, data, alpha, n_samples, n, epsilon, cov, silent)
+        private_check_deeper(region, prop, intervals, n, epsilon, cov, silent)
     if version == 2:
         globals()["que"] = Queue()
-        private_check_deeper_queue(region, prop, data, alpha, n_samples, n, epsilon, cov, silent)
+        private_check_deeper_queue(region, prop, intervals, n, epsilon, cov, silent)
     if version == 3:
         globals()["que"] = Queue()
-        private_check_deeper_queue_checking(region, prop, data, alpha, n_samples, n, epsilon, cov, silent, None)
+        private_check_deeper_queue_checking(region, prop, intervals, n, epsilon, cov, silent, None)
     if version == 4:
         globals()["que"] = Queue()
-        private_check_deeper_queue_checking_both(region, prop, data, alpha, n_samples, n, epsilon, cov, silent, None)
+        private_check_deeper_queue_checking_both(region, prop, intervals, n, epsilon, cov, silent, None)
     if version == 5:
-        print(check_deeper_iter(region, prop, data, alpha, n_samples, n, epsilon, cov, silent))
+        print(check_deeper_iter(region, prop, intervals, n, epsilon, cov, silent))
 
     # visualisation
     if len(region) == 1 or len(region) == 2:
@@ -330,8 +326,7 @@ def check_deeper(region, prop, data, alpha, n_samples, n, epsilon, cov, silent, 
         if len(region) == 2:
             pic.set_ylabel('q')
         pic.set_title(
-            "red = unsafe region, green = safe region, white = in between \n alpha:{}, n_samples:{}, max_recursion_depth:{}, \n min_rec_size:{}, achieved_coverage:{}, alg{} \n It took {} {} second(s)".format(
-                alpha, n_samples, n, epsilon, globals()["non_white_area"] / globals()["whole_area"], version,
+            "red = unsafe region, green = safe region, white = in between \n max_recursion_depth:{}, \n min_rec_size:{}, achieved_coverage:{}, alg{} \n It took {} {} second(s)".format( n, epsilon, globals()["non_white_area"] / globals()["whole_area"], version,
                 socket.gethostname(), round(time.time() - start_time, 1)))
         pc = PatchCollection(rectangles_unsat, facecolor='r', alpha=0.5)
         pic.add_collection(pc)
@@ -344,15 +339,13 @@ def check_deeper(region, prop, data, alpha, n_samples, n, epsilon, cov, silent, 
     return (globals()["non_white_area"], globals()["whole_area"])
 
 
-def private_check_deeper(region, prop, data, alpha, n_samples, n, epsilon, coverage, silent):
+def private_check_deeper(region, prop, intervals, n, epsilon, coverage, silent):
     """
     Parameters
     ----------
     region: array of pairs, low and high bound, defining the parameter space to be refined
     prop: array of polynomes
-    data: array of numbers to create intervals or the intervals inself    
-    alpha: confidence interval to compute margin
-    n_samples: number of samples to compute margin
+    intervals: array of numbers to create intervals or the intervals inself    
     n : max number of recursions to do
     epsilon: minimal size of rectangle to be checked
     cov: coverage threshold to stop computattion
@@ -388,9 +381,9 @@ def private_check_deeper(region, prop, data, alpha, n_samples, n, epsilon, cover
             return "coverage ", globals()["non_white_area"] / globals()["whole_area"], " is above the threshold"
 
     # HERE MAY ADDING THE MODEL
-    if check(region, prop, data, alpha, n_samples, silent) == "unsafe":
+    if check(region, prop, intervals, silent) == "unsafe":
         result = "unsafe"
-    elif check_safe(region, prop, data, alpha, n_samples, silent) == "safe":
+    elif check_safe(region, prop, intervals, silent) == "safe":
         result = "safe"
     else:
         result = "unknown"
@@ -425,21 +418,21 @@ def private_check_deeper(region, prop, data, alpha, n_samples, n, epsilon, cover
             globals()["hyper_rectangles_white"].append(foo2)  # add this region as white
             # print("white area",globals()["hyper_rectangles_white"])
             if silent:
-                private_check_deeper(foo, prop, data, alpha, n_samples, n - 1, epsilon, coverage, silent)
+                private_check_deeper(foo, prop, intervals, n - 1, epsilon, coverage, silent)
                 if globals()["whole_area"] > 0:
                     if globals()["non_white_area"] / globals()["whole_area"] > coverage:
                         return "coverage ", globals()["non_white_area"] / globals()[
                             "whole_area"], " is above the threshold"
-                private_check_deeper(foo2, prop, data, alpha, n_samples, n - 1, epsilon, coverage, silent)
+                private_check_deeper(foo2, prop, intervals, n - 1, epsilon, coverage, silent)
             else:
                 print(n, foo, globals()["non_white_area"] / globals()["whole_area"],
-                      private_check_deeper(foo, prop, data, alpha, n_samples, n - 1, epsilon, coverage, silent))
+                      private_check_deeper(foo, prop, intervals, n - 1, epsilon, coverage, silent))
                 if globals()["whole_area"] > 0:
                     if globals()["non_white_area"] / globals()["whole_area"] > coverage:
                         return "coverage ", globals()["non_white_area"] / globals()[
                             "whole_area"], " is above the threshold"
                 print(n, foo2, globals()["non_white_area"] / globals()["whole_area"],
-                      private_check_deeper(foo2, prop, data, alpha, n_samples, n - 1, epsilon, coverage, silent))
+                      private_check_deeper(foo2, prop, intervals, n - 1, epsilon, coverage, silent))
 
     return result
 
@@ -479,16 +472,14 @@ def colored(greater, smaller):
     # pic.add_collection(pc)
 
 
-def check_deeper_iter(region, props, data, alpha, n_samples, n, epsilon, coverage, silent):
+def check_deeper_iter(region, props, intervals, n, epsilon, coverage, silent):
     """New iterative method using alg1
 
     Parameters
     ----------
     region: array of pairs, low and high bound, defining the parameter space to be refined
     prop: array of polynomes
-    data: array of numbers to create intervals or the intervals inself    
-    alpha: confidence interval to compute margin
-    n_samples: number of samples to compute margin
+    intervals: array of numbers to create intervals or the intervals inself    
     n : max number of recursions to do
     epsilon: minimal size of rectangle to be checked
     cov: coverage threshold to stop computattion
@@ -496,12 +487,12 @@ def check_deeper_iter(region, props, data, alpha, n_samples, n, epsilon, coverag
     """
     new_tresh = copy.copy(region)
 
-    # implement ordering of the props with data
+    # implement ordering of the props with intervals
     for i in range(len(props) - 1):
         if not silent:
             # print("white: ",globals()["hyper_rectangles_white"])
-            print("check_deeper(", new_tresh, [props[i]], [data[i]], ")")
-        check_deeper(new_tresh, [props[i]], [data[i]], alpha, n_samples, n, epsilon, coverage, True, 1)
+            print("check_deeper(", new_tresh, [props[i]], [intervals[i]], ")")
+        check_deeper(new_tresh, [props[i]], [intervals[i]], n, epsilon, coverage, True, 1)
 
         new_tresh = []
         for interval_index in range(len(region)):
@@ -525,24 +516,22 @@ def check_deeper_iter(region, props, data, alpha, n_samples, n, epsilon, coverag
             print("Computed hull of nonred region is:", new_tresh)
         # globals()["hyper_rectangles_white"]=[new_tresh]
     default_region = None
-    check_deeper(new_tresh, props, data, alpha, n_samples, n, epsilon, coverage, True, 1)
+    check_deeper(new_tresh, props, intervals, n, epsilon, coverage, True, 1)
 
 
-def private_check_deeper_queue(region, prop, data, alpha, n_samples, n, epsilon, coverage, silent):
+def private_check_deeper_queue(region, prop, intervals, n, epsilon, coverage, silent):
     """
     Parameters
     ----------
     region: array of pairs, low and high bound, defining the parameter space to be refined
     prop: array of polynomes
-    data: array of numbers to create intervals or the intervals inself    
-    alpha: confidence interval to compute margin
-    n_samples: number of samples to compute margin
+    intervals: array of numbers to create intervals or the intervals inself    
     n : max number of recursions to do
     epsilon: minimal size of rectangle to be checked
     cov: coverage threshold to stop computattion
     silent: if silent printed output is set to minimum
     """
-    # print(region,prop,data,alpha,n_samples,n,epsilon,coverage,silent)
+    # print(region,prop,intervals,n,epsilon,coverage,silent)
 
     # checking this:
     # print("check equal", globals()["non_white_area"],non_white_area)
@@ -575,11 +564,11 @@ def private_check_deeper_queue(region, prop, data, alpha, n_samples, n, epsilon,
             return "coverage ", globals()["non_white_area"] / globals()["whole_area"], " is above the threshold"
 
     # HERE I CAN APPEND THE VALUE OF EXAMPLE AND COUNTEREXAMPLE
-    # print("hello check =",check(region,prop,data,alpha,n_samples,silent))
-    # print("hello check safe =",check_safe(region,prop,data,alpha,n_samples,silent))
-    if check(region, prop, data, alpha, n_samples, silent) == "unsafe":
+    # print("hello check =",check(region,prop,intervals,silent))
+    # print("hello check safe =",check_safe(region,prop,n_samples,silent))
+    if check(region, prop, intervals, silent) == "unsafe":
         result = "unsafe"
-    elif check_safe(region, prop, data, alpha, n_samples, silent) == "safe":
+    elif check_safe(region, prop, intervals, silent) == "safe":
         result = "safe"
     else:
         result = "unknown"
@@ -608,10 +597,10 @@ def private_check_deeper_queue(region, prop, data, alpha, n_samples, n, epsilon,
     foo2[index] = (low + (high - low) / 2, high)
 
     # ADD CALLS TO QUEUE
-    # print("adding",[copy.copy(foo),prop,data,alpha,n_samples,n-1,epsilon,coverage,silent], "with len", len([copy.copy(foo),prop,data,alpha,n_samples,n-1,epsilon,coverage,silent]))
-    # print("adding",[copy.copy(foo2),prop,data,alpha,n_samples,n-1,epsilon,coverage,silent], "with len", len([copy.copy(foo2),prop,data,alpha,n_samples,n-1,epsilon,coverage,silent]))
-    globals()["que"].enqueue([copy.copy(foo), prop, data, alpha, n_samples, n - 1, epsilon, coverage, silent])
-    globals()["que"].enqueue([copy.copy(foo2), prop, data, alpha, n_samples, n - 1, epsilon, coverage, silent])
+    # print("adding",[copy.copy(foo),prop,intervals,n-1,epsilon,coverage,silent], "with len", len([copy.copy(foo),prop,intervals,n-1,epsilon,coverage,silent]))
+    # print("adding",[copy.copy(foo2),prop,intervals,n-1,epsilon,coverage,silent], "with len", len([copy.copy(foo2),prop,intervals,n-1,epsilon,coverage,silent]))
+    globals()["que"].enqueue([copy.copy(foo), prop, intervals, n - 1, epsilon, coverage, silent])
+    globals()["que"].enqueue([copy.copy(foo2), prop, intervals, n - 1, epsilon, coverage, silent])
 
     # CALL QUEUE
     # print(globals()["que"].printQueue())
@@ -619,21 +608,19 @@ def private_check_deeper_queue(region, prop, data, alpha, n_samples, n, epsilon,
         private_check_deeper_queue(*que.dequeue())
 
 
-def private_check_deeper_queue_checking(region, prop, data, alpha, n_samples, n, epsilon, coverage, silent, model=None):
+def private_check_deeper_queue_checking(region, prop, intervals, n, epsilon, coverage, silent, model=None):
     """ THIS IS OBSOLETE METHOD, HERE JUST TO BE COPARED WITH THE NEW ONE
     Parameters
     ----------
     region: array of pairs, low and high bound, defining the parameter space to be refined
     prop: array of polynomes
-    data: array of numbers to create intervals or the intervals inself    
-    alpha: confidence interval to compute margin
-    n_samples: number of samples to compute margin
+    intervals: array of numbers to create intervals or the intervals inself    
     n : max number of recursions to do
     epsilon: minimal size of rectangle to be checked
     cov: coverage threshold to stop computattion
     silent: if silent printed output is set to minimum
     """
-    # print(region,prop,data,alpha,n_samples,n,epsilon,coverage,silent)
+    # print(region,prop,intervals,n,epsilon,coverage,silent)
 
     # checking this:
     # print("check equal", globals()["non_white_area"],non_white_area)
@@ -666,10 +653,10 @@ def private_check_deeper_queue_checking(region, prop, data, alpha, n_samples, n,
             return "coverage ", globals()["non_white_area"] / globals()["whole_area"], " is above the threshold"
 
     if model is None:
-        example = check(region, prop, data, alpha, n_samples, silent)
-        # counterexample = check_safe(region,prop,data,alpha,n_samples,silent)
+        example = check(region, prop, intervals, silent)
+        # counterexample = check_safe(region,prop,intervals,silent)
     elif model[0] is None:
-        example = check(region, prop, data, alpha, n_samples, silent)
+        example = check(region, prop, intervals, silent)
     else:
         if not silent:
             print("skipping check_unsafe at", region, "since example", model[0])
@@ -680,7 +667,7 @@ def private_check_deeper_queue_checking(region, prop, data, alpha, n_samples, n,
         if not silent:
             print(n, region, globals()["non_white_area"] / globals()["whole_area"], "unsafe")
         return
-    elif check_safe(region, prop, data, alpha, n_samples, silent) == "safe":
+    elif check_safe(region, prop, intervals, silent) == "safe":
         if not silent:
             print(n, region, globals()["non_white_area"] / globals()["whole_area"], "safe")
         return
@@ -724,31 +711,29 @@ def private_check_deeper_queue_checking(region, prop, data, alpha, n_samples, n,
         model_high[0] = None
 
     globals()["que"].enqueue(
-        [copy.copy(foo), prop, data, alpha, n_samples, n - 1, epsilon, coverage, silent, model_low])
+        [copy.copy(foo), prop, intervals, n - 1, epsilon, coverage, silent, model_low])
     globals()["que"].enqueue(
-        [copy.copy(foo2), prop, data, alpha, n_samples, n - 1, epsilon, coverage, silent, model_high])
+        [copy.copy(foo2), prop, intervals, n - 1, epsilon, coverage, silent, model_high])
 
     # print(globals()["que"].printQueue())
     while globals()["que"].size() > 0:
         private_check_deeper_queue_checking(*que.dequeue())
 
 
-def private_check_deeper_queue_checking_both(region, prop, data, alpha, n_samples, n, epsilon, coverage, silent,
+def private_check_deeper_queue_checking_both(region, prop, intervals, n, epsilon, coverage, silent,
                                              model=None):
     """
     Parameters
     ----------
     region: array of pairs, low and high bound, defining the parameter space to be refined
     prop: array of polynomes
-    data: array of numbers to create intervals or the intervals inself    
-    alpha: confidence interval to compute margin
-    n_samples: number of samples to compute margin
+    intervals: array of numbers to create intervals or the intervals inself    
     n : max number of recursions to do
     epsilon: minimal size of rectangle to be checked
     cov: coverage threshold to stop computattion
     silent: if silent printed output is set to minimum
     """
-    # print(region,prop,data,alpha,n_samples,n,epsilon,coverage,silent)
+    # print(region,prop,intervals,n,epsilon,coverage,silent)
 
     # checking this:
     # print("check equal", globals()["non_white_area"],non_white_area)
@@ -782,17 +767,17 @@ def private_check_deeper_queue_checking_both(region, prop, data, alpha, n_sample
 
     # resolving if the region safe/unsafe/uknown
     if model is None:
-        example = check(region, prop, data, alpha, n_samples, silent)
-        counterexample = check_safe(region, prop, data, alpha, n_samples, silent)
+        example = check(region, prop, intervals, silent)
+        counterexample = check_safe(region, prop, intervals, silent)
     elif model[0] is None:
-        example = check(region, prop, data, alpha, n_samples, silent)
+        example = check(region, prop, intervals, silent)
     else:
         if not silent:
             print("skipping check_unsafe at", region, "since example", model[0])
         example = model[0]
     if model is not None:
         if model[1] is None:
-            counterexample = check_safe(region, prop, data, alpha, n_samples, silent)
+            counterexample = check_safe(region, prop, intervals, silent)
         else:
             if not silent:
                 print("skipping check_safe at", region, "since counterexample", model[1])
@@ -856,9 +841,9 @@ def private_check_deeper_queue_checking_both(region, prop, data, alpha, n_sample
         model_high[1] = None
 
     globals()["que"].enqueue(
-        [copy.copy(foo), prop, data, alpha, n_samples, n - 1, epsilon, coverage, silent, model_low])
+        [copy.copy(foo), prop, intervals, n - 1, epsilon, coverage, silent, model_low])
     globals()["que"].enqueue(
-        [copy.copy(foo2), prop, data, alpha, n_samples, n - 1, epsilon, coverage, silent, model_high])
+        [copy.copy(foo2), prop, intervals, n - 1, epsilon, coverage, silent, model_high])
 
     # print(globals()["que"].printQueue())
     while globals()["que"].size() > 0:

@@ -41,7 +41,7 @@ if "prism" not in os.environ["PATH"]:
         os.environ["PATH"] = os.environ["PATH"] + ":" + prism_path
 
 
-def call_prism(args, seq, model_path=model_path, properties_path=properties_path, output_path=prism_results):
+def call_prism(args, seq, silent=True, model_path=model_path, properties_path=properties_path, output_path=prism_results):
     """  Solves problem of calling prism from another directory.
     
     Parameters
@@ -97,14 +97,16 @@ def call_prism(args, seq, model_path=model_path, properties_path=properties_path
                     prop = prop.readlines()
                     for i in range(1, len(prop) + 1):
                         args[-1] = str(i)
-                        # print(args)
+                        if not silent:
+                            print(str(args) + " >> " + str(os.path.join(output_path, output_file)))
                         output = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.decode(
                             "utf-8")
                         # print(output)
                         f.write(output)
         else:
             with open(os.path.join(output_path, output_file), 'w') as f:
-                # print(args)
+                if not silent:
+                    print(str(args) + " >> " + str(os.path.join(output_path, output_file)))
                 output = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.decode("utf-8")
                 # print(output)
                 f.write(output)

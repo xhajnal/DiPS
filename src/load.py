@@ -5,6 +5,7 @@ import os
 import pickle
 import re
 from pathlib import Path
+from collections.abc import Iterable
 
 import scipy.stats as st
 from sympy import factor
@@ -202,6 +203,8 @@ def create_intervals(alpha, n_samples, data):
     data: list of numbers, values to margined
     """
     foo = []
+    if not isinstance(data, Iterable):
+        return [create_interval(alpha, n_samples, data)]
     for data_point in data:
         foo.append(create_interval(alpha, n_samples, data_point))
     return foo
