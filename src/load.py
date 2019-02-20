@@ -55,6 +55,7 @@ def load_all_prism(path, factorize=True, rewards_only=False, f_only=False):
     for file in glob.glob(str(path)):
         print(os.path.join(os.getcwd(), file))
         N = int(re.findall('\d+', file)[0])
+        #print(os.getcwd(),file)
         file = open(file, "r")
         i = -1
         here = ""
@@ -86,7 +87,7 @@ def load_all_prism(path, factorize=True, rewards_only=False, f_only=False):
                         except:
                             print("Error while factorising rewards, used not factorised instead")
                             rewards[N].append(line[:-1])
-                            os.chdir(cwd)
+                            #os.chdir(cwd)
                     else:
                         rewards[N] = line[:-1]
                 elif not here == "r" and not rewards_only:
@@ -99,7 +100,7 @@ def load_all_prism(path, factorize=True, rewards_only=False, f_only=False):
                             print(
                                 "Error while factorising polynome f[{}][{}], used not factorised instead".format(N, i))
                             f[N] = line[:-1]
-                            os.chdir(cwd)
+                            #os.chdir(cwd)
                     else:
                         f[N].append(line[:-1])
     os.chdir(cwd)
