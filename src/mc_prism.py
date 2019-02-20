@@ -43,7 +43,7 @@ if "prism" not in os.environ["PATH"]:
 
 
 def call_prism(args, seq=False, silent=False, model_path=model_path, properties_path=properties_path,
-               output_path=prism_results):
+               prism_output_path=prism_results, std_output_path=prism_results):
     """  Solves problem of calling prism from another directory.
     
     Parameters
@@ -53,10 +53,10 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
     silent: if silent the output si set to minimum
     model_path: path to models
     properties_path: path to properties
-    output_path: path for the output
+    std_output_path: path for the output
     """
     output_file_path = Path(args.split()[0]).stem
-    output_file_path = os.path.join(output_path, Path(str(output_file_path) + ".txt"))
+    output_file_path = os.path.join(std_output_path, Path(str(output_file_path) + ".txt"))
     # print(output_file)
 
     # os.chdir(config.get("paths","cwd"))
@@ -88,10 +88,12 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
                     return
                 prism_args.append(property_file_path)
             elif re.compile('\.txt').search(arg) is not None:
-                if not os.path.isfile(os.path.join(output_path, arg)):
-                    print(f"{colored('file', 'red')} {os.path.join(output_path, arg)} {colored('not found, this may cause trouble', 'red')}")
+                prism_output_file_path = os.path.join(prism_output_path, arg)
+                if not os.path.isfile(prism_output_file_path):
+                    if not silent:
+                        print(f"{colored('file', 'red')} {prism_output_file_path} {colored('not found, this may cause trouble', 'red')}")
                     #return
-                prism_args.append(os.path.join(output_path, arg))
+                prism_args.append(os.path.join(prism_output_path, arg))
             else:
                 prism_args.append(arg)
         # print(prism_args)
@@ -164,23 +166,23 @@ def call_prism_files(file_prefix, multiparam, agents_quantities, seq=False, nopr
                 q = ",q=0:1"
             # print("{} prop_{}.pctl {}-param p=0:1{}".format(file,N,noprobchecks,q))
             call_prism("{} prop_{}.pctl {}-param p=0:1{}".format(file, N, noprobchecks, q), seq=seq,
-                       model_path=model_path, properties_path=properties_path, output_path=output_path)
+                       model_path=model_path, properties_path=properties_path, std_output_path=output_path)
             if not seq:
-                # if 'GC overhead' in tailhead.tail(open('prism_results/{}.txt'.format(file.split('.')[0])),40).read():
-                if 'GC overhead' in open(os.path.join(prism_results, "{}.txt".format(file.stem))).read():
+                # if 'GC overhead' in tailhead.tail(open('output_path/{}.txt'.format(file.split('.')[0])),40).read():
+                if 'GC overhead' in open(os.path.join(output_path, "{}.txt".format(file.stem))).read():
                     seq = True
                     print("  It took", socket.gethostname(), time.time() - start_time, "seconds to run")
                     start_time = time.time()
                     call_prism("{} prop_{}.pctl {}-param p=0:1{}".format(file, N, noprobchecks, q), seq=False,
-                               model_path=model_path, properties_path=properties_path, output_path=output_path)
+                               model_path=model_path, properties_path=properties_path, std_output_path=output_path)
             if not noprobchecks:
-                if '-noprobchecks' in open(os.path.join(prism_results, "{}.txt".format(file.stem))).read():
+                if '-noprobchecks' in open(os.path.join(output_path, "{}.txt".format(file.stem))).read():
                     print("An error occurred, running with noprobchecks option")
                     noprobchecks = '-noprobchecks '
                     print("  It took", socket.gethostname(), time.time() - start_time, "seconds to run")
                     start_time = time.time()
                     call_prism("{} prop_{}.pctl {}-param p=0:1{}".format(file, N, noprobchecks, q), seq=False,
-                               model_path=model_path, properties_path=properties_path, output_path=output_path)
+                               model_path=model_path, properties_path=properties_path, std_output_path=output_path)
             print("  It took", socket.gethostname(), time.time() - start_time, "seconds to run \n")
 
 
@@ -197,7 +199,7 @@ if __name__ == "__main__":
     print(colored('testing simple model checking', 'blue'))
     for population in agents_quantities:
         call_prism("linear_semisynchronous_parallel_{}.pm prop_{}.pctl -param p=0:1,q=0:1,alpha=0:1"
-                   .format(population, population), seq=False, output_path=cwd)
+                   .format(population, population), seq=False, std_output_path=cwd)
 
     ## simulating the path
     print(colored('testing simulation', 'blue'))
@@ -205,17 +207,17 @@ if __name__ == "__main__":
     file.close()
     call_prism(
         'synchronous_parallel_2.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '
-        'path_synchronous_parallel__2_3500_0.028502714675268215_0.5057623641293089.txt', output_path=cwd)
+        'path_synchronous_parallel__2_3500_0.028502714675268215_0.5057623641293089.txt', prism_output_path=cwd,std_output_path=cwd)
 
     print(colored('testing not existing input file', 'blue'))
     call_prism(
         'fake.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '
-        'path_synchronous_parallel__2_3500_0.028502714675268215_0.5057623641293089.txt', output_path=cwd)
+        'path_synchronous_parallel__2_3500_0.028502714675268215_0.5057623641293089.txt', prism_output_path=cwd,std_output_path=cwd)
 
     print(colored('testing not existing output file', 'blue'))
     call_prism(
         'synchronous_parallel_2.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '
-        'fake.txt', output_path=cwd)
+        'fake.txt', prism_output_path=cwd, std_output_path=cwd)
 
     ## call_prism_files
     print(colored('call_prism_files', 'blue'))
