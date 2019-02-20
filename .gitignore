@@ -120,6 +120,7 @@ properties/*
 prism_results/*
 performance_results/*
 
-data/*
+src/test/*
 
+data/*
 !data/*.p

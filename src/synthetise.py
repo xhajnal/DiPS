@@ -26,11 +26,12 @@ if not os.path.exists(z3_path):
 
 cwd = os.getcwd()
 os.chdir(z3_path)
-sys.path.append("../python")
-sys.path.append("..")
-from z3 import *
+print("z3_path", z3_path)
 
-os.chdir(cwd)
+#sys.path.append("../python")
+#sys.path.append("..")
+#from z3 import *
+#os.chdir(cwd)
 
 try:
     from z3 import *
