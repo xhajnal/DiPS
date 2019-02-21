@@ -56,8 +56,9 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
     std_output_path: path to save the results of the command
     prism_output_path: path to save the files inside the command
     """
-    output_file_path = Path(args.split()[0]).stem
-    output_file_path = os.path.join(std_output_path, Path(str(output_file_path) + ".txt"))
+    if std_output_path is not None:
+        output_file_path = Path(args.split()[0]).stem
+        output_file_path = os.path.join(std_output_path, Path(str(output_file_path) + ".txt"))
     # print(output_file)
 
     # os.chdir(config.get("paths","cwd"))
@@ -108,26 +109,31 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
         args.extend(prism_args)
 
         if seq:
-            with open(output_file_path, 'a') as output_file:
-                with open(property_file_path, 'r') as property_file:
-                    args.append("-property")
-                    args.append("")
-                    property_file = property_file.readlines()
-                    for i in range(1, len(property_file) + 1):
-                        args[-1] = str(i)
-                        if not silent:
-                            print("calling \"", " ".join(args) + "\" \n with output here: " + str(output_file_path))
-                        output = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.decode(
-                            "utf-8")
-                        # print(output)
-                        output_file.write(output)
+            with open(property_file_path, 'r') as property_file:
+                args.append("-property")
+                args.append("")
+                property_file = property_file.readlines()
+                for i in range(1, len(property_file) + 1):
+                    args[-1] = str(i)
+                    if not silent:
+                        print("calling \"", " ".join(args))
+                    output = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.decode(
+                        "utf-8")
+                    if std_output_path is not None:
+                        with open(output_file_path, 'a') as output_file:
+                            if not silent:
+                                print("output here: " + str(output_file_path))
+                            output_file.write(output)
         else:
-            with open(output_file_path, 'w') as output_file:
-                if not silent:
-                    print("calling \"", " ".join(args) + "\" \n with output here: " + str(output_file_path))
-                output = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.decode("utf-8")
-                # print(output)
-                output_file.write(output)
+            if not silent:
+                print("calling \"", " ".join(args))
+            output = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.decode("utf-8")
+            if std_output_path is not None:
+                with open(output_file_path, 'w') as output_file:
+                    if not silent:
+                        print("output here: " + str(output_file_path))
+                    output_file.write(output)
+                    output_file.close()
     finally:
         os.chdir(curr_dir)
 
@@ -165,9 +171,9 @@ def call_prism_files(file_prefix, multiparam, agents_quantities, seq=False, nopr
             else:
                 q = ",q=0:1"
             # print("{} prop_{}.pctl {}-param p=0:1{}".format(file,N,noprobchecks,q))
-            passed = call_prism("{} prop_{}.pctl {}-param p=0:1{}".format(file, N, noprobchecks, q), seq=seq,
+            skipped = call_prism("{} prop_{}.pctl {}-param p=0:1{}".format(file, N, noprobchecks, q), seq=seq,
                        model_path=model_path, properties_path=properties_path, std_output_path=output_path)
-            if not passed:
+            if skipped:
                 continue
             if not seq:
                 # if 'GC overhead' in tailhead.tail(open('output_path/{}.txt'.format(file.split('.')[0])),40).read():
@@ -197,32 +203,36 @@ if __name__ == "__main__":
     os.chdir("test")
     cwd = os.getcwd()
 
+    call_prism(
+        "multiparam_synchronous_parallel_10.pm -const p=0.028502714675268215,q1=0.5057623641293089 -simpath 2 dummy_path1550773616.0244777.txt",
+        silent=True, prism_output_path="/home/matej/Git/mpm/src/test/new", std_output_path=None)
+
     ## model checking
     print(colored('testing simple model checking', 'blue'))
     for population in agents_quantities:
-        call_prism("linear_semisynchronous_parallel_{}.pm prop_{}.pctl -param p=0:1,q=0:1,alpha=0:1"
+        call_prism("semisynchronous_parallel_{}.pm prop_{}.pctl -param p=0:1,q=0:1,alpha=0:1"
                    .format(population, population), seq=False, std_output_path=cwd)
 
     ## simulating the path
     print(colored('testing simulation', 'blue'))
-    file = open("path_synchronous_parallel__2_3500_0.028502714675268215_0.5057623641293089.txt", "w+")
-    file.close()
     call_prism(
         'synchronous_parallel_2.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '
-        'path_synchronous_parallel__2_3500_0.028502714675268215_0.5057623641293089.txt', prism_output_path=cwd,std_output_path=None)
+        'path1.txt', prism_output_path=cwd,std_output_path=None)
 
-    print(colored('testing simulation with stdout', 'blue'))
-    file = open("path_synchronous_parallel__2_3500_0.028502714675268215_0.5057623641293089.txt", "w+")
-    print(colored('testing not existing input file', 'blue'))
-    call_prism(
-        'fake.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '
-        'path_synchronous_parallel__2_3500_0.028502714675268215_0.5057623641293089.txt', prism_output_path=cwd,std_output_path=cwd)
-
-    print(colored('testing not existing output file', 'blue'))
+    print(colored('test simulation change the path of the path files output', 'blue'))
     call_prism(
         'synchronous_parallel_2.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '
-        'fake.txt', prism_output_path=cwd, std_output_path=cwd)
+        'path1.txt', prism_output_path="/home/matej/Git/mpm/src/test/new", std_output_path=None)
+
+    #print(colored('testing simulation with stdout', 'blue'))
+    #file = open("path_synchronous_parallel__2_3500_0.028502714675268215_0.5057623641293089.txt", "w+")
+    #print(colored('testing not existing input file', 'blue'))
+    #call_prism(
+    #    'fake.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '
+    #    'path_synchronous_parallel__2_3500_0.028502714675268215_0.5057623641293089.txt', prism_output_path=cwd,std_output_path=None)
 
     ## call_prism_files
     print(colored('call_prism_files', 'blue'))
-
+    call_prism_files("syn*_", False, agents_quantities)
+    print(colored('call_prism_files2', 'blue'))
+    call_prism_files("multiparam_syn*_", True, agents_quantities)
