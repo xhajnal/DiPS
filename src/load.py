@@ -42,7 +42,7 @@ def load_all_prism(path, factorize=True, rewards_only=False, f_only=False):
     f: dictionary N -> list of rational functions for each property
     rewards: dictionary N -> list of rational functions for each reward
     """
-    cwd = os.getcwd()
+    default_directory = os.getcwd()
     if not Path(path).is_absolute():
         os.chdir(prism_results)
 
@@ -50,7 +50,10 @@ def load_all_prism(path, factorize=True, rewards_only=False, f_only=False):
     rewards = {}
     # print(str(path))
     if not glob.glob(str(path)):
-        raise OSError("No valid files in the given directory " + os.path.join(os.getcwd(), path))
+        new_dir = os.getcwd()
+        if not Path(path).is_absolute():
+            os.chdir(default_directory)
+        raise OSError("No valid files in the given directory " + os.path.join(new_dir, path))
 
     for file in glob.glob(str(path)):
         print(os.path.join(os.getcwd(), file))
@@ -103,7 +106,7 @@ def load_all_prism(path, factorize=True, rewards_only=False, f_only=False):
                             #os.chdir(cwd)
                     else:
                         f[N].append(line[:-1])
-    os.chdir(cwd)
+    os.chdir(default_directory)
     return (f, rewards)
 
 

@@ -51,9 +51,10 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
     args: string for executing prism
     seq: if true it will take properties by one and append results (necessary if out of the memory)
     silent: if silent the output si set to minimum
-    model_path: path to models
-    properties_path: path to properties
-    std_output_path: path for the output
+    model_path: path to load  models from
+    properties_path: path to load properties from
+    std_output_path: path to save the results of the command
+    prism_output_path: path to save the files inside the command
     """
     output_file_path = Path(args.split()[0]).stem
     output_file_path = os.path.join(std_output_path, Path(str(output_file_path) + ".txt"))
@@ -78,21 +79,20 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
                 # print(model_file)
                 if not os.path.isfile(model_file_path):
                     print(f"{colored('file', 'red')} {model_file_path} {colored('not not found -- skipped', 'red')}")
-                    return
+                    return False
                 prism_args.append(model_file_path)
             elif re.compile('\.pctl').search(arg) is not None:
                 property_file_path = os.path.join(properties_path, arg)
                 # print(property_file)
                 if not os.path.isfile(property_file_path):
                     print(f"{colored('file', 'red')} {property_file_path} {colored('not not found -- skipped', 'red')}")
-                    return
+                    return False
                 prism_args.append(property_file_path)
             elif re.compile('\.txt').search(arg) is not None:
                 prism_output_file_path = os.path.join(prism_output_path, arg)
                 if not os.path.isfile(prism_output_file_path):
                     if not silent:
                         print(f"{colored('file', 'red')} {prism_output_file_path} {colored('not found, this may cause trouble', 'red')}")
-                    #return
                 prism_args.append(os.path.join(prism_output_path, arg))
             else:
                 prism_args.append(arg)
@@ -143,8 +143,8 @@ def call_prism_files(file_prefix, multiparam, agents_quantities, seq=False, nopr
     agents_quantities: pop_sizes to be used
     seq: if true it will take properties by one and append results (necessary if out of the memory)
     noprobchecks: True if no noprobchecks option is to be used for prism
-    model_path: path to models
-    properties_path: path to properties
+    model_path: path to load  models from
+    properties_path: path to load properties from
     output_path: path for the output
     """
     # os.chdir(config.get("paths","cwd"))
@@ -165,8 +165,10 @@ def call_prism_files(file_prefix, multiparam, agents_quantities, seq=False, nopr
             else:
                 q = ",q=0:1"
             # print("{} prop_{}.pctl {}-param p=0:1{}".format(file,N,noprobchecks,q))
-            call_prism("{} prop_{}.pctl {}-param p=0:1{}".format(file, N, noprobchecks, q), seq=seq,
+            passed = call_prism("{} prop_{}.pctl {}-param p=0:1{}".format(file, N, noprobchecks, q), seq=seq,
                        model_path=model_path, properties_path=properties_path, std_output_path=output_path)
+            if not passed:
+                continue
             if not seq:
                 # if 'GC overhead' in tailhead.tail(open('output_path/{}.txt'.format(file.split('.')[0])),40).read():
                 if 'GC overhead' in open(os.path.join(output_path, "{}.txt".format(file.stem))).read():
@@ -207,8 +209,10 @@ if __name__ == "__main__":
     file.close()
     call_prism(
         'synchronous_parallel_2.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '
-        'path_synchronous_parallel__2_3500_0.028502714675268215_0.5057623641293089.txt', prism_output_path=cwd,std_output_path=cwd)
+        'path_synchronous_parallel__2_3500_0.028502714675268215_0.5057623641293089.txt', prism_output_path=cwd,std_output_path=None)
 
+    print(colored('testing simulation with stdout', 'blue'))
+    file = open("path_synchronous_parallel__2_3500_0.028502714675268215_0.5057623641293089.txt", "w+")
     print(colored('testing not existing input file', 'blue'))
     call_prism(
         'fake.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '
@@ -221,4 +225,4 @@ if __name__ == "__main__":
 
     ## call_prism_files
     print(colored('call_prism_files', 'blue'))
-    call_prism_files("syn*_", False, agents_quantities, output_path=cwd)
+
