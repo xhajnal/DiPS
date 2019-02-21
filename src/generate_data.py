@@ -132,7 +132,7 @@ def generate_experiments_n_data(model_types, multiparam, n_samples, populations,
                 for value in param_space[:, column]:
                     column_values.append(value)
                 column_values = tuple(column_values)
-                print("parametrisation",column_values)
+                print("parametrisation:",column_values)
                 for n_sample in n_samples:
                     Experiments[model_type][N][n_sample][column_values] = []
                     Data[model_type][N][n_sample][column_values] = []
