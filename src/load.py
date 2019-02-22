@@ -265,9 +265,28 @@ def find_param(polynome):
     """
     parameters = polynome.replace('(', '').replace(')', '').replace('**', '*').replace(' ', '')
     parameters = re.split('\+|\*|\-|/', parameters)
-    parameters = [i for i in parameters if not i.isnumeric()]
+    parameters = [i for i in parameters if not i.replace('.','',1).isdigit()]
     parameters = set(parameters)
     parameters.add("")
     parameters.remove("")
     # print("hello",set(parameters))
     return set(parameters)
+
+
+import unittest
+
+class TestLoad(unittest.TestCase):
+    def test_find_param(self):
+        self.assertEqual(find_param("56*4+4**6 +   0.1"), set())
+        self.assertEqual(find_param("x+0.1"),{'x'})
+
+
+if __name__ == "__main__":
+    unittest.main()
+
+
+
+
+
+
+

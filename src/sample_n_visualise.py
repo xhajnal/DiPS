@@ -160,13 +160,19 @@ def visualise_byparam(hyper_rectangles):
     ----------
     hyper_rectangles : list of hyperrectangles
     """
+    from sympy import Interval
 
     # https://stackoverflow.com/questions/21352580/matplotlib-plotting-numerous-disconnected-line-segments-with-different-colors
     if hyper_rectangles:
         lines = []
+        intervals = []
         for i in range(len(hyper_rectangles[0])):
+            intervals.append([])
             for j in range(len(hyper_rectangles)):
                 # print(hyper_rectangles_sat[j][i])
+                intervals[i].append(Interval(hyper_rectangles[j][i][0],hyper_rectangles[j][i][1]))
+                if len(intervals[i])==2:
+                    intervals[i] = [intervals[i][0].union(intervals[i][1])]
                 lines.append([(i + 1, hyper_rectangles[j][i][0]), (i + 1, hyper_rectangles[j][i][1])])
                 # print([(i+1, hyper_rectangles_sat[j][i][0]), (i+1, hyper_rectangles_sat[j][i][1])])
         c = np.array([(1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1)])
@@ -182,8 +188,9 @@ def visualise_byparam(hyper_rectangles):
         ax.add_collection(lc)
         ax.autoscale()
         ax.margins(0.1)
+        print(intervals)
     else:
-        print("No green areas to be visualised")
+        print("No intervals to be visualised")
 
 
 def heatmap(fun, region, sampling_sizes):

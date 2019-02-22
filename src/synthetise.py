@@ -70,9 +70,6 @@ except:
         raise Exception("z3 not loaded properly")
 
 
-# non_white_area=0
-# whole_area=0
-
 
 def check(region, prop, intervals, silent=False, called=False):
     """ Check if the given region is unsafe or not.
@@ -254,9 +251,18 @@ class Queue:
     def printQueue(self):
         return self.queue
 
+class RefinedSpace:
+    def __init__(self, region, rectangles_sat, rectangles_unsat, hyper_rectangles_white, ):
+        self.region = region
+        self.sat = rectangles_sat
+        self.unsat = rectangles_unsat
+        self.unknown = hyper_rectangles_white
+        self.coverage
+
+
 
 def check_deeper(region, prop, intervals, n, epsilon, cov, silent, version):
-    """Splitting the parameter space into safe and unsafe regions with respective alg/method
+    """ Refining the parameter space into safe and unsafe regions with respective alg/method
     Parameters
     ----------
     region: array of pairs, low and high bound, defining the parameter space to be refined
@@ -297,9 +303,11 @@ def check_deeper(region, prop, intervals, n, epsilon, cov, silent, version):
         globals()["parameters"].update(find_param(polynome))
     globals()["parameters"] = sorted(list(globals()["parameters"]))
     ## EXAMPLE:  parameters >> ['p','q']
+
     for param in globals()["parameters"]:
         globals()[param] = Real(param)
-    ## EXAMPLE: p = Real(p) 
+    ## EXAMPLE: p = Real(p)
+
     if not len(globals()["parameters"]) == len(region) and not silent:
         print("number of parameters in property ({}) and dimension of the region ({}) is not equal".format(
             len(globals()["parameters"]), len(region)))
@@ -307,17 +315,22 @@ def check_deeper(region, prop, intervals, n, epsilon, cov, silent, version):
     ## Choosing from versions
     start_time = time.time()
     if version == 1:
+        print("Using DFS method")
         private_check_deeper(region, prop, intervals, n, epsilon, cov, silent)
     if version == 2:
+        print("Using BFS method")
         globals()["que"] = Queue()
         private_check_deeper_queue(region, prop, intervals, n, epsilon, cov, silent)
     if version == 3:
+        print("Using BFS method with passing examples")
         globals()["que"] = Queue()
         private_check_deeper_queue_checking(region, prop, intervals, n, epsilon, cov, silent, None)
     if version == 4:
+        print("Using BFS method with passing examples and counterexamples")
         globals()["que"] = Queue()
         private_check_deeper_queue_checking_both(region, prop, intervals, n, epsilon, cov, silent, None)
     if version == 5:
+        print("Using iterative methods")
         print(check_deeper_iter(region, prop, intervals, n, epsilon, cov, silent))
 
     ## Visualisation
@@ -327,9 +340,11 @@ def check_deeper(region, prop, intervals, n, epsilon, cov, silent, version):
         # rc('font', **{'family':'serif', 'serif':['Computer Modern Roman']})
         fig = plt.figure()
         pic = fig.add_subplot(111, aspect='equal')
-        pic.set_xlabel('p')
+        pic.set_xlabel(globals()["parameters"][0])
+        pic.axis([region[0][0], region[0][1], 0, 1])
         if len(region) == 2:
-            pic.set_ylabel('q')
+            pic.set_ylabel(globals()["parameters"][1])
+            pic.axis([region[0][0], region[0][1], region[1][0], region[1][1]])
         pic.set_title("red = unsafe region, green = safe region, white = in between \n max_recursion_depth:{},"
                 " \n min_rec_size:{}, achieved_coverage:{}, alg{} \n It took {} {} second(s)".format(
                 n, epsilon, globals()["non_white_area"] / globals()["whole_area"], version,
@@ -342,11 +357,46 @@ def check_deeper(region, prop, intervals, n, epsilon, cov, silent, version):
         pic.add_collection(pc)
         plt.show()
     print("result coverage is: ", globals()["non_white_area"] / globals()["whole_area"])
-    return (globals()["non_white_area"], globals()["whole_area"])
+    return (globals()["hyper_rectangles_sat"], globals()["hyper_rectangles_unsat"], globals()["hyper_rectangles_white"], globals()["non_white_area"]/globals()["whole_area"])
+
+
+
+def private_check_deeper_sampling(region, prop, intervals, n, epsilon, coverage, silent):
+    """ Refining the parameter space into safe and unsafe regions
+    Parameters
+    ----------
+    region: array of pairs, low and high bound, defining the parameter space to be refined
+    prop: array of polynomes
+    intervals: array of intervals to constrain properties
+    n : max number of recursions to do
+    epsilon: minimal size of rectangle to be checked
+    coverage: coverage threshold to stop computation
+    silent: if silent print
+    """
+
+    import numpy as np
+
+    sampling_size = 10
+
+    sampled_true = []
+    sampled_false = []
+
+    for interval in len(region):
+        for value in np.linspace( region[interval][0], region[interval][1], num=sampling_size):
+            globals()[parameters[interval]]=value
+
+
+
+
+
+
+
+
+
 
 
 def private_check_deeper(region, prop, intervals, n, epsilon, coverage, silent):
-    """
+    """ Refining the parameter space into safe and unsafe regions
     Parameters
     ----------
     region: array of pairs, low and high bound, defining the parameter space to be refined
@@ -456,12 +506,29 @@ def colored(greater, smaller):
     # print("smaller ",smaller)
     if greater is None or smaller is None:
         return
-    globals()["rectangles_unsat_added"].append(Rectangle((greater[0][0], 0), smaller[0][0] - greater[0][0], 1, fc='r'))
-    globals()["rectangles_unsat_added"].append(Rectangle((smaller[0][1], 0), greater[0][1] - smaller[0][1], 1, fc='r'))
-    globals()["rectangles_unsat_added"].append(
-        Rectangle((smaller[0][0], 0), smaller[0][1] - smaller[0][0], smaller[1][0], fc='r'))
-    globals()["rectangles_unsat_added"].append(
-        Rectangle((smaller[0][0], smaller[1][1]), smaller[0][1] - smaller[0][0], 1 - smaller[1][0], fc='r'))
+
+    ## if 1 dimensional coloring
+    if len(smaller)==1:
+        ## color 2 regions, to the left, to the right
+        ## to the left
+        globals()["rectangles_unsat_added"].append(
+            Rectangle([greater[0][0], 0], smaller[0][0] - greater[0][0], 1, fc='r'))
+        ## to the right
+        globals()["rectangles_unsat_added"].append(
+            Rectangle([smaller[0][1], 0], greater[0][1] - smaller[0][1], 1, fc='r'))
+
+    # else 2 dimensional coloring
+    elif len(smaller)==2:
+        ## color 4 regions, to the left, to the right, below, and above
+        ##
+        globals()["rectangles_unsat_added"].append(Rectangle([greater[0][0], 0], smaller[0][0] - greater[0][0], 1, fc='r'))
+        globals()["rectangles_unsat_added"].append(Rectangle([smaller[0][1], 0], greater[0][1] - smaller[0][1], 1, fc='r'))
+        globals()["rectangles_unsat_added"].append(
+            Rectangle([smaller[0][0], 0], smaller[0][1] - smaller[0][0], smaller[1][0], fc='r'))
+        globals()["rectangles_unsat_added"].append(
+            Rectangle([smaller[0][0], smaller[1][1]], smaller[0][1] - smaller[0][0], 1 - smaller[1][0], fc='r'))
+    else:
+        print("Error, trying to color more than 2 dimensional hyperrectangle")
 
     # re=[]
     # re.append(Rectangle((greater[0][0],0),smaller[0][0]-greater[0][0] , 1, fc='r'))
@@ -479,7 +546,7 @@ def colored(greater, smaller):
 
 
 def check_deeper_iter(region, props, intervals, n, epsilon, coverage, silent):
-    """New iterative method using alg1
+    """ New Refining the parameter space into safe and unsafe regions with iterative method using alg1
 
     Parameters
     ----------
@@ -526,7 +593,7 @@ def check_deeper_iter(region, props, intervals, n, epsilon, coverage, silent):
 
 
 def private_check_deeper_queue(region, prop, intervals, n, epsilon, coverage, silent):
-    """
+    """ Refining the parameter space into safe and unsafe regions
     Parameters
     ----------
     region: array of pairs, low and high bound, defining the parameter space to be refined
@@ -616,6 +683,9 @@ def private_check_deeper_queue(region, prop, intervals, n, epsilon, coverage, si
 
 def private_check_deeper_queue_checking(region, prop, intervals, n, epsilon, coverage, silent, model=None):
     """ THIS IS OBSOLETE METHOD, HERE JUST TO BE COMPARED WITH THE NEW ONE
+
+    Refining the parameter space into safe and unsafe regions
+
     Parameters
     ----------
     region: array of pairs, low and high bound, defining the parameter space to be refined
@@ -729,7 +799,7 @@ def private_check_deeper_queue_checking(region, prop, intervals, n, epsilon, cov
 
 def private_check_deeper_queue_checking_both(region, prop, intervals, n, epsilon, coverage, silent,
                                              model=None):
-    """
+    """ Refining the parameter space into safe and unsafe regions
     Parameters
     ----------
     region: array of pairs, low and high bound, defining the parameter space to be refined
