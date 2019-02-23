@@ -8,7 +8,7 @@ from pathlib import Path
 from collections.abc import Iterable
 
 import scipy.stats as st
-from sympy import factor
+from sympy import factor, Interval
 
 config = configparser.ConfigParser()
 print(os.getcwd())
@@ -224,7 +224,7 @@ def create_interval(alpha, n_samples, data_point):
     data_point: number, the value to margined
     """
     change = margin(alpha, n_samples, data_point)
-    return (data_point - change, data_point + change)
+    return Interval(data_point - change, data_point + change)
 
 
 def margin(alpha, n_samples, data_point):
