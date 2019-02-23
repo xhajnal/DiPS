@@ -3,6 +3,7 @@ import re
 import socket
 import sys
 import time
+from collections import Iterable
 
 import matplotlib.pyplot as plt
 from matplotlib.collections import PatchCollection
@@ -12,6 +13,10 @@ from numpy import prod
 workspace = os.path.dirname(__file__)
 sys.path.append(workspace)
 from load import find_param
+from space import RefinedSpace
+
+
+# space = RefinedSpace([(0,1)])
 
 import configparser
 
@@ -28,10 +33,10 @@ cwd = os.getcwd()
 os.chdir(z3_path)
 print("z3_path", z3_path)
 
-#sys.path.append("../python")
-#sys.path.append("..")
-#from z3 import *
-#os.chdir(cwd)
+# sys.path.append("../python")
+# sys.path.append("..")
+# from z3 import *
+# os.chdir(cwd)
 
 try:
     from z3 import *
@@ -69,6 +74,33 @@ except:
     except:
         raise Exception("z3 not loaded properly")
 
+
+class Queue:
+    # Constructor creates a list
+    def __init__(self):
+        self.queue = list()
+
+    # Adding elements to queue
+    def enqueue(self, data):
+        # Checking to avoid duplicate entry (not mandatory)
+        if data not in self.queue:
+            self.queue.insert(0, data)
+            return True
+        return False
+
+    # Removing the last element from the queue
+    def dequeue(self):
+        if len(self.queue) > 0:
+            return self.queue.pop()
+        return "Queue Empty!"
+
+    # Getting the size of the queue
+    def size(self):
+        return len(self.queue)
+
+    # printing the elements of the queue
+    def printQueue(self):
+        return self.queue
 
 
 def check(region, prop, intervals, silent=False, called=False):
@@ -122,7 +154,7 @@ def check(region, prop, intervals, silent=False, called=False):
         # if  intervals[i]<0.01:
         #    continue
 
-        s.add(eval(prop[i]) > intervals[i][0], eval(prop[i]) < intervals[i][1])
+        s.add(eval(prop[i]) > intervals[i].start, eval(prop[i]) < intervals[i].end)
         # print(prop[i],intervals[i])
 
     if s.check() == sat:
@@ -137,10 +169,10 @@ def check(region, prop, intervals, silent=False, called=False):
         globals()["hyper_rectangles_unsat"].append(region)
         if len(region) == 2:  # if two-dim param space
             globals()["rectangles_unsat"].append(
-                Rectangle((region[0][0], region[1][0]), region[0][1] - region[0][0], region[1][1] - region[1][0],
-                          fc='r'))
+                Rectangle((region[0][0], region[1][0]), region[0][1] - region[0][0], region[1][1] - region[1][0], fc='r'))
         if len(region) == 1:
-            globals()["rectangles_unsat"].append(Rectangle((region[0][0], 0.33), region[0][1] - region[0][0], 0.33, fc='r'))
+            globals()["rectangles_unsat"].append(
+                Rectangle((region[0][0], 0.33), region[0][1] - region[0][0], 0.33, fc='r'))
         # print("red", Rectangle((region[0][0],region[1][0]), region[0][1]-region[0][0], region[1][1]-region[1][0], fc='r'))
         return ("unsafe")
 
@@ -184,7 +216,7 @@ def check_safe(region, prop, intervals, silent=False, called=False):
 
     ## Adding property in the interval restrictions to solver
 
-    formula = Or(Not(eval(prop[0]) > intervals[0][0]), Not(eval(prop[0]) < intervals[0][1]))
+    formula = Or(Not(eval(prop[0]) > intervals[0].start), Not(eval(prop[0]) < intervals[0].end))
 
     ## ALTERNATIVE HEURISTIC APPROACH COMMENTED HERE
     # if intervals[0]<0.01:
@@ -199,7 +231,7 @@ def check_safe(region, prop, intervals, silent=False, called=False):
         ## ALTERNATIVE HEURISTIC APPROACH COMMENTED HERE
         # if  intervals[i]<0.01:
         #    continue
-        formula = Or(formula, Or(Not(eval(prop[i]) > intervals[i][0]), Not(eval(prop[i]) < intervals[i][1])))
+        formula = Or(formula, Or(Not(eval(prop[i]) > intervals[i].start), Not(eval(prop[i]) < intervals[i].end)))
     s.add(formula)
     # print(s.check())
     # return s.check()
@@ -216,7 +248,8 @@ def check_safe(region, prop, intervals, silent=False, called=False):
                 Rectangle((region[0][0], region[1][0]), region[0][1] - region[0][0], region[1][1] - region[1][0],
                           fc='g'))
         if len(region) == 1:
-            globals()["rectangles_sat"].append(Rectangle((region[0][0], 0.33), region[0][1] - region[0][0], 0.33, fc='g'))
+            globals()["rectangles_sat"].append(
+                Rectangle((region[0][0], 0.33), region[0][1] - region[0][0], 0.33, fc='g'))
 
         # print("green", Rectangle((region[0][0],region[1][0]), region[0][1]-region[0][0], region[1][1]-region[1][0], fc='g'))
         return "safe"
@@ -224,41 +257,7 @@ def check_safe(region, prop, intervals, silent=False, called=False):
         return s.model()
 
 
-class Queue:
-    # Constructor creates a list
-    def __init__(self):
-        self.queue = list()
-
-    # Adding elements to queue
-    def enqueue(self, data):
-        # Checking to avoid duplicate entry (not mandatory)
-        if data not in self.queue:
-            self.queue.insert(0, data)
-            return True
-        return False
-
-    # Removing the last element from the queue
-    def dequeue(self):
-        if len(self.queue) > 0:
-            return self.queue.pop()
-        return "Queue Empty!"
-
-    # Getting the size of the queue
-    def size(self):
-        return len(self.queue)
-
-    # printing the elements of the queue
-    def printQueue(self):
-        return self.queue
-
-class RefinedSpace:
-    def __init__(self, region, rectangles_sat, rectangles_unsat, hyper_rectangles_white, ):
-        self.region = region
-        self.sat = rectangles_sat
-        self.unsat = rectangles_unsat
-        self.unknown = hyper_rectangles_white
-        self.coverage
-
+# class Refinement
 
 
 def check_deeper(region, prop, intervals, n, epsilon, cov, silent, version):
@@ -274,6 +273,13 @@ def check_deeper(region, prop, intervals, n, epsilon, cov, silent, version):
     silent: if silent printed output is set to minimum
     version: version of the algorithm to be used
     """
+
+    if not isinstance(region, Iterable):
+        region = [region]
+    if not isinstance(prop, Iterable):
+        prop = [prop]
+    if not isinstance(intervals, Iterable):
+        intervals = [intervals]
 
     ## Initialisation
     ## region
@@ -346,9 +352,9 @@ def check_deeper(region, prop, intervals, n, epsilon, cov, silent, version):
             pic.set_ylabel(globals()["parameters"][1])
             pic.axis([region[0][0], region[0][1], region[1][0], region[1][1]])
         pic.set_title("red = unsafe region, green = safe region, white = in between \n max_recursion_depth:{},"
-                " \n min_rec_size:{}, achieved_coverage:{}, alg{} \n It took {} {} second(s)".format(
-                n, epsilon, globals()["non_white_area"] / globals()["whole_area"], version,
-                socket.gethostname(), round(time.time() - start_time, 1)))
+                      " \n min_rec_size:{}, achieved_coverage:{}, alg{} \n It took {} {} second(s)".format(
+            n, epsilon, globals()["non_white_area"] / globals()["whole_area"], version,
+            socket.gethostname(), round(time.time() - start_time, 1)))
         pc = PatchCollection(rectangles_unsat, facecolor='r', alpha=0.5)
         pic.add_collection(pc)
         pc = PatchCollection(rectangles_sat, facecolor='g', alpha=0.5)
@@ -357,8 +363,8 @@ def check_deeper(region, prop, intervals, n, epsilon, cov, silent, version):
         pic.add_collection(pc)
         plt.show()
     print("result coverage is: ", globals()["non_white_area"] / globals()["whole_area"])
-    return (globals()["hyper_rectangles_sat"], globals()["hyper_rectangles_unsat"], globals()["hyper_rectangles_white"], globals()["non_white_area"]/globals()["whole_area"])
-
+    return (globals()["hyper_rectangles_sat"], globals()["hyper_rectangles_unsat"], globals()["hyper_rectangles_white"],
+            globals()["non_white_area"] / globals()["whole_area"])
 
 
 def private_check_deeper_sampling(region, prop, intervals, n, epsilon, coverage, silent):
@@ -382,17 +388,8 @@ def private_check_deeper_sampling(region, prop, intervals, n, epsilon, coverage,
     sampled_false = []
 
     for interval in len(region):
-        for value in np.linspace( region[interval][0], region[interval][1], num=sampling_size):
-            globals()[parameters[interval]]=value
-
-
-
-
-
-
-
-
-
+        for value in np.linspace(region[interval][0], region[interval][1], num=sampling_size):
+            globals()[parameters[interval]] = value
 
 
 def private_check_deeper(region, prop, intervals, n, epsilon, coverage, silent):
@@ -508,7 +505,7 @@ def colored(greater, smaller):
         return
 
     ## if 1 dimensional coloring
-    if len(smaller)==1:
+    if len(smaller) == 1:
         ## color 2 regions, to the left, to the right
         ## to the left
         globals()["rectangles_unsat_added"].append(
@@ -518,11 +515,13 @@ def colored(greater, smaller):
             Rectangle([smaller[0][1], 0], greater[0][1] - smaller[0][1], 1, fc='r'))
 
     # else 2 dimensional coloring
-    elif len(smaller)==2:
+    elif len(smaller) == 2:
         ## color 4 regions, to the left, to the right, below, and above
         ##
-        globals()["rectangles_unsat_added"].append(Rectangle([greater[0][0], 0], smaller[0][0] - greater[0][0], 1, fc='r'))
-        globals()["rectangles_unsat_added"].append(Rectangle([smaller[0][1], 0], greater[0][1] - smaller[0][1], 1, fc='r'))
+        globals()["rectangles_unsat_added"].append(
+            Rectangle([greater[0][0], 0], smaller[0][0] - greater[0][0], 1, fc='r'))
+        globals()["rectangles_unsat_added"].append(
+            Rectangle([smaller[0][1], 0], greater[0][1] - smaller[0][1], 1, fc='r'))
         globals()["rectangles_unsat_added"].append(
             Rectangle([smaller[0][0], 0], smaller[0][1] - smaller[0][0], smaller[1][0], fc='r'))
         globals()["rectangles_unsat_added"].append(
@@ -605,6 +604,8 @@ def private_check_deeper_queue(region, prop, intervals, n, epsilon, coverage, si
     silent: if silent printed output is set to minimum
     """
     # print(region,prop,intervals,n,epsilon,coverage,silent)
+    # print("region",region)
+    # print("white regions: ", globals()["hyper_rectangles_white"])
 
     ## checking this:
     # print("check equal", globals()["non_white_area"],non_white_area)
@@ -646,6 +647,10 @@ def private_check_deeper_queue(region, prop, intervals, n, epsilon, coverage, si
     else:
         result = "unknown"
 
+    if result == "safe" or result == "unsafe":
+        # print("removing region:", region)
+        globals()["hyper_rectangles_white"].remove(region)
+
     if not silent:
         print(n, region, globals()["non_white_area"] / globals()["whole_area"], result)
 
@@ -668,6 +673,9 @@ def private_check_deeper_queue(region, prop, intervals, n, epsilon, coverage, si
     foo[index] = (low, low + (high - low) / 2)
     foo2 = copy.copy(region)
     foo2[index] = (low + (high - low) / 2, high)
+    globals()["hyper_rectangles_white"].remove(region)
+    globals()["hyper_rectangles_white"].append(foo)
+    globals()["hyper_rectangles_white"].append(foo2)
 
     # ADD CALLS TO QUEUE
     # print("adding",[copy.copy(foo),prop,intervals,n-1,epsilon,coverage,silent], "with len", len([copy.copy(foo),prop,intervals,n-1,epsilon,coverage,silent]))
@@ -741,10 +749,12 @@ def private_check_deeper_queue_checking(region, prop, intervals, n, epsilon, cov
 
     ## Resolving the result
     if example == "unsafe":
+        globals()["hyper_rectangles_white"].remove(region)
         if not silent:
             print(n, region, globals()["non_white_area"] / globals()["whole_area"], "unsafe")
         return
     elif check_safe(region, prop, intervals, silent) == "safe":
+        globals()["hyper_rectangles_white"].remove(region)
         if not silent:
             print(n, region, globals()["non_white_area"] / globals()["whole_area"], "safe")
         return
@@ -773,6 +783,9 @@ def private_check_deeper_queue_checking(region, prop, intervals, n, epsilon, cov
     foo[index] = (low, low + (high - low) / 2)
     foo2 = copy.copy(region)
     foo2[index] = (low + (high - low) / 2, high)
+    globals()["hyper_rectangles_white"].remove(region)
+    globals()["hyper_rectangles_white"].append(foo)
+    globals()["hyper_rectangles_white"].append(foo2)
 
     model_low = [9, 9]
     model_high = [9, 9]
@@ -863,10 +876,12 @@ def private_check_deeper_queue_checking_both(region, prop, intervals, n, epsilon
 
     ## Resolving the result
     if example == "unsafe":
+        globals()["hyper_rectangles_white"].remove(region)
         if not silent:
             print(n, region, globals()["non_white_area"] / globals()["whole_area"], "unsafe")
         return
     elif counterexample == "safe":
+        globals()["hyper_rectangles_white"].remove(region)
         if not silent:
             print(n, region, globals()["non_white_area"] / globals()["whole_area"], "safe")
         return
@@ -895,6 +910,9 @@ def private_check_deeper_queue_checking_both(region, prop, intervals, n, epsilon
     foo[index] = (low, low + (high - low) / 2)
     foo2 = copy.copy(region)
     foo2[index] = (low + (high - low) / 2, high)
+    globals()["hyper_rectangles_white"].remove(region)
+    globals()["hyper_rectangles_white"].append(foo)
+    globals()["hyper_rectangles_white"].append(foo2)
 
     model_low = [9, 9]
     model_high = [9, 9]
@@ -918,10 +936,8 @@ def private_check_deeper_queue_checking_both(region, prop, intervals, n, epsilon
         model_low[1] = None
         model_high[1] = None
 
-    globals()["que"].enqueue(
-        [copy.copy(foo), prop, intervals, n - 1, epsilon, coverage, silent, model_low])
-    globals()["que"].enqueue(
-        [copy.copy(foo2), prop, intervals, n - 1, epsilon, coverage, silent, model_high])
+    globals()["que"].enqueue([copy.copy(foo), prop, intervals, n - 1, epsilon, coverage, silent, model_low])
+    globals()["que"].enqueue([copy.copy(foo2), prop, intervals, n - 1, epsilon, coverage, silent, model_high])
 
     # print(globals()["que"].printQueue())
     while globals()["que"].size() > 0:

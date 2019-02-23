@@ -6,6 +6,9 @@ import pickle
 import re
 from pathlib import Path
 from collections.abc import Iterable
+from mpmath import mpi
+
+import unittest
 
 import scipy.stats as st
 from sympy import factor, Interval
@@ -273,13 +276,17 @@ def find_param(polynome):
     return set(parameters)
 
 
-import unittest
-
 class TestLoad(unittest.TestCase):
     def test_find_param(self):
         self.assertEqual(find_param("56*4+4**6 +   0.1"), set())
         self.assertEqual(find_param("x+0.1"),{'x'})
 
+    def test_intervals(self):
+        my_interval = mpi(0, 5)
+        self.assertEqual(my_interval.a, 0)
+        self.assertEqual(my_interval.b, 5)
+        self.assertEqual(my_interval.mid, (5+0)/2)
+        self.assertEqual(my_interval.delta, abs(0-5))
 
 if __name__ == "__main__":
     unittest.main()
