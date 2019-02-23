@@ -347,9 +347,14 @@ def check_deeper(region, prop, intervals, n, epsilon, cov, silent, version):
         fig = plt.figure()
         pic = fig.add_subplot(111, aspect='equal')
         pic.set_xlabel(globals()["parameters"][0])
+        ## set axis ranges
+        if region[0][1] - region[0][0] < 0.1:
+            region[0] = (region[0][0] - 0.2, region[0][1] + 0.2)
         pic.axis([region[0][0], region[0][1], 0, 1])
         if len(region) == 2:
             pic.set_ylabel(globals()["parameters"][1])
+            if region[1][1] - region[1][0] < 0.1:
+                region[1] = (region[1][0] - 0.2, region[1][1] + 0.2)
             pic.axis([region[0][0], region[0][1], region[1][0], region[1][1]])
         pic.set_title("red = unsafe region, green = safe region, white = in between \n max_recursion_depth:{},"
                       " \n min_rec_size:{}, achieved_coverage:{}, alg{} \n It took {} {} second(s)".format(

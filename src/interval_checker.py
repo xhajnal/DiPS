@@ -45,6 +45,7 @@ class Queue:
     def printQueue(self):
         return self.queue
 
+
 def check_interval_in(region, props, intervals, silent=False, called=True):
     """ Check if the given region is unsafe or not.
 
@@ -61,6 +62,7 @@ def check_interval_in(region, props, intervals, silent=False, called=True):
     """
 
     if called:
+        print("CALLED")
         globals()["rectangles_sat"] = []
         globals()["parameters"] = set()
         for polynome in props:
@@ -87,14 +89,19 @@ def check_interval_in(region, props, intervals, silent=False, called=True):
             return False
         i = i + 1
 
-    #print("region ",region, "sat, adding it to sat")
+    add_space = []
+    for interval in region:
+        add_space.append(interval[1] - interval[0])
+    globals()["non_white_area"] = globals()["non_white_area"] + prod(add_space)
+    # print("region ",region, "sat, adding it to sat")
+    globals()["hyper_rectangles_sat"].append(region)
     if len(region) == 2:  # if two-dim param space
         globals()["rectangles_sat"].append(
             Rectangle((region[0][0], region[1][0]), region[0][1] - region[0][0], region[1][1] - region[1][0], fc='g'))
     if len(region) == 1:  # if one-dim param space
         globals()["rectangles_sat"].append(
             Rectangle((region[0][0], 0.33), region[0][1] - region[0][0], 0.33, fc='g'))
-    #print(globals()["rectangles_sat"])
+    # print(globals()["rectangles_sat"])
     return True
 
 
@@ -114,6 +121,7 @@ def check_interval_out(region, props, intervals, silent=False, called=True):
     """
 
     if called:
+        print("CALLED")
         globals()["rectangles_unsat"] = []
         globals()["parameters"] = set()
         for polynome in props:
@@ -142,15 +150,21 @@ def check_interval_out(region, props, intervals, silent=False, called=True):
         if not (prop_eval > interval or prop_eval < interval):
             return False
         i = i + 1
-    #print("region ", region, "unsat, adding it to unsat")
+    # print("region ", region, "unsat, adding it to unsat")
+    add_space = []
+    for interval in region:
+        add_space.append(interval[1] - interval[0])
+    globals()["non_white_area"] = globals()["non_white_area"] + prod(add_space)
+    globals()["hyper_rectangles_unsat"].append(region)
     if len(region) == 2:  # if two-dim param space
         globals()["rectangles_unsat"].append(
             Rectangle((region[0][0], region[1][0]), region[0][1] - region[0][0], region[1][1] - region[1][0], fc='r'))
     if len(region) == 1:  # if one-dim param space
         globals()["rectangles_unsat"].append(
             Rectangle((region[0][0], 0.33), region[0][1] - region[0][0], 0.33, fc='r'))
-    #print(globals()["rectangles_unsat"])
+    # print(globals()["rectangles_unsat"])
     return True
+
 
 def check_deeper_interval(region, prop, intervals, n, epsilon, cov, silent, version):
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
@@ -202,20 +216,19 @@ def check_deeper_interval(region, prop, intervals, n, epsilon, cov, silent, vers
     globals()["parameters"] = sorted(list(globals()["parameters"]))
     ## EXAMPLE:  parameters >> ['p','q']
 
-
     if not len(globals()["parameters"]) == len(region) and not silent:
         print("number of parameters in property ({}) and dimension of the region ({}) is not equal".format(
             len(globals()["parameters"]), len(region)))
 
     start_time = time.time()
+    version = "-interval"
     print("Using interval method")
     globals()["que"] = Queue()
     private_check_deeper_interval(region, prop, intervals, n, epsilon, cov, silent)
 
-    #print("computed with results:")
-    #print(globals()["rectangles_sat"])
-    #print(globals()["rectangles_unsat"])
-
+    # print("computed with results:")
+    # print(globals()["rectangles_sat"])
+    # print(globals()["rectangles_unsat"])
 
     ## Visualisation
     if len(region) == 1 or len(region) == 2:
@@ -228,10 +241,14 @@ def check_deeper_interval(region, prop, intervals, n, epsilon, cov, silent, vers
         fig = plt.figure()
         pic = fig.add_subplot(111, aspect='equal')
         pic.set_xlabel(globals()["parameters"][0])
+        ## set axis ranges
+        if region[0][1] - region[0][0] < 0.1:
+            region[0] = (region[0][0] - 0.2, region[0][1] + 0.2)
         pic.axis([region[0][0], region[0][1], 0, 1])
         if len(region) == 2:
             pic.set_ylabel(globals()["parameters"][1])
-            pic.axis([region[0][0], region[0][1], region[1][0], region[1][1]])
+            if region[1][1] - region[1][0] < 0.1:
+                region[1] = (region[1][0] - 0.2, region[1][1] + 0.2)
         pic.set_title("red = unsafe region, green = safe region, white = in between \n max_recursion_depth:{},"
                       " \n min_rec_size:{}, achieved_coverage:{}, alg{} \n It took {} {} second(s)".format(
             n, epsilon, globals()["non_white_area"] / globals()["whole_area"], version,
@@ -246,6 +263,7 @@ def check_deeper_interval(region, prop, intervals, n, epsilon, cov, silent, vers
     print("result coverage is: ", globals()["non_white_area"] / globals()["whole_area"])
     return (globals()["hyper_rectangles_sat"], globals()["hyper_rectangles_unsat"], globals()["hyper_rectangles_white"],
             globals()["non_white_area"] / globals()["whole_area"])
+
 
 def colored(greater, smaller):
     """ Colors outside of the smaller region in the greater region as previously unsat
@@ -285,6 +303,7 @@ def colored(greater, smaller):
             Rectangle([smaller[0][0], smaller[1][1]], smaller[0][1] - smaller[0][0], 1 - smaller[1][0], fc='r'))
     else:
         print("Error, trying to color more than 2 dimensional hyperrectangle")
+
 
 def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage, silent, model=None):
     """ Refining the parameter space into safe and unsafe regions
@@ -452,14 +471,12 @@ class TestLoad(unittest.TestCase):
     def test_check_interval_deeper(self):
         ## check_deeper_interval(region, prop, intervals, n, epsilon, cov, silent, version)
         check_deeper_interval([(0, 4)], ["x"], [Interval(0, 3)], 5, 0, 0.95, silent=False, version=1)
-        #print(globals()["rectangles_unsat"])
-        #print(globals()["rectangles_sat"])
-        #self.assertEqual(check_deeper_interval([(0, 1)], ["x"], [Interval(0, 1)], 0, 0, 0.95, silent=False, version=1), True)
-
+        # print(globals()["rectangles_unsat"])
+        # print(globals()["rectangles_sat"])
+        # self.assertEqual(check_deeper_interval([(0, 1)], ["x"], [Interval(0, 1)], 0, 0, 0.95, silent=False, version=1), True)
 
 
 if __name__ == "__main__":
-
     unittest.main()
     # check_interval([(0, 1)], ["x"], [Interval(0, 1)], silent=False, called=False)
     # check_interval([(0, 3)], ["x"], [Interval(0, 2)], silent=False, called=False)
