@@ -14,7 +14,7 @@ workspace = os.path.dirname(__file__)
 sys.path.append(workspace)
 from load import find_param
 from space import RefinedSpace
-
+from space import get_rectangle_volume
 
 # space = RefinedSpace([(0,1)])
 
@@ -121,29 +121,33 @@ def check(region, prop, intervals, silent=False, called=False):
     if not silent:
         print("checking unsafe", region)
 
+    # p = Real('p')
+    # print(p)
+    # print(type(p))
+
     if called:
-        ## Parse parameteres from properties
         globals()["parameters"] = set()
+        parameters = globals()["parameters"]
         for polynome in prop:
-            globals()["parameters"].update(find_param(polynome))
-        globals()["parameters"] = sorted(list(globals()["parameters"]))
-        ## EXAMPLE:  print(parameters)
-        ##           >> ['p','q']
-        for param in globals()["parameters"]:
+            parameters.update(find_param(polynome))
+        parameters = sorted(list(parameters))
+        ## EXAMPLE:  parameters >> ['p','q']
+        for param in parameters:
             globals()[param] = Real(param)
-        ## EXAMPLE: p = Real(p) 
-        if not len(globals()["parameters"]) == len(region) and not silent:
-            print("number of parameters in property ({}) and dimension of the region ({}) is not equal".format(
-                len(globals()["parameters"]), len(region)))
+        ## EXAMPLE: p = Real(p)
+
+        space = RefinedSpace(copy.copy(region), parameters, [], [])
+    else:
+        space = globals()["space"]
 
     s = Solver()
 
     ## Adding regional restrictions to solver
-    for j in range(len(globals()["parameters"])):
-        s.add(globals()[parameters[j]] > region[j][0])
-        # print(str(globals()[parameters[j]] > region[j][0]))
-        s.add(globals()[parameters[j]] < region[j][1])
-        # print(str(globals()[parameters[j]] < region[j][1]))
+    j = 0
+    for param in globals()["parameters"]:
+        s.add(globals()[param] > region[j][0])
+        s.add(globals()[param] < region[j][1])
+        j = j + 1
 
     ## Adding property in the interval restrictions to solver
     for i in range(0, len(prop)):
@@ -160,25 +164,12 @@ def check(region, prop, intervals, silent=False, called=False):
     if s.check() == sat:
         return s.model()
     else:
-        add_space = []
-        for interval in region:
-            add_space.append(interval[1] - interval[0])
-        # print("add_space", add_space)
-        globals()["non_white_area"] = globals()["non_white_area"] + prod(add_space)
-        # print("area added: ",prod(add_space))
-        globals()["hyper_rectangles_unsat"].append(region)
-        if len(region) == 2:  # if two-dim param space
-            globals()["rectangles_unsat"].append(
-                Rectangle((region[0][0], region[1][0]), region[0][1] - region[0][0], region[1][1] - region[1][0], fc='r'))
-        if len(region) == 1:
-            globals()["rectangles_unsat"].append(
-                Rectangle((region[0][0], 0.33), region[0][1] - region[0][0], 0.33, fc='r'))
-        # print("red", Rectangle((region[0][0],region[1][0]), region[0][1]-region[0][0], region[1][1]-region[1][0], fc='r'))
+        space.add_red(region)
         return ("unsafe")
 
 
 def check_safe(region, prop, intervals, silent=False, called=False):
-    """ Check if the given region is safe or not 
+    """ Check if the given region is safe or not
 
     It means whether for all parametrisations in **region** every property(prop) is evaluated within the given
     **interval**, otherwise it is not safe and counterexample is returned.
@@ -197,22 +188,28 @@ def check_safe(region, prop, intervals, silent=False, called=False):
 
     if called:
         globals()["parameters"] = set()
+        parameters = globals()["parameters"]
         for polynome in prop:
-            globals()["parameters"].update(find_param(polynome))
-        globals()["parameters"] = sorted(list(globals()["parameters"]))
+            parameters.update(find_param(polynome))
+        parameters = sorted(list(parameters))
         ## EXAMPLE:  parameters >> ['p','q']
-        for param in globals()["parameters"]:
+
+        for param in parameters:
             globals()[param] = Real(param)
-        ## EXAMPLE: p = Real(p) 
-        if not len(globals()["parameters"]) == len(region) and not silent:
-            print("number of parameters in property ({}) and dimension of the region ({}) is not equal".format(
-                len(globals()["parameters"]), len(region)))
+        ## EXAMPLE: p = Real(p)
+
+        space = RefinedSpace(copy.copy(region), parameters, [], [])
+    else:
+        space = globals()["space"]
+
     s = Solver()
 
     ## Adding regional restrictions to solver
-    for j in range(len(globals()["parameters"])):
-        s.add(globals()[parameters[j]] > region[j][0])
-        s.add(globals()[parameters[j]] < region[j][1])
+    j = 0
+    for param in globals()["parameters"]:
+        s.add(globals()[param] > region[j][0])
+        s.add(globals()[param] < region[j][1])
+        j = j + 1
 
     ## Adding property in the interval restrictions to solver
 
@@ -220,13 +217,13 @@ def check_safe(region, prop, intervals, silent=False, called=False):
 
     ## ALTERNATIVE HEURISTIC APPROACH COMMENTED HERE
     # if intervals[0]<0.01:
-    #    formula = Or(Not(eval(prop[0]) > intervals[0][0])), Not(eval(prop[0]) < intervals[0][1]))) 
+    #    formula = Or(Not(eval(prop[0]) > intervals[0][0])), Not(eval(prop[0]) < intervals[0][1])))
     # else:
     #    formula = False
 
     for i in range(1, len(prop)):
         # if intervals[i]<100/n_samples:
-        #    continue       
+        #    continue
 
         ## ALTERNATIVE HEURISTIC APPROACH COMMENTED HERE
         # if  intervals[i]<0.01:
@@ -236,22 +233,7 @@ def check_safe(region, prop, intervals, silent=False, called=False):
     # print(s.check())
     # return s.check()
     if s.check() == unsat:
-        add_space = []
-        for interval in region:
-            add_space.append(interval[1] - interval[0])
-        # print("add_space", add_space)
-        globals()["non_white_area"] = globals()["non_white_area"] + prod(add_space)
-        # print("area added: ",prod(add_space))
-        globals()["hyper_rectangles_sat"].append(region)
-        if len(region) == 2:  # if two-dim param space
-            globals()["rectangles_sat"].append(
-                Rectangle((region[0][0], region[1][0]), region[0][1] - region[0][0], region[1][1] - region[1][0],
-                          fc='g'))
-        if len(region) == 1:
-            globals()["rectangles_sat"].append(
-                Rectangle((region[0][0], 0.33), region[0][1] - region[0][0], 0.33, fc='g'))
-
-        # print("green", Rectangle((region[0][0],region[1][0]), region[0][1]-region[0][0], region[1][1]-region[1][0], fc='g'))
+        space.add_green(region)
         return "safe"
     else:
         return s.model()
@@ -274,52 +256,67 @@ def check_deeper(region, prop, intervals, n, epsilon, cov, silent, version):
     version: version of the algorithm to be used
     """
 
-    if not isinstance(region, Iterable):
-        region = [region]
-    if not isinstance(prop, Iterable):
-        prop = [prop]
-    if not isinstance(intervals, Iterable):
-        intervals = [intervals]
+    #if not isinstance(region, Iterable):
+    #    region = [region]
+    #if not isinstance(prop, Iterable):
+    #    prop = [prop]
+    #if not isinstance(intervals, Iterable):
+    #    intervals = [intervals]
 
     ## Initialisation
-    ## region
-    globals()["default_region"] = copy.copy(region)
-
-    globals()["rectangles_sat"] = []
-    globals()["rectangles_unsat"] = []
-    globals()["rectangles_unsat_added"] = []
-
-    globals()["hyper_rectangles_sat"] = []
-    globals()["hyper_rectangles_unsat"] = []
-    globals()["hyper_rectangles_white"] = [region]
-
-    globals()["non_white_area"] = 0
-    globals()["whole_area"] = []
-    for interval in region:
-        globals()["whole_area"].append(interval[1] - interval[0])
-    globals()["whole_area"] = prod(globals()["whole_area"])
-
-    if not silent:
-        print("the area is: ", region)
-        print("the volume of the whole area is:", globals()["whole_area"])
-
-    ## params
     globals()["parameters"] = set()
     for polynome in prop:
         globals()["parameters"].update(find_param(polynome))
     globals()["parameters"] = sorted(list(globals()["parameters"]))
+
+    globals()["space"] = RefinedSpace(copy.copy(region), parameters, [], [])
+
+    globals()["default_region"] = copy.copy(region)
+
+    # globals()["rectangles_sat"] = []
+    # globals()["rectangles_unsat"] = []
+    # globals()["rectangles_unsat_added"] = []
+
+    # globals()["hyper_rectangles_sat"] = []
+    # globals()["hyper_rectangles_unsat"] = []
+    # globals()["hyper_rectangles_white"] = [region]
+
+    # globals()["non_white_area"] = 0
+    # globals()["whole_area"] = []
+    # for interval in region:
+    #    globals()["whole_area"].append(interval[1] - interval[0])
+    # globals()["whole_area"] = prod(globals()["whole_area"])
+
+    if not silent:
+        print("the area is: ", space.region)
+        print("the volume of the whole area is:", space.get_volume())
+
+    ## params
+    # globals()["parameters"] = set()
+    # for polynome in prop:
+    #     globals()["parameters"].update(find_param(polynome))
+    # globals()["parameters"] = sorted(list(globals()["parameters"]))
     ## EXAMPLE:  parameters >> ['p','q']
 
-    for param in globals()["parameters"]:
-        globals()[param] = Real(param)
+    # for param in globals()["parameters"]:
+    #     globals()[param] = Real(param)
     ## EXAMPLE: p = Real(p)
 
-    if not len(globals()["parameters"]) == len(region) and not silent:
-        print("number of parameters in property ({}) and dimension of the region ({}) is not equal".format(
-            len(globals()["parameters"]), len(region)))
+    # if not len(globals()["parameters"]) == len(region) and not silent:
+    #    print("number of parameters in property ({}) and dimension of the region ({}) is not equal".format(
+    #        len(globals()["parameters"]), len(region)))
 
     ## Choosing from versions
     start_time = time.time()
+    if version <= 4:
+        for param in parameters:
+            globals()[param] = Real(param)
+    else:
+        print()
+        # i = 0
+        # for param in parameters:
+        #     globals()[param] = mpi(region[i][0], region[i][1])
+
     if version == 1:
         print("Using DFS method")
         private_check_deeper(region, prop, intervals, n, epsilon, cov, silent)
@@ -340,36 +337,42 @@ def check_deeper(region, prop, intervals, n, epsilon, cov, silent, version):
         print(check_deeper_iter(region, prop, intervals, n, epsilon, cov, silent))
 
     ## Visualisation
-    if len(region) == 1 or len(region) == 2:
-        colored(globals()["default_region"], region)
-        # from matplotlib import rcParams
-        # rc('font', **{'family':'serif', 'serif':['Computer Modern Roman']})
-        fig = plt.figure()
-        pic = fig.add_subplot(111, aspect='equal')
-        pic.set_xlabel(globals()["parameters"][0])
-        ## set axis ranges
-        if region[0][1] - region[0][0] < 0.1:
-            region[0] = (region[0][0] - 0.2, region[0][1] + 0.2)
-        pic.axis([region[0][0], region[0][1], 0, 1])
-        if len(region) == 2:
-            pic.set_ylabel(globals()["parameters"][1])
-            if region[1][1] - region[1][0] < 0.1:
-                region[1] = (region[1][0] - 0.2, region[1][1] + 0.2)
-            pic.axis([region[0][0], region[0][1], region[1][0], region[1][1]])
-        pic.set_title("red = unsafe region, green = safe region, white = in between \n max_recursion_depth:{},"
-                      " \n min_rec_size:{}, achieved_coverage:{}, alg{} \n It took {} {} second(s)".format(
-            n, epsilon, globals()["non_white_area"] / globals()["whole_area"], version,
-            socket.gethostname(), round(time.time() - start_time, 1)))
-        pc = PatchCollection(rectangles_unsat, facecolor='r', alpha=0.5)
-        pic.add_collection(pc)
-        pc = PatchCollection(rectangles_sat, facecolor='g', alpha=0.5)
-        pic.add_collection(pc)
-        pc = PatchCollection(rectangles_unsat_added, facecolor='xkcd:grey', alpha=0.5)
-        pic.add_collection(pc)
-        plt.show()
-    print("result coverage is: ", globals()["non_white_area"] / globals()["whole_area"])
-    return (globals()["hyper_rectangles_sat"], globals()["hyper_rectangles_unsat"], globals()["hyper_rectangles_white"],
-            globals()["non_white_area"] / globals()["whole_area"])
+    # if len(region) == 1 or len(region) == 2:
+    #     colored(globals()["default_region"], region)
+    #     # from matplotlib import rcParams
+    #     # rc('font', **{'family':'serif', 'serif':['Computer Modern Roman']})
+    #     fig = plt.figure()
+    #     pic = fig.add_subplot(111, aspect='equal')
+    #     pic.set_xlabel(globals()["parameters"][0])
+    #     ## set axis ranges
+    #     if region[0][1] - region[0][0] < 0.1:
+    #         region[0] = (region[0][0] - 0.2, region[0][1] + 0.2)
+    #     pic.axis([region[0][0], region[0][1], 0, 1])
+    #     if len(region) == 2:
+    #         pic.set_ylabel(globals()["parameters"][1])
+    #         if region[1][1] - region[1][0] < 0.1:
+    #             region[1] = (region[1][0] - 0.2, region[1][1] + 0.2)
+    #         pic.axis([region[0][0], region[0][1], region[1][0], region[1][1]])
+    #     pic.set_title("red = unsafe region, green = safe region, white = in between \n max_recursion_depth:{},"
+    #                   " \n min_rec_size:{}, achieved_coverage:{}, alg{} \n It took {} {} second(s)".format(
+    #         n, epsilon, space.get_coverage(), version,
+    #         socket.gethostname(), round(time.time() - start_time, 1)))
+    #     pc = PatchCollection(rectangles_unsat, facecolor='r', alpha=0.5)
+    #     pic.add_collection(pc)
+    #     pc = PatchCollection(rectangles_sat, facecolor='g', alpha=0.5)
+    #     pic.add_collection(pc)
+    #     pc = PatchCollection(rectangles_unsat_added, facecolor='xkcd:grey', alpha=0.5)
+    #     pic.add_collection(pc)
+    #     plt.show()
+
+    space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time.time() - start_time)} second(s)")
+
+    # print("result coverage is: ", space.get_coverage())
+    print("result coverage is: ", space.get_coverage())
+    # return (globals()["hyper_rectangles_sat"], globals()["hyper_rectangles_unsat"], globals()["hyper_rectangles_white"],
+    #        space.get_coverage())
+    # return (space.sat, space.unsat, space.unknown, space.get_coverage())
+    return space
 
 
 def private_check_deeper_sampling(region, prop, intervals, n, epsilon, coverage, silent):
@@ -415,11 +418,7 @@ def private_check_deeper(region, prop, intervals, n, epsilon, coverage, silent):
     # print("check equal", globals()["whole_area"],whole_area)
 
     # stop if the given hyperrectangle is to small
-    add_space = []
-    for interval in region:
-        add_space.append(interval[1] - interval[0])
-    add_space = prod(add_space)
-    if add_space < epsilon:
+    if get_rectangle_volume(region) < epsilon:
         if len(region) > 2:
             # if not silent:
             #    print("hyperrectangle too small, skipped")
@@ -435,8 +434,8 @@ def private_check_deeper(region, prop, intervals, n, epsilon, coverage, silent):
 
     # stop if the the current coverage is above the given thresholds
     if globals()["whole_area"] > 0:
-        if globals()["non_white_area"] / globals()["whole_area"] > coverage:
-            return "coverage ", globals()["non_white_area"] / globals()["whole_area"], " is above the threshold"
+        if space.get_coverage() > coverage:
+            return "coverage ", space.get_coverage(), " is above the threshold"
 
     # HERE MAY ADDING THE MODEL
     if check(region, prop, intervals, silent) == "unsafe":
@@ -448,12 +447,12 @@ def private_check_deeper(region, prop, intervals, n, epsilon, coverage, silent):
 
     # print("result",result)
     if result == "safe" or result == "unsafe":
-        globals()["hyper_rectangles_white"].remove(region)
+        space.remove_white(region)
     if n == 0:
         # print("[",p_low,",",p_high ,"],[",q_low,",",q_high ,"]",result)
         if not silent:
             print("maximal recursion reached here with coverage:",
-                  globals()["non_white_area"] / globals()["whole_area"])
+                  space.get_coverage())
         return result
     else:
         if not (
@@ -471,25 +470,25 @@ def private_check_deeper(region, prop, intervals, n, epsilon, coverage, silent):
             foo[index] = (low, low + (high - low) / 2)
             foo2 = copy.copy(region)
             foo2[index] = (low + (high - low) / 2, high)
-            globals()["hyper_rectangles_white"].remove(region)
-            globals()["hyper_rectangles_white"].append(foo)  # add this region as white
-            globals()["hyper_rectangles_white"].append(foo2)  # add this region as white
+            space.remove_white(region)
+            space.add_white(foo)  # add this region as white
+            space.add_white(foo2)  # add this region as white
             # print("white area",globals()["hyper_rectangles_white"])
             if silent:
                 private_check_deeper(foo, prop, intervals, n - 1, epsilon, coverage, silent)
                 if globals()["whole_area"] > 0:
-                    if globals()["non_white_area"] / globals()["whole_area"] > coverage:
+                    if space.get_coverage() > coverage:
                         return "coverage ", globals()["non_white_area"] / globals()[
                             "whole_area"], " is above the threshold"
                 private_check_deeper(foo2, prop, intervals, n - 1, epsilon, coverage, silent)
             else:
-                print(n, foo, globals()["non_white_area"] / globals()["whole_area"],
+                print(n, foo, space.get_coverage(),
                       private_check_deeper(foo, prop, intervals, n - 1, epsilon, coverage, silent))
                 if globals()["whole_area"] > 0:
-                    if globals()["non_white_area"] / globals()["whole_area"] > coverage:
+                    if space.get_coverage() > coverage:
                         return "coverage ", globals()["non_white_area"] / globals()[
                             "whole_area"], " is above the threshold"
-                print(n, foo2, globals()["non_white_area"] / globals()["whole_area"],
+                print(n, foo2, space.get_coverage(),
                       private_check_deeper(foo2, prop, intervals, n - 1, epsilon, coverage, silent))
 
     return result
@@ -616,13 +615,10 @@ def private_check_deeper_queue(region, prop, intervals, n, epsilon, coverage, si
     # print("check equal", globals()["non_white_area"],non_white_area)
     # print("check equal", globals()["whole_area"],whole_area)
 
+    space = globals()["space"]
+
     ## stop if the given hyperrectangle is to small
-    add_space = []
-    for interval in region:
-        add_space.append(interval[1] - interval[0])
-    add_space = prod(add_space)
-    # print("add_space",add_space)
-    if add_space < epsilon:
+    if get_rectangle_volume(region) < epsilon:
         if len(region) > 2:
             if not silent:
                 print("hyperrectangle too small, skipped")
@@ -637,10 +633,9 @@ def private_check_deeper_queue(region, prop, intervals, n, epsilon, coverage, si
             return "interval too small, skipped"
 
     ## stop if the the current coverage is above the given thresholds
-    if globals()["whole_area"] > 0:
-        if globals()["non_white_area"] / globals()["whole_area"] > coverage:
-            globals()["que"] = Queue()
-            return "coverage ", globals()["non_white_area"] / globals()["whole_area"], " is above the threshold"
+    if space.get_coverage() > coverage:
+        globals()["que"] = Queue()
+        return "coverage ", space.get_coverage(), " is above the threshold"
 
     # HERE I CAN APPEND THE VALUE OF EXAMPLE AND COUNTEREXAMPLE
     # print("hello check =",check(region,prop,intervals,silent))
@@ -654,10 +649,10 @@ def private_check_deeper_queue(region, prop, intervals, n, epsilon, coverage, si
 
     if result == "safe" or result == "unsafe":
         # print("removing region:", region)
-        globals()["hyper_rectangles_white"].remove(region)
+        space.remove_white(region)
 
     if not silent:
-        print(n, region, globals()["non_white_area"] / globals()["whole_area"], result)
+        print(n, region, space.get_coverage(), result)
 
     # print("hello")
     if n == 0:
@@ -678,9 +673,9 @@ def private_check_deeper_queue(region, prop, intervals, n, epsilon, coverage, si
     foo[index] = (low, low + (high - low) / 2)
     foo2 = copy.copy(region)
     foo2[index] = (low + (high - low) / 2, high)
-    globals()["hyper_rectangles_white"].remove(region)
-    globals()["hyper_rectangles_white"].append(foo)
-    globals()["hyper_rectangles_white"].append(foo2)
+    space.remove_white(region)
+    space.add_white(foo)
+    space.add_white(foo2)
 
     # ADD CALLS TO QUEUE
     # print("adding",[copy.copy(foo),prop,intervals,n-1,epsilon,coverage,silent], "with len", len([copy.copy(foo),prop,intervals,n-1,epsilon,coverage,silent]))
@@ -716,13 +711,10 @@ def private_check_deeper_queue_checking(region, prop, intervals, n, epsilon, cov
     # print("check equal", globals()["non_white_area"],non_white_area)
     # print("check equal", globals()["whole_area"],whole_area)
 
+    space = globals()["space"]
+
     ## stop if the given hyperrectangle is to small
-    add_space = []
-    for interval in region:
-        add_space.append(interval[1] - interval[0])
-    add_space = prod(add_space)
-    # print("add_space",add_space)
-    if add_space < epsilon:
+    if get_rectangle_volume(region) < epsilon:
         if len(region) > 2:
             if not silent:
                 print("hyperrectangle too small, skipped")
@@ -738,9 +730,9 @@ def private_check_deeper_queue_checking(region, prop, intervals, n, epsilon, cov
 
     ## stop if the the current coverage is above the given thresholds
     if globals()["whole_area"] > 0:
-        if globals()["non_white_area"] / globals()["whole_area"] > coverage:
+        if space.get_coverage() > coverage:
             globals()["que"] = Queue()
-            return "coverage ", globals()["non_white_area"] / globals()["whole_area"], " is above the threshold"
+            return "coverage ", space.get_coverage(), " is above the threshold"
 
     if model is None:
         example = check(region, prop, intervals, silent)
@@ -754,18 +746,18 @@ def private_check_deeper_queue_checking(region, prop, intervals, n, epsilon, cov
 
     ## Resolving the result
     if example == "unsafe":
-        globals()["hyper_rectangles_white"].remove(region)
+        space.remove_white(region)
         if not silent:
-            print(n, region, globals()["non_white_area"] / globals()["whole_area"], "unsafe")
+            print(n, region, space.get_coverage(), "unsafe")
         return
     elif check_safe(region, prop, intervals, silent) == "safe":
-        globals()["hyper_rectangles_white"].remove(region)
+        space.remove_white(region)
         if not silent:
-            print(n, region, globals()["non_white_area"] / globals()["whole_area"], "safe")
+            print(n, region, space.get_coverage(), "safe")
         return
     else:  ## unknown
         if not silent:
-            print(n, region, globals()["non_white_area"] / globals()["whole_area"], example)
+            print(n, region, space.get_coverage(), example)
 
     if n == 0:
         return
@@ -788,9 +780,9 @@ def private_check_deeper_queue_checking(region, prop, intervals, n, epsilon, cov
     foo[index] = (low, low + (high - low) / 2)
     foo2 = copy.copy(region)
     foo2[index] = (low + (high - low) / 2, high)
-    globals()["hyper_rectangles_white"].remove(region)
-    globals()["hyper_rectangles_white"].append(foo)
-    globals()["hyper_rectangles_white"].append(foo2)
+    space.remove_white(region)
+    space.add_white(foo)
+    space.add_white(foo2)
 
     model_low = [9, 9]
     model_high = [9, 9]
@@ -829,6 +821,7 @@ def private_check_deeper_queue_checking_both(region, prop, intervals, n, epsilon
     silent: if silent printed output is set to minimum
     model: (example,counterexample) of the satisfaction in the given region
     """
+    space = globals()["space"]
     # print(region,prop,intervals,n,epsilon,coverage,silent)
 
     # checking this:
@@ -836,12 +829,7 @@ def private_check_deeper_queue_checking_both(region, prop, intervals, n, epsilon
     # print("check equal", globals()["whole_area"],whole_area)
 
     # stop if the given hyperrectangle is to small
-    add_space = []
-    for interval in region:
-        add_space.append(interval[1] - interval[0])
-    add_space = prod(add_space)
-    # print("add_space",add_space)
-    if add_space < epsilon:
+    if get_rectangle_volume(region) < epsilon:
         if len(region) > 2:
             if not silent:
                 print("hyperrectangle too small, skipped")
@@ -856,10 +844,9 @@ def private_check_deeper_queue_checking_both(region, prop, intervals, n, epsilon
             return "interval too small, skipped"
 
     ## Stop if the the current coverage is above the given thresholds
-    if globals()["whole_area"] > 0:
-        if globals()["non_white_area"] / globals()["whole_area"] > coverage:
-            globals()["que"] = Queue()
-            return "coverage ", globals()["non_white_area"] / globals()["whole_area"], " is above the threshold"
+    if space.get_coverage() > coverage:
+        globals()["que"] = Queue()
+        return "coverage ", space.get_coverage(), " is above the threshold"
 
     ## Resolving if the region safe/unsafe/unknown
     if model is None:
@@ -881,18 +868,18 @@ def private_check_deeper_queue_checking_both(region, prop, intervals, n, epsilon
 
     ## Resolving the result
     if example == "unsafe":
-        globals()["hyper_rectangles_white"].remove(region)
+        space.remove_white(region)
         if not silent:
-            print(n, region, globals()["non_white_area"] / globals()["whole_area"], "unsafe")
+            print(n, region, space.get_coverage(), "unsafe")
         return
     elif counterexample == "safe":
-        globals()["hyper_rectangles_white"].remove(region)
+        space.remove_white(region)
         if not silent:
-            print(n, region, globals()["non_white_area"] / globals()["whole_area"], "safe")
+            print(n, region, space.get_coverage(), "safe")
         return
     else:  ## unknown
         if not silent:
-            print(n, region, globals()["non_white_area"] / globals()["whole_area"], (example, counterexample))
+            print(n, region, space.get_coverage(), (example, counterexample))
 
     if n == 0:
         return
@@ -915,9 +902,9 @@ def private_check_deeper_queue_checking_both(region, prop, intervals, n, epsilon
     foo[index] = (low, low + (high - low) / 2)
     foo2 = copy.copy(region)
     foo2[index] = (low + (high - low) / 2, high)
-    globals()["hyper_rectangles_white"].remove(region)
-    globals()["hyper_rectangles_white"].append(foo)
-    globals()["hyper_rectangles_white"].append(foo2)
+    space.remove_white(region)
+    space.add_white(foo)
+    space.add_white(foo2)
 
     model_low = [9, 9]
     model_high = [9, 9]

@@ -56,10 +56,12 @@ class RefinedSpace:
         else:
             self.unsat = rectangles_unsat
 
+        #print("rectangles_unknown", rectangles_unknown)
         if rectangles_unknown is None:
-            self.unknown = region
+            self.unknown = [region]
         else:
             self.unknown = rectangles_unknown
+        #print("rectangles_unknown now", self.unknown)
 
     def show(self, title):
         if len(self.region) == 1 or len(self.region) == 2:
@@ -96,6 +98,18 @@ class RefinedSpace:
 
     def add_red(self, red):
         self.unsat.append(red)
+
+    def add_white(self, white):
+        self.unknown.append(white)
+
+    def remove_green(self, green):
+        self.sat.remove(green)
+
+    def remove_red(self, red):
+        self.unsat.remove(red)
+
+    def remove_white(self, white):
+        self.unknown.remove(white)
 
     def get_green_volume(self):
         cumulative_volume = 0
@@ -160,6 +174,12 @@ class RefinedSpace:
                     Rectangle((rectangle[0][0], 0.33), rectangle[0][1] - rectangle[0][0], 0.33, fc='r'))
         return PatchCollection(rectangles_unsat, facecolor='r', alpha=0.5)
 
+    def __repr__(self):
+        return str([self.sat, self.unsat, self.unknown])
+
+    def __str__(self):
+        return [self.sat, self.unsat, self.unknown]
+
 
 class TestLoad(unittest.TestCase):
     def test_space(self):
@@ -198,13 +218,11 @@ class TestLoad(unittest.TestCase):
         self.assertEqual(round(space.get_red_volume(), 1), 0.0)
         self.assertEqual(round(space.get_nonwhite_volume(), 1), 0.0)
 
-
         space.add_green([[0, 0.5]])
         space.show(f"achieved_coverage: {space.get_coverage() * 100}%")
         self.assertEqual(round(space.get_green_volume(), 1), 0.5)
         self.assertEqual(round(space.get_red_volume(), 1), 0.0)
         self.assertEqual(round(space.get_nonwhite_volume(), 1), 0.5)
-
 
         space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"], [[[0, 0.5], [0, 0.5]]], [])
         space.show(f"achieved_coverage: {space.get_coverage() * 100}%")
@@ -212,13 +230,11 @@ class TestLoad(unittest.TestCase):
         self.assertEqual(round(space.get_red_volume(), 1), 0.0)
         self.assertEqual(round(space.get_nonwhite_volume(), 2), 0.25)
 
-
         space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"], [], [[[0, 0.5], [0, 0.5]]])
         space.show(f"achieved_coverage: {space.get_coverage() * 100}%")
         self.assertEqual(round(space.get_green_volume(), 1), 0.0)
         self.assertEqual(round(space.get_red_volume(), 2), 0.25)
         self.assertEqual(round(space.get_nonwhite_volume(), 2), 0.25)
-
 
         space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"], [[[0, 0.2], [0, 0.2]]], [[[0.5, 0.7], [0.1, 0.3]]])
         space.show(f"achieved_coverage: {space.get_coverage() * 100}%")
@@ -226,14 +242,12 @@ class TestLoad(unittest.TestCase):
         self.assertEqual(round(space.get_red_volume(), 2), 0.04)
         self.assertEqual(round(space.get_nonwhite_volume(), 2), 0.08)
 
-
         space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"], [[[0, 0.2], [0, 0.2]], [[0.4, 0.6], [0.6, 0.8]]],
                              [[[0.5, 0.7], [0.1, 0.3]], [[0.6, 0.8], [0.8, 1]]])
         space.show(f"achieved_coverage: {space.get_coverage() * 100}%")
         self.assertEqual(round(space.get_green_volume(), 2), 0.08)
         self.assertEqual(round(space.get_red_volume(), 2), 0.08)
         self.assertEqual(round(space.get_nonwhite_volume(), 2), 0.16)
-
 
 
 if __name__ == "__main__":
