@@ -1,17 +1,11 @@
 import socket
 import sys
 import os
-import re
 import copy
-from collections import Iterable
 import time
-import matplotlib.pyplot as plt
-
-from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 from mpmath import mpi
 from sympy import Interval
-from numpy import prod
 
 workspace = os.path.dirname(__file__)
 sys.path.append(workspace)
@@ -21,29 +15,29 @@ from space import get_rectangle_volume
 
 
 class Queue:
-    # Constructor creates a list
+    ## Constructor creates a list
     def __init__(self):
         self.queue = list()
 
-    # Adding elements to queue
+    ## Adding elements to queue
     def enqueue(self, data):
-        # Checking to avoid duplicate entry (not mandatory)
+        ## Checking to avoid duplicate entry (not mandatory)
         if data not in self.queue:
             self.queue.insert(0, data)
             return True
         return False
 
-    # Removing the last element from the queue
+    ## Removing the last element from the queue
     def dequeue(self):
         if len(self.queue) > 0:
             return self.queue.pop()
         return "Queue Empty!"
 
-    # Getting the size of the queue
+    ## Getting the size of the queue
     def size(self):
         return len(self.queue)
 
-    # printing the elements of the queue
+    ## Printing the elements of the queue
     def printQueue(self):
         return self.queue
 
@@ -74,13 +68,13 @@ def check_interval_in(region, props, intervals, silent=False, called=True):
     else:
         space = globals()["space"]
 
-    ## assign each parameter its interval
+    ## Assign each parameter its interval
     i = 0
     for param in globals()["parameters"]:
         globals()[param] = mpi(region[i][0], region[i][1])
         i = i + 1
 
-    ## check that all prop are in its interval
+    ## Check that all prop are in its interval
     i = 0
     for prop in props:
         # print(eval(prop))
@@ -120,13 +114,13 @@ def check_interval_out(region, props, intervals, silent=False, called=True):
         space = RefinedSpace(copy.copy(region), parameters, [], [])
     else:
         space = globals()["space"]
-    ## assign each parameter its interval
+    ## Assign each parameter its interval
     i = 0
     for param in globals()["parameters"]:
         globals()[param] = mpi(region[i][0], region[i][1])
         i = i + 1
 
-    ## check that all prop are in its interval
+    ## Check that all prop are in its interval
     i = 0
     for prop in props:
         # print(eval(prop))
@@ -135,7 +129,7 @@ def check_interval_out(region, props, intervals, silent=False, called=True):
         # print(mpi(0,1) in mpi(0,2))
         prop_eval = eval(prop)
         interval = mpi(float(intervals[i].start), float(intervals[i].end))
-        ## if there exists an intersection (neither of these interval is greater in all points)
+        ## If there exists an intersection (neither of these interval is greater in all points)
         if not (prop_eval > interval or prop_eval < interval):
             return False
         i = i + 1
@@ -208,26 +202,29 @@ def colored(greater, smaller):
     if greater is None or smaller is None:
         return
 
-    ## if 1 dimensional coloring
+    ## If 1 dimensional coloring
     if len(smaller) == 1:
-        ## color 2 regions, to the left, to the right
-        ## to the left
+        ## Color 2 regions, to the left, to the right
+        ## To the left
         globals()["rectangles_unsat_added"].append(
             Rectangle([greater[0][0], 0], smaller[0][0] - greater[0][0], 1, fc='r'))
-        ## to the right
+        ## To the right
         globals()["rectangles_unsat_added"].append(
             Rectangle([smaller[0][1], 0], greater[0][1] - smaller[0][1], 1, fc='r'))
 
-    # else 2 dimensional coloring
+    ## Else 2 dimensional coloring
     elif len(smaller) == 2:
-        ## color 4 regions, to the left, to the right, below, and above
-        ##
+        ## Color 4 regions, to the left, to the right, below, and above
+        ## TBD
         globals()["rectangles_unsat_added"].append(
             Rectangle([greater[0][0], 0], smaller[0][0] - greater[0][0], 1, fc='r'))
+        ## TBD
         globals()["rectangles_unsat_added"].append(
             Rectangle([smaller[0][1], 0], greater[0][1] - smaller[0][1], 1, fc='r'))
+        ## TBD
         globals()["rectangles_unsat_added"].append(
             Rectangle([smaller[0][0], 0], smaller[0][1] - smaller[0][0], smaller[1][0], fc='r'))
+        ## TBD
         globals()["rectangles_unsat_added"].append(
             Rectangle([smaller[0][0], smaller[1][1]], smaller[0][1] - smaller[0][0], 1 - smaller[1][0], fc='r'))
     else:
@@ -247,17 +244,14 @@ def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage
     silent: if silent printed output is set to minimum
     """
 
+    ## TBD check consitency
     # print(region,prop,intervals,n,epsilon,coverage,silent)
-    # print("region",region)
-    # print("white regions: ", globals()["hyper_rectangles_white"])
-
-    ## checking this:
     # print("check equal", globals()["non_white_area"],non_white_area)
     # print("check equal", globals()["whole_area"],whole_area)
 
     space = globals()["space"]
 
-    ## stop if the given hyperrectangle is to small
+    ## Stop if the given hyperrectangle is to small
     if get_rectangle_volume(region) < epsilon:
         if len(region) > 2:
             if not silent:
@@ -272,12 +266,12 @@ def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage
                 print("interval too small, skipped")
             return "interval too small, skipped"
 
-    ## stop if the the current coverage is above the given thresholds
+    ## Stop if the the current coverage is above the given thresholds
     if space.get_coverage() > coverage:
         globals()["que"] = Queue()
         return "coverage ", space.get_coverage(), " is above the threshold"
 
-    ## resolve the result
+    ## Resolve the result
     if check_interval_out(region, props, intervals, silent, called=False):
         result = "unsafe"
     elif check_interval_in(region, props, intervals, silent, called=False):
@@ -314,13 +308,13 @@ def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage
     space.add_white(foo)
     space.add_white(foo2)
 
-    # ADD CALLS TO QUEUE
+    ## Add calls to the Queue
     # print("adding",[copy.copy(foo),prop,intervals,n-1,epsilon,coverage,silent], "with len", len([copy.copy(foo),prop,intervals,n-1,epsilon,coverage,silent]))
     # print("adding",[copy.copy(foo2),prop,intervals,n-1,epsilon,coverage,silent], "with len", len([copy.copy(foo2),prop,intervals,n-1,epsilon,coverage,silent]))
     globals()["que"].enqueue([copy.copy(foo), props, intervals, n - 1, epsilon, coverage, silent])
     globals()["que"].enqueue([copy.copy(foo2), props, intervals, n - 1, epsilon, coverage, silent])
 
-    # CALL QUEUE
+    ## Execute the queue
     # print(globals()["que"].printQueue())
     while globals()["que"].size() > 0:
         private_check_deeper_interval(*que.dequeue())
@@ -390,7 +384,7 @@ class TestLoad(unittest.TestCase):
             False)
 
     def test_check_interval_deeper(self):
-        ## check_deeper_interval(region, prop, intervals, n, epsilon, cov, silent, version)
+        # check_deeper_interval(region, prop, intervals, n, epsilon, cov, silent, version)
         check_deeper_interval([(0, 4)], ["x"], [Interval(0, 3)], 5, 0, 0.95, silent=False, version=1)
         # print(globals()["rectangles_unsat"])
         # print(globals()["rectangles_sat"])
