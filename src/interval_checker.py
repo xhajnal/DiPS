@@ -5,13 +5,16 @@ import copy
 import time
 from matplotlib.patches import Rectangle
 from mpmath import mpi
+from numpy import linspace, newaxis
 from sympy import Interval
+import unittest
 
 workspace = os.path.dirname(__file__)
 sys.path.append(workspace)
 from load import find_param
 from space import RefinedSpace
 from space import get_rectangle_volume
+from sample_n_visualise import cartesian_product
 
 
 class Queue:
@@ -138,6 +141,52 @@ def check_interval_out(region, props, intervals, silent=False, called=True):
     return True
 
 
+def sample(space, props, intervals, size_q, compress=False):
+    """ Samples the space in **size_q** samples in each dimension and saves if the point is in respective interval
+
+    Args
+    -------
+    space (space.RefinedSpace): space
+    props (list of strings): array of functions (polynomes or general rational functions in the case of Markov Chains)
+    intervals (list of sympy.Interval): array of intervals to constrain properties
+    size_q (int): number of samples in dimension
+
+    Returns
+    --------
+    A map from point to list of Bool whether f(point) in interval[index]
+    """
+    sampling = {}
+    parameter_values = []
+
+    for param in range(len(space.params)):
+        parameter_values.append(linspace(space.region[param][0], space.region[param][1], size_q, endpoint=True))
+
+    parameter_values = cartesian_product(*parameter_values)
+    #if (len(space.params) - 1) == 0:
+    #    parameter_values = linspace(0, 1, size_q, endpoint=True)[newaxis, :].T
+
+    for parameter_value in parameter_values:
+        for param in range(len(space.params)):
+            globals()[space.params[param]] = parameter_value[param]
+        #print(parameter_value)
+        #print(str(parameter_value))
+        #print(type(parameter_value))
+        sampling[str(parameter_value)] = []
+
+        for index in range(len(props)):
+            #print(eval(props[index]))
+            #print(intervals[index].start)
+            #print(intervals[index].end)
+            #print(mpi(float(intervals[index].start), float(intervals[index].end)))
+            sampling[str(parameter_value)].append(eval(props[index]) in mpi(float(intervals[index].start), float(intervals[index].end)))
+        if compress:
+            if False in sampling[str(parameter_value)]:
+                sampling[str(parameter_value)] = False
+            else:
+                sampling[str(parameter_value)] = True
+    return sampling
+
+
 def check_deeper_interval(region, prop, intervals, n, epsilon, cov, silent, version):
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
     Parameters
@@ -178,7 +227,8 @@ def check_deeper_interval(region, prop, intervals, n, epsilon, cov, silent, vers
     # print(globals()["rectangles_unsat"])
 
     ## Visualisation
-    space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time.time() - start_time)} second(s)")
+    space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())},"
+               f" alg{version} \n It took {socket.gethostname()} {round(time.time() - start_time)} second(s)")
 
     # print("result coverage is: ", space.get_coverage())
     print("result coverage is: ", space.get_coverage())
@@ -319,45 +369,41 @@ def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage
     while globals()["que"].size() > 0:
         private_check_deeper_interval(*que.dequeue())
 
-
-import unittest
-
-
 class TestLoad(unittest.TestCase):
     def test_check_interval_single(self):
         # IS IN
-        self.assertEqual(check_interval_in([(0, 1)], ["x"], [Interval(0, 1)], silent=False, called=True), True)
-        self.assertEqual(check_interval_in([(1, 1)], ["x"], [Interval(0, 2)], silent=False, called=True), True)
-        self.assertEqual(check_interval_in([(0, 1)], ["x"], [Interval(0.5, 3)], silent=False, called=True), False)
-        self.assertEqual(check_interval_in([(0, 1)], ["x"], [Interval(2, 3)], silent=False, called=True), False)
-        self.assertEqual(check_interval_in([(1, 4)], ["x"], [Interval(2, 3)], silent=False, called=True), False)
+        self.assertEqual(check_interval_in([(0, 1)], ["x"], [Interval(0, 1)], silent=False), True)
+        self.assertEqual(check_interval_in([(1, 1)], ["x"], [Interval(0, 2)], silent=False), True)
+        self.assertEqual(check_interval_in([(0, 1)], ["x"], [Interval(0.5, 3)], silent=False), False)
+        self.assertEqual(check_interval_in([(0, 1)], ["x"], [Interval(2, 3)], silent=False), False)
+        self.assertEqual(check_interval_in([(1, 4)], ["x"], [Interval(2, 3)], silent=False), False)
 
-        self.assertEqual(check_interval_in([(0, 1), (0, 1)], ["x+y"], [Interval(0, 2)], silent=True, called=True),
+        self.assertEqual(check_interval_in([(0, 1), (0, 1)], ["x+y"], [Interval(0, 2)], silent=True),
                          True)
-        self.assertEqual(check_interval_in([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], silent=True, called=True),
+        self.assertEqual(check_interval_in([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], silent=True),
                          False)
         ## IS OUT
-        self.assertEqual(check_interval_out([(0, 1)], ["x"], [Interval(2, 3)], silent=False, called=True), True)
-        self.assertEqual(check_interval_out([(1, 1)], ["x"], [Interval(2, 3)], silent=False, called=True), True)
-        self.assertEqual(check_interval_out([(0, 1)], ["x"], [Interval(1, 3)], silent=False, called=True), False)
-        self.assertEqual(check_interval_out([(0, 3)], ["x"], [Interval(2, 3)], silent=False, called=True), False)
-        self.assertEqual(check_interval_out([(1, 4)], ["x"], [Interval(2, 3)], silent=False, called=True), False)
+        self.assertEqual(check_interval_out([(0, 1)], ["x"], [Interval(2, 3)], silent=False), True)
+        self.assertEqual(check_interval_out([(1, 1)], ["x"], [Interval(2, 3)], silent=False), True)
+        self.assertEqual(check_interval_out([(0, 1)], ["x"], [Interval(1, 3)], silent=False), False)
+        self.assertEqual(check_interval_out([(0, 3)], ["x"], [Interval(2, 3)], silent=False), False)
+        self.assertEqual(check_interval_out([(1, 4)], ["x"], [Interval(2, 3)], silent=False), False)
 
-        self.assertEqual(check_interval_out([(0, 1), (0, 1)], ["x+y"], [Interval(0, 2)], silent=False, called=True),
+        self.assertEqual(check_interval_out([(0, 1), (0, 1)], ["x+y"], [Interval(0, 2)], silent=False),
                          False)
-        self.assertEqual(check_interval_out([(0, 1), (0, 1)], ["x+y"], [Interval(4, 5)], silent=False, called=True),
+        self.assertEqual(check_interval_out([(0, 1), (0, 1)], ["x+y"], [Interval(4, 5)], silent=False),
                          True)
 
     def test_check_interval_multiple(self):
         ## IS IN
         self.assertEqual(
-            check_interval_in([(0, 1)], ["x", "2*x"], [Interval(0, 1), Interval(0, 2)], silent=False, called=True),
+            check_interval_in([(0, 1)], ["x", "2*x"], [Interval(0, 1), Interval(0, 2)], silent=False),
             True)
         self.assertEqual(
-            check_interval_in([(0, 1)], ["x", "2*x"], [Interval(0, 1), Interval(0, 1)], silent=False, called=True),
+            check_interval_in([(0, 1)], ["x", "2*x"], [Interval(0, 1), Interval(0, 1)], silent=False),
             False)
         ## TRICKY
-        self.assertEqual(check_interval_in([(0, 2)], ["x", "2*x"], [Interval(0, 1)], silent=False, called=True), False)
+        self.assertEqual(check_interval_in([(0, 2)], ["x", "2*x"], [Interval(0, 1)], silent=False), False)
 
         self.assertEqual(check_interval_in([(0, 1), (0, 1)], ["x", "y"], [Interval(0, 1), Interval(0, 1)], silent=False,
                                            called=True), True)
@@ -366,13 +412,13 @@ class TestLoad(unittest.TestCase):
                               called=True), False)
         ## IS OUT
         self.assertEqual(
-            check_interval_out([(0, 1)], ["x", "2*x"], [Interval(2, 3), Interval(3, 4)], silent=False, called=True),
+            check_interval_out([(0, 1)], ["x", "2*x"], [Interval(2, 3), Interval(3, 4)], silent=False),
             True)
         self.assertEqual(
-            check_interval_out([(0, 1)], ["x", "2*x"], [Interval(0, 1), Interval(0, 1)], silent=False, called=True),
+            check_interval_out([(0, 1)], ["x", "2*x"], [Interval(0, 1), Interval(0, 1)], silent=False),
             False)
         ## TRICKY
-        self.assertEqual(check_interval_out([(0, 2)], ["x", "2*x"], [Interval(0, 1)], silent=False, called=True),
+        self.assertEqual(check_interval_out([(0, 2)], ["x", "2*x"], [Interval(0, 1)], silent=False),
                          False)
 
         self.assertEqual(
@@ -384,11 +430,27 @@ class TestLoad(unittest.TestCase):
             False)
 
     def test_check_interval_deeper(self):
-        # check_deeper_interval(region, prop, intervals, n, epsilon, cov, silent, version)
+        print()
+        ## check_deeper_interval(region, prop, intervals, n, epsilon, cov, silent, version)
         check_deeper_interval([(0, 4)], ["x"], [Interval(0, 3)], 5, 0, 0.95, silent=False, version=1)
+
         # print(globals()["rectangles_unsat"])
         # print(globals()["rectangles_sat"])
         # self.assertEqual(check_deeper_interval([(0, 1)], ["x"], [Interval(0, 1)], 0, 0, 0.95, silent=False, version=1), True)
+
+    def test_sample(self):
+        # print("hello")
+        print()
+        print(0.0 in mpi(0, 0))
+        ## def sample(space, props, intervals, size_q)
+        print(sample(RefinedSpace((0, 1), ["x"]), ["x"], [Interval(0, 1)], 3))
+        print(sample(RefinedSpace((0, 1), ["x"]), ["x"], [Interval(0, 1)], 3, compress=True))
+
+        print(sample(RefinedSpace((0, 2), ["x"]), ["x"], [Interval(0, 1)], 3))
+        print(sample(RefinedSpace((0, 2), ["x"]), ["x"], [Interval(0, 1)], 3, compress=True))
+
+        print(sample(RefinedSpace([(0, 1),(0,1)], ["x", "y"]), ["x+y"], [Interval(0, 1)], 3))
+        print(sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y"], [Interval(0, 1)], 3, compress=True))
 
 
 if __name__ == "__main__":

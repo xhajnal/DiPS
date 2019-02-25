@@ -1,16 +1,14 @@
 from collections import Iterable
-
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
+import matplotlib.pyplot as plt
 from numpy import prod
 import unittest
-
-import matplotlib.pyplot as plt
 
 
 def get_rectangle_volume(rectangle):
     intervals = []
-    ## if there is empty
+    ## If there is empty
     if not rectangle:
         raise Exception("empty rectangle has no volume")
     for interval in rectangle:
@@ -40,7 +38,7 @@ class RefinedSpace:
         self.params = params
         if not len(self.params) == len(self.region):
             print(f"number of parameters ({len(params)}) and dimension of the region ({len(region)}) is not equal")
-            # print("region", selfregion)
+            # print("region", self.region)
 
         if not isinstance(rectangles_sat, Iterable):
             raise Exception("Given rectangles_sat is not iterable")
@@ -56,12 +54,12 @@ class RefinedSpace:
         else:
             self.unsat = rectangles_unsat
 
-        #print("rectangles_unknown", rectangles_unknown)
+        # print("rectangles_unknown", rectangles_unknown)
         if rectangles_unknown is None:
             self.unknown = [region]
         else:
             self.unknown = rectangles_unknown
-        #print("rectangles_unknown now", self.unknown)
+        # print("rectangles_unknown now", self.unknown)
 
     def show(self, title):
         if len(self.region) == 1 or len(self.region) == 2:
@@ -72,7 +70,8 @@ class RefinedSpace:
             fig = plt.figure()
             pic = fig.add_subplot(111, aspect='equal')
             pic.set_xlabel(self.params[0])
-            ## set axis ranges
+
+            ## Set axis ranges
             if self.region[0][1] - self.region[0][0] < 0.1:
                 self.region[0] = (self.region[0][0] - 0.2, self.region[0][1] + 0.2)
             pic.axis([self.region[0][0], self.region[0][1], 0, 1])
@@ -114,7 +113,7 @@ class RefinedSpace:
     def get_green_volume(self):
         cumulative_volume = 0
 
-        ## if there is no hyperrectangle in the sat space
+        ## If there is no hyperrectangle in the sat space
         if not self.sat:
             return 0.0
 
@@ -125,7 +124,7 @@ class RefinedSpace:
     def get_red_volume(self):
         cumulative_volume = 0
 
-        ## if there is no hyperrectangle in the sat space
+        ## If there is no hyperrectangle in the unsat space
         if not self.unsat:
             return 0.0
 
@@ -213,6 +212,7 @@ class TestLoad(unittest.TestCase):
         # space.show( "max_recursion_depth:{},\n min_rec_size:{}, achieved_coverage:{}, alg{} \n It took {} {} second(s)".format(
         #        n, epsilon, self.get_coverage(), version, socket.gethostname(), round(time.time() - start_time, 1)))
 
+
         space.show(f"achieved_coverage: {space.get_coverage() * 100}%")
         self.assertEqual(round(space.get_green_volume(), 1), 0.0)
         self.assertEqual(round(space.get_red_volume(), 1), 0.0)
@@ -225,6 +225,7 @@ class TestLoad(unittest.TestCase):
         self.assertEqual(round(space.get_nonwhite_volume(), 1), 0.5)
 
         space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"], [[[0, 0.5], [0, 0.5]]], [])
+        space.sample(3)
         space.show(f"achieved_coverage: {space.get_coverage() * 100}%")
         self.assertEqual(round(space.get_green_volume(), 2), 0.25)
         self.assertEqual(round(space.get_red_volume(), 1), 0.0)

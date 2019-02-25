@@ -289,7 +289,7 @@ def check_deeper(region, prop, intervals, n, epsilon, cov, silent, version):
         globals()["que"] = Queue()
         private_check_deeper_queue_checking_both(region, prop, intervals, n, epsilon, cov, silent, None)
     if version == 5:
-        print("Using iterative methods")
+        print("Using iterative method")
         print(check_deeper_iter(region, prop, intervals, n, epsilon, cov, silent))
 
     ## Visualisation
@@ -359,9 +359,8 @@ def private_check_deeper(region, prop, intervals, n, epsilon, coverage, silent):
             return "interval too small, skipped"
 
     ## Stop if the the current coverage is above the given thresholds
-    if globals()["whole_area"] > 0:
-        if space.get_coverage() > coverage:
-            return "coverage ", space.get_coverage(), " is above the threshold"
+    if space.get_coverage() > coverage:
+        return "coverage ", space.get_coverage(), " is above the threshold"
 
     # HERE MAY ADDING THE MODEL
     if check(region, prop, intervals, silent) == "unsafe":
@@ -382,7 +381,7 @@ def private_check_deeper(region, prop, intervals, n, epsilon, coverage, silent):
         return result
     else:
         if not (
-                result == "safe" or result == "unsafe"):  # here is necessary to check only 3 of 4, since this line check 1 segment
+                result == "safe" or result == "unsafe"):  ## Here is necessary to check only 3 of 4, since this line check 1 segment
             ## Find max interval
             index, maximum = 0, 0
             for i in range(len(region)):
@@ -402,21 +401,16 @@ def private_check_deeper(region, prop, intervals, n, epsilon, coverage, silent):
             # print("white area",globals()["hyper_rectangles_white"])
             if silent:
                 private_check_deeper(foo, prop, intervals, n - 1, epsilon, coverage, silent)
-                if globals()["whole_area"] > 0:
-                    if space.get_coverage() > coverage:
-                        return "coverage ", globals()["non_white_area"] / globals()[
-                            "whole_area"], " is above the threshold"
+                if space.get_coverage() > coverage:
+                    return f"coverage {space.get_coverage()} is above the threshold"
                 private_check_deeper(foo2, prop, intervals, n - 1, epsilon, coverage, silent)
             else:
                 print(n, foo, space.get_coverage(),
                       private_check_deeper(foo, prop, intervals, n - 1, epsilon, coverage, silent))
-                if globals()["whole_area"] > 0:
-                    if space.get_coverage() > coverage:
-                        return "coverage ", globals()["non_white_area"] / globals()[
-                            "whole_area"], " is above the threshold"
+                if space.get_coverage() > coverage:
+                    return f"coverage {space.get_coverage()} is above the threshold"
                 print(n, foo2, space.get_coverage(),
                       private_check_deeper(foo2, prop, intervals, n - 1, epsilon, coverage, silent))
-
     return result
 
 
@@ -434,26 +428,29 @@ def colored(greater, smaller):
     if greater is None or smaller is None:
         return
 
-    ## if 1 dimensional coloring
+    ## If 1 dimensional coloring
     if len(smaller) == 1:
-        ## color 2 regions, to the left, to the right
-        ## to the left
+        ## Color 2 regions, to the left, to the right
+        ## To the left
         globals()["rectangles_unsat_added"].append(
             Rectangle([greater[0][0], 0], smaller[0][0] - greater[0][0], 1, fc='r'))
-        ## to the right
+        ## To the right
         globals()["rectangles_unsat_added"].append(
             Rectangle([smaller[0][1], 0], greater[0][1] - smaller[0][1], 1, fc='r'))
 
-    # else 2 dimensional coloring
+    ## Else 2 dimensional coloring
     elif len(smaller) == 2:
         ## color 4 regions, to the left, to the right, below, and above
-        ##
+        ## TBD
         globals()["rectangles_unsat_added"].append(
             Rectangle([greater[0][0], 0], smaller[0][0] - greater[0][0], 1, fc='r'))
+        ## TBD
         globals()["rectangles_unsat_added"].append(
             Rectangle([smaller[0][1], 0], greater[0][1] - smaller[0][1], 1, fc='r'))
+        ## TBD
         globals()["rectangles_unsat_added"].append(
             Rectangle([smaller[0][0], 0], smaller[0][1] - smaller[0][0], smaller[1][0], fc='r'))
+        ## TBD
         globals()["rectangles_unsat_added"].append(
             Rectangle([smaller[0][0], smaller[1][1]], smaller[0][1] - smaller[0][0], 1 - smaller[1][0], fc='r'))
     else:
@@ -489,7 +486,7 @@ def check_deeper_iter(region, props, intervals, n, epsilon, coverage, silent):
     """
     new_tresh = copy.copy(region)
 
-    # implement ordering of the props with intervals
+    ## Implement ordering of the props with intervals
     for i in range(len(props) - 1):
         if not silent:
             # print("white: ",globals()["hyper_rectangles_white"])
@@ -500,13 +497,13 @@ def check_deeper_iter(region, props, intervals, n, epsilon, coverage, silent):
         for interval_index in range(len(region)):
             minimum = 9001
             maximum = 0
-            # iterate though green regions to find min and max
+            ## Iterate though green regions to find min and max
             for rectangle_index in range(len(globals()["hyper_rectangles_sat"])):
                 if globals()["hyper_rectangles_sat"][rectangle_index][interval_index][0] < minimum:
                     minimum = globals()["hyper_rectangles_sat"][rectangle_index][interval_index][0]
                 if globals()["hyper_rectangles_sat"][rectangle_index][interval_index][1] > maximum:
                     maximum = globals()["hyper_rectangles_sat"][rectangle_index][interval_index][1]
-            # iterate though white regions to find min and max
+            ## Iterate though white regions to find min and max
             for rectangle_index in range(len(globals()["hyper_rectangles_white"])):
                 if globals()["hyper_rectangles_white"][rectangle_index][interval_index][0] < minimum:
                     minimum = globals()["hyper_rectangles_white"][rectangle_index][interval_index][0]
@@ -534,6 +531,7 @@ def private_check_deeper_queue(region, prop, intervals, n, epsilon, coverage, si
     coverage: coverage threshold to stop computation
     silent: if silent printed output is set to minimum
     """
+
     ## TBD check consitency
     # print(region,prop,intervals,n,epsilon,coverage,silent)
     # print("check equal", globals()["non_white_area"],non_white_area)
@@ -653,10 +651,9 @@ def private_check_deeper_queue_checking(region, prop, intervals, n, epsilon, cov
             return "interval too small, skipped"
 
     ## Stop if the the current coverage is above the given thresholds
-    if globals()["whole_area"] > 0:
-        if space.get_coverage() > coverage:
-            globals()["que"] = Queue()
-            return "coverage ", space.get_coverage(), " is above the threshold"
+    if space.get_coverage() > coverage:
+        globals()["que"] = Queue()
+        return "coverage ", space.get_coverage(), " is above the threshold"
 
     if model is None:
         example = check(region, prop, intervals, silent)
