@@ -10,6 +10,7 @@ from pathlib import Path
 from termcolor import colored
 
 import configparser
+
 config = configparser.ConfigParser()
 # print(os.getcwd())
 workspace = os.path.dirname(__file__)
@@ -93,7 +94,8 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
                 prism_output_file_path = os.path.join(prism_output_path, arg)
                 if not os.path.isfile(prism_output_file_path):
                     if not silent:
-                        print(f"{colored('file', 'red')} {prism_output_file_path} {colored('not found, this may cause trouble', 'red')}")
+                        print(
+                            f"{colored('file', 'red')} {prism_output_file_path} {colored('not found, this may cause trouble', 'red')}")
                 prism_args.append(os.path.join(prism_output_path, arg))
             else:
                 prism_args.append(arg)
@@ -172,7 +174,7 @@ def call_prism_files(file_prefix, multiparam, agents_quantities, seq=False, nopr
                 q = ",q=0:1"
             # print("{} prop_{}.pctl {}-param p=0:1{}".format(file,N,noprobchecks,q))
             skipped = call_prism("{} prop_{}.pctl {}-param p=0:1{}".format(file, N, noprobchecks, q), seq=seq,
-                       model_path=model_path, properties_path=properties_path, std_output_path=output_path)
+                                 model_path=model_path, properties_path=properties_path, std_output_path=output_path)
             if skipped:
                 continue
             if not seq:
@@ -217,17 +219,17 @@ if __name__ == "__main__":
     print(colored('testing simulation', 'blue'))
     call_prism(
         'synchronous_parallel_2.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '
-        'path1.txt', prism_output_path=cwd,std_output_path=None)
+        'path1.txt', prism_output_path=cwd, std_output_path=None)
 
     print(colored('test simulation change the path of the path files output', 'blue'))
     call_prism(
         'synchronous_parallel_2.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '
         'path1.txt', prism_output_path="/home/matej/Git/mpm/src/test/new", std_output_path=None)
 
-    #print(colored('testing simulation with stdout', 'blue'))
-    #file = open("path_synchronous_parallel__2_3500_0.028502714675268215_0.5057623641293089.txt", "w+")
-    #print(colored('testing not existing input file', 'blue'))
-    #call_prism(
+    # print(colored('testing simulation with stdout', 'blue'))
+    # file = open("path_synchronous_parallel__2_3500_0.028502714675268215_0.5057623641293089.txt", "w+")
+    # print(colored('testing not existing input file', 'blue'))
+    # call_prism(
     #    'fake.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '
     #    'path_synchronous_parallel__2_3500_0.028502714675268215_0.5057623641293089.txt', prism_output_path=cwd,std_output_path=None)
 

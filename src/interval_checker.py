@@ -5,7 +5,7 @@ import copy
 import time
 from matplotlib.patches import Rectangle
 from mpmath import mpi
-from numpy import linspace, newaxis
+from numpy import linspace, newaxis, zeros, nditer
 from sympy import Interval
 import unittest
 
@@ -157,33 +157,45 @@ def sample(space, props, intervals, size_q, compress=False):
     """
     sampling = {}
     parameter_values = []
-
+    parameter_indices = []
     for param in range(len(space.params)):
         parameter_values.append(linspace(space.region[param][0], space.region[param][1], size_q, endpoint=True))
+        parameter_indices.append(linspace(0, size_q-1, size_q, endpoint=True))
 
     parameter_values = cartesian_product(*parameter_values)
-    #if (len(space.params) - 1) == 0:
+    parameter_indices = cartesian_product(*parameter_indices)
+
+    # if (len(space.params) - 1) == 0:
     #    parameter_values = linspace(0, 1, size_q, endpoint=True)[newaxis, :].T
 
+    print("here")
+    print(parameter_values)
+    print(parameter_indices)
+
+    i = 0
     for parameter_value in parameter_values:
         for param in range(len(space.params)):
             globals()[space.params[param]] = parameter_value[param]
-        #print(parameter_value)
+        print("parameter_value", parameter_value)
         #print(str(parameter_value))
         #print(type(parameter_value))
-        sampling[str(parameter_value)] = []
+        print("parameter_index", str(parameter_indices[i]))
+        print()
+        sampling[str(parameter_indices[i])] = []
 
         for index in range(len(props)):
-            #print(eval(props[index]))
-            #print(intervals[index].start)
-            #print(intervals[index].end)
-            #print(mpi(float(intervals[index].start), float(intervals[index].end)))
-            sampling[str(parameter_value)].append(eval(props[index]) in mpi(float(intervals[index].start), float(intervals[index].end)))
+            # print(eval(props[index]))
+            # print(intervals[index].start)
+            # print(intervals[index].end)
+            # print(mpi(float(intervals[index].start), float(intervals[index].end)))
+            sampling[str(parameter_indices[i])].append( (str(parameter_value),
+                eval(props[index]) in mpi(float(intervals[index].start), float(intervals[index].end))))
         if compress:
-            if False in sampling[str(parameter_value)]:
-                sampling[str(parameter_value)] = False
+            if False in sampling[str(parameter_indices[i])]:
+                sampling[str(parameter_indices[i])] = str(parameter_value), False
             else:
-                sampling[str(parameter_value)] = True
+                sampling[str(parameter_indices[i])] = str(parameter_value), True
+        i = i + 1
     return sampling
 
 
@@ -369,6 +381,7 @@ def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage
     while globals()["que"].size() > 0:
         private_check_deeper_interval(*que.dequeue())
 
+
 class TestLoad(unittest.TestCase):
     def test_check_interval_single(self):
         # IS IN
@@ -432,7 +445,9 @@ class TestLoad(unittest.TestCase):
     def test_check_interval_deeper(self):
         print()
         ## check_deeper_interval(region, prop, intervals, n, epsilon, cov, silent, version)
-        check_deeper_interval([(0, 4)], ["x"], [Interval(0, 3)], 5, 0, 0.95, silent=False, version=1)
+
+        ##UNCOMENT THIS
+        # check_deeper_interval([(0, 4)], ["x"], [Interval(0, 3)], 5, 0, 0.95, silent=False, version=1)
 
         # print(globals()["rectangles_unsat"])
         # print(globals()["rectangles_sat"])
@@ -440,17 +455,21 @@ class TestLoad(unittest.TestCase):
 
     def test_sample(self):
         # print("hello")
-        print()
+        print("sample")
         print(0.0 in mpi(0, 0))
         ## def sample(space, props, intervals, size_q)
-        print(sample(RefinedSpace((0, 1), ["x"]), ["x"], [Interval(0, 1)], 3))
-        print(sample(RefinedSpace((0, 1), ["x"]), ["x"], [Interval(0, 1)], 3, compress=True))
+        # print(sample(RefinedSpace((0, 1), ["x"]), ["x"], [Interval(0, 1)], 3))
+        # print(sample(RefinedSpace((0, 1), ["x"]), ["x"], [Interval(0, 1)], 3, compress=True))
 
-        print(sample(RefinedSpace((0, 2), ["x"]), ["x"], [Interval(0, 1)], 3))
-        print(sample(RefinedSpace((0, 2), ["x"]), ["x"], [Interval(0, 1)], 3, compress=True))
+        # print(sample(RefinedSpace((0, 2), ["x"]), ["x"], [Interval(0, 1)], 3))
+        # print(sample(RefinedSpace((0, 2), ["x"]), ["x"], [Interval(0, 1)], 3, compress=True))
 
-        print(sample(RefinedSpace([(0, 1),(0,1)], ["x", "y"]), ["x+y"], [Interval(0, 1)], 3))
-        print(sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y"], [Interval(0, 1)], 3, compress=True))
+        a = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y"], [Interval(0, 1)], 3)
+        print(a)
+        # print(sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y"], [Interval(0, 1)], 3, compress=True))
+
+        #print("sample2")
+        #print(sample2(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y"], [Interval(0, 1)], 3))
 
 
 if __name__ == "__main__":
