@@ -141,6 +141,20 @@ def check_interval_out(region, props, intervals, silent=False, called=True):
     return True
 
 
+def create_matrix(size_q, dim):
+    """ Return **dim** dimensional array of length **size_q** in each dimension
+
+       Args
+       -------
+       size_q (int): number of samples in dimension
+       dim (int):number of dimensions
+
+       @author: xtrojak
+    """
+    if dim == 0:
+        return [1]
+    return [create_matrix(size_q, dim-1) for _ in range(size_q)]
+
 def sample(space, props, intervals, size_q, compress=False):
     """ Samples the space in **size_q** samples in each dimension and saves if the point is in respective interval
 
