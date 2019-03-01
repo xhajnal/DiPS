@@ -5,7 +5,7 @@ import copy
 import time
 from matplotlib.patches import Rectangle
 from mpmath import mpi
-from numpy import linspace, newaxis, zeros, nditer, asarray, ones
+from numpy import linspace, newaxis, zeros, nditer, asarray, ones, array, place, indices
 from sympy import Interval
 import unittest
 
@@ -147,13 +147,30 @@ def create_matrix(size_q, dim):
        Args
        -------
        size_q (int): number of samples in dimension
-       dim (int):number of dimensions
+       dim (int): number of dimensions
 
-       @author: xtrojak
+    """
+    return private_create_matrix(size_q, dim, dim)
+
+
+def private_create_matrix(size_q, dim, n_param):
+    """ Return **dim** dimensional array of length **size_q** in each dimension
+
+       Args
+       -------
+       size_q (int): number of samples in dimension
+       dim (int):number of dimensions
+       n_param (int): dummy parameter
+
+       @author: xtrojak, xhajnal
     """
     if dim == 0:
-        return [1]
-    return [create_matrix(size_q, dim-1) for _ in range(size_q)]
+        point = []
+        for i in range(n_param):
+            point.append(0)
+        return [point, 9]
+    return [private_create_matrix(size_q, dim-1, n_param) for _ in range(size_q)]
+
 
 def sample(space, props, intervals, size_q, compress=False):
     """ Samples the space in **size_q** samples in each dimension and saves if the point is in respective interval
@@ -169,15 +186,18 @@ def sample(space, props, intervals, size_q, compress=False):
     --------
     A map from point to list of Bool whether f(point) in interval[index]
     """
-    size = []
+
     parameter_values = []
     parameter_indices = []
     for param in range(len(space.params)):
-        size.append(size_q)
         parameter_values.append(linspace(space.region[param][0], space.region[param][1], size_q, endpoint=True))
         parameter_indices.append(asarray(range(0, size_q)))
 
-    sampling = ones(size)
+    print("sample")
+    print("size_q", size_q)
+    print("space.params", space.params)
+    sampling = array(create_matrix(size_q, len(space.params)))
+
     print("sampling", sampling)
     parameter_values = cartesian_product(*parameter_values)
     parameter_indices = cartesian_product(*parameter_indices)
@@ -187,45 +207,177 @@ def sample(space, props, intervals, size_q, compress=False):
 
     print("parameter_values", parameter_values)
     print("parameter_indices", parameter_indices)
-
+    print("a sample:", sampling[0][0])
     i = 0
+    ## For each parametrisation
     for parameter_value in parameter_values:
+        ## For each parameter
         for param in range(len(space.params)):
             globals()[space.params[param]] = parameter_value[param]
-        print("parameter_value", parameter_value)
-        #print(str(parameter_value))
-        #print(type(parameter_value))
-        print("parameter_index", parameter_indices[i])
-        print(type(parameter_indices[i]))
-        print(sampling[tuple(parameter_indices[i])])
-        #sampling[0, 0] = 9
-        #sampling[0, 0] = True
-        satisfied = True
+        ## print("parameter_value", parameter_value)
+        # print(str(parameter_value))
+        # print(type(parameter_value))
+        ## print("parameter_index", parameter_indices[i])
+        ## print(type(parameter_indices[i]))
+        ## print("sampling", sampling)
+        ## print("sampling[0][0]", sampling[0, 0])
+        #sampling[0][0] = [[0.], [True]]
+
+        ## print("sampling[0][0][0]", sampling[0][0][0])
+        ## print("sampling[0][0][0]", type(sampling[0][0][0]))
+
+        ## print("here")
+        ## print(tuple(parameter_indices[i]))
+        ## print(sampling[tuple(parameter_indices[i])])
+        # sampling[0, 0] = 9
+        # sampling[0, 0] = True
+
+        sampling[tuple(parameter_indices[i])][0] = list(parameter_value)
+
+        satisfied_list = []
+        ## For each property,interval
         for index in range(len(props)):
-            if eval(props[index]) not in mpi(float(intervals[index].start), float(intervals[index].end)):
-                satisfied = False
-            sampling[tuple(parameter_indices[i])] = satisfied
+            if eval(props[index]) in mpi(float(intervals[index].start), float(intervals[index].end)):
+                satisfied_list.append(True)
+            else:
+                satisfied_list.append(False)
+
+            ## print("cycle")
+            ## print(sampling[tuple(parameter_indices[i])])
+
+        if compress:
+            if False in satisfied_list:
+                sampling[tuple(parameter_indices[i])][1] = False
+            else:
+                sampling[tuple(parameter_indices[i])][1] = True
+        else:
+            sampling[tuple(parameter_indices[i])][1] = satisfied_list
         i = i + 1
     return sampling
 
+
 def refine_into_rectangles(sampled_space):
+    """ Refines the sampled space into hyperrectangles such that rectangle is all sat or all unsat
+
+    Args
+    -------
+    sampled_space (space.RefinedSpace): space
+
+    Yields
+    --------
+    Hyperectangles of length at least 2 (in each dimension)
+    """
+    print("\n refine into rectangles here ")
+    # print(sampled_space[:2,:2])
     print(type(sampled_space))
-    print(sampled_space.shape)
+    print("shape", sampled_space.shape)
     size_q = len(sampled_space[0])
-    print("hello")
-    print("space:", sampled_space[0])
+    print("space:", sampled_space)
     print("size_q:", size_q)
-    dimensions = len(sampled_space.shape)
+
+    print(sampled_space.shape)
+    dimensions = len(sampled_space.shape)-1
     print("dimensions:", dimensions)
-    a = []
-    for i in range(dimensions):
-        a.append(0)
+    # find_max_rectangle(sampled_space, [0, 0])
 
-    print(sampled_space[a])
-    value = sampled_space[a]
+    if dimensions == 2:
+        parameter_indices = []
+        for param in range(dimensions):
+            parameter_indices.append(asarray(range(0, size_q)))
+        parameter_indices = cartesian_product(*parameter_indices)
+
+        print(parameter_indices)
+        for point in parameter_indices:
+                # print("point", point)
+                find_max_rectangle(sampled_space, point)
+                # print(sampled_space)
+    else:
+        print(f"Sorry, {dimensions} dimensions TBD")
 
 
+def find_max_rectangle(sampled_space, starting_point, silent=True):
+    """ Finds the largest hyperrectangles such that rectangle is all sat or all unsat from starting point in positive direction
 
+    Args
+    -------
+    sampled_space (space.RefinedSpace): space
+    starting_point (list of floats): a point in the space to start search in
+
+    Returns
+    --------
+    triple(starting point, end point, is_sat)
+    """
+    dimensions = len(sampled_space.shape) - 1
+    if dimensions == 2:
+        if not silent:
+            print("dealing with 2D space")
+        index_x = starting_point[0]
+        index_y = starting_point[1]
+        length = 2
+        start_value = sampled_space[index_x][index_y][1]
+        if start_value == 2:
+            if not silent:
+                print(starting_point, "already added, skipping")
+            return
+        if index_x == dimensions or index_y == dimensions:
+            if not silent:
+                print(starting_point, "is at the border, skipping")
+            sampled_space[index_x][index_y][1] = 2
+            return
+        ## print(start_value)
+
+        stop = False
+        ## While other value is found
+        while not stop:
+            ## print(index_x+length)
+            ## print(sampled_space[index_x:index_x+length, index_y:index_y+length])
+            values = list(map(lambda x: [y[1] for y in x], sampled_space[index_x:index_x+length-1, index_y:index_y+length-1]))
+            ## print(values)
+            foo = []
+            for x in values:
+                for y in x:
+                    foo.append(y)
+            values = foo
+            ## print(values)
+            if (not start_value) in values:
+                if not silent:
+                    print("this rectangle does not satisfy")
+                length = length - 1
+                stop = True
+            elif index_x+length > dimensions or index_y+length > dimensions:
+                if not silent:
+                    print("rectangle is now out of box at the point [",index_x+length ,",", index_y+length  ,"], skipping")
+                stop = True
+            else:
+                length = length + 1
+        length = length - 1
+        if length == 1:
+            if not silent:
+                print("No rectangle found")
+            sampled_space[index_x][index_y][1] = 2
+            return
+        ## print(length-2)
+        ## print((sampled_space[index_x, index_y], sampled_space[index_x+length-2, index_y+length-2]))
+
+        # print(type(sampled_space))
+        # place(sampled_space, sampled_space==False, 2)
+        # print("new sampled_space: \n", sampled_space)
+
+        ## Mark as seen
+        # print("the space to be marked: \n", sampled_space[index_x:(index_x + length - 1), index_y:(index_y + length - 1)])
+        if not silent:
+            print("length",length)
+        print((sampled_space[index_x, index_y], sampled_space[index_x + length, index_y + length]))
+        place(sampled_space[index_x:(index_x + length), index_y:(index_y + length)],
+              sampled_space[index_x:(index_x + length), index_y:(index_y + length)] == False, 2)
+        place(sampled_space[index_x:(index_x + length), index_y:(index_y + length)],
+              sampled_space[index_x:(index_x + length), index_y:(index_y + length)] == True, 2)
+
+        ## print("new sampled_space: \n", sampled_space)
+        ## globals()["que"].enqueue([[index_x, index_x+length-2],[index_y, index_y+length-2]],start_value)
+        return (sampled_space[index_x, index_y], sampled_space[index_x+length-2, index_y+length-2], start_value)
+    else:
+        print(f"Sorry, {dimensions} dimensions TBD")
 
 
 def check_deeper_interval(region, prop, intervals, n, epsilon, cov, silent, version):
@@ -493,15 +645,30 @@ class TestLoad(unittest.TestCase):
         # print(sample(RefinedSpace((0, 2), ["x"]), ["x"], [Interval(0, 1)], 3))
         # print(sample(RefinedSpace((0, 2), ["x"]), ["x"], [Interval(0, 1)], 3, compress=True))
 
-        sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y"], [Interval(0, 1)], 3, compress=True)
+        #sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y"], [Interval(0, 1)], 3, compress=True)
 
-        a = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y"], [Interval(0, 1)], 2, compress=True)
+        #a = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y"], [Interval(0, 1)], 2, compress=True)
+        #print(a)
+        #refine_into_rectangles(a)
+
+        a = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y", "0"], [Interval(0, 1), Interval(0, 1)], 3,
+                    compress=True)
+        # a = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y", "0"], [Interval(0, 0.9), Interval(0, 1)], 3, compress=True)
+
+
+        #a = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y", "0"], [Interval(0, 1), Interval(0, 1)], 2)
+        # a = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y"], [Interval(0, 1)], 2, compress=True)
+
+        print("result")
         print(a)
-        refine_into_rectangles(a)
+
+        b = refine_into_rectangles(a)
+        # b = refine_into_rectangles(a)
+        # print(b)
 
         # a = sample(RefinedSpace([(0, 1), (0, 1), (0, 1)], ["x", "y", "z"]), ["x+y"], [Interval(0, 1)], 3, compress=True)
         # print(a)
-        # refine_into_rectangles(a)
+        # b = refine_into_rectangles(a)
 
 if __name__ == "__main__":
     unittest.main()
