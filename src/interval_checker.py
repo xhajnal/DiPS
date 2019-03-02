@@ -53,15 +53,16 @@ def check_interval_in(region, props, intervals, silent=False, called=True):
 
     Parameters
     ----------
-    region: array of pairs, low and high bound, defining the parameter space to be refined
-    props: array of functions (polynomes or general rational functions in the case of Markov Chains)
-    intervals: array of intervals to constrain properties
-    silent: if silent printed output is set to minimum
-    called: if called updates the global variables (use when calling it directly)
+    region: (list of intervals) low and high bound, defining the parameter space to be refined
+    props: (list of strings) array of functions (polynomes or general rational functions in the case of Markov Chains)
+    intervals: (list of sympy.Interval): array of intervals to constrain properties
+    silent: (Bool): if silent printed output is set to minimum
+    called: (Bool): if called updates the global variables (use when calling it directly)
     """
 
     if called:
-        print("CALLED")
+        if not silent:
+            print("CALLED")
         globals()["parameters"] = set()
         parameters = globals()["parameters"]
         for polynome in props:
@@ -100,15 +101,16 @@ def check_interval_out(region, props, intervals, silent=False, called=True):
 
     Parameters
     ----------
-    region: array of pairs, low and high bound, defining the parameter space to be refined
-    props: array of functions (polynomes or general rational functions in the case of Markov Chains)
-    intervals: array of intervals to constrain properties
-    silent: if silent printed output is set to minimum
-    called: if called updates the global variables (use when calling it directly)
+    region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
+    props: (list of strings) array of functions (polynomes or general rational functions in the case of Markov Chains)
+    intervals: (list of sympy.Interval): array of intervals to constrain properties
+    silent: (Bool): if silent printed output is set to minimum
+    called: (Bool): if called updates the global variables (use when calling it directly)
     """
 
     if called:
-        print("CALLED")
+        if not silent:
+            print("CALLED")
         globals()["parameters"] = set()
         parameters = globals()["parameters"]
         for polynome in props:
@@ -146,8 +148,8 @@ def create_matrix(size_q, dim):
 
        Args
        -------
-       size_q (int): number of samples in dimension
-       dim (int): number of dimensions
+       size_q: (int): number of samples in dimension
+       dim: (int): number of dimensions
 
     """
     return private_create_matrix(size_q, dim, dim)
@@ -158,9 +160,9 @@ def private_create_matrix(size_q, dim, n_param):
 
        Args
        -------
-       size_q (int): number of samples in dimension
-       dim (int):number of dimensions
-       n_param (int): dummy parameter
+       size_q: (int): number of samples in dimension
+       dim: (int): number of dimensions
+       n_param: (int): dummy parameter
 
        @author: xtrojak, xhajnal
     """
@@ -169,7 +171,7 @@ def private_create_matrix(size_q, dim, n_param):
         for i in range(n_param):
             point.append(0)
         return [point, 9]
-    return [private_create_matrix(size_q, dim-1, n_param) for _ in range(size_q)]
+    return [private_create_matrix(size_q, dim - 1, n_param) for _ in range(size_q)]
 
 
 def sample(space, props, intervals, size_q, compress=False, silent=True):
@@ -177,10 +179,11 @@ def sample(space, props, intervals, size_q, compress=False, silent=True):
 
     Args
     -------
-    space (space.RefinedSpace): space
-    props (list of strings): array of functions (polynomes or general rational functions in the case of Markov Chains)
-    intervals (list of sympy.Interval): array of intervals to constrain properties
-    size_q (int): number of samples in dimension
+    space: (space.RefinedSpace): space
+    props: (list of strings): array of functions (polynomes or general rational functions in the case of Markov Chains)
+    intervals: (list of sympy.Interval): array of intervals to constrain properties
+    size_q: (int): number of samples in dimension
+    silent: (Bool): if silent printed output is set to minimum
 
     Returns
     --------
@@ -221,7 +224,7 @@ def sample(space, props, intervals, size_q, compress=False, silent=True):
         ## print(type(parameter_indices[i]))
         ## print("sampling", sampling)
         ## print("sampling[0][0]", sampling[0, 0])
-        #sampling[0][0] = [[0.], [True]]
+        # sampling[0][0] = [[0.], [True]]
 
         ## print("sampling[0][0][0]", sampling[0][0][0])
         ## print("sampling[0][0][0]", type(sampling[0][0][0]))
@@ -261,7 +264,8 @@ def refine_into_rectangles(sampled_space, silent=True):
 
     Args
     -------
-    sampled_space (space.RefinedSpace): space
+    sampled_space: (space.RefinedSpace): space
+    silent: (Bool): if silent printed output is set to minimum
 
     Yields
     --------
@@ -288,10 +292,10 @@ def refine_into_rectangles(sampled_space, silent=True):
             print(parameter_indices)
         a = []
         for point in parameter_indices:
-                # print("point", point)
-                result = find_max_rectangle(sampled_space, point, silent=silent)
-                if result is not None:
-                    a.append(result)
+            # print("point", point)
+            result = find_max_rectangle(sampled_space, point, silent=silent)
+            if result is not None:
+                a.append(result)
         if not silent:
             print(a)
         return a
@@ -304,8 +308,9 @@ def find_max_rectangle(sampled_space, starting_point, silent=True):
 
     Args
     -------
-    sampled_space (space.RefinedSpace): space
-    starting_point (list of floats): a point in the space to start search in
+    sampled_space: (space.RefinedSpace): space
+    starting_point: (list of floats): a point in the space to start search in
+    silent: (Bool): if silent printed output is set to minimum
 
     Returns
     --------
@@ -319,73 +324,79 @@ def find_max_rectangle(sampled_space, starting_point, silent=True):
         length = 2
         start_value = sampled_space[index_x][index_y][1]
         if not silent:
-            print("dealing with 2D space at starting point", starting_point, "and start value", start_value)
+            print("Dealing with 2D space at starting point", starting_point, "with start value", start_value)
         if start_value == 2:
             if not silent:
                 print(starting_point, "already added, skipping")
             return
-        if index_x >= size_q-1 or index_y >= size_q-1:
+        if index_x >= size_q - 1 or index_y >= size_q - 1:
             if not silent:
                 print(starting_point, "is at the border, skipping")
             sampled_space[index_x][index_y][1] = 2
             return
-        ## print(start_value)
 
         ## While other value is found
         while True:
             ## print(index_x+length)
             ## print(sampled_space[index_x:index_x+length, index_y:index_y+length])
-            values = list(map(lambda x: [y[1] for y in x], sampled_space[index_x:index_x+length, index_y:index_y+length]))
-            ## print(values)
+            values = list(
+                map(lambda x: [y[1] for y in x], sampled_space[index_x:index_x + length, index_y:index_y + length]))
+            # print(values)
             foo = []
             for x in values:
                 for y in x:
                     foo.append(y)
             values = foo
             if not silent:
-                print(values)
+                print("Values found: ", values)
             if (not start_value) in values:
                 length = length - 1
                 if not silent:
-                    print(f"rectangle [[{index_x},{index_y}],[{index_x+length},{index_y+length}]] does not satisfy all sat not all unsat")
-                sampled_space[index_x][index_y][1] = 2
+                    print(
+                        f"rectangle [[{index_x},{index_y}],[{index_x+length},{index_y+length}]] does not satisfy all sat not all unsat")
                 break
-            elif index_x+length > size_q or index_y+length > size_q:
+            elif index_x + length > size_q or index_y + length > size_q:
                 if not silent:
-                    print(f"rectangle [[{index_x},{index_y}],[{index_x+length},{index_y+length}]] is out of box, using lower value")
-                sampled_space[index_x][index_y][1] = 2
+                    print(
+                        f"rectangle [[{index_x},{index_y}],[{index_x+length},{index_y+length}]] is out of box, using lower value")
                 length = length - 1
                 break
             else:
                 length = length + 1
-        #sampled_space[index_x][index_y][1] = 2
+
+        ## Mark as seen (only this point)
+        sampled_space[index_x][index_y][1] = 2
         length = length - 1
+
+        ## Skip if only this point safe/unsafe
         if length == 0:
             if not silent:
                 print("Only single point found, skipping")
             return
+
         ## print((sampled_space[index_x, index_y], sampled_space[index_x+length-2, index_y+length-2]))
 
         # print(type(sampled_space))
         # place(sampled_space, sampled_space==False, 2)
         # print("new sampled_space: \n", sampled_space)
 
-        ## Mark as seen
         # print("the space to be marked: \n", sampled_space[index_x:(index_x + length - 1), index_y:(index_y + length - 1)])
         if not silent:
             print("length", length)
 
-        ## old result
+        ## old result (in corner points format)
         # result = (sampled_space[index_x, index_y], sampled_space[index_x + length - 1, index_y + length - 1])
-        ## new result
+
+        ## new result (in region format)
         result = ([[sampled_space[index_x, index_y][0][0], sampled_space[index_x + length, index_y][0][0]],
                    [sampled_space[index_x, index_y][0][1], sampled_space[index_x, index_y + length][0][1]]])
-        print(f"adding rectangle [[{index_x},{index_y}],[{index_x+length},{index_y+length}]] with value [{sampled_space[index_x, index_y][0]},{sampled_space[index_x + length, index_y + length][0]}]")
+        print(
+            f"adding rectangle [[{index_x},{index_y}],[{index_x+length},{index_y+length}]] with value [{sampled_space[index_x, index_y][0]},{sampled_space[index_x + length, index_y + length][0]}]")
 
-        ## OLD setting seen
-        #place(sampled_space[index_x:(index_x + length), index_y:(index_y + length)],
+        ## OLD seen marking (seeting seen for all searched points)
+        # place(sampled_space[index_x:(index_x + length), index_y:(index_y + length)],
         #      sampled_space[index_x:(index_x + length), index_y:(index_y + length)] == False, 2)
-        #place(sampled_space[index_x:(index_x + length), index_y:(index_y + length)],
+        # place(sampled_space[index_x:(index_x + length), index_y:(index_y + length)],
         #      sampled_space[index_x:(index_x + length), index_y:(index_y + length)] == True, 2)
 
         print("new sampled_space: \n", sampled_space)
@@ -395,22 +406,23 @@ def find_max_rectangle(sampled_space, starting_point, silent=True):
         print(f"Sorry, {dimensions} dimensions TBD")
 
 
-def check_deeper_interval(region, prop, intervals, n, epsilon, cov, silent, version):
+def check_deeper_interval(region, props, intervals, n, epsilon, cov, silent, version, size_q=5):
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
     Parameters
     ----------
-    region: array of pairs, low and high bound, defining the parameter space to be refined
-    prop: array of polynomes
-    intervals: array of intervals to constrain properties
-    n : max number of recursions to do
-    epsilon: minimal size of rectangle to be checked
-    cov: coverage threshold to stop computation
-    silent: if silent printed output is set to minimum
-    version: version of the algorithm to be used
+    region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
+    props: (list of strings) array of polynomes
+    intervals: (list of sympy.Interval): array of intervals to constrain properties
+    n: (Int): max number of recursions to do
+    epsilon: (Float): minimal size of rectangle to be checked
+    cov: (Float): coverage threshold to stop computation
+    silent: (Bool): if silent printed output is set to minimum
+    version: version of the algorithm to be used {1, "presampled"}
+    size_q: (Int): number of samples in dimension used for presampling
     """
 
     globals()["parameters"] = set()
-    for polynome in prop:
+    for polynome in props:
         globals()["parameters"].update(find_param(polynome))
     globals()["parameters"] = sorted(list(globals()["parameters"]))
     parameters = globals()["parameters"]
@@ -429,47 +441,41 @@ def check_deeper_interval(region, prop, intervals, n, epsilon, cov, silent, vers
         version = "-interval"
         print("Using interval method")
         globals()["que"] = Queue()
-        private_check_deeper_interval(region, prop, intervals, n, epsilon, cov, silent)
+        private_check_deeper_interval(region, props, intervals, n, epsilon, cov, silent)
 
     ## TBD check the rest of the space
     elif version == "presampled":
         print("Using presampled interval method")
-        #globals()["space"] = RefinedSpace(copy.copy(region), parameters, [], [])
+        # globals()["space"] = RefinedSpace(copy.copy(region), parameters, [], [])
 
-        to_be_searched = sample(space, prop, intervals, 5, compress=True, silent=False)
-        #to_be_searched = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y", "0"], [Interval(0, 1), Interval(0, 1)], , compress=True, silent=False)
-        to_be_searched = refine_into_rectangles(to_be_searched, silent=False)
+        to_be_searched = sample(space, props, intervals, size_q, compress=True, silent=silent)
+        # to_be_searched = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y", "0"], [Interval(0, 1), Interval(0, 1)], , compress=True, silent=False)
+        to_be_searched = refine_into_rectangles(to_be_searched, silent=silent)
         print("to_be_searched: ", to_be_searched)
         globals()["que"] = Queue()
 
         for rectangle in to_be_searched:
             print(rectangle)
-            #print("sat", space.sat)
+            # print("sat", space.sat)
             print("unsat", space.unsat)
             space.add_white(rectangle)
-            private_check_deeper_interval(rectangle, prop, intervals, 0, epsilon, cov, silent)
-            check_interval_out(rectangle, prop, intervals, called=False)
+            private_check_deeper_interval(rectangle, props, intervals, 0, epsilon, cov, silent)
+            check_interval_out(rectangle, props, intervals, called=False)
             # check_interval_in(rectangle, prop, intervals, called=False)
-            #print("sat", space.sat)
+            # print("sat", space.sat)
             ## globals()["que"].enqueue([[(0, 0.5), (0, 0.5)], prop, intervals, 0, epsilon, cov, silent])
 
         # private_check_deeper_interval(*que.dequeue())
 
-    # print("computed with results:")
-    # print(globals()["rectangles_sat"])
-    # print(globals()["rectangles_unsat"])
-
     ## Visualisation
-    #print("sat here", space.sat)
+    # print("sat here", space.sat)
     print("unsat here", space.unsat)
     # print("sat here", globals()["space"].sat)
-    globals()["space"].show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())},"
-               f" alg{version} \n It took {socket.gethostname()} {round(time.time() - start_time)} second(s)")
+    globals()["space"].show(
+        f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())},"
+        f" alg{version} \n It took {socket.gethostname()} {round(time.time() - start_time)} second(s)")
 
-    # print("result coverage is: ", space.get_coverage())
     print("result coverage is: ", space.get_coverage())
-    # return (globals()["hyper_rectangles_sat"], globals()["hyper_rectangles_unsat"], globals()["hyper_rectangles_white"],
-    #        space.get_coverage())
     # return (space.sat, space.unsat, space.unknown, space.get_coverage())
     return space
 
@@ -479,8 +485,8 @@ def colored(greater, smaller):
 
     Parameters
     ----------
-    greater: region in which the smaller region is located
-    smaller: smaller region which is not to be colored
+    greater: (region) region in which the smaller region is located
+    smaller: (region) smaller region which is not to be colored
     """
     # rectangles_sat.append(Rectangle((low_x,low_y), width, height, fc='g'))
     # print("greater ",greater)
@@ -521,13 +527,13 @@ def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage
     """ Refining the parameter space into safe and unsafe regions
     Parameters
     ----------
-    region: array of pairs, low and high bound, defining the parameter space to be refined
-    prop: array of polynomes
-    intervals: array of intervals to constrain properties
-    n : max number of recursions to do
-    epsilon: minimal size of rectangle to be checked
-    coverage: coverage threshold to stop computation
-    silent: if silent printed output is set to minimum
+    region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
+    props: (list of strings) array of polynomes
+    intervals: (list of sympy.Interval): array of intervals to constrain properties
+    n (Int): max number of recursions to do
+    epsilon: (Float): minimal size of rectangle to be checked
+    coverage: (Float): coverage threshold to stop computation
+    silent: (Bool): if silent printed output is set to minimum
     """
 
     ## TBD check consitency
@@ -536,7 +542,7 @@ def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage
     # print("check equal", globals()["whole_area"],whole_area)
 
     space = globals()["space"]
-    #if presampled:
+    # if presampled:
     #    while globals()["que"].size() > 0:
     #        private_check_deeper_interval(*que.dequeue())
     #    return
@@ -612,120 +618,135 @@ def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage
 
 class TestLoad(unittest.TestCase):
     def test_check_interval_single(self):
-        # IS IN
-        self.assertEqual(check_interval_in([(0, 1)], ["x"], [Interval(0, 1)], silent=False), True)
-        self.assertEqual(check_interval_in([(1, 1)], ["x"], [Interval(0, 2)], silent=False), True)
-        self.assertEqual(check_interval_in([(0, 1)], ["x"], [Interval(0.5, 3)], silent=False), False)
-        self.assertEqual(check_interval_in([(0, 1)], ["x"], [Interval(2, 3)], silent=False), False)
-        self.assertEqual(check_interval_in([(1, 4)], ["x"], [Interval(2, 3)], silent=False), False)
+        print("Check (un)safe here with single properties here")
+        ## IS IN
+        self.assertEqual(check_interval_in([(0, 1)], ["x"], [Interval(0, 1)], silent=True, called=True), True)
+        self.assertEqual(check_interval_in([(1, 1)], ["x"], [Interval(0, 2)], silent=True, called=True), True)
+        self.assertEqual(check_interval_in([(0, 1)], ["x"], [Interval(0.5, 3)], silent=True, called=True), False)
+        self.assertEqual(check_interval_in([(0, 1)], ["x"], [Interval(2, 3)], silent=True, called=True), False)
+        self.assertEqual(check_interval_in([(1, 4)], ["x"], [Interval(2, 3)], silent=True, called=True), False)
 
-        self.assertEqual(check_interval_in([(0, 1), (0, 1)], ["x+y"], [Interval(0, 2)], silent=True),
-                         True)
-        self.assertEqual(check_interval_in([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], silent=True),
+        self.assertEqual(check_interval_in([(0, 1), (0, 1)], ["x+y"], [Interval(0, 2)], silent=True, called=True), True)
+        self.assertEqual(check_interval_in([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], silent=True, called=True),
                          False)
+
         ## IS OUT
-        self.assertEqual(check_interval_out([(0, 1)], ["x"], [Interval(2, 3)], silent=False), True)
-        self.assertEqual(check_interval_out([(1, 1)], ["x"], [Interval(2, 3)], silent=False), True)
-        self.assertEqual(check_interval_out([(0, 1)], ["x"], [Interval(1, 3)], silent=False), False)
-        self.assertEqual(check_interval_out([(0, 3)], ["x"], [Interval(2, 3)], silent=False), False)
-        self.assertEqual(check_interval_out([(1, 4)], ["x"], [Interval(2, 3)], silent=False), False)
+        self.assertEqual(check_interval_out([(0, 1)], ["x"], [Interval(2, 3)], silent=True, called=True), True)
+        self.assertEqual(check_interval_out([(1, 1)], ["x"], [Interval(2, 3)], silent=True, called=True), True)
+        self.assertEqual(check_interval_out([(0, 1)], ["x"], [Interval(1, 3)], silent=True, called=True), False)
+        self.assertEqual(check_interval_out([(0, 3)], ["x"], [Interval(2, 3)], silent=True, called=True), False)
+        self.assertEqual(check_interval_out([(1, 4)], ["x"], [Interval(2, 3)], silent=True, called=True), False)
 
-        self.assertEqual(check_interval_out([(0, 1), (0, 1)], ["x+y"], [Interval(0, 2)], silent=False),
+        self.assertEqual(check_interval_out([(0, 1), (0, 1)], ["x+y"], [Interval(0, 2)], silent=True, called=True),
                          False)
-        self.assertEqual(check_interval_out([(0, 1), (0, 1)], ["x+y"], [Interval(4, 5)], silent=False),
+        self.assertEqual(check_interval_out([(0, 1), (0, 1)], ["x+y"], [Interval(4, 5)], silent=True, called=True),
                          True)
 
     def test_check_interval_multiple(self):
+        print("Check (un)safe here with multiple properties here")
         ## IS IN
         self.assertEqual(
-            check_interval_in([(0, 1)], ["x", "2*x"], [Interval(0, 1), Interval(0, 2)], silent=False),
-            True)
+            check_interval_in([(0, 1)], ["x", "2*x"], [Interval(0, 1), Interval(0, 2)], silent=True, called=True), True)
         self.assertEqual(
-            check_interval_in([(0, 1)], ["x", "2*x"], [Interval(0, 1), Interval(0, 1)], silent=False),
+            check_interval_in([(0, 1)], ["x", "2*x"], [Interval(0, 1), Interval(0, 1)], silent=True, called=True),
             False)
-        ## TRICKY
-        self.assertEqual(check_interval_in([(0, 2)], ["x", "2*x"], [Interval(0, 1)], silent=False), False)
-
-        self.assertEqual(check_interval_in([(0, 1), (0, 1)], ["x", "y"], [Interval(0, 1), Interval(0, 1)], silent=False,
-                                           called=True), True)
+        ## !!!TRICKY
         self.assertEqual(
-            check_interval_in([(0, 1), (0, 2)], ["x", "y"], [Interval(0, 1), Interval(0, 1)], silent=False,
+            check_interval_in([(0, 2)], ["x", "2*x"], [Interval(0, 1)], silent=True, called=True), False)
+
+        self.assertEqual(
+            check_interval_in([(0, 1), (0, 1)], ["x", "y"], [Interval(0, 1), Interval(0, 1)], silent=True,
+                              called=True), True)
+        self.assertEqual(
+            check_interval_in([(0, 1), (0, 2)], ["x", "y"], [Interval(0, 1), Interval(0, 1)], silent=True,
                               called=True), False)
         ## IS OUT
         self.assertEqual(
-            check_interval_out([(0, 1)], ["x", "2*x"], [Interval(2, 3), Interval(3, 4)], silent=False),
+            check_interval_out([(0, 1)], ["x", "2*x"], [Interval(2, 3), Interval(3, 4)], silent=True, called=True),
             True)
         self.assertEqual(
-            check_interval_out([(0, 1)], ["x", "2*x"], [Interval(0, 1), Interval(0, 1)], silent=False),
+            check_interval_out([(0, 1)], ["x", "2*x"], [Interval(0, 1), Interval(0, 1)], silent=True, called=True),
             False)
-        ## TRICKY
-        self.assertEqual(check_interval_out([(0, 2)], ["x", "2*x"], [Interval(0, 1)], silent=False),
-                         False)
+        ## !!!TRICKY
+        self.assertEqual(
+            check_interval_out([(0, 2)], ["x", "2*x"], [Interval(0, 1)], silent=True, called=True), False)
 
         self.assertEqual(
-            check_interval_out([(0, 1), (0, 1)], ["x", "y"], [Interval(2, 3), Interval(2, 3)], silent=False,
+            check_interval_out([(0, 1), (0, 1)], ["x", "y"], [Interval(2, 3), Interval(2, 3)], silent=True,
                                called=True), True)
         self.assertEqual(
-            check_interval_out([(0, 1), (0, 2)], ["x", "y"], [Interval(0, 1), Interval(0, 1)], silent=False,
-                               called=True),
-            False)
+            check_interval_out([(0, 1), (0, 2)], ["x", "y"], [Interval(0, 1), Interval(0, 1)], silent=True,
+                               called=True), False)
 
     def test_check_interval_deeper(self):
-        print()
+        print("Refinement here")
         ## check_deeper_interval(region, prop, intervals, n, epsilon, cov, silent, version)
 
         ## UNCOMENT THIS TBA
-        #check_deeper_interval([(0, 4)], ["x"], [Interval(0, 3)], 5, 0, 0.95, silent=False, version=1)
+        # check_deeper_interval([(0, 4)], ["x"], [Interval(0, 3)], 5, 0, 0.95, silent=False, version=1)
 
+    def test_Interval(self):
+        print()
+        print("Interval here")
+        self.assertEqual(1.0 in mpi(1, 1), True)
+        self.assertEqual(1.0 in mpi(1, 2), True)
+        self.assertEqual(1.0 in mpi(0, 1), True)
+        self.assertEqual(1.0 in mpi(0, 2), True)
 
+        self.assertEqual(5.0 not in mpi(1, 1), True)
+        self.assertEqual(5.0 not in mpi(1, 2), True)
+        self.assertEqual(5.0 not in mpi(0, 1), True)
+        self.assertEqual(5.0 not in mpi(0, 2), True)
 
-        # print(globals()["rectangles_unsat"])
-        # print(globals()["rectangles_sat"])
-        # self.assertEqual(check_deeper_interval([(0, 1)], ["x"], [Interval(0, 1)], 0, 0, 0.95, silent=False, version=1), True)
+        self.assertEqual(mpi(1, 1) in mpi(1, 1), True)
+        self.assertEqual(mpi(1, 1) in mpi(1, 2), True)
+        self.assertEqual(mpi(1, 1) in mpi(0, 1), True)
+        self.assertEqual(mpi(1, 1) in mpi(0, 2), True)
+
+        self.assertEqual(mpi(1, 2) in mpi(1, 3), True)
+        self.assertEqual(mpi(1, 2) in mpi(0, 2), True)
+        self.assertEqual(mpi(1, 2) in mpi(0, 3), True)
+        self.assertEqual(mpi(1, 2) not in mpi(0, 1), True)
+        self.assertEqual(mpi(1, 2) not in mpi(2, 3), True)
+        self.assertEqual(mpi(1, 2) not in mpi(1.5, 2), True)
 
     def test_sample(self):
-        # print("hello")
-        print("sample")
-        print(0.0 in mpi(0, 0))
-        ## def sample(space, props, intervals, size_q)
+        print("Sample here")
+        ## def sample(space, props, intervals, size_q, compress)
         # print(sample(RefinedSpace((0, 1), ["x"]), ["x"], [Interval(0, 1)], 3))
         # print(sample(RefinedSpace((0, 1), ["x"]), ["x"], [Interval(0, 1)], 3, compress=True))
 
         # print(sample(RefinedSpace((0, 2), ["x"]), ["x"], [Interval(0, 1)], 3))
         # print(sample(RefinedSpace((0, 2), ["x"]), ["x"], [Interval(0, 1)], 3, compress=True))
 
-        #sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y"], [Interval(0, 1)], 3, compress=True)
+        # sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y"], [Interval(0, 1)], 3, compress=True)
 
-        #a = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y"], [Interval(0, 1)], 2, compress=True)
-        #print(a)
-        #refine_into_rectangles(a)
+        # a = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y"], [Interval(0, 1)], 2, compress=True)
+        # print(a)
+        # refine_into_rectangles(a)
 
-        #a = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y", "0"], [Interval(0, 1), Interval(0, 1)], 5,
+        # a = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y", "0"], [Interval(0, 1), Interval(0, 1)], 5,
         #            compress=True, silent=False)
         # a = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y", "0"], [Interval(0, 0.9), Interval(0, 1)], 3, compress=True)
 
-
-        #a = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y", "0"], [Interval(0, 1), Interval(0, 1)], 2)
+        # a = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y", "0"], [Interval(0, 1), Interval(0, 1)], 2)
         # a = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y"], [Interval(0, 1)], 2, compress=True)
 
-        #print("result")
-        #print(a)
+        # print(a)
+        # b = refine_into_rectangles(a, silent=False)
 
-        #b = refine_into_rectangles(a, silent=False)
-
+    def test_presampled(self):
+        print("Presampled refinement here")
         ## UNCOMENT THIS
-        #check_deeper_interval([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 12, 0, 0.95, silent=False, version=1)
-        check_deeper_interval([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 5, 0, 0.95, silent=False, version="presampled")
+        # check_deeper_interval([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 12, 0, 0.95, silent=False, version=1)
+        check_deeper_interval([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 5, 0, 0.95, silent=True, version="presampled")
 
-        #check_deeper_interval([(0, 0.5), (0, 0.5)], ["x+y"], [Interval(0, 1)], 5, 0, 0.95, silent=False, version=1)
-
-
-        # b = refine_into_rectangles(a)
-        # print(b)
+        # check_deeper_interval([(0, 0.5), (0, 0.5)], ["x+y"], [Interval(0, 1)], 5, 0, 0.95, silent=False, version=1)
 
         # a = sample(RefinedSpace([(0, 1), (0, 1), (0, 1)], ["x", "y", "z"]), ["x+y"], [Interval(0, 1)], 3, compress=True)
         # print(a)
         # b = refine_into_rectangles(a)
+
 
 if __name__ == "__main__":
     unittest.main()

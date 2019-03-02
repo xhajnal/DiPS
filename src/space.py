@@ -8,7 +8,7 @@ import unittest
 
 def get_rectangle_volume(rectangle):
     intervals = []
-    ## If there is empty
+    ## If there is empty rectangle
     if not rectangle:
         raise Exception("empty rectangle has no volume")
     for interval in rectangle:
@@ -21,10 +21,10 @@ class RefinedSpace:
 
     Args
     ------
-    region: list of intervals -- whole space
-    rectangles_sat:  list of intervals -- sat (green) space
-    rectangles_unsat:  list of intervals -- unsat (red) space
-    rectangles_unknown:  list of intervals -- unknown (white) space
+    region: (list of intervals): whole space
+    rectangles_sat: (list of intervals): sat (green) space
+    rectangles_unsat: (list of intervals): unsat (red) space
+    rectangles_unknown: (list of intervals): unknown (white) space
     """
 
     def __init__(self, region, params, rectangles_sat=[], rectangles_unsat=[], rectangles_unknown=None):
@@ -108,8 +108,10 @@ class RefinedSpace:
         self.unsat.remove(red)
 
     def remove_white(self, white):
-        self.unknown.remove(white)
-
+        try:
+            self.unknown.remove(white)
+        except:
+            print("Could not remove white area ",white)
     def get_green_volume(self):
         cumulative_volume = 0
 
@@ -182,6 +184,8 @@ class RefinedSpace:
 
 class TestLoad(unittest.TestCase):
     def test_space(self):
+        print("Test Refined space here")
+        ## def __init__(region, params, rectangles_sat=[], rectangles_unsat=[], rectangles_unknown=None):
         with self.assertRaises(Exception):
             RefinedSpace(5, )
         with self.assertRaises(Exception):
@@ -212,40 +216,39 @@ class TestLoad(unittest.TestCase):
         # space.show( "max_recursion_depth:{},\n min_rec_size:{}, achieved_coverage:{}, alg{} \n It took {} {} second(s)".format(
         #        n, epsilon, self.get_coverage(), version, socket.gethostname(), round(time.time() - start_time, 1)))
 
-
-        space.show(f"achieved_coverage: {space.get_coverage() * 100}%")
+        space.show(f"No green, \n achieved_coverage: {space.get_coverage() * 100}%")
         self.assertEqual(round(space.get_green_volume(), 1), 0.0)
         self.assertEqual(round(space.get_red_volume(), 1), 0.0)
         self.assertEqual(round(space.get_nonwhite_volume(), 1), 0.0)
 
         space.add_green([[0, 0.5]])
-        space.show(f"achieved_coverage: {space.get_coverage() * 100}%")
+        space.show(f"First half green added,\n achieved_coverage: {space.get_coverage() * 100}%")
         self.assertEqual(round(space.get_green_volume(), 1), 0.5)
         self.assertEqual(round(space.get_red_volume(), 1), 0.0)
         self.assertEqual(round(space.get_nonwhite_volume(), 1), 0.5)
 
+        ## def __init__(region, params, rectangles_sat=[], rectangles_unsat=[], rectangles_unknown=None):
         space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"], [[[0, 0.5], [0, 0.5]]], [])
-        space.sample(3)
-        space.show(f"achieved_coverage: {space.get_coverage() * 100}%")
+        space.show(f"Left bottom quarter green added,\n achieved_coverage: {space.get_coverage() * 100}%")
         self.assertEqual(round(space.get_green_volume(), 2), 0.25)
         self.assertEqual(round(space.get_red_volume(), 1), 0.0)
         self.assertEqual(round(space.get_nonwhite_volume(), 2), 0.25)
 
         space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"], [], [[[0, 0.5], [0, 0.5]]])
-        space.show(f"achieved_coverage: {space.get_coverage() * 100}%")
+        space.show(f"Left bottom quarter red added,\n achieved_coverage: {space.get_coverage() * 100}%")
         self.assertEqual(round(space.get_green_volume(), 1), 0.0)
         self.assertEqual(round(space.get_red_volume(), 2), 0.25)
         self.assertEqual(round(space.get_nonwhite_volume(), 2), 0.25)
 
         space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"], [[[0, 0.2], [0, 0.2]]], [[[0.5, 0.7], [0.1, 0.3]]])
-        space.show(f"achieved_coverage: {space.get_coverage() * 100}%")
+        space.show(f"One green and one red region added,\n achieved_coverage: {space.get_coverage() * 100}%")
         self.assertEqual(round(space.get_green_volume(), 2), 0.04)
         self.assertEqual(round(space.get_red_volume(), 2), 0.04)
         self.assertEqual(round(space.get_nonwhite_volume(), 2), 0.08)
 
         space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"], [[[0, 0.2], [0, 0.2]], [[0.4, 0.6], [0.6, 0.8]]],
                              [[[0.5, 0.7], [0.1, 0.3]], [[0.6, 0.8], [0.8, 1]]])
-        space.show(f"achieved_coverage: {space.get_coverage() * 100}%")
+        space.show(f"Two green and two red regions added,\n  achieved_coverage: {space.get_coverage() * 100}%")
         self.assertEqual(round(space.get_green_volume(), 2), 0.08)
         self.assertEqual(round(space.get_red_volume(), 2), 0.08)
         self.assertEqual(round(space.get_nonwhite_volume(), 2), 0.16)

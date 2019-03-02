@@ -21,11 +21,11 @@ if not os.path.exists(properties_path):
 
 def nCr(n, k):
     """ Return combinatorial number n take k
-    
+
     Parameters
     ----------
-    n : int
-    k : int
+    n: (int)
+    k: (int)
     """
 
     f = math.factorial
@@ -35,11 +35,11 @@ def nCr(n, k):
 def create_synchronous_model(file, N):
     """ Creates synchronous model of *N* agents to a *file* with probabilities p and q in [0,1].
     For more information see the paper.
-    
+
     Parameters
     ----------
-    file : string - filename with extension
-    N : int - agent quantity
+    file: (string) - filename with extension
+    N: (int) - agent quantity
     """
     filename = model_path / Path(file.split(".")[0] + ".pm")
     file = open(filename, "w")
@@ -58,13 +58,13 @@ def create_synchronous_model(file, N):
         coefficient = ""
     # print(first_attempt)
 
-    # start here 
+    # start here
     file.write("dtmc \n \n")
     file.write("const double p;\n")
     file.write("const double q;\n")
     file.write("\n")
 
-    # module here 
+    # module here
     file.write("module bees_" + str(N) + "\n")
     file.write("       // ai - state of agent i:  -1:init 0:total_failure 1:success 2:failure_after_first_attempt\n")
     for i in range(N):
@@ -72,7 +72,7 @@ def create_synchronous_model(file, N):
     file.write("       b : [0..1] init 0; \n")
     file.write("\n")
 
-    # transitions here 
+    # transitions here
     # initial transition
     file.write("       //  initial transition\n")
     file.write("       []   a0 = -1")
@@ -159,7 +159,7 @@ def create_synchronous_model(file, N):
 
     file.write("\n")
 
-    # rewards here 
+    # rewards here
     file.write('rewards "coin_flips" \n')
     for i in range(N + 1):
         file.write("       a0 = " + str(0 if i == 0 else 1))
@@ -173,11 +173,11 @@ def create_synchronous_model(file, N):
 
 def create_semisynchronous_model(file, N):
     """ Creates semisynchronous model of *N* agents to a *file* with probabilities p and q in [0,1]. For more information see paper.
-    
+
     Parameters
     ----------
-    file : string - filename with extesion
-    N : int - agent quantity
+    file: (string) - filename with extesion
+    N: (int) - agent quantity
     """
     filename = model_path / Path(file.split(".")[0] + ".pm")
     file = open(filename, "w")
@@ -196,13 +196,13 @@ def create_semisynchronous_model(file, N):
         coefficient = ""
     # print(first_attempt)
 
-    # start here 
+    # start here
     file.write("dtmc \n \n")
     file.write("const double p;\n")
     file.write("const double q;\n")
     file.write("\n")
 
-    # module here 
+    # module here
     file.write("module bees_" + str(N) + "\n")
     file.write("       // ai - state of agent i:  -1:init 0:total_failure 1:succes 2:failure_after_first_attempt\n")
     for i in range(N):
@@ -210,7 +210,7 @@ def create_semisynchronous_model(file, N):
     file.write("       b : [0..1] init 0; \n")
     file.write("\n")
 
-    # transitions here 
+    # transitions here
     # initial transition
     file.write("       //  initial transition\n")
     file.write("       []   a0 = -1")
@@ -316,7 +316,7 @@ def create_semisynchronous_model(file, N):
 
     file.write("\n")
 
-    # rewards here 
+    # rewards here
     file.write('rewards "coin_flips" \n')
     for i in range(N + 1):
         file.write("       a0 = " + str(0 if i == 0 else 1))
@@ -330,32 +330,32 @@ def create_semisynchronous_model(file, N):
 
 def create_asynchronous_model(file, N):
     """ Creates asynchronous model of *N* agents to a *file* with probabilities p and q in [0,1]. For more information see paper.
-    
+
     Parameters
     ----------
-    file : string - filename with extension
-    N : int - agent quantity
-    
-    
+    file: (string) - filename with extension
+    N: (int) - agent quantity
+
+
     Model meaning
     ----------
     Params:
-    N - number of agents (agents quantity)
-    p - probability to succeed in the first attempt
-    q - probability to succeed when getting help
+    N: (int) - number of agents (agents quantity)
+    p: (float) - probability to succeed in the first attempt
+    q: (float) - probability to succeed in the first attempt
     ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
     """
     filename = model_path / Path(file.split(".")[0] + ".pm")
     file = open(filename, "w")
     print(filename)
 
-    # start here 
+    # start here
     file.write("dtmc \n \n")
     file.write("const double p;\n")
     file.write("const double q;\n")
     file.write("\n")
 
-    # module here 
+    # module here
     file.write("module bees_" + str(N) + "\n")
     file.write("       // ai - state of agent i:  -1:init 0:total_failure 1:success 2:failure_after_first_attempt\n")
     for i in range(N):
@@ -363,7 +363,7 @@ def create_asynchronous_model(file, N):
     file.write("       b : [0..1] init 0; \n")
     file.write("\n")
 
-    # transitions here 
+    # transitions here
     # initial transition
     file.write("       //  initial transitions\n")
 
@@ -580,7 +580,7 @@ def create_asynchronous_model(file, N):
 
     file.write("\n")
 
-    # rewards here 
+    # rewards here
     file.write('rewards "coin_flips" \n')
     for i in range(N + 1):
         file.write("       a0 = " + str(0 if i == 0 else 1))
@@ -595,11 +595,11 @@ def create_asynchronous_model(file, N):
 def create_multiparam_synchronous_model(file, N):
     """ Creates synchronous model of *N* agents to a *file* with probabilities p and q in [0,1].
     For more information see coefficient.
-    
+
     Parameters
     ----------
-    file : string - filename with extesion
-    N : int - agent quantity
+    file: (string) - filename with extesion
+    N: (int) - agent quantity
     """
     filename = model_path / Path(file.split(".")[0] + ".pm")
     file = open(filename, "w")
@@ -618,7 +618,7 @@ def create_multiparam_synchronous_model(file, N):
         coefficient = ""
     # print(first_attempt)
 
-    # start here 
+    # start here
     file.write("dtmc \n \n")
     file.write("const double p;\n")
 
@@ -626,7 +626,7 @@ def create_multiparam_synchronous_model(file, N):
         file.write("const double q" + str(i) + ";\n")
     file.write("\n")
 
-    # module here 
+    # module here
     file.write("module bees_" + str(N) + "\n")
     file.write("       // ai - state of agent i:  -1:init 0:total_failure 1:succes 2:failure_after_first_attempt\n")
     for i in range(N):
@@ -634,7 +634,7 @@ def create_multiparam_synchronous_model(file, N):
     file.write("       b : [0..1] init 0; \n")
     file.write("\n")
 
-    # transitions here 
+    # transitions here
     # initial transition
     file.write("       //  initial transition\n")
     file.write("       []   a0 = -1")
@@ -720,7 +720,7 @@ def create_multiparam_synchronous_model(file, N):
 
     file.write("\n")
 
-    # rewards here 
+    # rewards here
     file.write('rewards "coin_flips" \n')
     for i in range(N + 1):
         file.write("       a0 = " + str(0 if i == 0 else 1))
@@ -735,11 +735,11 @@ def create_multiparam_synchronous_model(file, N):
 def create_multiparam_semisynchronous_model(file, N):
     """ Creates semisynchronous model of *N* agents to a *file* with probabilities p and multiple q-s in [0,1].
     For more information see paper.
-    
+
     Parameters
     ----------
-    file : string - filename with extension
-    N : int - agent quantity
+    file: (string) - filename with extension
+    N: (int) - agent quantity
     """
     filename = model_path / Path(file.split(".")[0] + ".pm")
     file = open(filename, "w")
@@ -758,7 +758,7 @@ def create_multiparam_semisynchronous_model(file, N):
         coefficient = ""
     # print(first_attempt)
 
-    # start here 
+    # start here
     file.write("dtmc \n \n")
     file.write("const double p;\n")
 
@@ -766,7 +766,7 @@ def create_multiparam_semisynchronous_model(file, N):
         file.write("const double q" + str(i) + ";\n")
     file.write("\n")
 
-    # module here 
+    # module here
     file.write("module multiparam_bees_" + str(N) + "\n")
     file.write("       // ai - state of agent i:  -1:init 0:total_failure 1:success 2:failure_after_first_attempt\n")
     for i in range(N):
@@ -774,7 +774,7 @@ def create_multiparam_semisynchronous_model(file, N):
     file.write("       b : [0..1] init 0; \n")
     file.write("\n")
 
-    # transitions here 
+    # transitions here
     # initial transition
     file.write("       //  initial transition\n")
     file.write("       []   a0 = -1")
@@ -897,11 +897,11 @@ def create_multiparam_semisynchronous_model(file, N):
 def create_multiparam_asynchronous_model(file, N):
     """ Creates semisynchronous model of *N* agents to a *file* with probabilities p and multiple q-s in [0,1].
     For more information see paper.
-    
+
     Parameters
     ----------
-    file : string - filename with extension
-    N : int - agent quantity
+    file: (string) - filename with extension
+    N: (int) - agent quantity
     """
     filename = model_path / Path(file.split(".")[0] + ".pm")
     file = open(filename, "w")
@@ -920,7 +920,7 @@ def create_multiparam_asynchronous_model(file, N):
         coefficient = ""
     # print(first_attempt)
 
-    # start here 
+    # start here
     file.write("dtmc \n \n")
     file.write("const double p;\n")
 
@@ -928,7 +928,7 @@ def create_multiparam_asynchronous_model(file, N):
         file.write("const double q" + str(i) + ";\n")
     file.write("\n")
 
-    # module here 
+    # module here
     file.write("module multiparam_bees_" + str(N) + "\n")
     file.write("       // ai - state of agent i:  -1:init 0:total_failure 1:success 2:failure_after_first_attempt\n")
     for i in range(N):
@@ -936,7 +936,7 @@ def create_multiparam_asynchronous_model(file, N):
     file.write("       b : [0..1] init 0; \n")
     file.write("\n")
 
-    # transitions here 
+    # transitions here
     # initial transition
     file.write("       //  initial transitions\n")
 
@@ -1167,10 +1167,10 @@ def create_multiparam_asynchronous_model(file, N):
 def create_properties(N):
     """ Creates property file of reaching each BSCC of the model of *N* agents as prop_<N>.pctl file.
     For more information see paper.
-    
+
     Parameters
     ----------
-    N : int - agent quantity
+    N: (int) - agent quantity
     """
 
     filename = properties_path / Path("prop_" + str(N) + ".pctl")

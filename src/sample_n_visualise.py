@@ -26,10 +26,10 @@ def cartesian_product(*arrays):
 def eval_and_show(fun_list, parameter_value):
     """ Creates bar plot of probabilities of i successes for given parametrisation
 
-    Parameters
+    Args
     ----------
-    fun_list : list of polynomes
-    parameter_value: array of param values 
+    fun_list: (list of strings) list of polynomes
+    parameter_value: (list of floats) array of param values
     """
     for polynome in fun_list:
         parameters = set()
@@ -61,11 +61,11 @@ def eval_and_show(fun_list, parameter_value):
 def sample(dic_fun, agents_quantities, size_q):
     """ Returns probabilities of i successes for sampled parametrisations
 
-    Parameters
+    Args
     ----------
-    dic_fun : dictionary N -> list of polynomes
-    size_q : sample size in each parameter
-    agents_quantities: pop sizes to be used
+    dic_fun: (dictionary N -> list of polynomes)
+    size_q: (int) sample size in each parameter
+    agents_quantities: (int) pop sizes to be used
 
     Returns
     ----------
@@ -106,11 +106,11 @@ def sample(dic_fun, agents_quantities, size_q):
 def visualise(dic_fun, agents_quantities, size_q):
     """ Creates bar plot of probabilities of i successes for sampled parametrisation
 
-    Parameters
+    Args
     ----------
-    dic_fun : dictionary N -> list of polynomes
-    size_q : sample size in each parameter
-    agents_quantities: pop sizes to be used
+    dic_fun: (dictionary N -> list of polynomes)
+    size_q: (int) sample size in each parameter
+    agents_quantities: (int) pop sizes to be used
     """
     for N in agents_quantities:
         parameters = set()
@@ -155,10 +155,10 @@ def visualise(dic_fun, agents_quantities, size_q):
 def visualise_byparam(hyper_rectangles):
     """
     Visualise intervals of each dimension in plot.
-    
-    Parameters
+
+    Args
     ----------
-    hyper_rectangles : list of hyperrectangles
+    hyper_rectangles: list of hyperrectangles
     """
     from sympy import Interval
 
@@ -170,8 +170,8 @@ def visualise_byparam(hyper_rectangles):
             intervals.append([])
             for j in range(len(hyper_rectangles)):
                 # print(hyper_rectangles_sat[j][i])
-                intervals[i].append(Interval(hyper_rectangles[j][i][0],hyper_rectangles[j][i][1]))
-                if len(intervals[i])==2:
+                intervals[i].append(Interval(hyper_rectangles[j][i][0], hyper_rectangles[j][i][1]))
+                if len(intervals[i]) == 2:
                     intervals[i] = [intervals[i][0].union(intervals[i][1])]
                 lines.append([(i + 1, hyper_rectangles[j][i][0]), (i + 1, hyper_rectangles[j][i][1])])
                 # print([(i+1, hyper_rectangles_sat[j][i][0]), (i+1, hyper_rectangles_sat[j][i][1])])
@@ -196,11 +196,11 @@ def visualise_byparam(hyper_rectangles):
 def heatmap(fun, region, sampling_sizes):
     """ Creates 2D heatmap plot of sampled points of given function
 
-    Parameters
+    Args
     ----------
-    fun : dictionary N -> list of polynomes
-    region: boundaries of parameter space to be sampled
-    sampling_sizes : tuple of sample size of respective parameter
+    fun: dictionary N -> list of polynomes
+    region: (list of intervals) boundaries of parameter space to be sampled
+    sampling_sizes: (int) tuple of sample size of respective parameter
 
     Example
     ----------
@@ -241,11 +241,11 @@ def heatmap(fun, region, sampling_sizes):
 def visualise_sampled_byparam(hyper_rectangles, sample_size):
     """
     Visualise sampled hyperspace by connecting the values in each dimension.
-    
-    Parameters
+
+    Args
     ----------
-    hyper_rectangles : list of hyperrectangles
-    sample_size: int of nuumber of points to be sampled
+    hyper_rectangles: list of hyperrectangles
+    sample_size: (int) of nuumber of points to be sampled
     """
     if hyper_rectangles:
         fig, ax = plt.subplots()
@@ -280,11 +280,11 @@ def visualise_sampled_byparam(hyper_rectangles, sample_size):
 def visualise_sampled_byparam(hyper_rectangles, sample_size):
     """
     Visualise sampled hyperspace by connecting the values in each dimension.
-    
-    Parameters
+
+    Args
     ----------
-    hyper_rectangles : list of hyperrectangles
-    sample_size: int -- number of points to be sampled
+    hyper_rectangles: list of hyperrectangles
+    sample_size: (int) -- number of points to be sampled
     """
     if hyper_rectangles:
         fig, ax = plt.subplots()

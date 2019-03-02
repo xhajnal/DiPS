@@ -36,12 +36,12 @@ def create_data_informed_properties(N, data, alpha, n_samples, multiparam, seq):
     
     Parameters
     ----------
-    N: int number of agents  
+    N: (int) number of agents
     data: map of data    
-    alpha : confidence interval to compute margin
-    n_samples : number of samples to compute margin
-    multiparam: if True multiparam model is used
-    seq: if seq the property will be written for sequential usage
+    alpha: (float) confidence interval to compute margin
+    n_samples: (int) number of samples to compute margin
+    multiparam: (Bool) if True multiparam model is used
+    seq: (Bool) if seq the property will be written for sequential usage
     """
 
     if multiparam:
@@ -91,12 +91,13 @@ def call_data_informed_prism(N, parameters, data, alpha, n_samples, multiparam, 
     
     Parameters
     ----------
-    N: int number of agents  
+    N: (int) number of agents
     data: map of data    
-    alpha : confidence interval to compute margin
-    n_samples : number of samples to compute margin
-    multiparam: if True multiparam model is used
-    parameters: set of parameters
+    alpha: (float) confidence interval to compute margin
+    n_samples: (int) number of samples to compute margin
+    multiparam: (Bool) if True multiparam model is used
+    parameters: (string)  set of parameters
+    seq: (Bool) if seq the property will be written for sequential usage
     """
 
     if multiparam:
@@ -160,11 +161,11 @@ def call_storm(N, parameters, data, alpha, n_samples, multiparam):
     
     Parameters
     ----------
-    N: int number of agents  
+    N: (int) number of agents
     data: map of data    
-    alpha : confidence interval to compute margin
-    n_samples : number of samples to compute margin
-    multiparam: if True multiparam model is used
+    alpha: (float) confidence interval to compute margin
+    n_samples: (int) number of samples to compute margin
+    multiparam: (Bool) if True multiparam model is used
     """
 
     storm_models = model_folder.replace("\\\\", "/").replace("\\", "/").split("/")[-1]

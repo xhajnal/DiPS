@@ -46,16 +46,16 @@ if "prism" not in os.environ["PATH"]:
 def call_prism(args, seq=False, silent=False, model_path=model_path, properties_path=properties_path,
                prism_output_path=prism_results, std_output_path=prism_results):
     """  Solves problem of calling prism from another directory.
-    
+
     Parameters
     ----------
     args: string for executing prism
-    seq: if true it will take properties by one and append results (necessary if out of the memory)
-    silent: if silent the output si set to minimum
-    model_path: path to load  models from
-    properties_path: path to load properties from
-    std_output_path: path to save the results of the command
-    prism_output_path: path to save the files inside the command
+    seq: (Bool) if true it will take properties by one and append results (necessary if out of the memory)
+    silent: (Bool) if silent the output si set to minimum
+    model_path: (string) path to load  models from
+    properties_path: (string) path to load properties from
+    std_output_path: (string) path to save the results of the command
+    prism_output_path: (string) path to save the files inside the command
     """
     if std_output_path is not None:
         output_file_path = Path(args.split()[0]).stem
@@ -147,13 +147,13 @@ def call_prism_files(file_prefix, multiparam, agents_quantities, seq=False, nopr
     Parameters
     ----------
     file_prefix: file prefix to be matched
-    multiparam: true if multiparam models are to be used
-    agents_quantities: pop_sizes to be used
-    seq: if true it will take properties by one and append results (necessary if out of the memory)
-    noprobchecks: True if no noprobchecks option is to be used for prism
-    model_path: path to load  models from
-    properties_path: path to load properties from
-    output_path: path for the output
+    multiparam: (Bool) true if multiparam models are to be used
+    agents_quantities: (int) pop_sizes to be used
+    seq: (Bool) if true it will take properties by one and append results (necessary if out of the memory)
+    noprobchecks: (Bool) True if no noprobchecks option is to be used for prism
+    model_path: (string) path to load  models from
+    properties_path: (string) path to load properties from
+    output_path: (string) path for the output
     """
     # os.chdir(config.get("paths","cwd"))
     if noprobchecks:

@@ -34,9 +34,9 @@ def load_all_prism(path, factorize=True, rewards_only=False, f_only=False):
     
     Parameters
     ----------
-    path: string - file name regex
-    factorize: if true it will factorise polynomial results 
-    rewards_only: if true it compute only rewards
+    path: (string) - file name regex
+    factorize: (Bool) if true it will factorise polynomial results
+    rewards_only: (Bool) if true it compute only rewards
     f_only: if true it will compute only standard properties
     
     Returns
@@ -126,11 +126,11 @@ def load_all_data(path):
     
     Parameters
     ----------
-    path: string - file name regex
+    path: (string) - file name regex
     
     Returns
     ----------
-        D: dictionary N -> list of probabilities for respective property
+    D: dictionary N -> list of probabilities for respective property
     """
     cwd = os.getcwd()
     if not Path(path).is_absolute():
@@ -176,7 +176,7 @@ def load_pickled_data(file):
     
     Parameters
     ----------
-    file: filename of the data to be loaded
+    file: (string) filename of the data to be loaded
     
     """
     return pickle.load(open(os.path.join(data_path, file + ".p"), "rb"))
@@ -187,9 +187,9 @@ def catch_data_error(data, minimum, maximum):
     
     Parameters
     ----------
-    data: map structure of data
-    minimum: minimal value in data to be set to
-    maximum: maximal value in data to be set to
+    data: (dictionary) structure of data
+    minimum: (float) minimal value in data to be set to
+    maximum: (float) maximal value in data to be set to
     
     """
     for n in data.keys():
@@ -205,9 +205,9 @@ def create_intervals(alpha, n_samples, data):
 
     Parameters
     ----------
-    alpha : confidence interval to compute margin
-    n_samples : number of samples to compute margin 
-    data: list of numbers, values to margined
+    alpha: (float) confidence interval to compute margin
+    n_samples: (int) number of samples to compute margin
+    data: (list of floats), values to be margined
     """
     foo = []
     if not isinstance(data, Iterable):
@@ -222,9 +222,9 @@ def create_interval(alpha, n_samples, data_point):
 
     Parameters
     ----------
-    alpha : confidence interval to compute margin
-    n_samples : number of samples to compute margin 
-    data_point: number, the value to margined
+    alpha: (float) confidence interval to compute margin
+    n_samples: (int) number of samples to compute margin
+    data_point: (float), the value to be margined
     """
     change = margin(alpha, n_samples, data_point)
     return Interval(data_point - change, data_point + change)
@@ -236,9 +236,9 @@ def margin(alpha, n_samples, data_point):
 
     Parameters
     ----------
-    alpha : confidence interval to compute margin
-    n_samples : number of samples to compute margin 
-    data_point: number, the value to margined
+    alpha: (float) confidence interval to compute margin
+    n_samples: (int) number of samples to compute margin
+    data_point: (float), the value to be margined
     """
     return st.norm.ppf(1 - (1 - alpha) / 2) * math.sqrt(data_point * (1 - data_point) / n_samples) + 0.5 / n_samples
 
@@ -249,9 +249,9 @@ def margin_experimental(alpha, n_samples, data_point):
 
     Parameters
     ----------
-    alpha : confidence interval to compute margin
-    n_samples : number of samples to compute margin 
-    data_point: number, the value to margined
+    alpha: (float) confidence interval to compute margin
+    n_samples: (int) number of samples to compute margin
+    data_point: (float), the value to be margined
     """
     return st.norm.ppf(1 - (1 - alpha) / 2) * math.sqrt(
         data_point * (1 - data_point) / n_samples) + 0.5 / n_samples + 0.005

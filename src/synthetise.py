@@ -96,19 +96,19 @@ class Queue:
         return self.queue
 
 
-def check(region, prop, intervals, silent=False, called=False):
+def check(region, props, intervals, silent=False, called=False):
     """ Check if the given region is unsafe or not.
 
     It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given
     **interval** (called a model in SMT), otherwise it is unsafe.
 
-    Parameters
+    Args
     ----------
-    region: array of pairs, low and high bound, defining the parameter space to be refined
-    prop: array of functions (polynomes or general rational functions in the case of Markov Chains)
-    intervals: array of intervals to constrain properties
-    silent: if silent printed output is set to minimum
-    called: if called updates the global variables (use when calling it directly)
+    region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
+    props:  (list of strings): array of functions (polynomes or general rational functions in the case of Markov Chains)
+    intervals: (list of sympy.Interval): array of intervals to constrain properties
+    silent: (Bool): if silent printed output is set to minimum
+    called: (Bool): if called updates the global variables (use when calling it directly)
     """
     ## Initialisation
     if not silent:
@@ -121,7 +121,7 @@ def check(region, prop, intervals, silent=False, called=False):
     if called:
         globals()["parameters"] = set()
         parameters = globals()["parameters"]
-        for polynome in prop:
+        for polynome in props:
             parameters.update(find_param(polynome))
         parameters = sorted(list(parameters))
         ## EXAMPLE:  parameters >> ['p','q']
@@ -143,7 +143,7 @@ def check(region, prop, intervals, silent=False, called=False):
         j = j + 1
 
     ## Adding property in the interval restrictions to solver
-    for i in range(0, len(prop)):
+    for i in range(0, len(props)):
         # if intervals[i]<100/n_samples:
         #    continue
 
@@ -151,7 +151,7 @@ def check(region, prop, intervals, silent=False, called=False):
         # if  intervals[i]<0.01:
         #    continue
 
-        s.add(eval(prop[i]) > intervals[i].start, eval(prop[i]) < intervals[i].end)
+        s.add(eval(props[i]) > intervals[i].start, eval(props[i]) < intervals[i].end)
         # print(prop[i],intervals[i])
 
     if s.check() == sat:
@@ -161,19 +161,19 @@ def check(region, prop, intervals, silent=False, called=False):
         return ("unsafe")
 
 
-def check_safe(region, prop, intervals, silent=False, called=False):
+def check_safe(region, props, intervals, silent=False, called=False):
     """ Check if the given region is safe or not
 
     It means whether for all parametrisations in **region** every property(prop) is evaluated within the given
     **interval**, otherwise it is not safe and counterexample is returned.
 
-    Parameters
+    Args
     ----------
-    region: array of pairs, low and high bound, defining the parameter space to be refined
-    prop: array of functions (polynomes or general rational functions in the case of Markov Chains)
-    intervals: array of intervals to constrain properties
-    silent: if silent printed output is set to minimum
-    called: if called updates the global variables (use when calling it directly)
+    region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
+    props:  (list of strings): array of functions (polynomes or general rational functions in the case of Markov Chains)
+    intervals: (list of sympy.Interval): array of intervals to constrain properties
+    silent: (Bool): if silent printed output is set to minimum
+    called: (Bool): if called updates the global variables (use when calling it directly)
     """
     # initialisation
     if not silent:
@@ -182,7 +182,7 @@ def check_safe(region, prop, intervals, silent=False, called=False):
     if called:
         globals()["parameters"] = set()
         parameters = globals()["parameters"]
-        for polynome in prop:
+        for polynome in props:
             parameters.update(find_param(polynome))
         parameters = sorted(list(parameters))
         ## EXAMPLE:  parameters >> ['p','q']
@@ -206,7 +206,7 @@ def check_safe(region, prop, intervals, silent=False, called=False):
 
     ## Adding property in the interval restrictions to solver
 
-    formula = Or(Not(eval(prop[0]) > intervals[0].start), Not(eval(prop[0]) < intervals[0].end))
+    formula = Or(Not(eval(props[0]) > intervals[0].start), Not(eval(props[0]) < intervals[0].end))
 
     ## ALTERNATIVE HEURISTIC APPROACH COMMENTED HERE
     # if intervals[0]<0.01:
@@ -214,14 +214,14 @@ def check_safe(region, prop, intervals, silent=False, called=False):
     # else:
     #    formula = False
 
-    for i in range(1, len(prop)):
+    for i in range(1, len(props)):
         # if intervals[i]<100/n_samples:
         #    continue
 
         ## ALTERNATIVE HEURISTIC APPROACH COMMENTED HERE
         # if  intervals[i]<0.01:
         #    continue
-        formula = Or(formula, Or(Not(eval(prop[i]) > intervals[i].start), Not(eval(prop[i]) < intervals[i].end)))
+        formula = Or(formula, Or(Not(eval(props[i]) > intervals[i].start), Not(eval(props[i]) < intervals[i].end)))
     s.add(formula)
     # print(s.check())
     # return s.check()
@@ -232,23 +232,23 @@ def check_safe(region, prop, intervals, silent=False, called=False):
         return s.model()
 
 
-def check_deeper(region, prop, intervals, n, epsilon, cov, silent, version):
+def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version):
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
-    Parameters
+    Args
     ----------
-    region: array of pairs, low and high bound, defining the parameter space to be refined
-    prop: array of polynomes
-    intervals: array of intervals to constrain properties
-    n : max number of recursions to do
-    epsilon: minimal size of rectangle to be checked
-    cov: coverage threshold to stop computation
-    silent: if silent printed output is set to minimum
-    version: version of the algorithm to be used
+    region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
+    props:  (list of strings): array of polynomes
+    intervals: (list of sympy.Interval): array of intervals to constrain properties
+    n: (Int): max number of recursions to do
+    epsilon: (Float): minimal size of rectangle to be checked
+    coverage: (Float): coverage threshold to stop computation
+    silent: (Bool): if silent printed output is set to minimum
+    version: (Bool): version of the algorithm to be used
     """
     ## Initialisation
     ## Params
     globals()["parameters"] = set()
-    for polynome in prop:
+    for polynome in props:
         globals()["parameters"].update(find_param(polynome))
     globals()["parameters"] = sorted(list(globals()["parameters"]))
     parameters = globals()["parameters"]
@@ -275,22 +275,22 @@ def check_deeper(region, prop, intervals, n, epsilon, cov, silent, version):
 
     if version == 1:
         print("Using DFS method")
-        private_check_deeper(region, prop, intervals, n, epsilon, cov, silent)
+        private_check_deeper(region, props, intervals, n, epsilon, coverage, silent)
     if version == 2:
         print("Using BFS method")
         globals()["que"] = Queue()
-        private_check_deeper_queue(region, prop, intervals, n, epsilon, cov, silent)
+        private_check_deeper_queue(region, props, intervals, n, epsilon, coverage, silent)
     if version == 3:
         print("Using BFS method with passing examples")
         globals()["que"] = Queue()
-        private_check_deeper_queue_checking(region, prop, intervals, n, epsilon, cov, silent, None)
+        private_check_deeper_queue_checking(region, props, intervals, n, epsilon, coverage, silent, None)
     if version == 4:
         print("Using BFS method with passing examples and counterexamples")
         globals()["que"] = Queue()
-        private_check_deeper_queue_checking_both(region, prop, intervals, n, epsilon, cov, silent, None)
+        private_check_deeper_queue_checking_both(region, props, intervals, n, epsilon, coverage, silent, None)
     if version == 5:
         print("Using iterative method")
-        print(check_deeper_iter(region, prop, intervals, n, epsilon, cov, silent))
+        print(check_deeper_iter(region, props, intervals, n, epsilon, coverage, silent))
 
     ## Visualisation
     space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time.time() - start_time)} second(s)")
@@ -298,17 +298,17 @@ def check_deeper(region, prop, intervals, n, epsilon, cov, silent, version):
     return space
 
 
-def private_check_deeper_sampling(region, prop, intervals, n, epsilon, coverage, silent):
+def private_check_deeper_sampling(region, props, intervals, n, epsilon, coverage, silent):
     """ Refining the parameter space into safe and unsafe regions
-    Parameters
+    Args
     ----------
-    region: array of pairs, low and high bound, defining the parameter space to be refined
-    prop: array of polynomes
-    intervals: array of intervals to constrain properties
-    n : max number of recursions to do
-    epsilon: minimal size of rectangle to be checked
-    coverage: coverage threshold to stop computation
-    silent: if silent print
+    region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
+    props:  (list of strings): array of polynomes
+    intervals: (list of sympy.Interval): array of intervals to constrain properties
+    n: (Int): max number of recursions to do
+    epsilon: (Float): minimal size of rectangle to be checked
+    coverage: (Float): coverage threshold to stop computation
+    silent: (Bool): if silent print
     """
 
     import numpy as np
@@ -323,17 +323,17 @@ def private_check_deeper_sampling(region, prop, intervals, n, epsilon, coverage,
             globals()[parameters[interval]] = value
 
 
-def private_check_deeper(region, prop, intervals, n, epsilon, coverage, silent):
+def private_check_deeper(region, props, intervals, n, epsilon, coverage, silent):
     """ Refining the parameter space into safe and unsafe regions
-    Parameters
+    Args
     ----------
-    region: array of pairs, low and high bound, defining the parameter space to be refined
-    prop: array of polynomes
-    intervals: array of intervals to constrain properties
-    n : max number of recursions to do
-    epsilon: minimal size of rectangle to be checked
-    coverage: coverage threshold to stop computation
-    silent: if silent printed output is set to minimum
+    region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
+    props: (list of strings): array of polynomes
+    intervals: (list of sympy.Interval): array of intervals to constrain properties
+    n: (Int): max number of recursions to do
+    epsilon: (Float): minimal size of rectangle to be checked
+    coverage: (Float): coverage threshold to stop computation
+    silent: (Bool): if silent printed output is set to minimum
     """
 
     ## TBD check consitency
@@ -363,9 +363,9 @@ def private_check_deeper(region, prop, intervals, n, epsilon, coverage, silent):
         return "coverage ", space.get_coverage(), " is above the threshold"
 
     # HERE MAY ADDING THE MODEL
-    if check(region, prop, intervals, silent) == "unsafe":
+    if check(region, props, intervals, silent) == "unsafe":
         result = "unsafe"
-    elif check_safe(region, prop, intervals, silent) == "safe":
+    elif check_safe(region, props, intervals, silent) == "safe":
         result = "safe"
     else:
         result = "unknown"
@@ -400,27 +400,27 @@ def private_check_deeper(region, prop, intervals, n, epsilon, coverage, silent):
             space.add_white(foo2)  # add this region as white
             # print("white area",globals()["hyper_rectangles_white"])
             if silent:
-                private_check_deeper(foo, prop, intervals, n - 1, epsilon, coverage, silent)
+                private_check_deeper(foo, props, intervals, n - 1, epsilon, coverage, silent)
                 if space.get_coverage() > coverage:
                     return f"coverage {space.get_coverage()} is above the threshold"
-                private_check_deeper(foo2, prop, intervals, n - 1, epsilon, coverage, silent)
+                private_check_deeper(foo2, props, intervals, n - 1, epsilon, coverage, silent)
             else:
                 print(n, foo, space.get_coverage(),
-                      private_check_deeper(foo, prop, intervals, n - 1, epsilon, coverage, silent))
+                      private_check_deeper(foo, props, intervals, n - 1, epsilon, coverage, silent))
                 if space.get_coverage() > coverage:
                     return f"coverage {space.get_coverage()} is above the threshold"
                 print(n, foo2, space.get_coverage(),
-                      private_check_deeper(foo2, prop, intervals, n - 1, epsilon, coverage, silent))
+                      private_check_deeper(foo2, props, intervals, n - 1, epsilon, coverage, silent))
     return result
 
 
 def colored(greater, smaller):
     """ Colors outside of the smaller region in the greater region as previously unsat
 
-    Parameters
+    Args
     ----------
-    greater: region in which the smaller region is located
-    smaller: smaller region which is not to be colored
+    greater: (list of intervals) region in which the smaller region is located
+    smaller: (list of intervals) smaller region which is not to be colored
     """
     # rectangles_sat.append(Rectangle((low_x,low_y), width, height, fc='g'))
     # print("greater ",greater)
@@ -474,15 +474,15 @@ def colored(greater, smaller):
 def check_deeper_iter(region, props, intervals, n, epsilon, coverage, silent):
     """ New Refining the parameter space into safe and unsafe regions with iterative method using alg1
 
-    Parameters
+    Args
     ----------
-    region: array of pairs, low and high bound, defining the parameter space to be refined
-    props: array of polynomes
-    intervals: array of intervals to constrain properties
-    n : max number of recursions to do
-    epsilon: minimal size of rectangle to be checked
-    coverage: coverage threshold to stop computation
-    silent: if silent printed output is set to minimum
+    region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
+    props (list of strings): array of polynomes
+    intervals: (list of sympy.Interval): array of intervals to constrain properties
+    n: (Int): max number of recursions to do
+    epsilon: (Float): minimal size of rectangle to be checked
+    coverage: (Float): coverage threshold to stop computation
+    silent: (Bool): if silent printed output is set to minimum
     """
     new_tresh = copy.copy(region)
 
@@ -518,18 +518,18 @@ def check_deeper_iter(region, props, intervals, n, epsilon, coverage, silent):
     check_deeper(new_tresh, props, intervals, n, epsilon, coverage, True, 1)
 
 
-def private_check_deeper_queue(region, prop, intervals, n, epsilon, coverage, silent):
+def private_check_deeper_queue(region, props, intervals, n, epsilon, coverage, silent):
     """ Refining the parameter space into safe and unsafe regions
 
-    Parameters
+    Args
     ----------
-    region: array of pairs, low and high bound, defining the parameter space to be refined
-    prop: array of polynomes
-    intervals: array of intervals to constrain properties
-    n : max number of recursions to do
-    epsilon: minimal size of rectangle to be checked
-    coverage: coverage threshold to stop computation
-    silent: if silent printed output is set to minimum
+    region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
+    props: (list of strings): array of polynomes
+    intervals: (list of sympy.Interval): array of intervals to constrain properties
+    n: (Int): max number of recursions to do
+    epsilon: (Float): minimal size of rectangle to be checked
+    coverage: (Float): coverage threshold to stop computation
+    silent: (Bool): if silent printed output is set to minimum
     """
 
     ## TBD check consitency
@@ -562,9 +562,9 @@ def private_check_deeper_queue(region, prop, intervals, n, epsilon, coverage, si
     ## HERE I CAN APPEND THE VALUE OF EXAMPLE AND COUNTEREXAMPLE
     # print("hello check =",check(region,prop,intervals,silent))
     # print("hello check safe =",check_safe(region,prop,n_samples,silent))
-    if check(region, prop, intervals, silent) == "unsafe":
+    if check(region, props, intervals, silent) == "unsafe":
         result = "unsafe"
-    elif check_safe(region, prop, intervals, silent) == "safe":
+    elif check_safe(region, props, intervals, silent) == "safe":
         result = "safe"
     else:
         result = "unknown"
@@ -602,8 +602,8 @@ def private_check_deeper_queue(region, prop, intervals, n, epsilon, coverage, si
     ## Add calls to the Queue
     # print("adding",[copy.copy(foo),prop,intervals,n-1,epsilon,coverage,silent], "with len", len([copy.copy(foo),prop,intervals,n-1,epsilon,coverage,silent]))
     # print("adding",[copy.copy(foo2),prop,intervals,n-1,epsilon,coverage,silent], "with len", len([copy.copy(foo2),prop,intervals,n-1,epsilon,coverage,silent]))
-    globals()["que"].enqueue([copy.copy(foo), prop, intervals, n - 1, epsilon, coverage, silent])
-    globals()["que"].enqueue([copy.copy(foo2), prop, intervals, n - 1, epsilon, coverage, silent])
+    globals()["que"].enqueue([copy.copy(foo), props, intervals, n - 1, epsilon, coverage, silent])
+    globals()["que"].enqueue([copy.copy(foo2), props, intervals, n - 1, epsilon, coverage, silent])
 
     ## Execute the Queue
     # print(globals()["que"].printQueue())
@@ -611,20 +611,20 @@ def private_check_deeper_queue(region, prop, intervals, n, epsilon, coverage, si
         private_check_deeper_queue(*que.dequeue())
 
 
-def private_check_deeper_queue_checking(region, prop, intervals, n, epsilon, coverage, silent, model=None):
+def private_check_deeper_queue_checking(region, props, intervals, n, epsilon, coverage, silent, model=None):
     """ THIS IS OBSOLETE METHOD, HERE JUST TO BE COMPARED WITH THE NEW ONE
 
     Refining the parameter space into safe and unsafe regions
 
-    Parameters
+    Args
     ----------
-    region: array of pairs, low and high bound, defining the parameter space to be refined
-    prop: array of polynomes
-    intervals: array of intervals to constrain properties
-    n : max number of recursions to do
-    epsilon: minimal size of rectangle to be checked
-    coverage: coverage threshold to stop computation
-    silent: if silent printed output is set to minimum
+    region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
+    props: (list of strings): array of polynomes
+    intervals: (list of sympy.Interval): array of intervals to constrain properties
+    n: (Int): max number of recursions to do
+    epsilon: (Float): minimal size of rectangle to be checked
+    coverage: (Float): coverage threshold to stop computation
+    silent: (Bool): if silent printed output is set to minimum
     model: (example,counterexample) of the satisfaction in the given region
     """
 
@@ -656,10 +656,10 @@ def private_check_deeper_queue_checking(region, prop, intervals, n, epsilon, cov
         return "coverage ", space.get_coverage(), " is above the threshold"
 
     if model is None:
-        example = check(region, prop, intervals, silent)
+        example = check(region, props, intervals, silent)
         # counterexample = check_safe(region,prop,intervals,silent)
     elif model[0] is None:
-        example = check(region, prop, intervals, silent)
+        example = check(region, props, intervals, silent)
     else:
         if not silent:
             print("skipping check_unsafe at", region, "since example", model[0])
@@ -671,7 +671,7 @@ def private_check_deeper_queue_checking(region, prop, intervals, n, epsilon, cov
         if not silent:
             print(n, region, space.get_coverage(), "unsafe")
         return
-    elif check_safe(region, prop, intervals, silent) == "safe":
+    elif check_safe(region, props, intervals, silent) == "safe":
         space.remove_white(region)
         if not silent:
             print(n, region, space.get_coverage(), "safe")
@@ -720,9 +720,9 @@ def private_check_deeper_queue_checking(region, prop, intervals, n, epsilon, cov
 
     ## Add calls to the Queue
     globals()["que"].enqueue(
-        [copy.copy(foo), prop, intervals, n - 1, epsilon, coverage, silent, model_low])
+        [copy.copy(foo), props, intervals, n - 1, epsilon, coverage, silent, model_low])
     globals()["que"].enqueue(
-        [copy.copy(foo2), prop, intervals, n - 1, epsilon, coverage, silent, model_high])
+        [copy.copy(foo2), props, intervals, n - 1, epsilon, coverage, silent, model_high])
 
     ## Execute the Queue
     # print(globals()["que"].printQueue())
@@ -730,19 +730,19 @@ def private_check_deeper_queue_checking(region, prop, intervals, n, epsilon, cov
         private_check_deeper_queue_checking(*que.dequeue())
 
 
-def private_check_deeper_queue_checking_both(region, prop, intervals, n, epsilon, coverage, silent,
+def private_check_deeper_queue_checking_both(region, props, intervals, n, epsilon, coverage, silent,
                                              model=None):
     """ Refining the parameter space into safe and unsafe regions
-    Parameters
+    Args
     ----------
-    region: array of pairs, low and high bound, defining the parameter space to be refined
-    prop: array of polynomes
-    intervals: array of intervals to constrain properties
-    n : max number of recursions to do
-    epsilon: minimal size of rectangle to be checked
-    coverage: coverage threshold to stop computation
-    silent: if silent printed output is set to minimum
-    model: (example,counterexample) of the satisfaction in the given region
+    region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
+    props:  (list of strings): array of polynomes
+    intervals: (list of sympy.Interval): array of intervals to constrain properties
+    n: (Int): max number of recursions to do
+    epsilon: (Float): minimal size of rectangle to be checked
+    coverage: (Float): coverage threshold to stop computation
+    silent: (Bool): if silent printed output is set to minimum
+    model: (example, counterexample) of the satisfaction in the given region
     """
 
     ## TBD check consitency
@@ -774,17 +774,17 @@ def private_check_deeper_queue_checking_both(region, prop, intervals, n, epsilon
 
     ## Resolving if the region safe/unsafe/unknown
     if model is None:
-        example = check(region, prop, intervals, silent)
-        counterexample = check_safe(region, prop, intervals, silent)
+        example = check(region, props, intervals, silent)
+        counterexample = check_safe(region, props, intervals, silent)
     elif model[0] is None:
-        example = check(region, prop, intervals, silent)
+        example = check(region, props, intervals, silent)
     else:
         if not silent:
             print("skipping check_unsafe at", region, "since example", model[0])
         example = model[0]
     if model is not None:
         if model[1] is None:
-            counterexample = check_safe(region, prop, intervals, silent)
+            counterexample = check_safe(region, props, intervals, silent)
         else:
             if not silent:
                 print("skipping check_safe at", region, "since counterexample", model[1])
@@ -853,8 +853,8 @@ def private_check_deeper_queue_checking_both(region, prop, intervals, n, epsilon
         model_high[1] = None
 
     ## Add calls to the Queue
-    globals()["que"].enqueue([copy.copy(foo), prop, intervals, n - 1, epsilon, coverage, silent, model_low])
-    globals()["que"].enqueue([copy.copy(foo2), prop, intervals, n - 1, epsilon, coverage, silent, model_high])
+    globals()["que"].enqueue([copy.copy(foo), props, intervals, n - 1, epsilon, coverage, silent, model_low])
+    globals()["que"].enqueue([copy.copy(foo2), props, intervals, n - 1, epsilon, coverage, silent, model_high])
 
     ## Execute the Queue
     # print(globals()["que"].printQueue())
