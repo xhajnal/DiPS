@@ -50,7 +50,7 @@ file = open(outputfile, "w")
 file.write("semisynchronous/synchronous \n")
 print("semisynchronous/synchronous")
 file.write(
-    " v_p, v_q, alpha, n_samples, recursion_depth, min_rect_size, population, algorithm, run times{} average time, standard deviation\n".format(
+    " v_p, v_q, alpha, n_samples, recursion_depth, min_rect_size, population, algorithm, run times {} average time, standard deviation\n".format(
         "," * sample_size))
 # file.write("---------------------------------------------------------------------------------------------------------\n")
 print(" alpha, n_samples, min_rect_size, recursion_depth, population, algorithm")
@@ -89,7 +89,7 @@ for v_p in p_values:
                                     deviations = []
                                     for run in range(0, sample_size):
                                         deviations.append((runs[run] - average) * (runs[run] - average))
-                                    file.write(" {}, {}".format(average, math.sqrt(sum(deviations) / (sample_size))))
+                                    file.write(" {}, {}".format(average, math.sqrt(sum(deviations) / sample_size)))
                                     file.write("\n")
                                     file.flush()
                                 file.write("\n")

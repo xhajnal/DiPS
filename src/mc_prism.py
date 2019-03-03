@@ -47,7 +47,7 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
                prism_output_path=prism_results, std_output_path=prism_results):
     """  Solves problem of calling prism from another directory.
 
-    Parameters
+    Args
     ----------
     args: string for executing prism
     seq: (Bool) if true it will take properties by one and append results (necessary if out of the memory)
@@ -144,7 +144,7 @@ def call_prism_files(file_prefix, multiparam, agents_quantities, seq=False, nopr
                      properties_path=properties_path, output_path=prism_results):
     """  Calls prism for each file matching the prefix
 
-    Parameters
+    Args
     ----------
     file_prefix: file prefix to be matched
     multiparam: (Bool) true if multiparam models are to be used
@@ -209,13 +209,13 @@ if __name__ == "__main__":
         "multiparam_synchronous_parallel_10.pm -const p=0.028502714675268215,q1=0.5057623641293089 -simpath 2 dummy_path1550773616.0244777.txt",
         silent=True, prism_output_path="/home/matej/Git/mpm/src/test/new", std_output_path=None)
 
-    ## model checking
+    ## Model checking
     print(colored('testing simple model checking', 'blue'))
     for population in agents_quantities:
         call_prism("semisynchronous_parallel_{}.pm prop_{}.pctl -param p=0:1,q=0:1,alpha=0:1"
                    .format(population, population), seq=False, std_output_path=cwd)
 
-    ## simulating the path
+    ## Simulating the path
     print(colored('testing simulation', 'blue'))
     call_prism(
         'synchronous_parallel_2.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '

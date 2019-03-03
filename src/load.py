@@ -32,7 +32,7 @@ if not os.path.exists(data_path):
 def load_all_prism(path, factorize=True, rewards_only=False, f_only=False):
     """ Loads all results of parameter synthesis in *path* folder into two maps - f list of rational functions for each property, and rewards list of rational functions for each reward
     
-    Parameters
+    Args
     ----------
     path: (string) - file name regex
     factorize: (Bool) if true it will factorise polynomial results
@@ -124,7 +124,7 @@ def get_rewards(path, factorize):
 def load_all_data(path):
     """ loads all experimental data for respective property, returns as dictionary D
     
-    Parameters
+    Args
     ----------
     path: (string) - file name regex
     
@@ -174,7 +174,7 @@ def load_all_data(path):
 def load_pickled_data(file):
     """ returns pickled experimental data for
     
-    Parameters
+    Args
     ----------
     file: (string) filename of the data to be loaded
     
@@ -185,7 +185,7 @@ def load_pickled_data(file):
 def catch_data_error(data, minimum, maximum):
     """ Corrects all data value to be in range min,max
     
-    Parameters
+    Args
     ----------
     data: (dictionary) structure of data
     minimum: (float) minimal value in data to be set to
@@ -203,7 +203,7 @@ def catch_data_error(data, minimum, maximum):
 def create_intervals(alpha, n_samples, data):
     """ Returns intervals of data_point +- margin
 
-    Parameters
+    Args
     ----------
     alpha: (float) confidence interval to compute margin
     n_samples: (int) number of samples to compute margin
@@ -220,7 +220,7 @@ def create_intervals(alpha, n_samples, data):
 def create_interval(alpha, n_samples, data_point):
     """ Returns interval of data_point +- margin
 
-    Parameters
+    Args
     ----------
     alpha: (float) confidence interval to compute margin
     n_samples: (int) number of samples to compute margin
@@ -234,7 +234,7 @@ def margin(alpha, n_samples, data_point):
     """ Estimates expected interval with respect to parameters
     TBA shortly describe this type of margin
 
-    Parameters
+    Args
     ----------
     alpha: (float) confidence interval to compute margin
     n_samples: (int) number of samples to compute margin
@@ -247,7 +247,7 @@ def margin_experimental(alpha, n_samples, data_point):
     """ Estimates expected interval with respect to parameters
     This margin was used to produce the visual outputs for hsb19 
 
-    Parameters
+    Args
     ----------
     alpha: (float) confidence interval to compute margin
     n_samples: (int) number of samples to compute margin
@@ -260,7 +260,7 @@ def margin_experimental(alpha, n_samples, data_point):
 def find_param(polynome):
     """ Finds parameters of a polynomes
 
-    Parameters
+    Args
     ----------
     polynome : polynome as string
     

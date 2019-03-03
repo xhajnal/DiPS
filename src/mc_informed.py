@@ -34,7 +34,7 @@ def create_data_informed_properties(N, data, alpha, n_samples, multiparam, seq):
     """ Creates property file of reaching each BSCC of the model of *N* agents as prop_<N>.pctl file.
     For more information see paper.
     
-    Parameters
+    Args
     ----------
     N: (int) number of agents
     data: map of data    
@@ -89,7 +89,7 @@ def call_data_informed_prism(N, parameters, data, alpha, n_samples, multiparam, 
     """
     Creates data informed properties.
     
-    Parameters
+    Args
     ----------
     N: (int) number of agents
     data: map of data    
@@ -159,13 +159,14 @@ def call_storm(N, parameters, data, alpha, n_samples, multiparam):
     """
     Returns command to call storm with given model and data informed properties
     
-    Parameters
+    Args
     ----------
     N: (int) number of agents
     data: map of data    
     alpha: (float) confidence interval to compute margin
     n_samples: (int) number of samples to compute margin
     multiparam: (Bool) if True multiparam model is used
+    parameters: (list of string) list of parameters
     """
 
     storm_models = model_folder.replace("\\\\", "/").replace("\\", "/").split("/")[-1]

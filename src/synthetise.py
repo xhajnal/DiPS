@@ -330,31 +330,6 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
     return space
 
 
-def private_check_deeper_sampling(region, props, intervals, n, epsilon, coverage, silent):
-    """ Refining the parameter space into safe and unsafe regions
-    Args
-    ----------
-    region: (list of intervals) array of pairs, low and high bound, defining the parameter space xto be refined
-    props:  (list of strings): array of polynomes
-    intervals: (list of sympy.Interval): array of intervals to constrain properties
-    n: (Int): max number of recursions to do
-    epsilon: (Float): minimal size of rectangle to be checked
-    coverage: (Float): coverage threshold to stop computation
-    silent: (Bool): if silent print
-    """
-
-    import numpy as np
-
-    sampling_size = 10
-
-    sampled_true = []
-    sampled_false = []
-
-    for interval in len(region):
-        for value in np.linspace(region[interval][0], region[interval][1], num=sampling_size):
-            globals()[parameters[interval]] = value
-
-
 def private_check_deeper(region, props, intervals, n, epsilon, coverage, silent):
     """ Refining the parameter space into safe and unsafe regions
     Args
@@ -766,6 +741,7 @@ def private_check_deeper_queue_checking(region, props, intervals, n, epsilon, co
 def private_check_deeper_queue_checking_both(region, props, intervals, n, epsilon, coverage, silent,
                                              model=None):
     """ Refining the parameter space into safe and unsafe regions
+
     Args
     ----------
     region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
@@ -901,7 +877,7 @@ def check_interval_in(region, props, intervals, silent=False, called=True):
     It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given
     **interval** (called a model in SMT), otherwise it is unsafe.
 
-    Parameters
+    Args
     ----------
     region: (list of intervals) low and high bound, defining the parameter space to be refined
     props: (list of strings) array of functions (polynomes or general rational functions in the case of Markov Chains)
@@ -949,7 +925,7 @@ def check_interval_out(region, props, intervals, silent=False, called=True):
     It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given
     **interval** (called a model in SMT), otherwise it is unsafe.
 
-    Parameters
+    Args
     ----------
     region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
     props: (list of strings) array of functions (polynomes or general rational functions in the case of Markov Chains)
@@ -993,9 +969,10 @@ def check_interval_out(region, props, intervals, silent=False, called=True):
     return True
 
 
-def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage, silent, model=None, presampled=False):
+def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage, silent, presampled=False):
     """ Refining the parameter space into safe and unsafe regions
-    Parameters
+
+    Args
     ----------
     region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
     props: (list of strings) array of polynomes
@@ -1012,6 +989,8 @@ def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage
     # print("check equal", globals()["whole_area"],whole_area)
 
     space = globals()["space"]
+
+    ## TBD
     # if presampled:
     #    while globals()["que"].size() > 0:
     #        private_check_deeper_interval(*que.dequeue())
@@ -1297,13 +1276,11 @@ def find_max_rectangle(sampled_space, starting_point, silent=True):
             if (not start_value) in values:
                 length = length - 1
                 if not silent:
-                    print(
-                        f"rectangle [[{index_x},{index_y}],[{index_x + length},{index_y + length}]] does not satisfy all sat not all unsat")
+                    print(f"rectangle [[{index_x},{index_y}],[{index_x + length},{index_y + length}]] does not satisfy all sat not all unsat")
                 break
             elif index_x + length > size_q or index_y + length > size_q:
                 if not silent:
-                    print(
-                        f"rectangle [[{index_x},{index_y}],[{index_x + length},{index_y + length}]] is out of box, using lower value")
+                    print(f"rectangle [[{index_x},{index_y}],[{index_x + length},{index_y + length}]] is out of box, using lower value")
                 length = length - 1
                 break
             else:
@@ -1519,7 +1496,7 @@ class TestLoad(unittest.TestCase):
         print("Refinement here")
         ## check_deeper_interval(region, prop, intervals, n, epsilon, cov, silent, version)
 
-        ## UNCOMENT THIS TBA
+        ## UNCOMMENT THIS TBD
         # check_deeper_interval([(0, 4)], ["x"], [Interval(0, 3)], 5, 0, 0.95, silent=False, version=1)
 
     def test_Interval(self):
@@ -1574,10 +1551,9 @@ class TestLoad(unittest.TestCase):
 
     def test_presampled(self):
         print("Presampled refinement here")
-        from synthetise import check_deeper
-        ## UNCOMMENT THIS
+        ## UNCOMMENT THIS TBD
         # check_deeper_interval([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 12, 0, 0.95, silent=False, version=1)
-        # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 5, 0, 0.95, silent=True, version=6)
+        check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 5, 0, 0.95, silent=True, version=6)
 
         # check_deeper_interval([(0, 0.5), (0, 0.5)], ["x+y"], [Interval(0, 1)], 5, 0, 0.95, silent=False, version=1)
 

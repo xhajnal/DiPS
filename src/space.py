@@ -111,7 +111,8 @@ class RefinedSpace:
         try:
             self.unknown.remove(white)
         except:
-            print("Could not remove white area ",white)
+            print("Could not remove white area ", white)
+
     def get_green_volume(self):
         cumulative_volume = 0
 

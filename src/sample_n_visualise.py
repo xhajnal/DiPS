@@ -248,50 +248,11 @@ def visualise_sampled_byparam(hyper_rectangles, sample_size):
     Args
     ----------
     hyper_rectangles: list of hyperrectangles
-    sample_size: (int) of nuumber of points to be sampled
-    """
-    if hyper_rectangles:
-        fig, ax = plt.subplots()
-        # create values of the horizontal axis
-        x_axis = []
-        i = 0
-        for dimension in hyper_rectangles[0]:
-            i = i + 1
-            x_axis.append(i)
-        # get values of the vertical axis for respective line
-        for sample in range(sample_size):
-            rectangle = random.randint(0, len(hyper_rectangles) - 1)
-            # print(rectangle)
-            values = []
-            # print(hyper_rectangles[rectangle])
-            for dimension in range(len(hyper_rectangles[rectangle])):
-                # print(hyper_rectangles[rectangle][dimension])
-                values.append(random.uniform(hyper_rectangles[rectangle][dimension][0],
-                                             hyper_rectangles[rectangle][dimension][1]))
-            ax.scatter(x_axis, values)
-            ax.plot(x_axis, values)
-        ax.set_xlabel('params')
-        ax.set_ylabel('parameter value')
-        ax.set_title("Sample points of the given hyperspace")
-        ax.autoscale()
-        ax.margins(0.1)
-        plt.show()
-    else:
-        print("Given space is empty")
-
-
-def visualise_sampled_byparam(hyper_rectangles, sample_size):
-    """
-    Visualise sampled hyperspace by connecting the values in each dimension.
-
-    Args
-    ----------
-    hyper_rectangles: list of hyperrectangles
     sample_size: (int) -- number of points to be sampled
     """
     if hyper_rectangles:
         fig, ax = plt.subplots()
-        # create values of the horizontal axis
+        ## Creates values of the horizontal axis
         x_axis = []
         i = 0
         for dimension in hyper_rectangles[0]:
@@ -320,7 +281,7 @@ def visualise_sampled_byparam(hyper_rectangles, sample_size):
 
 
 if __name__ == "__main__":
-    # # returns [N, dic_fun[N].index(polynome), datapooint]
+    ## returns [N, dic_fun[N].index(polynome), datapoint]
     print(sample({10: ["x+y"]}, [10], 2))
 
     # heatmap("p+0*q",[[1,5],[1,5]],[6,6])

@@ -22,7 +22,7 @@ if not os.path.exists(properties_path):
 def nCr(n, k):
     """ Return combinatorial number n take k
 
-    Parameters
+    Args
     ----------
     n: (int)
     k: (int)
@@ -36,7 +36,7 @@ def create_synchronous_model(file, N):
     """ Creates synchronous model of *N* agents to a *file* with probabilities p and q in [0,1].
     For more information see the paper.
 
-    Parameters
+    Args
     ----------
     file: (string) - filename with extension
     N: (int) - agent quantity
@@ -174,7 +174,7 @@ def create_synchronous_model(file, N):
 def create_semisynchronous_model(file, N):
     """ Creates semisynchronous model of *N* agents to a *file* with probabilities p and q in [0,1]. For more information see paper.
 
-    Parameters
+    Args
     ----------
     file: (string) - filename with extesion
     N: (int) - agent quantity
@@ -331,7 +331,7 @@ def create_semisynchronous_model(file, N):
 def create_asynchronous_model(file, N):
     """ Creates asynchronous model of *N* agents to a *file* with probabilities p and q in [0,1]. For more information see paper.
 
-    Parameters
+    Args
     ----------
     file: (string) - filename with extension
     N: (int) - agent quantity
@@ -596,7 +596,7 @@ def create_multiparam_synchronous_model(file, N):
     """ Creates synchronous model of *N* agents to a *file* with probabilities p and q in [0,1].
     For more information see coefficient.
 
-    Parameters
+    Args
     ----------
     file: (string) - filename with extesion
     N: (int) - agent quantity
@@ -736,7 +736,7 @@ def create_multiparam_semisynchronous_model(file, N):
     """ Creates semisynchronous model of *N* agents to a *file* with probabilities p and multiple q-s in [0,1].
     For more information see paper.
 
-    Parameters
+    Args
     ----------
     file: (string) - filename with extension
     N: (int) - agent quantity
@@ -898,7 +898,7 @@ def create_multiparam_asynchronous_model(file, N):
     """ Creates semisynchronous model of *N* agents to a *file* with probabilities p and multiple q-s in [0,1].
     For more information see paper.
 
-    Parameters
+    Args
     ----------
     file: (string) - filename with extension
     N: (int) - agent quantity
@@ -1168,7 +1168,7 @@ def create_properties(N):
     """ Creates property file of reaching each BSCC of the model of *N* agents as prop_<N>.pctl file.
     For more information see paper.
 
-    Parameters
+    Args
     ----------
     N: (int) - agent quantity
     """
