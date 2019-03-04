@@ -3,7 +3,6 @@ import re
 import socket
 import sys
 import time
-import copy
 import numpy as np
 from sympy import Interval
 from mpmath import mpi

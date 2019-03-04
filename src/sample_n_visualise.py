@@ -31,7 +31,7 @@ def eval_and_show(fun_list, parameter_value):
 
     Args
     ----------
-    fun_list: (list of strings) list of polynomes
+    fun_list: (list of strings) list of rational functions
     parameter_value: (list of floats) array of param values
     """
     for polynome in fun_list:

@@ -1,24 +1,11 @@
+import os
 import datetime
 import math
 import pickle
+import socket
+import time
 
-from synthetise import *
-
-config = configparser.ConfigParser()
-print("here ", os.getcwd())
-config.read("../config.ini")
-# config.sections()
-z3_path = config.get("paths", "z3_path")
-data_path = config.get("paths", "data")
-
-if not os.path.exists(z3_path):
-    raise OSError("Directory does not exist: " + str(z3_path))
-
-# cwd = os.getcwd()
-# os.chdir(z3_path)
-# from z3 import *
-# os.chdir(cwd)
-
+from synthetise import check_deeper
 from load import get_f
 
 f = get_f("./sem*[0-9].txt", True)
