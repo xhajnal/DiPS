@@ -18,8 +18,11 @@ from sample_n_visualise import cartesian_product
 
 import configparser
 
+
 config = configparser.ConfigParser()
 # print(os.getcwd())
+workspace = os.path.dirname(__file__)
+print("workspace", workspace)
 config.read("../config.ini")
 # config.sections()
 z3_path = config.get("paths", "z3_path")
@@ -36,7 +39,10 @@ print("z3_path", z3_path)
 # from z3 import *
 # os.chdir(cwd)
 
-print("pythonpath: ", os.environ["PYTHONPATH"])
+try:
+    print("pythonpath: ", os.environ["PYTHONPATH"])
+except:
+    print("pythonpath is empty, this may cause trouble")
 
 try:
     from z3 import *
