@@ -3,6 +3,7 @@ from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 import matplotlib.pyplot as plt
 from numpy import prod
+import copy
 import unittest
 
 
@@ -72,19 +73,22 @@ class RefinedSpace:
             pic.set_xlabel(self.params[0])
 
             ## Set axis ranges
-            if self.region[0][1] - self.region[0][0] < 0.1:
-                self.region[0] = (self.region[0][0] - 0.2, self.region[0][1] + 0.2)
-            pic.axis([self.region[0][0], self.region[0][1], 0, 1])
+            region = copy.copy(self.region)
+            if region[0][1] - region[0][0] < 0.1:
+                region[0] = (region[0][0] - 0.2, region[0][1] + 0.2)
+            pic.axis([region[0][0], region[0][1], 0, 1])
+
             if len(self.region) == 2:
                 pic.set_ylabel(self.params[1])
-                if self.region[1][1] - self.region[1][0] < 0.1:
-                    self.region[1] = (self.region[1][0] - 0.2, self.region[1][1] + 0.2)
-                pic.axis([self.region[0][0], self.region[0][1], self.region[1][0], self.region[1][1]])
+                if region[1][1] - region[1][0] < 0.1:
+                    region[1] = (region[1][0] - 0.2, region[1][1] + 0.2)
+                pic.axis([region[0][0], region[0][1], region[1][0], region[1][1]])
             pic.set_title("red = unsafe region, green = safe region, white = in between \n " + title)
 
             pic.add_collection(self.show_green())
             pic.add_collection(self.show_red())
             plt.show()
+            del region
 
     def get_volume(self):
         add_space = []
