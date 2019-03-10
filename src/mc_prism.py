@@ -6,7 +6,10 @@ import socket
 import subprocess
 import sys
 import time
+import unittest
 from pathlib import Path
+
+import psutil
 from termcolor import colored
 
 import configparser
@@ -110,6 +113,10 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
             args = ["prism"]
         args.extend(prism_args)
 
+        ## forwarding error output to the file
+        # args.append("2>&1")
+
+
         if seq:
             with open(property_file_path, 'r') as property_file:
                 args.append("-property")
@@ -119,7 +126,7 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
                     args[-1] = str(i)
                     if not silent:
                         print("calling \"", " ".join(args))
-                    output = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.decode(
+                    output = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode(
                         "utf-8")
                     if std_output_path is not None:
                         with open(output_file_path, 'a') as output_file:
@@ -129,7 +136,7 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
         else:
             if not silent:
                 print("calling \"", " ".join(args))
-            output = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.decode("utf-8")
+            output = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8")
             if std_output_path is not None:
                 with open(output_file_path, 'w') as output_file:
                     if not silent:
@@ -140,7 +147,7 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
         os.chdir(curr_dir)
 
 
-def call_prism_files(file_prefix, multiparam, agents_quantities, seq=False, noprobchecks=False, model_path=model_path,
+def call_prism_files(file_prefix, multiparam, agents_quantities, seq=False, noprobchecks=False, memory="", model_path=model_path,
                      properties_path=properties_path, output_path=prism_results):
     """  Calls prism for each file matching the prefix
 
@@ -160,7 +167,14 @@ def call_prism_files(file_prefix, multiparam, agents_quantities, seq=False, nopr
         noprobchecks = '-noprobchecks '
     else:
         noprobchecks = ""
-    for N in agents_quantities:
+
+    if memory == "":
+        memory = ""
+    elif "javamaxmem" not in str(memory):
+        memory = f'-javamaxmem {memory}g '
+
+    for N in sorted(agents_quantities):
+        # print(glob.glob(os.path.join(model_path, file_prefix + str(N) + ".pm")))
         for file in glob.glob(os.path.join(model_path, file_prefix + str(N) + ".pm")):
             file = Path(file)
             start_time = time.time()
@@ -172,69 +186,110 @@ def call_prism_files(file_prefix, multiparam, agents_quantities, seq=False, nopr
                     # q=q+",q"+str(i)"=0:1"
             else:
                 q = ",q=0:1"
-            # print("{} prop_{}.pctl {}-param p=0:1{}".format(file,N,noprobchecks,q))
-            skipped = call_prism("{} prop_{}.pctl {}-param p=0:1{}".format(file, N, noprobchecks, q), seq=seq,
-                                 model_path=model_path, properties_path=properties_path, std_output_path=output_path)
-            if skipped:
-                continue
-            if not seq:
-                # if 'GC overhead' in tailhead.tail(open('output_path/{}.txt'.format(file.split('.')[0])),40).read():
-                if 'GC overhead' in open(os.path.join(output_path, "{}.txt".format(file.stem))).read():
-                    seq = True
-                    print("  It took", socket.gethostname(), time.time() - start_time, "seconds to run")
-                    start_time = time.time()
-                    call_prism("{} prop_{}.pctl {}-param p=0:1{}".format(file, N, noprobchecks, q), seq=False,
-                               model_path=model_path, properties_path=properties_path, std_output_path=output_path)
-            if not noprobchecks:
-                if '-noprobchecks' in open(os.path.join(output_path, "{}.txt".format(file.stem))).read():
-                    print("An error occurred, running with noprobchecks option")
-                    noprobchecks = '-noprobchecks '
-                    print("  It took", socket.gethostname(), time.time() - start_time, "seconds to run")
-                    start_time = time.time()
-                    call_prism("{} prop_{}.pctl {}-param p=0:1{}".format(file, N, noprobchecks, q), seq=False,
-                               model_path=model_path, properties_path=properties_path, std_output_path=output_path)
-            print("  It took", socket.gethostname(), time.time() - start_time, "seconds to run \n")
 
+            error = False
+
+            # print("{} prop_{}.pctl {}-param p=0:1{}".format(file,N,noprobchecks,q))
+            skipped = call_prism("{} prop_{}.pctl {}{}-param p=0:1{}".format(file, N, memory, noprobchecks, q), seq=seq,
+                                 model_path=model_path, properties_path=properties_path, std_output_path=output_path)
+            print("  It took", socket.gethostname(), time.time() - start_time, "seconds to run")
+            if skipped:
+                print("skipped", skipped)
+                continue
+
+            # print("seq", seq)
+            # print("noprobchecks", noprobchecks)
+            if (not seq) or (noprobchecks == ""):
+                # if 'GC overhead' in tailhead.tail(open('output_path/{}.txt'.format(file.split('.')[0])),40).read():
+                with open(os.path.join(output_path, "{}.txt".format(file.stem))) as file_open:
+                    # print("I am in", file_open)
+                    file_open_read = file_open.read()
+                    # print('GC overhead' in file_open_read)
+                    # print('-noprobchecks' in file_open_read)
+
+                    ## Check if there was a memory error
+                    if 'GC overhead' in file_open_read or "OutOfMemoryError" in file_open_read:
+                        if seq:
+                            ## A memory occured while seq
+                            memory = round(psutil.virtual_memory()[0]/1024/1024/1024)  ## total memory converted to GB
+                            print("A memory error occurred while seq, max memory increased to ", memory)
+                        else:
+                            print("A memory error occurred. Running prop by prob now")
+
+                        seq = True
+                        ## Remove the file because appending would no overwrite the file
+                        os.remove(os.path.join(output_path, "{}.txt".format(file.stem)))
+                        error = True
+
+                    ## Check if there was problem with sum of probabilities
+                    if 'use -noprobchecks' in file_open_read:
+                        print("Outgoing transitions checksum error occurred. Running with noprobchecks option")
+                        noprobchecks = '-noprobchecks '
+                        error = True
+
+                    ## If an error found
+                if error:
+                    ## Call this function for this file again
+                    print()
+                    call_prism_files(file_prefix, multiparam, [N], seq, noprobchecks, memory=memory, model_path=model_path, properties_path=properties_path, output_path=prism_results)
+            print()
+
+
+class TestLoad(unittest.TestCase):
+    def test_easy(self):
+        agents_quantities = [2, 3]
+        try:
+            os.mkdir("test")
+        except:
+            print("folder src/test probably already exists, if not this will fail")
+        os.chdir("test")
+        cwd = os.getcwd()
+
+        call_prism(
+            "multiparam_synchronous_parallel_10.pm -const p=0.028502714675268215,q1=0.5057623641293089 -simpath 2 dummy_path1550773616.0244777.txt",
+            silent=True, prism_output_path="/home/matej/Git/mpm/src/test/new", std_output_path=None)
+
+        ## Model checking
+        print(colored('Testing simple model checking', 'blue'))
+        for population in agents_quantities:
+            call_prism("semisynchronous_parallel_{}.pm prop_{}.pctl -param p=0:1,q=0:1,alpha=0:1"
+                       .format(population, population), seq=False, std_output_path=cwd)
+
+        ## Simulating the path
+        print(colored('Testing simulation', 'blue'))
+        call_prism(
+            'synchronous_parallel_2.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '
+            'path1.txt', prism_output_path=cwd, std_output_path=None)
+
+        print(colored('Test simulation change the path of the path files output', 'blue'))
+        print(colored('This should produce a file in ', 'blue'))
+        call_prism(
+            'synchronous_parallel_2.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '
+            'path1.txt', prism_output_path="../test/new", std_output_path=None)
+
+        # print(colored('testing simulation with stdout', 'blue'))
+        # file = open("path_synchronous_parallel__2_3500_0.028502714675268215_0.5057623641293089.txt", "w+")
+        # print(colored('testing not existing input file', 'blue'))
+        # call_prism(
+        #    'fake.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '
+        #    'path_synchronous_parallel__2_3500_0.028502714675268215_0.5057623641293089.txt', prism_output_path=cwd,std_output_path=None)
+
+        ## call_prism_files
+        print(colored('Call_prism_files', 'blue'))
+        call_prism_files("syn*_", False, agents_quantities)
+
+        print(colored('Call_prism_files2', 'blue'))
+        call_prism_files("multiparam_syn*_", True, agents_quantities)
+
+    def test_heavy_load(self):
+        agents_quantities = [20, 40]
+        ## 20 should pass
+        ## This will require noprobcheck for 40
+        call_prism_files("syn*_", False, agents_quantities)
+        ## This will require seq for 40
+        call_prism_files("semi*_", False, agents_quantities)
+        ## This will require seq with adding the memory for 40
+        call_prism_files("asyn*_", False, agents_quantities)
 
 if __name__ == "__main__":
-    agents_quantities = [2, 3]
-    try:
-        os.mkdir("test")
-    except:
-        print("folder src/test probably already exists, if not this will fail")
-    os.chdir("test")
-    cwd = os.getcwd()
-
-    call_prism(
-        "multiparam_synchronous_parallel_10.pm -const p=0.028502714675268215,q1=0.5057623641293089 -simpath 2 dummy_path1550773616.0244777.txt",
-        silent=True, prism_output_path="/home/matej/Git/mpm/src/test/new", std_output_path=None)
-
-    ## Model checking
-    print(colored('testing simple model checking', 'blue'))
-    for population in agents_quantities:
-        call_prism("semisynchronous_parallel_{}.pm prop_{}.pctl -param p=0:1,q=0:1,alpha=0:1"
-                   .format(population, population), seq=False, std_output_path=cwd)
-
-    ## Simulating the path
-    print(colored('testing simulation', 'blue'))
-    call_prism(
-        'synchronous_parallel_2.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '
-        'path1.txt', prism_output_path=cwd, std_output_path=None)
-
-    print(colored('test simulation change the path of the path files output', 'blue'))
-    call_prism(
-        'synchronous_parallel_2.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '
-        'path1.txt', prism_output_path="/home/matej/Git/mpm/src/test/new", std_output_path=None)
-
-    # print(colored('testing simulation with stdout', 'blue'))
-    # file = open("path_synchronous_parallel__2_3500_0.028502714675268215_0.5057623641293089.txt", "w+")
-    # print(colored('testing not existing input file', 'blue'))
-    # call_prism(
-    #    'fake.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '
-    #    'path_synchronous_parallel__2_3500_0.028502714675268215_0.5057623641293089.txt', prism_output_path=cwd,std_output_path=None)
-
-    ## call_prism_files
-    print(colored('call_prism_files', 'blue'))
-    call_prism_files("syn*_", False, agents_quantities)
-    print(colored('call_prism_files2', 'blue'))
-    call_prism_files("multiparam_syn*_", True, agents_quantities)
+    unittest.main()
