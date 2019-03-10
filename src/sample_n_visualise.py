@@ -157,7 +157,7 @@ def visualise(dic_fun, agents_quantities, size_q):
 
 def visualise_byparam(hyper_rectangles):
     """
-    Visualise intervals of each dimension in plot.
+    Visualise domain intervals of each dimension in a plot.
 
     Args
     ----------
@@ -186,14 +186,14 @@ def visualise_byparam(hyper_rectangles):
 
         ax.set_xlabel('params')
         ax.set_ylabel('parameter value')
-        ax.set_title("intervals in which are parameter in green regions")
+        ax.set_title("domain in which respective parameter belongs to in the given space")
 
         ax.add_collection(lc)
         ax.autoscale()
         ax.margins(0.1)
         print(intervals)
     else:
-        print("No intervals to be visualised")
+        print("Given space is empty, no intervals to be visualised")
 
 
 def heatmap(fun, region, sampling_sizes):

@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 from numpy import prod
 import copy
 import unittest
+## colored output
+from termcolor import colored
 
 
 def get_rectangle_volume(rectangle):
@@ -38,7 +40,7 @@ class RefinedSpace:
 
         self.params = params
         if not len(self.params) == len(self.region):
-            print(f"number of parameters ({len(params)}) and dimension of the region ({len(region)}) is not equal")
+            print(colored(f"number of parameters ({len(params)}) and dimension of the region ({len(region)}) is not equal", 'red'))
             # print("region", self.region)
 
         if not isinstance(rectangles_sat, Iterable):
