@@ -61,13 +61,13 @@ def load_all_prism(path, factorize=True, agents_quantities=[], rewards_only=Fals
 
     ## Choosing files with the given pattern
     for file in glob.glob(str(path)):
-        print(os.path.join(os.getcwd(), file))
         N = int(re.findall('\d+', file)[0])
-
         ## Parsing only selected agents quantities
         if agents_quantities:
             if N not in agents_quantities:
                 continue
+            else:
+                print(os.path.join(os.getcwd(), file))
         # print(os.getcwd(),file)
         file = open(file, "r")
         i = -1
