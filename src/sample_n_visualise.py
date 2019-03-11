@@ -26,13 +26,14 @@ def cartesian_product(*arrays):
     return arr.reshape(-1, la)
 
 
-def eval_and_show(fun_list, parameter_value):
+def eval_and_show(fun_list, parameter_value, cumulative=False):
     """ Creates bar plot of probabilities of i successes for given parametrisation
 
     Args
     ----------
     fun_list: (list of strings) list of rational functions
     parameter_value: (list of floats) array of param values
+    cumulative: (Bool) if true cdf instead of pdf is visualised
     """
     for polynome in fun_list:
         parameters = set()
@@ -42,6 +43,7 @@ def eval_and_show(fun_list, parameter_value):
 
     title = ""
     a = []
+    add = 0
     for param in range(len(parameters)):
         # print(parameters[param])
         # print(parameter_value[param])
@@ -49,7 +51,14 @@ def eval_and_show(fun_list, parameter_value):
         title = "{}{}={} ".format(title, parameters[param], parameter_value[param])
     # print("eval ", polynome, eval(polynome))
     for polynome in fun_list:
-        a.append(eval(polynome))
+        if cumulative:
+            ## Add sum of all values
+            value = eval(polynome)
+            add = add + value
+            a.append(add)
+            del value
+        else:
+            a.append(eval(polynome))
     # print(a)
     fig, ax = plt.subplots()
     width = 0.2
@@ -106,7 +115,7 @@ def sample(dic_fun, agents_quantities, size_q):
     return arr
 
 
-def visualise(dic_fun, agents_quantities, size_q):
+def visualise(dic_fun, agents_quantities, size_q, cumulative=False):
     """ Creates bar plot of probabilities of i successes for sampled parametrisation
 
     Args
@@ -114,7 +123,9 @@ def visualise(dic_fun, agents_quantities, size_q):
     dic_fun: (dictionary N -> list of polynomes)
     size_q: (int) sample size in each parameter
     agents_quantities: (int) pop sizes to be used
+    cumulative: (Bool) if true cdf instead of pdf is visualised
     """
+
     for N in agents_quantities:
         parameters = set()
         for polynome in dic_fun[N]:
@@ -130,9 +141,9 @@ def visualise(dic_fun, agents_quantities, size_q):
         if (len(parameters) - 1) == 0:
             parameter_values = np.linspace(0, 1, size_q, endpoint=True)[np.newaxis, :].T
         # print(parameter_values)
-
         for parameter_value in parameter_values:
             # print(parameter_value)
+            add = 0
             a = [N, dic_fun[N].index(polynome)]
             title = ""
             for param in range(len(parameters)):
@@ -143,7 +154,14 @@ def visualise(dic_fun, agents_quantities, size_q):
                 title = "{}{}={} ".format(title, parameters[param], parameter_value[param])
             # print("eval ", polynome, eval(polynome))
             for polynome in dic_fun[N]:
-                a.append(eval(polynome))
+                if cumulative:
+                    ## Add sum of all values
+                    value = eval(polynome)
+                    add = add + value
+                    a.append(add)
+                    del value
+                else:
+                    a.append(eval(polynome))
 
             print(a)
             fig, ax = plt.subplots()
