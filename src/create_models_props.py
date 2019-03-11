@@ -160,7 +160,7 @@ def create_synchronous_model(file, N):
     file.write("\n")
 
     # rewards here
-    file.write('rewards "coin_flips" \n')
+    file.write('rewards "mean" \n')
     for i in range(N + 1):
         file.write("       a0 = " + str(0 if i == 0 else 1))
         for j in range(1, N):
@@ -168,6 +168,16 @@ def create_synchronous_model(file, N):
             file.write(" & a" + str(j) + " = " + str(1 if i > j else 0))
         file.write(":" + str(i) + ";\n")
     file.write("endrewards \n")
+
+    file.write('rewards "mean_squared" \n')
+    for i in range(N + 1):
+        file.write("       a0 = " + str(0 if i == 0 else 1))
+        for j in range(1, N):
+            # print("N",N,"i",i,"j",j)
+            file.write(" & a" + str(j) + " = " + str(1 if i > j else 0))
+        file.write(":" + str(i*i) + ";\n")
+    file.write("endrewards \n")
+
     file.close()
 
 
@@ -317,7 +327,7 @@ def create_semisynchronous_model(file, N):
     file.write("\n")
 
     # rewards here
-    file.write('rewards "coin_flips" \n')
+    file.write('rewards "mean" \n')
     for i in range(N + 1):
         file.write("       a0 = " + str(0 if i == 0 else 1))
         for j in range(1, N):
@@ -325,6 +335,16 @@ def create_semisynchronous_model(file, N):
             file.write(" & a" + str(j) + " = " + str(1 if i > j else 0))
         file.write(":" + str(i) + ";\n")
     file.write("endrewards \n")
+
+    file.write('rewards "mean_squared" \n')
+    for i in range(N + 1):
+        file.write("       a0 = " + str(0 if i == 0 else 1))
+        for j in range(1, N):
+            # print("N",N,"i",i,"j",j)
+            file.write(" & a" + str(j) + " = " + str(1 if i > j else 0))
+        file.write(":" + str(i*i) + ";\n")
+    file.write("endrewards \n")
+
     file.close()
 
 
@@ -581,7 +601,7 @@ def create_asynchronous_model(file, N):
     file.write("\n")
 
     # rewards here
-    file.write('rewards "coin_flips" \n')
+    file.write('rewards "mean" \n')
     for i in range(N + 1):
         file.write("       a0 = " + str(0 if i == 0 else 1))
         for j in range(1, N):
@@ -589,6 +609,16 @@ def create_asynchronous_model(file, N):
             file.write(" & a" + str(j) + " = " + str(1 if i > j else 0))
         file.write(":" + str(i) + ";\n")
     file.write("endrewards \n")
+
+    file.write('rewards "mean_squared" \n')
+    for i in range(N + 1):
+        file.write("       a0 = " + str(0 if i == 0 else 1))
+        for j in range(1, N):
+            # print("N",N,"i",i,"j",j)
+            file.write(" & a" + str(j) + " = " + str(1 if i > j else 0))
+        file.write(":" + str(i*i) + ";\n")
+    file.write("endrewards \n")
+
     file.close()
 
 
@@ -721,7 +751,7 @@ def create_multiparam_synchronous_model(file, N):
     file.write("\n")
 
     # rewards here
-    file.write('rewards "coin_flips" \n')
+    file.write('rewards "mean" \n')
     for i in range(N + 1):
         file.write("       a0 = " + str(0 if i == 0 else 1))
         for j in range(1, N):
@@ -729,6 +759,16 @@ def create_multiparam_synchronous_model(file, N):
             file.write(" & a" + str(j) + " = " + str(1 if i > j else 0))
         file.write(":" + str(i) + ";\n")
     file.write("endrewards \n")
+
+    file.write('rewards "mean_squared" \n')
+    for i in range(N + 1):
+        file.write("       a0 = " + str(0 if i == 0 else 1))
+        for j in range(1, N):
+            # print("N",N,"i",i,"j",j)
+            file.write(" & a" + str(j) + " = " + str(1 if i > j else 0))
+        file.write(":" + str(i*i) + ";\n")
+    file.write("endrewards \n")
+
     file.close()
 
 
@@ -883,7 +923,7 @@ def create_multiparam_semisynchronous_model(file, N):
     file.write("\n")
 
     # rewards here
-    file.write('rewards "coin_flips" \n')
+    file.write('rewards "mean" \n')
     for i in range(N + 1):
         file.write("       a0 = " + str(0 if i == 0 else 1))
         for j in range(1, N):
@@ -891,6 +931,16 @@ def create_multiparam_semisynchronous_model(file, N):
             file.write(" & a" + str(j) + " = " + str(1 if i > j else 0))
         file.write(":" + str(i) + ";\n")
     file.write("endrewards \n")
+
+    file.write('rewards "mean_squared" \n')
+    for i in range(N + 1):
+        file.write("       a0 = " + str(0 if i == 0 else 1))
+        for j in range(1, N):
+            # print("N",N,"i",i,"j",j)
+            file.write(" & a" + str(j) + " = " + str(1 if i > j else 0))
+        file.write(":" + str(i*i) + ";\n")
+    file.write("endrewards \n")
+
     file.close()
 
 
@@ -1153,7 +1203,7 @@ def create_multiparam_asynchronous_model(file, N):
     file.write("\n")
 
     # rewards here
-    file.write('rewards "coin_flips" \n')
+    file.write('rewards "mean" \n')
     for i in range(N + 1):
         file.write("       a0 = " + str(0 if i == 0 else 1))
         for j in range(1, N):
@@ -1161,6 +1211,16 @@ def create_multiparam_asynchronous_model(file, N):
             file.write(" & a" + str(j) + " = " + str(1 if i > j else 0))
         file.write(":" + str(i) + ";\n")
     file.write("endrewards \n")
+
+    file.write('rewards "mean_squared" \n')
+    for i in range(N + 1):
+        file.write("       a0 = " + str(0 if i == 0 else 1))
+        for j in range(1, N):
+            # print("N",N,"i",i,"j",j)
+            file.write(" & a" + str(j) + " = " + str(1 if i > j else 0))
+        file.write(":" + str(i*i) + ";\n")
+    file.write("endrewards \n")
+
     file.close()
 
 
@@ -1186,5 +1246,6 @@ def create_properties(N):
         for j in range(1, N):
             file.write("&(a" + str(j) + "=" + str(1 if i > j + 1 else 0) + ")")
         file.write("]\n")
-    file.write("R=? [ F b=1] \n")
+    file.write('R{"mean"}=? [ F b=1] \n')
+    file.write('R{"mean_squared"}=? [ F b=1] \n')
     file.close()

@@ -29,7 +29,7 @@ if not os.path.exists(data_path):
     raise OSError("Directory does not exist: " + str(data_path))
 
 
-def load_all_prism(path, factorize=True, rewards_only=False, f_only=False):
+def load_all_prism(path, factorize=True, agents_quantities=[], rewards_only=False, f_only=False):
     """ Loads all results of parameter synthesis in *path* folder into two maps - f list of rational functions for each property, and rewards list of rational functions for each reward
     
     Args
@@ -44,6 +44,7 @@ def load_all_prism(path, factorize=True, rewards_only=False, f_only=False):
     (f,reward), where
     f: dictionary N -> list of rational functions for each property
     rewards: dictionary N -> list of rational functions for each reward
+    agents_quantities: (list) of population sizes to be used
     """
     default_directory = os.getcwd()
     if not Path(path).is_absolute():
@@ -58,10 +59,16 @@ def load_all_prism(path, factorize=True, rewards_only=False, f_only=False):
             os.chdir(default_directory)
         raise OSError("No valid files in the given directory " + os.path.join(new_dir, path))
 
+    ## Choosing files with the given pattern
     for file in glob.glob(str(path)):
         print(os.path.join(os.getcwd(), file))
         N = int(re.findall('\d+', file)[0])
-        #print(os.getcwd(),file)
+
+        ## Parsing only selected agents quantities
+        if agents_quantities:
+            if N not in agents_quantities:
+                continue
+        # print(os.getcwd(),file)
         file = open(file, "r")
         i = -1
         here = ""
@@ -70,7 +77,7 @@ def load_all_prism(path, factorize=True, rewards_only=False, f_only=False):
         for line in file:
             if line.startswith('Parametric model checking:'):
                 i = i + 1
-            if line.startswith('Parametric model checking: R=?'):
+            if line.startswith('Parametric model checking: R'):
                 here = "r"
             if i >= 0 and line.startswith('Result'):
                 line = line.split(":")[2]
@@ -93,7 +100,7 @@ def load_all_prism(path, factorize=True, rewards_only=False, f_only=False):
                         except TypeError:
                             print("Error while factorising rewards, used not factorised instead")
                             rewards[N].append(line[:-1])
-                            #os.chdir(cwd)
+                            # os.chdir(cwd)
                     else:
                         rewards[N] = line[:-1]
                 elif not here == "r" and not rewards_only:
@@ -106,19 +113,19 @@ def load_all_prism(path, factorize=True, rewards_only=False, f_only=False):
                             print(
                                 "Error while factorising polynome f[{}][{}], used not factorised instead".format(N, i))
                             f[N].append(line[:-1])
-                            #os.chdir(cwd)
+                            # os.chdir(cwd)
                     else:
                         f[N].append(line[:-1])
     os.chdir(default_directory)
     return (f, rewards)
 
 
-def get_f(path, factorize):
-    return load_all_prism(path, factorize, False, True)[0]
+def get_f(path, factorize, agents_quantities=[]):
+    return load_all_prism(path, factorize, agents_quantities=agents_quantities, rewards_only=False, f_only=True)[0]
 
 
-def get_rewards(path, factorize):
-    return load_all_prism(path, factorize, True, False)[1]
+def get_rewards(path, factorize, agents_quantities=[]):
+    return load_all_prism(path, factorize, agents_quantities=agents_quantities, rewards_only=True, f_only=False)[1]
 
 
 def load_all_data(path):
