@@ -84,14 +84,14 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
                 # print(model_file)
                 if not os.path.isfile(model_file_path):
                     print(f"{colored('file', 'red')} {model_file_path} {colored('not found -- skipped', 'red')}")
-                    return False
+                    return 404
                 prism_args.append(model_file_path)
             elif re.compile('\.pctl').search(arg) is not None:
                 property_file_path = os.path.join(properties_path, arg)
                 # print(property_file)
                 if not os.path.isfile(property_file_path):
                     print(f"{colored('file', 'red')} {property_file_path} {colored('not found -- skipped', 'red')}")
-                    return False
+                    return 404
                 prism_args.append(property_file_path)
             elif re.compile('\.txt').search(arg) is not None:
                 prism_output_file_path = os.path.join(prism_output_path, arg)
@@ -127,23 +127,48 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
                         print("calling \"", " ".join(args))
                     output = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8")
 
-                    ## Optional check for syntax error
-                    if 'Syntax error' in output:
-                        print(colored(f"A syntax error occurred"), "red")
+                    ## Check for errors
+                    if 'OutOfMemoryError' in output:
+                        if "-javamaxmem" not in args:
+                            memory = round(psutil.virtual_memory()[0] / 1024 / 1024 / 1024)  ## total memory converted to GB
+                            print(colored(f"A memory error occurred while seq, max memory increased to {memory}GB", "red"))
+                            args[-2] = "-javamaxmem"
+                            args[-1] = f"{memory}g"
+                            args.append("-property")
+                            args.append(str(i))
+                            output = subprocess.run(args, stdout=subprocess.PIPE,
+                                                    stderr=subprocess.STDOUT).stdout.decode("utf-8")
+                            if 'OutOfMemoryError' in output:
+                                print(colored(f"A memory error occurred while seq", "red"))
+                                return "memory"
+                        else:
+                            if std_output_path is not None:
+                                with open(output_file_path, 'a') as output_file:
+                                    if not silent:
+                                        print("output here: " + str(output_file_path))
+                                    output_file.write(output)
+                            print(colored(f"A memory error occurred while seq", "red"))
+                            return "memory"
 
                     if std_output_path is not None:
                         with open(output_file_path, 'a') as output_file:
                             if not silent:
                                 print("output here: " + str(output_file_path))
                             output_file.write(output)
+
+                    if 'Syntax error' in output:
+                        print(colored(f"A syntax error occurred", "red"))
+                        return "syntax"
+                    if 'NullPointerException' in output:
+                        print(colored(f"A NullPointerException occurred", "red"))
+                        return "NullPointerException"
+                    if 'use -noprobchecks' in output:
+                        print(colored(f"Outgoing transitions checksum error occurred", "red"))
+                        return "noprobchecks"
         else:
             if not silent:
                 print("calling \"", " ".join(args))
             output = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8")
-
-            ## Optional check for syntax error
-            if 'Syntax error' in output:
-                print(colored(f"A syntax error occurred"), "red")
 
             if std_output_path is not None:
                 with open(output_file_path, 'w') as output_file:
@@ -151,6 +176,22 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
                         print("output here: " + str(output_file_path))
                     output_file.write(output)
                     output_file.close()
+
+            ## Check for errors
+            if 'OutOfMemoryError' in output:
+                print(colored(f"A memory error occurred while seq", "red"))
+                return "memory"
+            if 'Syntax error' in output:
+                print(colored(f"A syntax error occurred", "red"))
+                return "syntax"
+            if 'NullPointerException' in output:
+                print(colored(f"A NullPointerException occurred", "red"))
+                return "NullPointerException"
+            if 'use -noprobchecks' in output:
+                print(colored(f"Outgoing transitions checksum error occurred", "red"))
+                return "noprobchecks"
+
+        return 0
     finally:
         os.chdir(curr_dir)
 
@@ -195,51 +236,51 @@ def call_prism_files(file_prefix, multiparam, agents_quantities, seq=False, nopr
             else:
                 q = ",q=0:1"
 
-            error = False
-
             # print("{} prop_{}.pctl {}-param p=0:1{}".format(file,N,noprobchecks,q))
-            skipped = call_prism("{} prop_{}.pctl {}{}-param p=0:1{}".format(file, N, memory, noprobchecks, q), seq=seq,
+            error = call_prism("{} prop_{}.pctl {}{}-param p=0:1{}".format(file, N, memory, noprobchecks, q), seq=seq,
                                  model_path=model_path, properties_path=properties_path, std_output_path=output_path)
-            print("  It took", socket.gethostname(), time.time() - start_time, "seconds to run")
-            if skipped:
-                print("skipped", skipped)
+
+            print(f"  Return code is: {error}")
+            print(f"  It took {socket.gethostname()}, {time.time() - start_time} seconds to run")
+
+            if error == 404:
+                print("not found, skipped")
                 continue
 
-            # print("seq", seq)
-            # print("noprobchecks", noprobchecks)
-            if (not seq) or (noprobchecks == ""):
-                # if 'GC overhead' in tailhead.tail(open('output_path/{}.txt'.format(file.split('.')[0])),40).read():
-                with open(os.path.join(output_path, "{}.txt".format(file.stem))) as file_open:
-                    # print("I am in", file_open)
-                    file_open_read = file_open.read()
-                    # print('GC overhead' in file_open_read)
-                    # print('-noprobchecks' in file_open_read)
+            ## Check for syntax error
+            if error == "syntax":
+                print(colored("A syntax error occurred, sorry we can not correct that", "red"))
+                continue
 
-                    ## Check if there was a memory error
-                    if 'GC overhead' in file_open_read or "OutOfMemoryError" in file_open_read:
-                        if seq:
-                            ## A memory occured while seq
-                            memory = round(psutil.virtual_memory()[0]/1024/1024/1024)  ## total memory converted to GB
-                            print(colored(f"A memory error occurred while seq, max memory increased to {memory}"), "red")
-                        else:
-                            print(colored("A memory error occurred. Running prop by prob now", "red"))
+            ## Check if there was problem with sum of probabilities
+            if error == "noprobchecks":
+                if noprobchecks == "":
+                    print(colored("Outgoing transitions checksum error occurred. Running with noprobchecks option", "red"))
+                    noprobchecks = '-noprobchecks '
+                else:
+                    print(colored("This is embarrassing, but Outgoing transitions checksum error occurred while noprobchecks option",
+                                  "red"))
 
-                        seq = True
-                        ## Remove the file because appending would no overwrite the file
-                        os.remove(os.path.join(output_path, "{}.txt".format(file.stem)))
-                        error = True
+            ## Check if memory problem has occurred
+            if error == "memory":
+                if not seq:
+                    ## A memory occurred while not seq, trying seq now
+                    seq = True
+                    ## Remove the file because appending would no overwrite the file
+                    os.remove(os.path.join(output_path, "{}.txt".format(file.stem)))
+                    print(colored("A memory error occurred. Running prop by prob now", "red"))
+                else:
+                    ## A memory occurred while seq
+                    ## Remove the file because appending would no overwrite the file
+                    os.remove(os.path.join(output_path, "{}.txt".format(file.stem)))
+                    memory = round(psutil.virtual_memory()[0] / 1024 / 1024 / 1024)  ## total memory converted to GB
+                    print(colored(f"A memory error occurred while seq, max memory increased to {memory}GB", "red"))
 
-                    ## Check if there was problem with sum of probabilities
-                    if 'use -noprobchecks' in file_open_read:
-                        print(colored("Outgoing transitions checksum error occurred. Running with noprobchecks option","red"))
-                        noprobchecks = '-noprobchecks '
-                        error = True
-
-                    ## If an error found
-                if error:
-                    ## Call this function for this file again
-                    print()
-                    call_prism_files(file_prefix, multiparam, [N], seq, noprobchecks, memory=memory, model_path=model_path, properties_path=properties_path, output_path=prism_results)
+            if error is not 0:
+                ## If an error occurred call this function for this file again
+                print()
+                call_prism_files(file_prefix, multiparam, [N], seq, noprobchecks, memory=memory, model_path=model_path,
+                                 properties_path=properties_path, output_path=prism_results)
             print()
 
 
