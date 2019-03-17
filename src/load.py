@@ -110,8 +110,7 @@ def load_all_prism(path, factorize=True, agents_quantities=[], rewards_only=Fals
                         try:
                             f[N].append(str(factor(line[:-1])))
                         except TypeError:
-                            print(
-                                "Error while factorising polynome f[{}][{}], used not factorised instead".format(N, i))
+                            print(f"Error while factorising polynome f[{N}][{i}], used not factorised instead")
                             f[N].append(line[:-1])
                             # os.chdir(cwd)
                     else:

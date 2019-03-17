@@ -1,3 +1,4 @@
+import datetime
 import os
 import re
 import socket
@@ -127,7 +128,7 @@ def check_unsafe(region, props, intervals, silent=False, called=False):
     """
     ## Initialisation
     if not silent:
-        print("checking unsafe", region)
+        print("checking unsafe", region, "current time is", datetime.datetime.now())
 
     # p = Real('p')
     # print(p)
@@ -195,7 +196,7 @@ def check_safe(region, props, intervals, silent=False, called=False):
     """
     # initialisation
     if not silent:
-        print("checking safe", region)
+        print("checking safe", region, "current time is", datetime.datetime.now())
 
     if called:
         globals()["parameters"] = set()
@@ -253,7 +254,7 @@ def check_safe(region, props, intervals, silent=False, called=False):
         return s.model()
 
 
-def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version, size_q=5):
+def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version, size_q=5, time_out=False):
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
     Args
     ----------
@@ -266,6 +267,7 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
     silent: (Bool): if silent printed output is set to minimum
     version: (Int): version of the algorithm to be used
     size_q: (Int): number of samples in dimension used for presampling
+    time_out: (Int): time out in minutes
     """
     ## Initialisation
     ## Params
@@ -299,23 +301,23 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
 
     if version == 1:
         print("Using DFS method")
-        private_check_deeper(region, props, intervals, n, epsilon, coverage, silent)
+        private_check_deeper(region, props, intervals, n, epsilon, coverage, silent, time_out=time_out)
     elif version == 2:
         print("Using BFS method")
         globals()["que"] = Queue()
-        private_check_deeper_queue(region, props, intervals, n, epsilon, coverage, silent)
+        private_check_deeper_queue(region, props, intervals, n, epsilon, coverage, silent, time_out=time_out )
     elif version == 3:
         print("Using BFS method with passing examples")
         globals()["que"] = Queue()
-        private_check_deeper_queue_checking(region, props, intervals, n, epsilon, coverage, silent, None)
+        private_check_deeper_queue_checking(region, props, intervals, n, epsilon, coverage, silent, None, time_out=time_out)
     elif version == 4:
         print("Using BFS method with passing examples and counterexamples")
         globals()["que"] = Queue()
-        private_check_deeper_queue_checking_both(region, props, intervals, n, epsilon, coverage, silent, None)
+        private_check_deeper_queue_checking_both(region, props, intervals, n, epsilon, coverage, silent, None, time_out=time_out)
     elif version == 5:
         print("Using iterative method")
         globals()["que"] = Queue()
-        private_check_deeper_interval(region, props, intervals, n, epsilon, coverage, silent)
+        private_check_deeper_interval(region, props, intervals, n, epsilon, coverage, silent, time_out=time_out)
     elif version == 6:
         print("Using presampled interval method")
         # globals()["space"] = RefinedSpace(copy.copy(region), parameters, [], [])
@@ -339,7 +341,7 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
     return space
 
 
-def private_check_deeper(region, props, intervals, n, epsilon, coverage, silent):
+def private_check_deeper(region, props, intervals, n, epsilon, coverage, silent, time_out=False):
     """ Refining the parameter space into safe and unsafe regions
     Args
     ----------
@@ -350,6 +352,7 @@ def private_check_deeper(region, props, intervals, n, epsilon, coverage, silent)
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
     silent: (Bool): if silent printed output is set to minimum
+    time_out: (Int): time out in minutes
     """
 
     ## TBD check consitency
@@ -431,7 +434,7 @@ def private_check_deeper(region, props, intervals, n, epsilon, coverage, silent)
     return result
 
 
-def private_check_deeper_queue(region, props, intervals, n, epsilon, coverage, silent):
+def private_check_deeper_queue(region, props, intervals, n, epsilon, coverage, silent, time_out=False):
     """ Refining the parameter space into safe and unsafe regions
 
     Args
@@ -443,6 +446,7 @@ def private_check_deeper_queue(region, props, intervals, n, epsilon, coverage, s
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
     silent: (Bool): if silent printed output is set to minimum
+    time_out: (Int): time out in minutes
     """
 
     ## TBD check consitency
@@ -524,7 +528,7 @@ def private_check_deeper_queue(region, props, intervals, n, epsilon, coverage, s
         private_check_deeper_queue(*que.dequeue())
 
 
-def private_check_deeper_queue_checking(region, props, intervals, n, epsilon, coverage, silent, model=None):
+def private_check_deeper_queue_checking(region, props, intervals, n, epsilon, coverage, silent, model=None, time_out=False):
     """ THIS IS OBSOLETE METHOD, HERE JUST TO BE COMPARED WITH THE NEW ONE
 
     Refining the parameter space into safe and unsafe regions
@@ -539,6 +543,7 @@ def private_check_deeper_queue_checking(region, props, intervals, n, epsilon, co
     coverage: (Float): coverage threshold to stop computation
     silent: (Bool): if silent printed output is set to minimum
     model: (example,counterexample) of the satisfaction in the given region
+    time_out: (Int): time out in minutes
     """
 
     ## TBD check consitency
@@ -644,7 +649,7 @@ def private_check_deeper_queue_checking(region, props, intervals, n, epsilon, co
 
 
 def private_check_deeper_queue_checking_both(region, props, intervals, n, epsilon, coverage, silent,
-                                             model=None):
+                                             model=None, time_out=False):
     """ Refining the parameter space into safe and unsafe regions
 
     Args
@@ -657,6 +662,7 @@ def private_check_deeper_queue_checking_both(region, props, intervals, n, epsilo
     coverage: (Float): coverage threshold to stop computation
     silent: (Bool): if silent printed output is set to minimum
     model: (example, counterexample) of the satisfaction in the given region
+    time_out: (Int): time out in minutes
     """
 
     ## TBD check consitency
@@ -834,7 +840,7 @@ def colored(greater, smaller):
     # pic.add_collection(pc)
 
 
-def check_deeper_iter(region, props, intervals, n, epsilon, coverage, silent):
+def check_deeper_iter(region, props, intervals, n, epsilon, coverage, silent, time_out=False):
     """ New Refining the parameter space into safe and unsafe regions with iterative method using alg1
 
     Args
@@ -846,6 +852,7 @@ def check_deeper_iter(region, props, intervals, n, epsilon, coverage, silent):
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
     silent: (Bool): if silent printed output is set to minimum
+    time_out: (Int): time out in minutes
     """
     new_tresh = copy.copy(region)
 
@@ -881,7 +888,7 @@ def check_deeper_iter(region, props, intervals, n, epsilon, coverage, silent):
     check_deeper(new_tresh, props, intervals, n, epsilon, coverage, True, 1)
 
 
-def check_interval_in(region, props, intervals, silent=False, called=True):
+def check_interval_in(region, props, intervals, silent=False, called=False):
     """ Check if the given region is unsafe or not.
 
     It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given
@@ -919,8 +926,9 @@ def check_interval_in(region, props, intervals, silent=False, called=True):
     for prop in props:
         # print(eval(prop))
         # print(intervals[i])
-        # print((intervals[i].start, intervals[i].end))
-        # print(mpi(0,1) in mpi(0,2))
+        # print(float(intervals[i].start), float(intervals[i].end))
+        # print(mpi(float(intervals[i].start), float(intervals[i].end)))
+        print("eval(prop)", eval(prop))
         if not eval(prop) in mpi(float(intervals[i].start), float(intervals[i].end)):
             return False
         i = i + 1
@@ -929,7 +937,7 @@ def check_interval_in(region, props, intervals, silent=False, called=True):
     return True
 
 
-def check_interval_out(region, props, intervals, silent=False, called=True):
+def check_interval_out(region, props, intervals, silent=False, called=False):
     """ Check if the given region is unsafe or not.
 
     It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given
@@ -958,7 +966,17 @@ def check_interval_out(region, props, intervals, silent=False, called=True):
     ## Assign each parameter its interval
     i = 0
     for param in globals()["parameters"]:
-        globals()[param] = mpi(region[i][0], region[i][1])
+        print("region", region, "precisely within interval", region[i][0], region[i][1])
+        print(mpi(region[i][0], region[i][1]))
+        # globals()[param] = mpi(region[i][0], region[i][1])
+        try:
+            #print(mpi(region[i][0], region[i][1]))
+            globals()[param] = mpi(region[i][0], region[i][1])
+        except:
+            print("Error within region", region, "precisely within interval", region[i][0], region[i][1])
+            print("while parameters: ", globals()["parameters"])
+            print("and the parameter:", globals()[param])
+
         i = i + 1
 
     ## Check that all prop are in its interval
@@ -968,7 +986,10 @@ def check_interval_out(region, props, intervals, silent=False, called=True):
         # print(intervals[i])
         # print((intervals[i].start, intervals[i].end))
         # print(mpi(0,1) in mpi(0,2))
-        prop_eval = eval(prop)
+        try:
+            prop_eval = eval(prop)
+        except:
+            print("Error with prop: ", prop)
         interval = mpi(float(intervals[i].start), float(intervals[i].end))
         ## If there exists an intersection (neither of these interval is greater in all points)
         if not (prop_eval > interval or prop_eval < interval):
@@ -979,7 +1000,7 @@ def check_interval_out(region, props, intervals, silent=False, called=True):
     return True
 
 
-def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage, silent, presampled=False):
+def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage, silent, presampled=False, time_out=False):
     """ Refining the parameter space into safe and unsafe regions
 
     Args
@@ -991,6 +1012,8 @@ def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
     silent: (Bool): if silent printed output is set to minimum
+    presampled (Bool): if True, use presampled subregions to start refinement with
+    time_out: (Int): time out in minutes
     """
 
     ## TBD check consitency
@@ -1027,6 +1050,7 @@ def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage
         return "coverage ", space.get_coverage(), " is above the threshold"
 
     ## Resolve the result
+    print("gonna check region: ", region)
     if check_interval_out(region, props, intervals, silent, called=False) is True:
         result = "unsafe"
     elif check_interval_in(region, props, intervals, silent, called=False) is True:
@@ -1506,8 +1530,10 @@ class TestLoad(unittest.TestCase):
         print("Refinement here")
         ## check_deeper_interval(region, prop, intervals, n, epsilon, cov, silent, version)
 
-        ## UNCOMMENT THIS TBD
-        # check_deeper_interval([(0, 4)], ["x"], [Interval(0, 3)], 5, 0, 0.95, silent=False, version=1)
+        ## UNCOMMENT FOLLOWING to run this test
+        # check_deeper([(0, 4)], ["x"], [Interval(0, 3)], 5, 0, 0.95, silent=False, version=5)
+        # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 5, 0, 0.95, silent=True, version=5)
+        # check_deeper([(0, 0.5), (0, 0.5)], ["x+y"], [Interval(0, 1)], 5, 0, 0.95, silent=False, version=5)
 
     def test_Interval(self):
         print()
@@ -1562,10 +1588,10 @@ class TestLoad(unittest.TestCase):
     def test_presampled(self):
         print("Presampled refinement here")
         ## UNCOMMENT THIS TBD
-        # check_deeper_interval([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 12, 0, 0.95, silent=False, version=1)
+        # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 12, 0, 0.95, silent=False, version=5)
         check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 5, 0, 0.95, silent=True, version=6)
 
-        # check_deeper_interval([(0, 0.5), (0, 0.5)], ["x+y"], [Interval(0, 1)], 5, 0, 0.95, silent=False, version=1)
+        # check_deeper([(0, 0.5), (0, 0.5)], ["x+y"], [Interval(0, 1)], 5, 0, 0.95, silent=False, version=5)
 
         # a = sample(RefinedSpace([(0, 1), (0, 1), (0, 1)], ["x", "y", "z"]), ["x+y"], [Interval(0, 1)], 3, compress=True)
         # print(a)
@@ -1573,8 +1599,25 @@ class TestLoad(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    f_multiparam = {}
-    f_multiparam[10] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    ## mpi test
+    a = mpi(0.75, 0.78125)
+    b = mpi(0.39375000000000004441, 0.421875)
+
+    ## NORMAL TEST
+    from load import create_intervals, get_f, load_pickled_data
+    agents_quantities = [2, 3, 5, 10]
+    f = get_f("./sem*[0-9].txt", True, agents_quantities)
+    D3 = load_pickled_data("Data_two_param")
+
+    coverage_thresh = 0.95
+    alpha, n_samples, max_depth, min_rect_size, N, algorithm, v_p, v_q = 0.95, 100, 12, 1e-05, 2, 5, 0.028502714675268215, 0.03259111103419188
+
+    space = check_deeper([(0, 1), (0, 0.9)], f[N], create_intervals(alpha, n_samples, D3[("synchronous_parallel_", N, n_samples, v_p, v_q)]),
+                         max_depth, min_rect_size, coverage_thresh, False, algorithm)
+
+
+    ## MULTIPARAM TEST
+    f_multiparam = {10: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
     f_multiparam[10][0] = '(p - 1)**10'
     f_multiparam[10][1] = '10*p*(p - 1)**9*(q1 - 1)**9'
     f_multiparam[10][
@@ -1608,7 +1651,9 @@ if __name__ == "__main__":
     sys.setrecursionlimit(23000)
     start_time = time.time()
     # result6 = check_deeper([(0.0869140625000000, 0.112304687500000), (0, 1)], [replaced_f6], [intervals[6]], 16, 0.01**3*0.5, 0.999, False, 5)
-    result6 = check_deeper([(0.0869140625000000, 0.112304687500000), (0, 1)], [replaced_f6], [intervals[6]], 16, 0.01 ** 3 , 0.999, False, 4)
+
+    ## TO RUN THIS TEST UNCOMENT FOLLOWING LINE
+    # result6 = check_deeper([(0.0869140625000000, 0.112304687500000), (0, 1)], [replaced_f6], [intervals[6]], 16, 0.01 ** 3 , 0.999, False, 4)
 
     print("  It took", socket.gethostname(), time.time() - start_time, "seconds to run")
 

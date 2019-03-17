@@ -83,14 +83,14 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
                 model_file_path = os.path.join(model_path, arg)
                 # print(model_file)
                 if not os.path.isfile(model_file_path):
-                    print(f"{colored('file', 'red')} {model_file_path} {colored('not not found -- skipped', 'red')}")
+                    print(f"{colored('file', 'red')} {model_file_path} {colored('not found -- skipped', 'red')}")
                     return False
                 prism_args.append(model_file_path)
             elif re.compile('\.pctl').search(arg) is not None:
                 property_file_path = os.path.join(properties_path, arg)
                 # print(property_file)
                 if not os.path.isfile(property_file_path):
-                    print(f"{colored('file', 'red')} {property_file_path} {colored('not not found -- skipped', 'red')}")
+                    print(f"{colored('file', 'red')} {property_file_path} {colored('not found -- skipped', 'red')}")
                     return False
                 prism_args.append(property_file_path)
             elif re.compile('\.txt').search(arg) is not None:
@@ -116,7 +116,6 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
         ## forwarding error output to the file
         # args.append("2>&1")
 
-
         if seq:
             with open(property_file_path, 'r') as property_file:
                 args.append("-property")
@@ -126,8 +125,12 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
                     args[-1] = str(i)
                     if not silent:
                         print("calling \"", " ".join(args))
-                    output = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode(
-                        "utf-8")
+                    output = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8")
+
+                    ## Optional check for syntax error
+                    if 'Syntax error' in output:
+                        print(colored(f"A syntax error occurred"), "red")
+
                     if std_output_path is not None:
                         with open(output_file_path, 'a') as output_file:
                             if not silent:
@@ -137,6 +140,11 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
             if not silent:
                 print("calling \"", " ".join(args))
             output = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8")
+
+            ## Optional check for syntax error
+            if 'Syntax error' in output:
+                print(colored(f"A syntax error occurred"), "red")
+
             if std_output_path is not None:
                 with open(output_file_path, 'w') as output_file:
                     if not silent:
@@ -212,9 +220,9 @@ def call_prism_files(file_prefix, multiparam, agents_quantities, seq=False, nopr
                         if seq:
                             ## A memory occured while seq
                             memory = round(psutil.virtual_memory()[0]/1024/1024/1024)  ## total memory converted to GB
-                            print("A memory error occurred while seq, max memory increased to ", memory)
+                            print(colored(f"A memory error occurred while seq, max memory increased to {memory}"), "red")
                         else:
-                            print("A memory error occurred. Running prop by prob now")
+                            print(colored("A memory error occurred. Running prop by prob now", "red"))
 
                         seq = True
                         ## Remove the file because appending would no overwrite the file
@@ -223,7 +231,7 @@ def call_prism_files(file_prefix, multiparam, agents_quantities, seq=False, nopr
 
                     ## Check if there was problem with sum of probabilities
                     if 'use -noprobchecks' in file_open_read:
-                        print("Outgoing transitions checksum error occurred. Running with noprobchecks option")
+                        print(colored("Outgoing transitions checksum error occurred. Running with noprobchecks option","red"))
                         noprobchecks = '-noprobchecks '
                         error = True
 

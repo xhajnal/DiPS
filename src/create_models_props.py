@@ -65,7 +65,7 @@ def create_synchronous_model(file, N):
     file.write("\n")
 
     # module here
-    file.write("module bees_" + str(N) + "\n")
+    file.write(f"module two_param_agents_{N}\n")
     file.write("       // ai - state of agent i:  -1:init 0:total_failure 1:success 2:failure_after_first_attempt\n")
     for i in range(N):
         file.write("       a" + str(i) + " : [-1..2] init -1; \n")
@@ -213,7 +213,7 @@ def create_semisynchronous_model(file, N):
     file.write("\n")
 
     # module here
-    file.write("module bees_" + str(N) + "\n")
+    file.write(f"module two_param_agents_{N}\n")
     file.write("       // ai - state of agent i:  -1:init 0:total_failure 1:succes 2:failure_after_first_attempt\n")
     for i in range(N):
         file.write("       a" + str(i) + " : [-1..2] init -1; \n")
@@ -376,7 +376,7 @@ def create_asynchronous_model(file, N):
     file.write("\n")
 
     # module here
-    file.write("module bees_" + str(N) + "\n")
+    file.write(f"module two_param_agents_{N}\n")
     file.write("       // ai - state of agent i:  -1:init 0:total_failure 1:success 2:failure_after_first_attempt\n")
     for i in range(N):
         file.write("       a" + str(i) + " : [-1..2] init -1; \n")
@@ -657,7 +657,7 @@ def create_multiparam_synchronous_model(file, N):
     file.write("\n")
 
     # module here
-    file.write("module bees_" + str(N) + "\n")
+    file.write(f"module multi_param_agents_{N}\n")
     file.write("       // ai - state of agent i:  -1:init 0:total_failure 1:succes 2:failure_after_first_attempt\n")
     for i in range(N):
         file.write("       a" + str(i) + " : [-1..2] init -1; \n")
@@ -807,7 +807,7 @@ def create_multiparam_semisynchronous_model(file, N):
     file.write("\n")
 
     # module here
-    file.write("module multiparam_bees_" + str(N) + "\n")
+    file.write(f"module multi_param_agents_{N}\n")
     file.write("       // ai - state of agent i:  -1:init 0:total_failure 1:success 2:failure_after_first_attempt\n")
     for i in range(N):
         file.write("       a" + str(i) + " : [-1..2] init -1; \n")
@@ -979,7 +979,7 @@ def create_multiparam_asynchronous_model(file, N):
     file.write("\n")
 
     # module here
-    file.write("module multiparam_bees_" + str(N) + "\n")
+    file.write(f"module multi_param_agents_{N}\n")
     file.write("       // ai - state of agent i:  -1:init 0:total_failure 1:success 2:failure_after_first_attempt\n")
     for i in range(N):
         file.write("       a" + str(i) + " : [-1..2] init -1; \n")
