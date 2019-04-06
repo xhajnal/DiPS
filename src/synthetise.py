@@ -4,7 +4,8 @@ import re
 import socket
 import sys
 import time
-from collections import Iterable
+import platform
+from collections.abc import Iterable
 
 import numpy as np
 from sympy import Interval
@@ -21,7 +22,6 @@ from sample_n_visualise import cartesian_product
 
 import configparser
 
-
 config = configparser.ConfigParser()
 # print(os.getcwd())
 workspace = os.path.dirname(__file__)
@@ -34,7 +34,7 @@ if not os.path.exists(z3_path):
     raise OSError("Directory does not exist: " + str(z3_path))
 
 cwd = os.getcwd()
-os.chdir(z3_path)
+# os.chdir(z3_path)
 print("z3_path", z3_path)
 
 # sys.path.append("../python")
@@ -42,11 +42,23 @@ print("z3_path", z3_path)
 # from z3 import *
 # os.chdir(cwd)
 
-try:
-    print("pythonpath: ", os.environ["PYTHONPATH"])
-except:
-    print("pythonpath is empty, this may cause trouble")
+# import struct
+# print("You are running "+ str(struct.calcsize("P") * 8)+"bit Python, please verify that installed z3 is compatible")
+# print("path: ", os.environ["PATH"])
 
+# try:
+#     print("pythonpath: ", os.environ["PYTHONPATH"])
+# except:
+#     print("pythonpath is empty, this may cause trouble")
+
+## Add z3 to PYTHON PATH
+if z3_path not in os.environ["PYTHONPATH"]:
+    if "wind" in platform.system().lower():
+        os.environ["PYTHONPATH"] = os.environ["PYTHONPATH"] + ";" + z3_path
+    else:
+        os.environ["PYTHONPATH"] = os.environ["PYTHONPATH"] + ":" + z3_path
+
+## Try to import z3
 try:
     from z3 import *
     # print(os.getcwd())
@@ -57,11 +69,10 @@ except:
 finally:
     os.chdir(cwd)
 
+## Try to run z3
 try:
     p = Real('p')
 except:
-    import platform
-
     if '/' in z3_path:
         z3_path_short = '/'.join(z3_path.split("/")[:-1])
     elif '\\' in z3_path:
@@ -75,7 +86,6 @@ except:
                 os.environ["PATH"] = os.environ["PATH"] + ";" + z3_path_short
             else:
                 os.environ["PATH"] = os.environ["PATH"] + ":" + z3_path_short
-    os.environ["PYTHONPATH"] = z3_path
     os.environ["Z3_LIBRARY_PATH"] = z3_path
     os.environ["Z3_LIBRARY_DIRS"] = z3_path
     try:
