@@ -50,19 +50,26 @@ elif '\\' in z3_path:
 else:
     print("Warning: Could not set path to add to the PATH, please add it manually")
 
-if z3_path_short not in os.environ["PATH"]:
-    if z3_path_short.replace("/", "\\") not in os.environ["PATH"]:
-        if "wind" in platform.system().lower():
-            os.environ["PATH"] = os.environ["PATH"] + ";" + z3_path_short
-        else:
-            os.environ["PATH"] = os.environ["PATH"] + ":" + z3_path_short
+if "PATH" not in os.environ:
+    os.environ["PATH"] = z3_path
+else:
+    if z3_path_short not in os.environ["PATH"]:
+        if z3_path_short.replace("/", "\\") not in os.environ["PATH"]:
+            if "wind" in platform.system().lower():
+                os.environ["PATH"] = os.environ["PATH"] + ";" + z3_path_short
+            else:
+                os.environ["PATH"] = os.environ["PATH"] + ":" + z3_path_short
 
 ## Add z3 to PYTHON PATH
-if z3_path not in os.environ["PYTHONPATH"]:
-    if "wind" in platform.system().lower():
-        os.environ["PYTHONPATH"] = os.environ["PYTHONPATH"] + ";" + z3_path
-    else:
-        os.environ["PYTHONPATH"] = os.environ["PYTHONPATH"] + ":" + z3_path
+if "PYTHONPATH" not in os.environ:
+    os.environ["PYTHONPATH"] = z3_path
+else:
+    if z3_path not in os.environ["PYTHONPATH"]:
+
+        if "wind" in platform.system().lower():
+            os.environ["PYTHONPATH"] = os.environ["PYTHONPATH"] + ";" + z3_path
+        else:
+            os.environ["PYTHONPATH"] = os.environ["PYTHONPATH"] + ":" + z3_path
 
 ## Add z3 to LDLIB PATH
 if "wind" not in platform.system().lower():
