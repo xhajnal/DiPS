@@ -60,6 +60,8 @@ else:
             else:
                 os.environ["PATH"] = os.environ["PATH"] + ":" + z3_path_short
 
+sys.path.append(z3_path)
+
 ## Add z3 to PYTHON PATH
 if "PYTHONPATH" not in os.environ:
     os.environ["PYTHONPATH"] = z3_path
@@ -74,13 +76,13 @@ else:
 ## Add z3 to LDLIB PATH
 if "wind" not in platform.system().lower():
     if "LD_LIBRARY_PATH" in os.environ:
-        os.environ["LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"] + ":" + z3_path
+        os.environ["LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"] + ":" + z3_path_short
     else:
-        os.environ["LD_LIBRARY_PATH"] = z3_path
+        os.environ["LD_LIBRARY_PATH"] = z3_path_short
 
 ##  Add z3 to other variables
-os.environ["Z3_LIBRARY_PATH"] = z3_path
-os.environ["Z3_LIBRARY_DIRS"] = z3_path
+os.environ["Z3_LIBRARY_PATH"] = z3_path_short
+os.environ["Z3_LIBRARY_DIRS"] = z3_path_short
 
 ## Try to import z3
 try:
