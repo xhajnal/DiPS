@@ -9,7 +9,7 @@ Feel free to leave response either via issues or email.
 *****
 ## HOW TO INSTALL
 
-### INSTALL DEPENDENCIES:
+### 1. INSTALL DEPENDENCIES:
 
 * [Jupyter Notebook](https://jupyter.org/install)
 * [z3](https://github.com/Z3Prover/z3/releases) 
@@ -19,7 +19,7 @@ Feel free to leave response either via issues or email.
 * missing python packages 
 
 ****
-### SETUP CONFIG
+### 2. SETUP CONFIG
 
 in the main folder there is `config.ini` file. Please fill in required paths.
 
@@ -43,13 +43,13 @@ in the main folder there is `config.ini` file. Please fill in required paths.
 
 Several notebooks appears:
  
-* `create_data_and_synth_params` can be used to automatically create models, properties, and synthetise rational function using PRISM for population models used in [1]
+* `create_data_and_synth_params` can be used to automatically create models, properties, and synthetise rational function using PRISM for population models used in [[1]](#one).
 * `sample_n_visualise` samples and visualises result rational functions
 * `generate_data` generate synthetic data by simulating the model
 * `direct_param_synth` creates commands to be used for "direct" constrain solving using PRISM and Storm without deriving rational functions.
 * `analysis` our method - parameter space refinement using z3 solver or interval arithmetic to solve constraints    
 
-to run thought the workflow of the paper just run the notebooks in this order. The documentation and the source code of the used functions is in `mpm\src`. When you are familiar with the notebooks, try your input files or even adapt the notebook.  
+to run thought the workflow of the paper just run the notebooks in this order. The documentation and the source code of the used functions is in `mpm\src`. When you are familiar with the notebooks, try your input files or even adapt the notebooks.  
 
 
 *****
