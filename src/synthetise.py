@@ -34,22 +34,28 @@ if not os.path.exists(z3_path):
     raise OSError("Directory does not exist: " + str(z3_path))
 
 cwd = os.getcwd()
-# os.chdir(z3_path)
 print("z3_path", z3_path)
-
-# sys.path.append("../python")
-# sys.path.append("..")
-# from z3 import *
-# os.chdir(cwd)
 
 # import struct
 # print("You are running "+ str(struct.calcsize("P") * 8)+"bit Python, please verify that installed z3 is compatible")
 # print("path: ", os.environ["PATH"])
 
-# try:
-#     print("pythonpath: ", os.environ["PYTHONPATH"])
-# except:
-#     print("pythonpath is empty, this may cause trouble")
+# print(os.environ["PATH"])
+
+##  Add z3 to PATH
+if '/' in z3_path:
+    z3_path_short = '/'.join(z3_path.split("/")[:-1])
+elif '\\' in z3_path:
+    z3_path_short = '\\'.join(z3_path.split("\\")[:-1])
+else:
+    print("Warning: Could not set path to add to the PATH, please add it manually")
+
+if z3_path_short not in os.environ["PATH"]:
+    if z3_path_short.replace("/", "\\") not in os.environ["PATH"]:
+        if "wind" in platform.system().lower():
+            os.environ["PATH"] = os.environ["PATH"] + ";" + z3_path_short
+        else:
+            os.environ["PATH"] = os.environ["PATH"] + ":" + z3_path_short
 
 ## Add z3 to PYTHON PATH
 if z3_path not in os.environ["PYTHONPATH"]:
@@ -57,6 +63,17 @@ if z3_path not in os.environ["PYTHONPATH"]:
         os.environ["PYTHONPATH"] = os.environ["PYTHONPATH"] + ";" + z3_path
     else:
         os.environ["PYTHONPATH"] = os.environ["PYTHONPATH"] + ":" + z3_path
+
+## Add z3 to LDLIB PATH
+if "wind" not in platform.system().lower():
+    if "LD_LIBRARY_PATH" in os.environ:
+        os.environ["LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"] + ":" + z3_path
+    else:
+        os.environ["LD_LIBRARY_PATH"] = z3_path
+
+##  Add z3 to other variables
+os.environ["Z3_LIBRARY_PATH"] = z3_path
+os.environ["Z3_LIBRARY_DIRS"] = z3_path
 
 ## Try to import z3
 try:
@@ -66,32 +83,12 @@ try:
     # subprocess.call(["python", "example.py"])
 except:
     raise Exception("could not load z3 from: ", z3_path)
-finally:
-    os.chdir(cwd)
 
 ## Try to run z3
 try:
     p = Real('p')
 except:
-    if '/' in z3_path:
-        z3_path_short = '/'.join(z3_path.split("/")[:-1])
-    elif '\\' in z3_path:
-        z3_path_short = '\\'.join(z3_path.split("\\")[:-1])
-    else:
-        print("Warning: Could not set path to add to the PATH, please add it manually")
-
-    if z3_path_short not in os.environ["PATH"]:
-        if z3_path_short.replace("/", "\\") not in os.environ["PATH"]:
-            if "wind" in platform.system().lower():
-                os.environ["PATH"] = os.environ["PATH"] + ";" + z3_path_short
-            else:
-                os.environ["PATH"] = os.environ["PATH"] + ":" + z3_path_short
-    os.environ["Z3_LIBRARY_PATH"] = z3_path
-    os.environ["Z3_LIBRARY_DIRS"] = z3_path
-    try:
-        p = Real('p')
-    except:
-        raise Exception("z3 not loaded properly")
+    raise Exception("z3 not loaded properly")
 
 
 class Queue:
