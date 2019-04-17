@@ -6,6 +6,7 @@ import sys
 import time
 import platform
 from collections.abc import Iterable
+from termcolor import colored
 
 import numpy as np
 from sympy import Interval
@@ -290,7 +291,6 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
     if not isinstance(props, Iterable):
         raise Exception("Given properties are not iterable, to use single property use list of lenght 1")
 
-
     globals()["parameters"] = set()
     for polynome in props:
         globals()["parameters"].update(find_param(polynome))
@@ -336,11 +336,16 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
         private_check_deeper_interval(region, props, intervals, n, epsilon, coverage, silent, time_out=time_out)
     elif version == 6:
         print("Using presampled interval method")
+        globals()["que"] = Queue()
         # globals()["space"] = RefinedSpace(copy.copy(region), parameters, [], [])
 
         to_be_searched = sample(space, props, intervals, size_q, compress=True, silent=silent)
+        print(type(to_be_searched))
+        print("to_be_searched", to_be_searched)
         # to_be_searched = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y", "0"], [Interval(0, 1), Interval(0, 1)], , compress=True, silent=False)
-        to_be_searched = refine_into_rectangles(to_be_searched, silent=silent)
+
+        # to_be_searched = refine_into_rectangles(to_be_searched, silent=silent)
+        to_be_searched = refine_into_rectangles(to_be_searched, silent=False)
         print("to_be_searched: ", to_be_searched)
         globals()["que"] = Queue()
 
@@ -799,7 +804,7 @@ def private_check_deeper_queue_checking_both(region, props, intervals, n, epsilo
         private_check_deeper_queue_checking_both(*que.dequeue())
 
 
-def colored(greater, smaller):
+def color_margins(greater, smaller):
     """ Colors outside of the smaller region in the greater region as previously unsat
 
     Args
@@ -1253,7 +1258,6 @@ def refine_into_rectangles(sampled_space, silent=True):
         print("shape", sampled_space.shape)
         print("space:", sampled_space)
         print("size_q:", size_q)
-        print(sampled_space.shape)
         print("dimensions:", dimensions)
     # find_max_rectangle(sampled_space, [0, 0])
 
@@ -1379,7 +1383,7 @@ def find_max_rectangle(sampled_space, starting_point, silent=True):
 
 class TestLoad(unittest.TestCase):
     def test_check_single(self):
-        print("Check (un)safe with single properties here")
+        print(colored("Check (un)safe with single properties here", 'blue'))
         ## IS IN
         ## def check_safe(region, props, intervals, silent=False, called=False):
         # check_deeper([(0, 1)], ["x"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
@@ -1446,7 +1450,7 @@ class TestLoad(unittest.TestCase):
         self.assertEqual(check_unsafe([(0, 1), (0, 1)], ["x+y"], [Interval(4, 5)], silent=True, called=True), True)
 
     def test_check_multiple(self):
-        print("Check (un)safe with multiple properties here")
+        print(colored("Check (un)safe with multiple properties here", 'blue'))
         ## IS IN
         ## def check_safe(region, props, intervals, silent=False, called=False):
         self.assertEqual(
@@ -1454,8 +1458,8 @@ class TestLoad(unittest.TestCase):
         self.assertIsInstance(
             check_safe([(0, 1)], ["x", "2*x"], [Interval(0, 1), Interval(0, 1)], silent=True, called=True),
             z3.z3.ModelRef)
-        ## !!!TRICKY
 
+        ## !!!TRICKY
         self.assertIsInstance(
             check_safe([(0, 2)], ["x", "2*x"], [Interval(0, 1), Interval(0, 1)], silent=True, called=True), z3.z3.ModelRef)
 
@@ -1472,6 +1476,7 @@ class TestLoad(unittest.TestCase):
         self.assertIsInstance(
             check_unsafe([(0, 1)], ["x", "2*x"], [Interval(0, 1), Interval(0, 1)], silent=True, called=True),
             z3.z3.ModelRef)
+
         ## !!!TRICKY
         self.assertIsInstance(
             check_unsafe([(0, 2)], ["x", "2*x"], [Interval(0, 1), Interval(0, 1)], silent=False, called=True), z3.z3.ModelRef)
@@ -1482,7 +1487,7 @@ class TestLoad(unittest.TestCase):
             check_unsafe([(0, 1), (0, 2)], ["x", "y"], [Interval(0, 1), Interval(0, 1)], silent=True, called=True), z3.z3.ModelRef)
 
     def test_check_interval_single(self):
-        print("Check interval (un)safe with single properties here")
+        print(colored("Check interval (un)safe with single properties here", 'blue'))
         ## IS IN
         self.assertEqual(check_interval_in([(0, 1)], ["x"], [Interval(0, 1)], silent=True, called=True), True)
         self.assertEqual(check_interval_in([(1, 1)], ["x"], [Interval(0, 2)], silent=True, called=True), True)
@@ -1506,13 +1511,14 @@ class TestLoad(unittest.TestCase):
                          True)
 
     def test_check_interval_multiple(self):
-        print("Check interval (un)safe with multiple properties here")
+        print(colored("Check interval (un)safe with multiple properties here", 'blue'))
         ## IS IN
         self.assertEqual(
             check_interval_in([(0, 1)], ["x", "2*x"], [Interval(0, 1), Interval(0, 2)], silent=True, called=True), True)
         self.assertEqual(
             check_interval_in([(0, 1)], ["x", "2*x"], [Interval(0, 1), Interval(0, 1)], silent=True, called=True),
             False)
+
         ## !!!TRICKY
         self.assertEqual(
             check_interval_in([(0, 2)], ["x", "2*x"], [Interval(0, 1)], silent=True, called=True), False)
@@ -1543,7 +1549,7 @@ class TestLoad(unittest.TestCase):
                                called=True), False)
 
     def test_check_interval_deeper(self):
-        print("Refinement here")
+        print(colored("Refinement here", 'blue'))
         ## check_deeper_interval(region, prop, intervals, n, epsilon, cov, silent, version)
 
         ## UNCOMMENT FOLLOWING to run this test
@@ -1553,7 +1559,7 @@ class TestLoad(unittest.TestCase):
 
     def test_Interval(self):
         print()
-        print("Interval here")
+        print(colored("Interval test here", 'blue'))
         self.assertEqual(1.0 in mpi(1, 1), True)
         self.assertEqual(1.0 in mpi(1, 2), True)
         self.assertEqual(1.0 in mpi(0, 1), True)
@@ -1577,7 +1583,7 @@ class TestLoad(unittest.TestCase):
         self.assertEqual(mpi(1, 2) not in mpi(1.5, 2), True)
 
     def test_sample(self):
-        print("Sample here")
+        print(colored("Sample test here", 'blue'))
         ## def sample(space, props, intervals, size_q, compress)
         # print(sample(RefinedSpace((0, 1), ["x"]), ["x"], [Interval(0, 1)], 3))
         # print(sample(RefinedSpace((0, 1), ["x"]), ["x"], [Interval(0, 1)], 3, compress=True))
@@ -1602,24 +1608,26 @@ class TestLoad(unittest.TestCase):
         # b = refine_into_rectangles(a, silent=False)
 
     def test_presampled(self):
-        print("Presampled refinement here")
+        print(colored("Presampled refinement here", 'blue'))
         ## UNCOMMENT THIS TBD
-        # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 12, 0, 0.95, silent=False, version=5)
-        check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 5, 0, 0.95, silent=True, version=6)
+        # check_deeper([(0, 1), (2, 3)], ["x+y"], [Interval(0, 3)], 5, 0, 0.95, silent=False, version=5)
+        check_deeper([(0, 1), (2, 3)], ["x+y"], [Interval(0, 3)], 5, 0, 0.95, silent=True, version=6)
 
         # check_deeper([(0, 0.5), (0, 0.5)], ["x+y"], [Interval(0, 1)], 5, 0, 0.95, silent=False, version=5)
 
         # a = sample(RefinedSpace([(0, 1), (0, 1), (0, 1)], ["x", "y", "z"]), ["x+y"], [Interval(0, 1)], 3, compress=True)
         # print(a)
         # b = refine_into_rectangles(a)
-
+        print(colored("Presampled refinement ends here", 'blue'))
 
 if __name__ == "__main__":
     ## mpi test
+    print(colored('Mpi test here', 'blue'))
     a = mpi(0.75, 0.78125)
     b = mpi(0.39375000000000004441, 0.421875)
 
     ## NORMAL TEST
+    print(colored('Normal test here', 'blue'))
     from load import create_intervals, get_f, load_pickled_data
     agents_quantities = [2, 3, 5, 10]
     f = get_f("./sem*[0-9].txt", True, agents_quantities)
@@ -1628,9 +1636,10 @@ if __name__ == "__main__":
     coverage_thresh = 0.95
     alpha, n_samples, max_depth, min_rect_size, N, algorithm, v_p, v_q = 0.95, 100, 12, 1e-05, 2, 5, 0.028502714675268215, 0.03259111103419188
 
+
     space = check_deeper([(0, 1), (0, 0.9)], f[N], create_intervals(alpha, n_samples, D3[("synchronous_parallel_", N, n_samples, v_p, v_q)]),
                          max_depth, min_rect_size, coverage_thresh, False, algorithm)
-
+    print(colored('End of normal test', 'blue'))
 
     ## MULTIPARAM TEST
     f_multiparam = {10: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
