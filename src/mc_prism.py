@@ -140,7 +140,7 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
                                                     stderr=subprocess.STDOUT).stdout.decode("utf-8")
                             if 'OutOfMemoryError' in output:
                                 print(colored(f"A memory error occurred while seq, close some programs and try again", "red"))
-                                return "memory 2"
+                                return "memory_fail"
                         else:
                             if std_output_path is not None:
                                 with open(output_file_path, 'a') as output_file:
@@ -279,6 +279,13 @@ def call_prism_files(file_prefix, multiparam, agents_quantities, seq=False, nopr
             if error == "memory_fail":
                 ## A error occured even when seq and max memory, no reason to continue
                 break
+
+            if error == "NullPointerException":
+                if seq:
+                    print(colored("Sorry, I do not know to to fix this, please try it manually"), "red")
+                else:
+                    print(colored("Trying to fix the null pointer exception by running prop by prop"), "red")
+                    seq = True
 
             if error is not 0:
                 ## If an error occurred call this function for this file again

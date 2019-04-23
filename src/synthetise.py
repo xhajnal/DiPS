@@ -341,11 +341,40 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
 
         to_be_searched = sample(space, props, intervals, size_q, compress=True, silent=silent)
         print(type(to_be_searched))
-        print("to_be_searched", to_be_searched)
+        print("sampled space: ", to_be_searched)
+
+        spam = []
+        for egg in range(len(to_be_searched)):
+            for point in to_be_searched[egg]:
+                if point[1] is True:
+                    spam.append(point[0])
+        print(spam)
+
+        if spam:
+            ## initializing the min point and max point as the first point
+            min = copy.copy(spam[0])
+            print("current min", min)
+            max = copy.copy(spam[0])
+            print("current max", max)
+            for point in spam[1:]:
+                print(point)
+                for dimension in range(0, len(spam[0])):
+                    print(point[dimension])
+                    if point[dimension] < min[dimension]:
+                        print("current point:", point[dimension], "current min:", min[dimension], "change min")
+                        min[dimension] = point[dimension]
+                    if point[dimension] > max[dimension]:
+                        print("current point:", point[dimension], "current max:", max[dimension], "change max")
+                        max[dimension] = point[dimension]
+
+
         # to_be_searched = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y", "0"], [Interval(0, 1), Interval(0, 1)], , compress=True, silent=False)
 
         # to_be_searched = refine_into_rectangles(to_be_searched, silent=silent)
         to_be_searched = refine_into_rectangles(to_be_searched, silent=False)
+
+
+
         print("to_be_searched: ", to_be_searched)
         globals()["que"] = Queue()
 
