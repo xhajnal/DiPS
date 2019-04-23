@@ -139,8 +139,8 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
                             output = subprocess.run(args, stdout=subprocess.PIPE,
                                                     stderr=subprocess.STDOUT).stdout.decode("utf-8")
                             if 'OutOfMemoryError' in output:
-                                print(colored(f"A memory error occurred while seq", "red"))
-                                return "memory"
+                                print(colored(f"A memory error occurred while seq, close some programs and try again", "red"))
+                                return "memory 2"
                         else:
                             if std_output_path is not None:
                                 with open(output_file_path, 'a') as output_file:
@@ -271,10 +271,14 @@ def call_prism_files(file_prefix, multiparam, agents_quantities, seq=False, nopr
                     print(colored("A memory error occurred. Running prop by prob now", "red"))
                 else:
                     ## A memory occurred while seq
-                    ## Remove the file because appending would no overwrite the file
+                    ## Remove the file because appending would not overwrite the file
                     os.remove(os.path.join(output_path, "{}.txt".format(file.stem)))
                     memory = round(psutil.virtual_memory()[0] / 1024 / 1024 / 1024)  ## total memory converted to GB
                     print(colored(f"A memory error occurred while seq, max memory increased to {memory}GB", "red"))
+
+            if error == "memory_fail":
+                ## A error occured even when seq and max memory, no reason to continue
+                break
 
             if error is not 0:
                 ## If an error occurred call this function for this file again
