@@ -65,8 +65,8 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
 
     Args
     ----------
-    args: string for executing prism
-    seq: (Bool) if true it will take properties by one and append results (necessary if out of the memory)
+    args: (string) args for executing prism
+    seq: (Bool) if true it will take properties one by one and append the results (helps to deal with memory)
     silent: (Bool) if silent the output si set to minimum
     model_path: (string) path to load  models from
     properties_path: (string) path to load properties from
@@ -139,7 +139,7 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
                 for i in range(1, len(property_file) + 1):
                     args[-1] = str(i)
                     if not silent:
-                        print("calling \"", " ".join(args))
+                        print("calling \"", " ".join(args), "\"")
                     output = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8")
 
                     ## Check for errors
@@ -152,7 +152,7 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
                             args.append("-property")
                             args.append(str(i))
                             if not silent:
-                                print("calling \"", " ".join(args))
+                                print("calling \"", " ".join(args), "\"")
                             output = subprocess.run(args, stdout=subprocess.PIPE,
                                                     stderr=subprocess.STDOUT).stdout.decode("utf-8")
                             if 'OutOfMemoryError' in output:
@@ -213,11 +213,12 @@ def call_prism_files(file_prefix, multiparam, agents_quantities, seq=False, nopr
     file_prefix: file prefix to be matched
     multiparam: (Bool) true if multiparam models are to be used
     agents_quantities: (int) pop_sizes to be used
-    seq: (Bool) if true it will take properties by one and append results (necessary if out of the memory)
+    seq: (Bool) if true it will take properties one by one and append the results (helps to deal with memory)
     noprobchecks: (Bool) True if no noprobchecks option is to be used for prism
     model_path: (string) path to load  models from
     properties_path: (string) path to load properties from
     output_path: (string) path for the output
+    memory: (int) sets maximum memory in GB, see https://www.prismmodelchecker.org/manual/ConfiguringPRISM/OtherOptions
     """
     # os.chdir(config.get("paths","cwd"))
     if noprobchecks:
@@ -232,6 +233,8 @@ def call_prism_files(file_prefix, multiparam, agents_quantities, seq=False, nopr
 
     for N in sorted(agents_quantities):
         # print(glob.glob(os.path.join(model_path, file_prefix + str(N) + ".pm")))
+        if not glob.glob(os.path.join(model_path, file_prefix + str(N) + ".pm")):
+            print(colored("No files for N="+str(N)+" found", "red"))
         for file in glob.glob(os.path.join(model_path, file_prefix + str(N) + ".pm")):
             file = Path(file)
             start_time = time.time()
@@ -252,7 +255,7 @@ def call_prism_files(file_prefix, multiparam, agents_quantities, seq=False, nopr
             print(f"  It took {socket.gethostname()}, {time.time() - start_time} seconds to run")
 
             if error == 404:
-                print("not found, skipped")
+                print(colored("A file not found, skipped", "red"))
                 continue
 
             ## Check for syntax error
@@ -360,6 +363,7 @@ class TestLoad(unittest.TestCase):
         call_prism_files("semi*_", False, agents_quantities)
         ## This will require seq with adding the memory for 40
         call_prism_files("asyn*_", False, agents_quantities)
+
 
 if __name__ == "__main__":
     unittest.main()
