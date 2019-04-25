@@ -46,6 +46,19 @@ if "prism" not in os.environ["PATH"]:
         os.environ["PATH"] = os.environ["PATH"] + ":" + prism_path
 
 
+def write_to_file(std_output_path, output_file_path, output, silent, append=False):
+    if std_output_path is not None:
+        if not silent:
+            print("output here: " + str(output_file_path))
+        if append:
+            with open(output_file_path, 'a') as output_file:
+                output_file.write(output)
+        else:
+            with open(output_file_path, 'w') as output_file:
+                output_file.write(output)
+                output_file.close()
+
+
 def call_prism(args, seq=False, silent=False, model_path=model_path, properties_path=properties_path,
                prism_output_path=prism_results, std_output_path=prism_results):
     """  Solves problem of calling prism from another directory.
@@ -117,6 +130,8 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
         # args.append("2>&1")
 
         if seq:
+            if os.path.isfile(os.path.join(std_output_path, output_file_path)):
+                os.remove(os.path.join(std_output_path, output_file_path))
             with open(property_file_path, 'r') as property_file:
                 args.append("-property")
                 args.append("")
@@ -136,50 +151,43 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
                             args[-1] = f"{memory}g"
                             args.append("-property")
                             args.append(str(i))
+                            if not silent:
+                                print("calling \"", " ".join(args))
                             output = subprocess.run(args, stdout=subprocess.PIPE,
                                                     stderr=subprocess.STDOUT).stdout.decode("utf-8")
                             if 'OutOfMemoryError' in output:
-                                print(colored(f"A memory error occurred while seq, close some programs and try again", "red"))
+                                write_to_file(std_output_path, output_file_path, output, silent, append=True)
+                                print(colored(f"A memory error occurred while seq even after increasing the memory, close some programs and try again", "red"))
                                 return "memory_fail"
                         else:
-                            if std_output_path is not None:
-                                with open(output_file_path, 'a') as output_file:
-                                    if not silent:
-                                        print("output here: " + str(output_file_path))
-                                    output_file.write(output)
-                            print(colored(f"A memory error occurred while seq", "red"))
+                            write_to_file(std_output_path, output_file_path, output, silent, append=True)
+                            print(colored(f"A memory error occurred while seq with given amount of memory", "red"))
                             return "memory"
 
-                    if std_output_path is not None:
-                        with open(output_file_path, 'a') as output_file:
-                            if not silent:
-                                print("output here: " + str(output_file_path))
-                            output_file.write(output)
+                    write_to_file(std_output_path, output_file_path, output, silent, append=True)
 
                     if 'Syntax error' in output:
                         print(colored(f"A syntax error occurred", "red"))
                         return "syntax"
+                    if "Cannot allocate memory" in output:
+                        print(colored(f"A memory error occurred while seq, close some programs and try again", "red"))
+                        return "memory_fail"
                     if 'NullPointerException' in output:
                         print(colored(f"A NullPointerException occurred", "red"))
                         return "NullPointerException"
                     if 'use -noprobchecks' in output:
                         print(colored(f"Outgoing transitions checksum error occurred", "red"))
                         return "noprobchecks"
+
         else:
             if not silent:
                 print("calling \"", " ".join(args))
             output = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8")
-
-            if std_output_path is not None:
-                with open(output_file_path, 'w') as output_file:
-                    if not silent:
-                        print("output here: " + str(output_file_path))
-                    output_file.write(output)
-                    output_file.close()
+            write_to_file(std_output_path, output_file_path, output, silent, append=False)
 
             ## Check for errors
-            if 'OutOfMemoryError' in output:
-                print(colored(f"A memory error occurred while seq", "red"))
+            if ('OutOfMemoryError' in output) or ("Cannot allocate memory" in output):
+                print(colored(f"A memory error occurred", "red"))
                 return "memory"
             if 'Syntax error' in output:
                 print(colored(f"A syntax error occurred", "red"))
@@ -238,7 +246,7 @@ def call_prism_files(file_prefix, multiparam, agents_quantities, seq=False, nopr
 
             # print("{} prop_{}.pctl {}-param p=0:1{}".format(file,N,noprobchecks,q))
             error = call_prism("{} prop_{}.pctl {}{}-param p=0:1{}".format(file, N, memory, noprobchecks, q), seq=seq,
-                                 model_path=model_path, properties_path=properties_path, std_output_path=output_path)
+                               model_path=model_path, properties_path=properties_path, std_output_path=output_path)
 
             print(f"  Return code is: {error}")
             print(f"  It took {socket.gethostname()}, {time.time() - start_time} seconds to run")
@@ -258,8 +266,7 @@ def call_prism_files(file_prefix, multiparam, agents_quantities, seq=False, nopr
                     print(colored("Outgoing transitions checksum error occurred. Running with noprobchecks option", "red"))
                     noprobchecks = '-noprobchecks '
                 else:
-                    print(colored("This is embarrassing, but Outgoing transitions checksum error occurred while noprobchecks option",
-                                  "red"))
+                    print(colored("This is embarrassing, but Outgoing transitions checksum error occurred while noprobchecks option", "red"))
 
             ## Check if memory problem has occurred
             if error == "memory":
@@ -282,10 +289,13 @@ def call_prism_files(file_prefix, multiparam, agents_quantities, seq=False, nopr
 
             if error == "NullPointerException":
                 if seq:
-                    print(colored("Sorry, I do not know to to fix this, please try it manually"), "red")
+                    print(colored("Sorry, I do not know to to fix this, please try it manually", "red"))
+                    break
                 else:
-                    print(colored("Trying to fix the null pointer exception by running prop by prop"), "red")
+                    print(colored("Trying to fix the null pointer exception by running prop by prop", "red"))
                     seq = True
+                    ## Remove the file because appending would no overwrite the file
+                    os.remove(os.path.join(output_path, "{}.txt".format(file.stem)))
 
             if error is not 0:
                 ## If an error occurred call this function for this file again
