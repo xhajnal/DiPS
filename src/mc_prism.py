@@ -76,6 +76,8 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
     if std_output_path is not None:
         output_file_path = Path(args.split()[0]).stem
         output_file_path = os.path.join(std_output_path, Path(str(output_file_path) + ".txt"))
+    else:
+        output_file_path = ""
     # print(output_file)
 
     # os.chdir(config.get("paths","cwd"))
@@ -204,14 +206,13 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
         os.chdir(curr_dir)
 
 
-def call_prism_files(file_prefix, multiparam, agents_quantities, seq=False, noprobchecks=False, memory="", model_path=model_path,
+def call_prism_files(file_prefix, agents_quantities, seq=False, noprobchecks=False, memory="", model_path=model_path,
                      properties_path=properties_path, output_path=prism_results):
     """  Calls prism for each file matching the prefix
 
     Args
     ----------
     file_prefix: file prefix to be matched
-    multiparam: (Bool) true if multiparam models are to be used
     agents_quantities: (int) pop_sizes to be used
     seq: (Bool) if true it will take properties one by one and append the results (helps to deal with memory)
     noprobchecks: (Bool) True if no noprobchecks option is to be used for prism
@@ -239,16 +240,34 @@ def call_prism_files(file_prefix, multiparam, agents_quantities, seq=False, nopr
             file = Path(file)
             start_time = time.time()
             # print("{} seq={}{} >> {}".format(file, seq, noprobchecks, str(prism_results)))
-            if multiparam:
-                q = ""
-                for i in range(1, N):
-                    q = "{},q{}=0:1".format(q, i)
-                    # q=q+",q"+str(i)"=0:1"
-            else:
-                q = ",q=0:1"
+
+            ## Parsing the parameters from the files
+            params = ""
+            # print(file)
+            with open(file, 'r') as input_file:
+                for line in input_file:
+                    if line.startswith('const'):
+                        # print(line)
+                        line = line.split(" ")[-1].split(";")[0]
+                        params = f"{params}{line}=0:1,"
+            params = params[:-1]
+
+            ## OLD parameters
+            # if multiparam:
+            #     params = ""
+            #     for i in range(1, N):
+            #         params = "{},q{}=0:1".format(q, i)
+            #         # q=q+",q"+str(i)"=0:1"
+            # else:
+            #     params = ",q=0:1"
+            # error = call_prism("{} prop_{}.pctl {}{}-param p=0:1{}".format(file, N, memory, noprobchecks, params),
+            #                   seq=seq,
+            #                   model_path=model_path, properties_path=properties_path, std_output_path=output_path)
 
             # print("{} prop_{}.pctl {}-param p=0:1{}".format(file,N,noprobchecks,q))
-            error = call_prism("{} prop_{}.pctl {}{}-param p=0:1{}".format(file, N, memory, noprobchecks, q), seq=seq,
+
+            ## Calling the PRISM using our function
+            error = call_prism("{} prop_{}.pctl {}{}-param {}".format(file, N, memory, noprobchecks, params), seq=seq,
                                model_path=model_path, properties_path=properties_path, std_output_path=output_path)
 
             print(f"  Return code is: {error}")
@@ -303,7 +322,7 @@ def call_prism_files(file_prefix, multiparam, agents_quantities, seq=False, nopr
             if error is not 0:
                 ## If an error occurred call this function for this file again
                 print()
-                call_prism_files(file_prefix, multiparam, [N], seq, noprobchecks, memory=memory, model_path=model_path,
+                call_prism_files(file_prefix, [N], seq, noprobchecks, memory=memory, model_path=model_path,
                                  properties_path=properties_path, output_path=prism_results)
             print()
 
