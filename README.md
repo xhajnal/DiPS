@@ -37,6 +37,8 @@ in the main folder there is `config.ini` file. Please fill in required paths.
 ## HOW TO RUN
 
 *****
+\- open command line in the main mpm directory (on Win - please open it with admin privileges to ensure changing the PRISM setting does not fail on permission denied)
+
 `>> cd ipython`
 
 `>> jupyter notebook`

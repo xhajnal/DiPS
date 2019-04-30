@@ -47,6 +47,16 @@ if "prism" not in os.environ["PATH"]:
 
 
 def write_to_file(std_output_path, output_file_path, output, silent, append=False):
+    """  Generic writing to a file
+
+    Args
+    ----------
+    std_output_path: (string) path to write the output
+    output_file_path: (string) path of the output file
+    output: (string) text to be written into the file
+    silent: (Bool) if silent command line output is set to minimum
+    append: (Bool) if True appending instead of writing from the start
+    """
     if std_output_path is not None:
         if not silent:
             print("output here: " + str(output_file_path))
@@ -59,6 +69,43 @@ def write_to_file(std_output_path, output_file_path, output, silent, append=Fals
                 output_file.close()
 
 
+def set_javaheap_win(size):
+    """  Changing the java heap size for the PRISM on Windows
+
+    Args
+    ----------
+    size: (str) sets maximum memory, see https://www.prismmodelchecker.org/manual/ConfiguringPRISM/OtherOptions
+
+    """
+    previous_size = -5
+    output = ""
+
+    with open(os.path.join(str(prism_path), "prism.bat"), 'r') as input_file:
+        # print(input_file)
+        for line in input_file:
+            output = output + str(line)
+            if line.startswith('java'):
+                # print("line", line)
+                previous_size = re.findall(r'-Xmx.+[g|G|m|M] -X', line)
+                # print("previous_size: ", previous_size)
+                previous_size = previous_size[0][4:-3]
+                # print("previous_size: ", previous_size)
+
+    a = str(f'-Xmx{str(size)} -X')
+    # print(a)
+    output = re.sub(r'-Xmx.+[g|G|m|M] -X', a, output)
+    # print("output: ", output)
+
+    with open(os.path.join(str(prism_path), "prism.bat"), 'w') as input_file:
+        input_file.write(output)
+
+    if previous_size == -5:
+        print("Error occurred while reading the prism.bat file")
+        return
+
+    return previous_size
+
+
 def call_prism(args, seq=False, silent=False, model_path=model_path, properties_path=properties_path,
                prism_output_path=prism_results, std_output_path=prism_results):
     """  Solves problem of calling prism from another directory.
@@ -67,7 +114,7 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
     ----------
     args: (string) args for executing prism
     seq: (Bool) if true it will take properties one by one and append the results (helps to deal with memory)
-    silent: (Bool) if silent the output si set to minimum
+    silent: (Bool) if silent command line output is set to minimum
     model_path: (string) path to load  models from
     properties_path: (string) path to load properties from
     std_output_path: (string) path to save the results of the command
@@ -153,6 +200,8 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
                             args[-1] = f"{memory}g"
                             args.append("-property")
                             args.append(str(i))
+                            if sys.platform.startswith("win"):
+                                previous_memory = set_javaheap_win(f"{memory}g")
                             if not silent:
                                 print("calling \"", " ".join(args), "\"")
                             output = subprocess.run(args, stdout=subprocess.PIPE,
@@ -160,10 +209,15 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
                             if 'OutOfMemoryError' in output:
                                 write_to_file(std_output_path, output_file_path, output, silent, append=True)
                                 print(colored(f"A memory error occurred while seq even after increasing the memory, close some programs and try again", "red"))
+                                if sys.platform.startswith("win"):
+                                    set_javaheap_win(previous_memory)
                                 return "memory_fail"
                         else:
                             write_to_file(std_output_path, output_file_path, output, silent, append=True)
                             print(colored(f"A memory error occurred while seq with given amount of memory", "red"))
+                            ## Changing the memory setting back
+                            if sys.platform.startswith("win"):
+                                set_javaheap_win(previous_memory)
                             return "memory"
 
                     write_to_file(std_output_path, output_file_path, output, silent, append=True)
@@ -206,20 +260,22 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
         os.chdir(curr_dir)
 
 
-def call_prism_files(file_prefix, agents_quantities, seq=False, noprobchecks=False, memory="", model_path=model_path,
-                     properties_path=properties_path, output_path=prism_results):
+def call_prism_files(file_prefix, agents_quantities, param_intervals=False, seq=False, noprobchecks=False, memory="",
+                     model_path=model_path, properties_path=properties_path, output_path=prism_results):
     """  Calls prism for each file matching the prefix
 
     Args
     ----------
     file_prefix: file prefix to be matched
     agents_quantities: (int) pop_sizes to be used
+    param_intervals (list of pairs): list of intervals to be used for respective parameter (default all intervals are from 0 to 1)
     seq: (Bool) if true it will take properties one by one and append the results (helps to deal with memory)
     noprobchecks: (Bool) True if no noprobchecks option is to be used for prism
     model_path: (string) path to load  models from
     properties_path: (string) path to load properties from
     output_path: (string) path for the output
     memory: (int) sets maximum memory in GB, see https://www.prismmodelchecker.org/manual/ConfiguringPRISM/OtherOptions
+
     """
     # os.chdir(config.get("paths","cwd"))
     if noprobchecks:
@@ -245,11 +301,16 @@ def call_prism_files(file_prefix, agents_quantities, seq=False, noprobchecks=Fal
             params = ""
             # print(file)
             with open(file, 'r') as input_file:
+                i = 0
                 for line in input_file:
                     if line.startswith('const'):
                         # print(line)
                         line = line.split(" ")[-1].split(";")[0]
-                        params = f"{params}{line}=0:1,"
+                        if param_intervals:
+                            params = f"{params}{line}={param_intervals[i][0]}:{param_intervals[i][1]},"
+                        else:
+                            params = f"{params}{line}=0:1,"
+                        i = i + 1
             params = params[:-1]
 
             ## OLD parameters
@@ -303,6 +364,8 @@ def call_prism_files(file_prefix, agents_quantities, seq=False, noprobchecks=Fal
                     ## Remove the file because appending would not overwrite the file
                     os.remove(os.path.join(output_path, "{}.txt".format(file.stem)))
                     memory = round(psutil.virtual_memory()[0] / 1024 / 1024 / 1024)  ## total memory converted to GB
+                    if sys.platform.startswith("win"):
+                        previous_memory = set_javaheap_win(f"{memory}g")
                     print(colored(f"A memory error occurred while seq, max memory increased to {memory}GB", "red"))
 
             if error == "memory_fail":
@@ -326,8 +389,20 @@ def call_prism_files(file_prefix, agents_quantities, seq=False, noprobchecks=Fal
                                  properties_path=properties_path, output_path=prism_results)
             print()
 
+    if sys.platform.startswith("win"):
+        set_javaheap_win(previous_memory)
+
 
 class TestLoad(unittest.TestCase):
+    def test_changing_javahep(self):
+        print(colored('test_changing_javahep on Windows', 'blue'))
+        if sys.platform.startswith("win"):
+            a = (set_javaheap_win("9g"))
+            print("previous memory:", a)
+            set_javaheap_win(a)
+        else:
+            print("Skipping this test since not on windows")
+
     def test_easy(self):
         agents_quantities = [2, 3]
         try:
@@ -368,20 +443,20 @@ class TestLoad(unittest.TestCase):
 
         ## call_prism_files
         print(colored('Call_prism_files', 'blue'))
-        call_prism_files("syn*_", False, agents_quantities)
+        call_prism_files("syn*_", agents_quantities)
 
         print(colored('Call_prism_files2', 'blue'))
-        call_prism_files("multiparam_syn*_", True, agents_quantities)
+        call_prism_files("multiparam_syn*_", agents_quantities)
 
     def test_heavy_load(self):
         agents_quantities = [20, 40]
         ## 20 should pass
         ## This will require noprobcheck for 40
-        call_prism_files("syn*_", False, agents_quantities)
+        call_prism_files("syn*_", agents_quantities)
         ## This will require seq for 40
-        call_prism_files("semi*_", False, agents_quantities)
+        call_prism_files("semi*_", agents_quantities)
         ## This will require seq with adding the memory for 40
-        call_prism_files("asyn*_", False, agents_quantities)
+        call_prism_files("asyn*_", agents_quantities)
 
 
 if __name__ == "__main__":
