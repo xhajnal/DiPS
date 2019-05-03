@@ -106,14 +106,19 @@ venv.bak/
 #IDE
 .idea
 
+###########
+# MAC aux #
+###########
 
-##MY
+\.DS_Store
+
+#########
+# Local #
+#########
 ipython/*
 #!ipython/data*
 !ipython/*.ipynb
 !ipython/*.md
-
-
 
 models/*
 properties/*
