@@ -107,7 +107,7 @@ def set_javaheap_win(size):
 
 
 def call_prism(args, seq=False, silent=False, model_path=model_path, properties_path=properties_path,
-               prism_output_path=prism_results, std_output_path=prism_results):
+               prism_output_path=prism_results, std_output_path=prism_results, std_output_file=False):
     """  Solves problem of calling prism from another directory.
 
     Args
@@ -117,14 +117,25 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
     silent: (Bool) if silent command line output is set to minimum
     model_path: (string) path to load  models from
     properties_path: (string) path to load properties from
-    std_output_path: (string) path to save the results of the command
     prism_output_path: (string) path to save the files inside the command
+    std_output_path: (string) path to save the results of the command
+    std_output_file: (string) file name to save the output
     """
+    # print("std_output_path", std_output_path)
+    # print("prism_results", prism_results)
+    # print("std_output_file", std_output_file)
+
     if std_output_path is not None:
         output_file_path = Path(args.split()[0]).stem
-        output_file_path = os.path.join(std_output_path, Path(str(output_file_path) + ".txt"))
+        if not std_output_file:
+            output_file_path = os.path.join(std_output_path, Path(str(output_file_path) + ".txt"))
+        else:
+            output_file_path = os.path.join(prism_results, Path(str(std_output_file)))
+            # print("new output_file_path", output_file_path)
     else:
         output_file_path = ""
+
+
     # print(output_file)
 
     # os.chdir(config.get("paths","cwd"))
@@ -260,19 +271,20 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
         os.chdir(curr_dir)
 
 
-def call_prism_files(file_prefix, agents_quantities, param_intervals=False, seq=False, noprobchecks=False, memory="",
-                     model_path=model_path, properties_path=properties_path, output_path=prism_results):
+def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq=False, noprobchecks=False, memory="",
+                     model_path=model_path, properties_path=properties_path, property_file=False, output_path=prism_results):
     """  Calls prism for each file matching the prefix
 
     Args
     ----------
-    file_prefix: file prefix to be matched
+    model_prefix: file prefix to be matched
     agents_quantities: (int) pop_sizes to be used
     param_intervals (list of pairs): list of intervals to be used for respective parameter (default all intervals are from 0 to 1)
     seq: (Bool) if true it will take properties one by one and append the results (helps to deal with memory)
     noprobchecks: (Bool) True if no noprobchecks option is to be used for prism
     model_path: (string) path to load  models from
     properties_path: (string) path to load properties from
+    property_file: (string) file name of single property files to be used for all models
     output_path: (string) path for the output
     memory: (int) sets maximum memory in GB, see https://www.prismmodelchecker.org/manual/ConfiguringPRISM/OtherOptions
 
@@ -290,9 +302,9 @@ def call_prism_files(file_prefix, agents_quantities, param_intervals=False, seq=
 
     for N in sorted(agents_quantities):
         # print(glob.glob(os.path.join(model_path, file_prefix + str(N) + ".pm")))
-        if not glob.glob(os.path.join(model_path, file_prefix + str(N) + ".pm")):
+        if not glob.glob(os.path.join(model_path, model_prefix + str(N) + ".pm")):
             print(colored("No files for N="+str(N)+" found", "red"))
-        for file in glob.glob(os.path.join(model_path, file_prefix + str(N) + ".pm")):
+        for file in glob.glob(os.path.join(model_path, model_prefix + str(N) + ".pm")):
             file = Path(file)
             start_time = time.time()
             # print("{} seq={}{} >> {}".format(file, seq, noprobchecks, str(prism_results)))
@@ -328,8 +340,18 @@ def call_prism_files(file_prefix, agents_quantities, param_intervals=False, seq=
             # print("{} prop_{}.pctl {}-param p=0:1{}".format(file,N,noprobchecks,q))
 
             ## Calling the PRISM using our function
-            error = call_prism("{} prop_{}.pctl {}{}-param {}".format(file, N, memory, noprobchecks, params), seq=seq,
-                               model_path=model_path, properties_path=properties_path, std_output_path=output_path)
+
+
+            if not property_file:
+                error = call_prism("{} prop_{}.pctl {}{}-param {}".format(file, N, memory, noprobchecks, params),
+                                   seq=seq, model_path=model_path, properties_path=properties_path,
+                                   std_output_path=output_path)
+            else:
+                # print("output_path", output_path)
+                # print("file", file.stem)
+                error = call_prism("{} {} {}{}-param {}".format(file, property_file, memory, noprobchecks, params),
+                                   seq=seq, model_path=model_path, properties_path=properties_path, std_output_path=output_path,
+                                   std_output_file="{}_{}.txt".format(str(file.stem).split(".")[0], property_file.split(".")[0]))
 
             print(f"  Return code is: {error}")
             print(f"  It took {socket.gethostname()}, {time.time() - start_time} seconds to run")
@@ -387,8 +409,8 @@ def call_prism_files(file_prefix, agents_quantities, param_intervals=False, seq=
                 print()
                 # print("seq",seq)
                 # print("noprobchecks", noprobchecks)
-                call_prism_files(file_prefix, [N], seq=seq, noprobchecks=noprobchecks, memory=memory, model_path=model_path,
-                                 properties_path=properties_path, output_path=prism_results)
+                call_prism_files(model_prefix, [N], seq=seq, noprobchecks=noprobchecks, memory=memory, model_path=model_path,
+                                 properties_path=properties_path, property_file=property_file, output_path=prism_results)
             print()
 
     if sys.platform.startswith("win"):

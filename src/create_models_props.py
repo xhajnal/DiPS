@@ -1246,6 +1246,19 @@ def create_properties(N):
         for j in range(1, N):
             file.write("&(a" + str(j) + "=" + str(1 if i > j + 1 else 0) + ")")
         file.write("]\n")
+    # file.write('R{"mean"}=? [ F b=1] \n')
+    # file.write('R{"mean_squared"}=? [ F b=1] \n')
+    file.close()
+
+
+def create_rewards_prop():
+    """ Creates rewards properties file of moments of reaching BSCC of the model.
+    """
+
+    filename = properties_path / Path("moments2.pctl")
+    file = open(filename, "w")
+    print(filename)
+
     file.write('R{"mean"}=? [ F b=1] \n')
     file.write('R{"mean_squared"}=? [ F b=1] \n')
     file.close()
