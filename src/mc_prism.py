@@ -385,7 +385,9 @@ def call_prism_files(file_prefix, agents_quantities, param_intervals=False, seq=
             if error is not 0:
                 ## If an error occurred call this function for this file again
                 print()
-                call_prism_files(file_prefix, [N], seq, noprobchecks, memory=memory, model_path=model_path,
+                # print("seq",seq)
+                # print("noprobchecks", noprobchecks)
+                call_prism_files(file_prefix, [N], seq=seq, noprobchecks=noprobchecks, memory=memory, model_path=model_path,
                                  properties_path=properties_path, output_path=prism_results)
             print()
 
