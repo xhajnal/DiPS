@@ -341,7 +341,6 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
 
             ## Calling the PRISM using our function
 
-
             if not property_file:
                 error = call_prism("{} prop_{}.pctl {}{}-param {}".format(file, N, memory, noprobchecks, params),
                                    seq=seq, model_path=model_path, properties_path=properties_path,

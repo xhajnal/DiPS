@@ -99,7 +99,7 @@ def generate_experiments_and_data(model_types, multiparam, n_samples, population
         if multiparam:
             model_type = "multiparam_" + model_type
         if debugging:
-            print("model_type",model_type)
+            print("model_type", model_type)
         if "synchronous" in model_type:
             sim_lenght = 2
         Data[model_type] = {}
@@ -140,7 +140,7 @@ def generate_experiments_and_data(model_types, multiparam, n_samples, population
                 for value in param_space[:, column]:
                     column_values.append(value)
                 column_values = tuple(column_values)
-                print("parametrisation:",column_values)
+                print("parametrisation:", column_values)
                 for n_sample in n_samples:
                     Experiments[model_type][N][n_sample][column_values] = []
                     Data[model_type][N][n_sample][column_values] = []
@@ -161,20 +161,23 @@ def generate_experiments_and_data(model_types, multiparam, n_samples, population
 
                     ## More profound path name here
                     ## path_file = f"path_{model_type}{N}_{max_sample}_{parameter_values}.txt"
-                    path_file = f"dummy_path {time.time()}.txt"
+                    path_file = "dump_file_{}_{}_{}_{}.txt".format(model_type, N, max_sample, str(time.time()).replace(".", ""))
                     # print(path_file)
                     if debugging:
-                        print(f"{model} -const {prism_parameter_values} -simpath {str(sim_lenght)} {path_file}")
+                        print(f"calling prism {model} -const {prism_parameter_values} -simpath {str(sim_lenght)} {path_file}")
 
                     ## Here is the PRISM called
                     call_prism(f"{model} -const {prism_parameter_values} -simpath {str(sim_lenght)} {path_file}",
                                silent=True, prism_output_path=cwd, std_output_path=None)
-                    ## Parse the dummy file
+                    ## Parse the dump file
+                    # print("curr dir:", os.getcwd())
                     file = open(path_file, "rt")
                     last_line = file.readlines()[-1]
 
-                    ## Close dummy file
+                    ## Close dump file
                     file.close()
+                    ## Remove dump file
+                    os.remove(path_file)
 
                     ## Append the experiment
                     state = sum(list(map(lambda x: int(x), last_line.split(" ")[2:-1])))

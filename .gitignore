@@ -123,6 +123,7 @@ ipython/*
 models/*
 properties/*
 prism_results/*
+storm_results/*
 performance_results/*
 
 src/test/*
