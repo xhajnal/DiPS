@@ -24,12 +24,16 @@ prism_results = config.get("paths", "prism_results")
 if not os.path.exists(prism_results):
     raise OSError("Directory does not exist: " + str(prism_results))
 
+storm_results = config.get("paths", "storm_results")
+if not os.path.exists(prism_results):
+    raise OSError("Directory does not exist: " + str(storm_results))
+
 data_path = config.get("paths", "data")
 if not os.path.exists(data_path):
     raise OSError("Directory does not exist: " + str(data_path))
 
 
-def load_all_prism(path, factorize=True, agents_quantities=[], rewards_only=False, f_only=False):
+def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewards_only=False, f_only=False):
     """ Loads all results of parameter synthesis in *path* folder into two maps - f list of rational functions for each property, and rewards list of rational functions for each reward
     
     Args
@@ -38,17 +42,26 @@ def load_all_prism(path, factorize=True, agents_quantities=[], rewards_only=Fals
     factorize: (Bool) if true it will factorise polynomial results
     rewards_only: (Bool) if true it compute only rewards
     f_only: if true it will compute only standard properties
-    
+    agents_quantities: (list) of population sizes to be used
+    tool: (string) a tool of which is the output from (PRISM/STORM)
+
     Returns
     ----------
     (f,reward), where
     f: dictionary N -> list of rational functions for each property
     rewards: dictionary N -> list of rational functions for each reward
-    agents_quantities: (list) of population sizes to be used
     """
+
+    ## Setting the current directory
     default_directory = os.getcwd()
     if not Path(path).is_absolute():
-        os.chdir(prism_results)
+        if tool.lower().startswith("p"):
+            os.chdir(prism_results)
+        elif tool.lower().startswith("s"):
+            os.chdir(storm_results)
+        else:
+            print("Selected tool unsupported.")
+            return
 
     f = {}
     rewards = {}
@@ -57,7 +70,8 @@ def load_all_prism(path, factorize=True, agents_quantities=[], rewards_only=Fals
         new_dir = os.getcwd()
         if not Path(path).is_absolute():
             os.chdir(default_directory)
-        raise OSError("No valid files in the given directory " + os.path.join(new_dir, path))
+        print("No files match the pattern " + os.path.join(new_dir, path))
+        return
 
     ## Choosing files with the given pattern
     for file in glob.glob(str(path)):
@@ -68,29 +82,46 @@ def load_all_prism(path, factorize=True, agents_quantities=[], rewards_only=Fals
                 continue
             else:
                 print(os.path.join(os.getcwd(), file))
-        # print(os.getcwd(),file)
+        # print(os.getcwd(), file)
         file = open(file, "r")
         i = -1
         here = ""
         f[N] = []
         rewards[N] = []
+        ## PARSING PRISM/STORM OUTPUT
         for line in file:
-            if line.startswith('Parametric model checking:'):
+            if line.startswith('Parametric model checking:') or line.startswith('Model checking property'):
                 i = i + 1
+                here = ""
+                ## STORM check if rewards
+                if "R[exp]" in line:
+                    here = "r"
+            ## PRISM check if rewards
             if line.startswith('Parametric model checking: R'):
                 here = "r"
             if i >= 0 and line.startswith('Result'):
-                line = line.split(":")[2]
+                ## PARSE THE EXPRESSION
+                # print("line:", line)
+                if tool.lower().startswith("p"):
+                    line = line.split(":")[2]
+                elif tool.lower().startswith("s"):
+                    line = line.split(":")[1]
+                ## CONVERT THE EXPRESSION TO PYTHON FORMAT
                 line = line.replace("{", "")
                 line = line.replace("}", "")
-                line = line.replace("p", "* p")
-                line = line.replace("q", "* q")
+                ## PUTS "* " BEFORE EVERY WORD (VARIABLE)
+                line = re.sub(r'([a-z|A-Z]+)', r'* \1', line)
+                # line = line.replace("p", "* p")
+                # line = line.replace("q", "* q")
                 line = line.replace("**", "*")
                 line = line.replace("* *", "*")
                 line = line.replace("*  *", "*")
                 line = line.replace("+ *", "+")
                 line = line.replace("^", "**")
                 line = line.replace(" ", "")
+                line = line.replace("(*", "(")
+                line = line.replace("+*", "+")
+                line = line.replace("-*", "-")
                 if line.startswith('*'):
                     line = line[1:]
                 if here == "r" and not f_only:
@@ -119,12 +150,12 @@ def load_all_prism(path, factorize=True, agents_quantities=[], rewards_only=Fals
     return (f, rewards)
 
 
-def get_f(path, factorize, agents_quantities=[]):
-    return load_all_prism(path, factorize, agents_quantities=agents_quantities, rewards_only=False, f_only=True)[0]
+def get_f(path, tool, factorize, agents_quantities=False):
+    return load_all_functions(path, tool, factorize, agents_quantities=agents_quantities, rewards_only=False, f_only=True)[0]
 
 
-def get_rewards(path, factorize, agents_quantities=[]):
-    return load_all_prism(path, factorize, agents_quantities=agents_quantities, rewards_only=True, f_only=False)[1]
+def get_rewards(path, tool, factorize, agents_quantities=False):
+    return load_all_functions(path, tool, factorize, agents_quantities=agents_quantities, rewards_only=True, f_only=False)[1]
 
 
 def load_all_data(path):
@@ -178,7 +209,7 @@ def load_all_data(path):
 
 
 def load_pickled_data(file):
-    """ returns pickled experimental data for
+    """ returns pickled data
     
     Args
     ----------
@@ -283,9 +314,19 @@ def find_param(polynome):
 
 
 class TestLoad(unittest.TestCase):
+    def test_load_expressions(self):
+        ## THIS WILL PASS ONLY AFTER CREATING THE THE STORM RESULTS
+        agents_quantities = [2]
+        f_storm = get_f("./asyn*[0-9]_moments.txt", "storm", True, agents_quantities)
+        # print(f_storm)
+        self.assertFalse(f_storm[2])
+        rewards_storm = get_rewards("./asyn*[0-9]_moments.txt", "storm", True, agents_quantities)
+        # print(rewards_storm)
+        self.assertTrue(rewards_storm[2])
+
     def test_find_param(self):
         self.assertEqual(find_param("56*4+4**6 +   0.1"), set())
-        self.assertEqual(find_param("x+0.1"),{'x'})
+        self.assertEqual(find_param("x+0.1"), {'x'})
 
     def test_intervals(self):
         my_interval = mpi(0, 5)
@@ -293,6 +334,7 @@ class TestLoad(unittest.TestCase):
         self.assertEqual(my_interval.b, 5)
         self.assertEqual(my_interval.mid, (5+0)/2)
         self.assertEqual(my_interval.delta, abs(0-5))
+
 
 if __name__ == "__main__":
     unittest.main()
