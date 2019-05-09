@@ -58,4 +58,4 @@ to run thought the workflow of the paper just run the notebooks in this order. T
 ## HOW TO CITE US
 
 <a name="one"> </a>
-[1] M. Hajnal, T. Petrov, D. Safranek, and M. Nouvian, Data-informed parameter synthesis for population Markov chains In: International Workshop on Hybrid Systems Biology. Springer, Cham, 2019. To appear.
+[1] M. Hajnal, M. Nouvian, D. Safranek, and T. Petrov, Data-informed parameter synthesis for population Markov chains In: International Workshop on Hybrid Systems Biology. Springer, 2019. To appear.
