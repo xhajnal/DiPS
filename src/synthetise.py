@@ -1026,16 +1026,12 @@ def check_interval_out(region, props, intervals, silent=False, called=False):
     ## Assign each parameter its interval
     i = 0
     for param in globals()["parameters"]:
-        print("region", region, "precisely within interval", region[i][0], region[i][1])
-        print(mpi(region[i][0], region[i][1]))
-        # globals()[param] = mpi(region[i][0], region[i][1])
+        # print(f"param {} in interval {mpi(region[i][0], region[i][1])}")
         try:
-            #print(mpi(region[i][0], region[i][1]))
+            # print(mpi(region[i][0], region[i][1]))
             globals()[param] = mpi(region[i][0], region[i][1])
         except:
-            print("Error within region", region, "precisely within interval", region[i][0], region[i][1])
-            print("while parameters: ", globals()["parameters"])
-            print("and the parameter:", globals()[param])
+            print(f"Error occurred while region: {region}, with param {globals()[param]} of interval {mpi(region[i][0], region[i][1])}")
 
         i = i + 1
 
