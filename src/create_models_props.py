@@ -7,7 +7,10 @@ from typing import Any, Union
 config = configparser.ConfigParser()
 # print(os.getcwd())
 workspace = os.path.dirname(__file__)
-# print("workspace",workspace)
+# print("workspace", workspace)
+cwd = os.getcwd()
+os.chdir(workspace)
+
 config.read(os.path.join(workspace, "../config.ini"))
 # config.sections()
 model_path: Union[Path, Any] = Path(config.get("paths", "models"))
@@ -17,6 +20,8 @@ if not os.path.exists(model_path):
 properties_path = Path(config.get("paths", "properties"))
 if not os.path.exists(properties_path):
     os.makedirs(properties_path)
+
+os.chdir(cwd)
 
 
 def nCr(n, k):

@@ -24,9 +24,12 @@ from sample_n_visualise import cartesian_product
 import configparser
 
 config = configparser.ConfigParser()
+
 # print(os.getcwd())
 workspace = os.path.dirname(__file__)
-print("workspace", workspace)
+# print("workspace", workspace)
+cwd = os.getcwd()
+os.chdir(workspace)
 config.read("../config.ini")
 # config.sections()
 z3_path = config.get("paths", "z3_path")
@@ -34,7 +37,8 @@ z3_path = config.get("paths", "z3_path")
 if not os.path.exists(z3_path):
     raise OSError("Directory does not exist: " + str(z3_path))
 
-cwd = os.getcwd()
+os.chdir(cwd)
+
 print("z3_path", z3_path)
 
 # import struct

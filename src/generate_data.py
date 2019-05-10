@@ -9,19 +9,21 @@ config = configparser.ConfigParser()
 print(os.getcwd())
 
 workspace = os.path.dirname(__file__)
-print("workspace", workspace)
+# print("workspace", workspace)
+cwd = os.getcwd()
+os.chdir(workspace)
+
 config.read(os.path.join(workspace, "../config.ini"))
 
 prism_results = config.get("paths", "prism_results")
 if not os.path.exists(prism_results):
     os.makedirs(prism_results)
 
-workspace = os.path.dirname(__file__)
 sys.path.append(workspace)
 from mc_prism import call_prism
 from load import find_param
 
-cwd = os.getcwd()
+os.chdir(cwd)
 
 
 def generate_all_data_twoparam(agents_quantities, dic_fun, p_v=None, q_v=None):

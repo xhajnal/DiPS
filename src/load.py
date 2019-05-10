@@ -17,7 +17,11 @@ config = configparser.ConfigParser()
 print(os.getcwd())
 
 workspace = os.path.dirname(__file__)
-print("workspace", workspace)
+# print("workspace", workspace)
+cwd = os.getcwd()
+os.chdir(workspace)
+
+
 config.read(os.path.join(workspace, "../config.ini"))
 
 prism_results = config.get("paths", "prism_results")
@@ -31,6 +35,13 @@ if not os.path.exists(prism_results):
 data_path = config.get("paths", "data")
 if not os.path.exists(data_path):
     raise OSError("Directory does not exist: " + str(data_path))
+
+os.chdir(cwd)
+
+
+###########################
+### RATIONAL FUNCTIONS  ###
+###########################
 
 
 def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewards_only=False, f_only=False):
@@ -125,6 +136,7 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
                 if line.startswith('*'):
                     line = line[1:]
                 if here == "r" and not f_only:
+                    # print(f"pop: {N}, formula: {i+1}", line[:-1])
                     if factorize:
                         try:
                             rewards[N].append(str(factor(line[:-1])))
@@ -135,13 +147,12 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
                     else:
                         rewards[N] = line[:-1]
                 elif not here == "r" and not rewards_only:
-                    # print(f[N])
-                    # print(line[:-1])
+                    # print(f"pop: {N}, formula: {i+1}", line[:-1])
                     if factorize:
                         try:
                             f[N].append(str(factor(line[:-1])))
                         except TypeError:
-                            print(f"Error while factorising polynome f[{N}][{i}], used not factorised instead")
+                            print(f"Error while factorising polynome f[{N}][{i+1}], used not factorised instead")
                             f[N].append(line[:-1])
                             # os.chdir(cwd)
                     else:
@@ -156,6 +167,42 @@ def get_f(path, tool, factorize, agents_quantities=False):
 
 def get_rewards(path, tool, factorize, agents_quantities=False):
     return load_all_functions(path, tool, factorize, agents_quantities=agents_quantities, rewards_only=True, f_only=False)[1]
+
+
+def save_functions(dic, name):
+    """ Exports the dic in a compact but readable manner
+
+    Args
+    ----------
+    dic: (map) to be exported
+    name: (string) name of the dictionary (used for the file name)
+    """
+
+    for key in dic.keys():
+        ## If value not empty list
+        if dic[key]:
+            with open(f"export_{name}_{key}.txt", "w") as file:
+                i = 0
+                for pol in dic[key]:
+                    file.write(f"f[{i}]='{pol}' \n")
+                    i = i + 1
+
+
+def to_variance(dic):
+    """ Computes variance specifically for the dictionary in a form dic[key][0] = EX, dic[key][1] = E(X^2)
+    Args
+    ----------
+    dic: (map) for which the variance is computed
+    """
+
+    for key in dic.keys():
+        dic[key][1] = str(factor(f"{dic[key][1]} - ({dic[key][0]} * {dic[key][0]})"))
+    return dic
+
+
+###########################
+###       DATA HERE     ###
+###########################
 
 
 def load_all_data(path):

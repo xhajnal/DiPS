@@ -3,6 +3,9 @@ import os
 import sys
 
 workspace = os.path.dirname(__file__)
+cwd = os.getcwd()
+os.chdir(workspace)
+
 sys.path.append(os.path.join(workspace, '../src/'))
 from load import margin
 
@@ -28,6 +31,8 @@ if not os.path.exists(storm_results):
 model_folder = config.get("paths", "models")
 if not os.path.exists(model_folder):
     raise OSError("Directory does not exist: " + str(model_folder))
+
+os.chdir(cwd)
 
 
 def create_data_informed_properties(N, data, alpha, n_samples, multiparam, seq):

@@ -17,7 +17,10 @@ import configparser
 config = configparser.ConfigParser()
 # print(os.getcwd())
 workspace = os.path.dirname(__file__)
-# print("workspace",workspace)
+# print("workspace", workspace)
+cwd = os.getcwd()
+os.chdir(workspace)
+
 config.read(os.path.join(workspace, "../config.ini"))
 # config.sections()
 # prism_path = config.paths['prism_path']
@@ -44,6 +47,8 @@ if "prism" not in os.environ["PATH"]:
         os.environ["PATH"] = os.environ["PATH"] + ";" + prism_path
     else:
         os.environ["PATH"] = os.environ["PATH"] + ":" + prism_path
+
+os.chdir(cwd)
 
 
 def write_to_file(std_output_path, output_file_path, output, silent, append=False):
