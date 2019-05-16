@@ -3,10 +3,13 @@ import os
 import re
 import socket
 import sys
+import threading
 import time
 import platform
 from collections.abc import Iterable
 from termcolor import colored
+from math import log
+from numpy import prod
 
 import numpy as np
 from sympy import Interval
@@ -167,7 +170,7 @@ def check_unsafe(region, props, intervals, silent=False, called=False):
             globals()[param] = Real(param)
         ## EXAMPLE: p = Real(p)
 
-        space = RefinedSpace(copy.copy(region), parameters, [], [])
+        space = RefinedSpace(copy.deepcopy(region), parameters, [], [])
     else:
         space = globals()["space"]
 
@@ -232,7 +235,7 @@ def check_safe(region, props, intervals, silent=False, called=False):
             globals()[param] = Real(param)
         ## EXAMPLE: p = Real(p)
 
-        space = RefinedSpace(copy.copy(region), parameters, [], [])
+        space = RefinedSpace(copy.deepcopy(region), parameters, [], [])
     else:
         space = globals()["space"]
 
@@ -276,6 +279,78 @@ def check_safe(region, props, intervals, silent=False, called=False):
         return s.model()
 
 
+def to_interval(points):
+    """ Transforms the set of points into set of intervals
+
+        Args
+        ----------
+        points: (list of pairs) which are the points
+    """
+    intervals = []
+    for dimension in range(len(points[0])):
+        interval = [points[0][dimension], points[0][dimension]]
+        for point in range(len(points)):
+            if interval[0] > points[point][dimension]:
+                interval[0] = points[point][dimension]
+            if interval[1] < points[point][dimension]:
+                interval[1] = points[point][dimension]
+        intervals.append(interval)
+    return intervals
+
+
+def is_in(region1, region2):
+    """Returns yes if the interval1 is in the other interval, returns False otherwise
+
+    interval1: (list of pairs) (hyper)space defined by the regions
+    interval2: (list of pairs) (hyper)space defined by the regions
+    """
+    if len(region1) is not len(region2):
+        print("The intervals does not have the same size")
+        return False
+
+    for dimension in range(len(region1)):
+        if mpi(region1[dimension]) not in mpi(region2[dimension]):
+            return False
+    return True
+
+
+def refine_by(region1, region2):
+    """Returns the first (hyper)space refined/spliced by the second (hyperspace) into orthogonal subspaces
+
+    region1: (list of pairs) (hyper)space defined by the regions
+    region2: (list of pairs) (hyper)space defined by the regions
+    """
+
+    if not is_in(region2, region1):
+        raise Exception("the first interval is not within the second, it cannot be refined/spliced properly")
+
+    region1 = copy.deepcopy(region1)
+    regions = []
+    ## for each dimension trying to cut of the space
+    for dimension in range(len(region2)):
+        ## LEFT
+        if region1[dimension][0] < region2[dimension][0]:
+            sliced_region = copy.deepcopy(region1)
+            sliced_region[dimension][1] = region2[dimension][0]
+            print("left ", sliced_region)
+            regions.append(sliced_region)
+            region1[dimension][0] = region2[dimension][0]
+            print("new intervals", region1)
+
+        ## RIGHT
+        if region1[dimension][1] > region2[dimension][1]:
+            sliced_region = copy.deepcopy(region1)
+            sliced_region[dimension][0] = region2[dimension][1]
+            print("right ", sliced_region)
+            regions.append(sliced_region)
+            region1[dimension][1] = region2[dimension][1]
+            print("new intervals", region1)
+
+    # print("region1 ", region1)
+    regions.append(region1)
+    return regions
+
+
 def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version, size_q=5, time_out=False):
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
     Args
@@ -291,10 +366,16 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
     size_q: (Int): number of samples in dimension used for presampling
     time_out: (Int): time out in minutes
     """
-    ## Initialisation
-    ## Params
+
+    ## INITIALISATION
+    ### Regions
+    ### Taking care of unchangable tuples
+    for interval_index in range(len(region)):
+        region[interval_index] = [region[interval_index][0], region[interval_index][1]]
+
+    ### Params
     if not isinstance(props, Iterable):
-        raise Exception("Given properties are not iterable, to use single property use list of lenght 1")
+        raise Exception("Given properties are not iterable, to use single property use list of length 1")
 
     globals()["parameters"] = set()
     for polynome in props:
@@ -302,17 +383,17 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
     globals()["parameters"] = sorted(list(globals()["parameters"]))
     parameters = globals()["parameters"]
 
-    globals()["space"] = RefinedSpace(copy.copy(region), parameters, [], [])
+    globals()["space"] = RefinedSpace(copy.deepcopy(region), parameters, [], [])
     space = globals()["space"]
 
-    globals()["default_region"] = copy.copy(region)
+    globals()["default_region"] = copy.deepcopy(region)
 
     if not silent:
         print("the area is: ", space.region)
         print("the volume of the whole area is:", space.get_volume())
         print()
 
-    ## Choosing from versions
+    ## Choosing version/algorithm here
     ## If using z3 initialise the parameters
     if version <= 4:
         for param in parameters:
@@ -342,55 +423,138 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
     elif version == 6:
         print("Using presampled interval method")
         globals()["que"] = Queue()
-        # globals()["space"] = RefinedSpace(copy.copy(region), parameters, [], [])
+        # globals()["space"] = RefinedSpace(copy.deepcopy(region), parameters, [], [])
 
         to_be_searched = sample(space, props, intervals, size_q, compress=True, silent=silent)
         print(type(to_be_searched))
         print("sampled space: ", to_be_searched)
 
-        spam = []
-        for egg in range(len(to_be_searched)):
-            for point in to_be_searched[egg]:
+        ## PARSE SAT POINTS
+        sat_points = []
+        for point_index in range(len(to_be_searched)):
+            for point in to_be_searched[point_index]:
                 if point[1] is True:
-                    spam.append(point[0])
-        print(spam)
+                    sat_points.append(point[0])
+        print("satisfying points: ", sat_points)
 
-        if spam:
-            ## initializing the min point and max point as the first point
-            min = copy.copy(spam[0])
-            print("current min", min)
-            max = copy.copy(spam[0])
-            print("current max", max)
-            for point in spam[1:]:
+        ## COMPUTING THE ORTHOGONAL HULL OF SAT POINTS
+        ## Initializing the min point and max point as the first point
+        if sat_points:
+            sat_min = copy.deepcopy(sat_points[0])
+            print("initial min", sat_min)
+            sat_max = copy.deepcopy(sat_points[0])
+            print("initial max", sat_max)
+
+            ## TBD - POSSIBLE OPTIMISATION HERE DOING IT IN THE REVERSE ORDER AND STOPPING IF A BORDER OF THE REGION IS ADDED
+            for point in sat_points:
                 print(point)
-                for dimension in range(0, len(spam[0])):
+                for dimension in range(0, len(sat_points[0])):
                     print(point[dimension])
-                    if point[dimension] < min[dimension]:
-                        print("current point:", point[dimension], "current min:", min[dimension], "change min")
-                        min[dimension] = point[dimension]
-                    if point[dimension] > max[dimension]:
-                        print("current point:", point[dimension], "current max:", max[dimension], "change max")
-                        max[dimension] = point[dimension]
+                    if point[dimension] < sat_min[dimension]:
+                        print("current point:", point[dimension], "current min:", sat_min[dimension], "change min")
+                        sat_min[dimension] = point[dimension]
+                    if point[dimension] > sat_max[dimension]:
+                        print("current point:", point[dimension], "current max:", sat_max[dimension], "change max")
+                        sat_max[dimension] = point[dimension]
+            print("sat_min ", sat_min)
+            print("sat_max ", sat_max)
+        else:
+            print("No sat points in the samples")
+
+        if is_in(region, to_interval([sat_min, sat_max])):
+            print("The ORTHOGONAL hull of sat points actually covers the whole region")
+        else:
+            ## SPLIT THE WHITE REGION INTO 3-5 AREAS (in 2D) (DEPENDING ON THE POSITION OF THE HULL)
+            print(colored("I was here", 'red'))
+            space.remove_white(region)
+            regions = refine_by(region, to_interval([sat_min, sat_max]))
+            for subregion in regions:
+                space.add_white(subregion)
+
+        ## If there is only the default region to be refined in the whitespace
+        if len(space.get_white()) == 1:
+            ## PARSE UNSAT POINTS
+            unsat_points = []
+            for point_index in range(len(to_be_searched)):
+                for point in to_be_searched[point_index]:
+                    if point[1] is False:
+                        unsat_points.append(point[0])
+            print("unsatisfying points: ", unsat_points)
+
+            ## COMPUTING THE ORTHOGONAL HULL OF UNSAT POINTS
+            ## Initializing the min point and max point as the first point
+
+            if unsat_points:
+                unsat_min = copy.deepcopy(unsat_points[0])
+                print("initial min", unsat_min)
+                unsat_max = copy.deepcopy(unsat_points[0])
+                print("initial max", unsat_max)
+
+                ## TBD - POSSIBLE OPTIMISATION HERE DOING IT IN THE REVERSE ORDER AND STOPPING IF A BORDER OF THE REGION IS ADDED
+                for point in unsat_points:
+                    print(point)
+                    for dimension in range(0, len(unsat_points[0])):
+                        print(point[dimension])
+                        if point[dimension] < unsat_min[dimension]:
+                            print("current point:", point[dimension], "current min:", unsat_min[dimension], "change min")
+                            unsat_min[dimension] = point[dimension]
+                        if point[dimension] > unsat_max[dimension]:
+                            print("current point:", point[dimension], "current max:", unsat_max[dimension], "change max")
+                            unsat_max[dimension] = point[dimension]
+                print("unsat_min ", unsat_min)
+                print("unsat_max ", unsat_max)
+            else:
+                print("No unsat points in the samples")
+
+            if is_in(region, to_interval([unsat_min, unsat_max])):
+                print("The ORTHOGONAL hull of unsat points actually covers the whole region")
+            else:
+                ## SPLIT THE WHITE REGION INTO 3-5 AREAS (in 2D) (DEPENDING ON THE POSITION OF THE HULL)
+                print(colored("I was here", 'red'))
+                print("space white", space.get_white())
+                space.remove_white(region)
+                regions = refine_by(region, to_interval([unsat_min, unsat_max]))
+                for subregion in regions:
+                    space.add_white(subregion)
+
+        print("region now", region)
+        print("space white", space.get_white())
+        # space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time.time() - start_time)} second(s)")
+
+        # spam = copy.deepcopy(space.get_white())
+        # private_check_deeper_interval(spam[0], props, intervals, n, epsilon, coverage, silent, time_out=time_out)
+        # private_check_deeper_interval(spam[1], props, intervals, n, epsilon, coverage, silent, time_out=time_out)
+        # private_check_deeper_interval(spam[2], props, intervals, n, epsilon, coverage, silent, time_out=time_out)
+
+        spam = copy.deepcopy(space.get_white())
+        for rectangle in spam:
+            ## To get more similar result substituting the number of splits from the max_depth
+            print("max_depth = ", max(1, n-(int(log(len(spam), 2)))))
+            print("refining", rectangle)
+            ## THE PROBLEM IS THAT COVERAGE IS COMPUTED FOR THE WHOLE SPACE NOT ONLY FOR THE GIVEN REGION
+            rectangle_size = []
+            for interval in rectangle:
+                rectangle_size.append(interval[1] - interval[0])
+            rectangle_size = prod(rectangle_size)
+            private_check_deeper_interval(rectangle, props, intervals, max(1, n-(int(log(len(spam), 2)))), epsilon, space.get_coverage() + (rectangle_size/space.get_volume())*coverage, silent, time_out=time_out)
 
 
-        # to_be_searched = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y", "0"], [Interval(0, 1), Interval(0, 1)], , compress=True, silent=False)
+        ## OLD REFINEMENT HERE
+        # # to_be_searched = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y", "0"], [Interval(0, 1), Interval(0, 1)], , compress=True, silent=False)
 
-        # to_be_searched = refine_into_rectangles(to_be_searched, silent=silent)
-        to_be_searched = refine_into_rectangles(to_be_searched, silent=False)
+        # to_be_searched = refine_into_rectangles(to_be_searched, silent=False)
 
+        # print("to_be_searched: ", to_be_searched)
+        # globals()["que"] = Queue()
 
+        # for rectangle in to_be_searched:
+        #     print(rectangle)
+        #     # print("safe", space.sat)
+        #     print("unsafe", space.unsat)
+        #     space.add_white(rectangle)
+        #     private_check_deeper_interval(rectangle, props, intervals, 0, epsilon, coverage, silent)
 
-        print("to_be_searched: ", to_be_searched)
-        globals()["que"] = Queue()
-
-        for rectangle in to_be_searched:
-            print(rectangle)
-            # print("safe", space.sat)
-            print("unsafe", space.unsat)
-            space.add_white(rectangle)
-            private_check_deeper_interval(rectangle, props, intervals, 0, epsilon, coverage, silent)
-
-    ## Visualisation
+    ## VISUALISATION
     space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time.time() - start_time)} second(s)")
     print("result coverage is: ", space.get_coverage())
     return space
@@ -401,7 +565,7 @@ def private_check_deeper(region, props, intervals, n, epsilon, coverage, silent,
     Args
     ----------
     region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
-    props: (list of strings): array of polynomes
+    props: (list of strings): array of polynomials
     intervals: (list of sympy.Interval): array of intervals to constrain properties
     n: (Int): max number of recursions to do
     epsilon: (Float): minimal size of rectangle to be checked
@@ -410,7 +574,7 @@ def private_check_deeper(region, props, intervals, n, epsilon, coverage, silent,
     time_out: (Int): time out in minutes
     """
 
-    ## TBD check consitency
+    ## TBD check consistency
     # print(region,prop,intervals,n,epsilon,coverage,silent)
     # print("check equal", globals()["non_white_area"],non_white_area)
     # print("check equal", globals()["whole_area"],whole_area)
@@ -466,9 +630,9 @@ def private_check_deeper(region, props, intervals, n, epsilon, coverage, silent,
                     maximum = value
             low = region[index][0]
             high = region[index][1]
-            foo = copy.copy(region)
+            foo = copy.deepcopy(region)
             foo[index] = (low, low + (high - low) / 2)
-            foo2 = copy.copy(region)
+            foo2 = copy.deepcopy(region)
             foo2[index] = (low + (high - low) / 2, high)
             space.remove_white(region)
             space.add_white(foo)  # add this region as white
@@ -563,19 +727,19 @@ def private_check_deeper_queue(region, props, intervals, n, epsilon, coverage, s
             maximum = value
     low = region[index][0]
     high = region[index][1]
-    foo = copy.copy(region)
+    foo = copy.deepcopy(region)
     foo[index] = (low, low + (high - low) / 2)
-    foo2 = copy.copy(region)
+    foo2 = copy.deepcopy(region)
     foo2[index] = (low + (high - low) / 2, high)
     space.remove_white(region)
     space.add_white(foo)
     space.add_white(foo2)
 
     ## Add calls to the Queue
-    # print("adding",[copy.copy(foo),prop,intervals,n-1,epsilon,coverage,silent], "with len", len([copy.copy(foo),prop,intervals,n-1,epsilon,coverage,silent]))
-    # print("adding",[copy.copy(foo2),prop,intervals,n-1,epsilon,coverage,silent], "with len", len([copy.copy(foo2),prop,intervals,n-1,epsilon,coverage,silent]))
-    globals()["que"].enqueue([copy.copy(foo), props, intervals, n - 1, epsilon, coverage, silent])
-    globals()["que"].enqueue([copy.copy(foo2), props, intervals, n - 1, epsilon, coverage, silent])
+    # print("adding",[copy.deepcopy(foo),prop,intervals,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo),prop,intervals,n-1,epsilon,coverage,silent]))
+    # print("adding",[copy.deepcopy(foo2),prop,intervals,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo2),prop,intervals,n-1,epsilon,coverage,silent]))
+    globals()["que"].enqueue([copy.deepcopy(foo), props, intervals, n - 1, epsilon, coverage, silent])
+    globals()["que"].enqueue([copy.deepcopy(foo2), props, intervals, n - 1, epsilon, coverage, silent])
 
     ## Execute the Queue
     # print(globals()["que"].printQueue())
@@ -670,9 +834,9 @@ def private_check_deeper_queue_checking(region, props, intervals, n, epsilon, co
             maximum = value
     low = region[index][0]
     high = region[index][1]
-    foo = copy.copy(region)
+    foo = copy.deepcopy(region)
     foo[index] = (low, low + (high - low) / 2)
-    foo2 = copy.copy(region)
+    foo2 = copy.deepcopy(region)
     foo2[index] = (low + (high - low) / 2, high)
     space.remove_white(region)
     space.add_white(foo)
@@ -693,9 +857,9 @@ def private_check_deeper_queue_checking(region, props, intervals, n, epsilon, co
 
     ## Add calls to the Queue
     globals()["que"].enqueue(
-        [copy.copy(foo), props, intervals, n - 1, epsilon, coverage, silent, model_low])
+        [copy.deepcopy(foo), props, intervals, n - 1, epsilon, coverage, silent, model_low])
     globals()["que"].enqueue(
-        [copy.copy(foo2), props, intervals, n - 1, epsilon, coverage, silent, model_high])
+        [copy.deepcopy(foo2), props, intervals, n - 1, epsilon, coverage, silent, model_high])
 
     ## Execute the Queue
     # print(globals()["que"].printQueue())
@@ -798,9 +962,9 @@ def private_check_deeper_queue_checking_both(region, props, intervals, n, epsilo
             maximum = value
     low = region[index][0]
     high = region[index][1]
-    foo = copy.copy(region)
+    foo = copy.deepcopy(region)
     foo[index] = (low, low + (high - low) / 2)
-    foo2 = copy.copy(region)
+    foo2 = copy.deepcopy(region)
     foo2[index] = (low + (high - low) / 2, high)
     space.remove_white(region)
     space.add_white(foo)
@@ -829,8 +993,8 @@ def private_check_deeper_queue_checking_both(region, props, intervals, n, epsilo
         model_high[1] = None
 
     ## Add calls to the Queue
-    globals()["que"].enqueue([copy.copy(foo), props, intervals, n - 1, epsilon, coverage, silent, model_low])
-    globals()["que"].enqueue([copy.copy(foo2), props, intervals, n - 1, epsilon, coverage, silent, model_high])
+    globals()["que"].enqueue([copy.deepcopy(foo), props, intervals, n - 1, epsilon, coverage, silent, model_low])
+    globals()["que"].enqueue([copy.deepcopy(foo2), props, intervals, n - 1, epsilon, coverage, silent, model_high])
 
     ## Execute the Queue
     # print(globals()["que"].printQueue())
@@ -909,7 +1073,7 @@ def check_deeper_iter(region, props, intervals, n, epsilon, coverage, silent, ti
     silent: (Bool): if silent printed output is set to minimum
     time_out: (Int): time out in minutes
     """
-    new_tresh = copy.copy(region)
+    new_tresh = copy.deepcopy(region)
 
     ## Implement ordering of the props with intervals
     for i in range(len(props) - 1):
@@ -967,7 +1131,7 @@ def check_interval_in(region, props, intervals, silent=False, called=False):
         for polynome in props:
             parameters.update(find_param(polynome))
         parameters = sorted(list(parameters))
-        space = RefinedSpace(copy.copy(region), parameters, [], [])
+        space = RefinedSpace(copy.deepcopy(region), parameters, [], [])
     else:
         space = globals()["space"]
 
@@ -985,11 +1149,13 @@ def check_interval_in(region, props, intervals, silent=False, called=False):
         # print(float(intervals[i].start), float(intervals[i].end))
         # print(mpi(float(intervals[i].start), float(intervals[i].end)))
         if not eval(prop) in mpi(float(intervals[i].start), float(intervals[i].end)):
-            print(f"property {props.index(prop) + 1} ϵ {eval(prop)},")
-            print(f"which is not in the interval {mpi(float(intervals[i].start), float(intervals[i].end))}")
+            if not silent:
+                print(f"region {region}, property {props.index(prop) + 1} ϵ {eval(prop)},")
+                print(f"which is not in the interval {mpi(float(intervals[i].start), float(intervals[i].end))}")
             return False
         else:
-            print(f"property {props.index(prop)+1} ϵ {eval(prop)} --safe")
+            if not silent:
+                print(f"property {props.index(prop)+1} ϵ {eval(prop)} --safe")
 
         i = i + 1
 
@@ -1020,7 +1186,7 @@ def check_interval_out(region, props, intervals, silent=False, called=False):
         for polynome in props:
             parameters.update(find_param(polynome))
         parameters = sorted(list(parameters))
-        space = RefinedSpace(copy.copy(region), parameters, [], [])
+        space = RefinedSpace(copy.deepcopy(region), parameters, [], [])
     else:
         space = globals()["space"]
     ## Assign each parameter its interval
@@ -1050,15 +1216,16 @@ def check_interval_out(region, props, intervals, silent=False, called=False):
         interval = mpi(float(intervals[i].start), float(intervals[i].end))
         ## If there exists an intersection (neither of these interval is greater in all points)
         if not (prop_eval > interval or prop_eval < interval):
-            print(f"property {props.index(prop) + 1} ϵ {eval(prop)},")
-            print(f"which is not outside of interval {mpi(float(intervals[i].start), float(intervals[i].end))}")
-            return False
+            if not silent:
+                print(f"region {region}, property {props.index(prop) + 1} ϵ {eval(prop)},")
+                print(f"which is not outside of interval {mpi(float(intervals[i].start), float(intervals[i].end))}")
         else:
-            print(f"property {props.index(prop) + 1} ϵ {eval(prop)} -- unsafe")
+            space.add_red(region)
+            if not silent:
+                print(f"property {props.index(prop) + 1} ϵ {eval(prop)} -- unsafe")
+            return True
         i = i + 1
-    # print("region ", region, "unsat, adding it to unsat")
-    space.add_red(region)
-    return True
+    return False
 
 
 def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage, silent, presampled=False, time_out=False):
@@ -1141,19 +1308,19 @@ def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage
             maximum = value
     low = region[index][0]
     high = region[index][1]
-    foo = copy.copy(region)
+    foo = copy.deepcopy(region)
     foo[index] = (low, low + (high - low) / 2)
-    foo2 = copy.copy(region)
+    foo2 = copy.deepcopy(region)
     foo2[index] = (low + (high - low) / 2, high)
     space.remove_white(region)
     space.add_white(foo)
     space.add_white(foo2)
 
     ## Add calls to the Queue
-    # print("adding",[copy.copy(foo),prop,intervals,n-1,epsilon,coverage,silent], "with len", len([copy.copy(foo),prop,intervals,n-1,epsilon,coverage,silent]))
-    # print("adding",[copy.copy(foo2),prop,intervals,n-1,epsilon,coverage,silent], "with len", len([copy.copy(foo2),prop,intervals,n-1,epsilon,coverage,silent]))
-    globals()["que"].enqueue([copy.copy(foo), props, intervals, n - 1, epsilon, coverage, silent])
-    globals()["que"].enqueue([copy.copy(foo2), props, intervals, n - 1, epsilon, coverage, silent])
+    # print("adding",[copy.deepcopy(foo),prop,intervals,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo),prop,intervals,n-1,epsilon,coverage,silent]))
+    # print("adding",[copy.deepcopy(foo2),prop,intervals,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo2),prop,intervals,n-1,epsilon,coverage,silent]))
+    globals()["que"].enqueue([copy.deepcopy(foo), props, intervals, n - 1, epsilon, coverage, silent])
+    globals()["que"].enqueue([copy.deepcopy(foo2), props, intervals, n - 1, epsilon, coverage, silent])
 
     ## Execute the queue
     # print(globals()["que"].printQueue())
@@ -1198,7 +1365,7 @@ def sample(space, props, intervals, size_q, compress=False, silent=True):
     Args
     -------
     space: (space.RefinedSpace): space
-    props: (list of strings): array of functions (polynomes or general rational functions in the case of Markov Chains)
+    props: (list of strings): array of functions (polynomials or general rational functions in the case of Markov Chains)
     intervals: (list of sympy.Interval): array of intervals to constrain properties
     size_q: (int): number of samples in dimension
     silent: (Bool): if silent printed output is set to minimum
@@ -1449,6 +1616,23 @@ class TestLoad(unittest.TestCase):
         self.assertEqual(mpi(1, 2) not in mpi(2, 3), True)
         self.assertEqual(mpi(1, 2) not in mpi(1.5, 2), True)
 
+    def test_to_interval(self):
+        print(colored("Checking transformation of a set of points into a set of intervals here", 'blue'))
+        self.assertEqual(to_interval([(0, 2), (1, 3)]), [[0, 1], [2, 3]])
+        self.assertEqual(to_interval([(0, 0, 0), (1, 0, 0), (1, 2, 0), (0, 2, 0), (0, 2, 3), (0, 0, 3), (1, 0, 3), (1, 2, 3)]), [[0, 1], [0, 2], [0, 3]])
+
+    def test_is_in(self):
+        print(colored("Checking if the first region is within the second one here", 'blue'))
+        self.assertEqual(is_in([(1, 4)], [(1, 4)]), True)
+        self.assertEqual(is_in([(1, 4)], [(0, 5)]), True)
+        self.assertEqual(is_in([(1, 4)], [(0, 3)]), False)
+        self.assertEqual(is_in([(1, 4)], [(2, 5)]), False)
+
+        self.assertEqual(is_in([(0, 2), (1, 3)], [(0, 2), (1, 3)]), True)
+        self.assertEqual(is_in([(0, 2), (1, 3)], [(0, 3), (1, 4)]), True)
+        self.assertEqual(is_in([(0, 2), (1, 3)], [(0, 1), (1, 4)]), False)
+        self.assertEqual(is_in([(0, 2), (1, 3)], [(0, 2), (1, 2)]), False)
+
     def test_check_single(self):
         print(colored("Check (un)safe with single properties here", 'blue'))
         ## IS IN
@@ -1596,7 +1780,7 @@ class TestLoad(unittest.TestCase):
             check_interval_out([(0, 1)], ["x", "2*x"], [Interval(0, 1), Interval(0, 1)], silent=True, called=True), False)
         ## !!!TRICKY
         self.assertEqual(
-            check_interval_out([(0, 2)], ["x", "2*x"], [Interval(0, 1)], silent=True, called=True), False)
+            check_interval_out([(0, 2)], ["x", "2*x"], [Interval(0, 1), Interval(0, 1)], silent=True, called=True), False)
 
         self.assertEqual(
             check_interval_out([(0, 1), (0, 1)], ["x", "y"], [Interval(2, 3), Interval(2, 3)], silent=True,
@@ -1613,9 +1797,6 @@ class TestLoad(unittest.TestCase):
         # check_deeper([(0, 4)], ["x"], [Interval(0, 3)], 5, 0, 0.95, silent=False, version=5)
         # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 5, 0, 0.95, silent=True, version=5)
         # check_deeper([(0, 0.5), (0, 0.5)], ["x+y"], [Interval(0, 1)], 5, 0, 0.95, silent=False, version=5)
-
-
-
 
 
         ## NORMAL TEST
@@ -1701,7 +1882,17 @@ class TestLoad(unittest.TestCase):
         print(colored("Presampled refinement here", 'blue'))
         ## UNCOMMENT THIS TBD
         # check_deeper([(0, 1), (2, 3)], ["x+y"], [Interval(0, 3)], 5, 0, 0.95, silent=False, version=5)
-        check_deeper([(0, 1), (2, 3)], ["x+y"], [Interval(0, 3)], 5, 0, 0.95, silent=True, version=6)
+
+        # check_deeper([(0, 1), (2, 3)], ["x+y"], [Interval(0, 3)], 5, 0, 0.95, silent=True, version=5)
+        # check_deeper([(0, 1), (2, 3)], ["x+y"], [Interval(0, 3)], 5, 0, 0.95, silent=True, version=6)
+
+        # check_deeper([(0, 1), (2, 3)], ["x", "y"], [Interval(0.5, 3), Interval(2.5, 3)], 5, 0, 0.95, silent=True, version=5)
+        # check_deeper([(0, 1), (2, 3)], ["x", "y"], [Interval(0, 3), Interval(2.5, 3)], 20, 0, 0.95, silent=True, version=5)
+
+        # check_deeper([[0, 1], [2, 2.5]], ["x", "y"], [Interval(0, 3), Interval(2.5, 3)], 20, 0, 0.95, silent=False, version=5)
+
+
+        check_deeper([(0, 1), (2, 3)], ["x", "y"], [Interval(0, 3), Interval(2.5, 3)], 15, 0, 0.95, silent=False, version=6)
 
         # check_deeper([(0, 0.5), (0, 0.5)], ["x+y"], [Interval(0, 1)], 5, 0, 0.95, silent=False, version=5)
 
