@@ -157,6 +157,7 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
                             # os.chdir(cwd)
                     else:
                         f[N].append(line[:-1])
+        file.close()
     os.chdir(default_directory)
     return (f, rewards)
 
@@ -248,6 +249,7 @@ def load_all_data(path):
             # D[N].append(1-sum(D[N]))
             break
             # print(D[N])
+        file.close()
     os.chdir(cwd)
     if D:
         return D

@@ -10,6 +10,12 @@ from termcolor import colored
 
 
 def get_rectangle_volume(rectangle):
+    """Computes the volume of the given (hyper)rectangle
+
+    Args
+    ------
+    rectangle:  (list of intervals) defining the (hyper)rectangle
+    """
     intervals = []
     ## If there is empty rectangle
     if not rectangle:
@@ -43,6 +49,7 @@ class RefinedSpace:
             print(colored(f"number of parameters ({len(params)}) and dimension of the region ({len(region)}) is not equal", 'red'))
             # print("region", self.region)
 
+        # print("rectangles_sat", rectangles_sat)
         if not isinstance(rectangles_sat, Iterable):
             raise Exception("Given rectangles_sat is not iterable")
         if isinstance(rectangles_sat, tuple):
@@ -50,6 +57,7 @@ class RefinedSpace:
         else:
             self.sat = rectangles_sat
 
+        # print("rectangles_unsat", rectangles_unsat)
         if not isinstance(rectangles_unsat, Iterable):
             raise Exception("Given rectangles_unsat is not iterable")
         if isinstance(rectangles_unsat, tuple):
@@ -60,9 +68,12 @@ class RefinedSpace:
         # print("rectangles_unknown", rectangles_unknown)
         if rectangles_unknown is None:
             self.unknown = [region]
+        elif not isinstance(rectangles_unknown, Iterable):
+            raise Exception("Given rectangles_unknown is not iterable")
+        elif isinstance(rectangles_unknown, tuple):
+            self.unknown = [rectangles_unknown]
         else:
             self.unknown = rectangles_unknown
-        # print("rectangles_unknown now", self.unknown)
 
     def show(self, title):
         if len(self.region) == 1 or len(self.region) == 2:
@@ -75,7 +86,7 @@ class RefinedSpace:
             pic.set_xlabel(self.params[0])
 
             ## Set axis ranges
-            region = copy.copy(self.region)
+            region = copy.deepcopy(self.region)
             if region[0][1] - region[0][0] < 0.1:
                 region[0] = (region[0][0] - 0.2, region[0][1] + 0.2)
             pic.axis([region[0][0], region[0][1], 0, 1])
@@ -93,10 +104,10 @@ class RefinedSpace:
             del region
 
     def get_volume(self):
-        add_space = []
+        intervals = []
         for interval in self.region:
-            add_space.append(interval[1] - interval[0])
-        return prod(add_space)
+            intervals.append(interval[1] - interval[0])
+        return prod(intervals)
 
     def add_green(self, green):
         self.sat.append(green)
@@ -118,6 +129,17 @@ class RefinedSpace:
             self.unknown.remove(white)
         except:
             print("Could not remove white area ", white)
+            return False
+        return True
+
+    def get_green(self):
+        return self.sat
+
+    def get_red(self):
+        return self.unsat
+
+    def get_white(self):
+        return self.unknown
 
     def get_green_volume(self):
         cumulative_volume = 0
