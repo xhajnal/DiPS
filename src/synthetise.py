@@ -314,7 +314,7 @@ def is_in(region1, region2):
     return True
 
 
-def refine_by(region1, region2):
+def refine_by(region1, region2, debug=False):
     """Returns the first (hyper)space refined/spliced by the second (hyperspace) into orthogonal subspaces
 
     region1: (list of pairs) (hyper)space defined by the regions
@@ -332,26 +332,30 @@ def refine_by(region1, region2):
         if region1[dimension][0] < region2[dimension][0]:
             sliced_region = copy.deepcopy(region1)
             sliced_region[dimension][1] = region2[dimension][0]
-            print("left ", sliced_region)
+            if debug:
+                print("left ", sliced_region)
             regions.append(sliced_region)
             region1[dimension][0] = region2[dimension][0]
-            print("new intervals", region1)
+            if debug:
+                print("new intervals", region1)
 
         ## RIGHT
         if region1[dimension][1] > region2[dimension][1]:
             sliced_region = copy.deepcopy(region1)
             sliced_region[dimension][0] = region2[dimension][1]
-            print("right ", sliced_region)
+            if debug:
+                print("right ", sliced_region)
             regions.append(sliced_region)
             region1[dimension][1] = region2[dimension][1]
-            print("new intervals", region1)
+            if debug:
+                print("new intervals", region1)
 
     # print("region1 ", region1)
     regions.append(region1)
     return regions
 
 
-def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version, size_q=5, time_out=False):
+def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version, size_q=5, time_out=False, debug=False):
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
     Args
     ----------
@@ -365,6 +369,7 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
     version: (Int): version of the algorithm to be used
     size_q: (Int): number of samples in dimension used for presampling
     time_out: (Int): time out in minutes
+    debug: (Bool): if debug extensive print will be used
     """
 
     ## INITIALISATION
@@ -425,9 +430,10 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
         globals()["que"] = Queue()
         # globals()["space"] = RefinedSpace(copy.deepcopy(region), parameters, [], [])
 
-        to_be_searched = sample(space, props, intervals, size_q, compress=True, silent=silent)
-        print(type(to_be_searched))
-        print("sampled space: ", to_be_searched)
+        to_be_searched = sample(space, props, intervals, size_q, compress=True, silent=not debug)
+        if debug:
+            print(type(to_be_searched))
+            print("sampled space: ", to_be_searched)
 
         ## PARSE SAT POINTS
         sat_points = []
@@ -435,37 +441,46 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
             for point in to_be_searched[point_index]:
                 if point[1] is True:
                     sat_points.append(point[0])
-        print("satisfying points: ", sat_points)
+        if debug:
+            print("satisfying points: ", sat_points)
 
         ## COMPUTING THE ORTHOGONAL HULL OF SAT POINTS
         ## Initializing the min point and max point as the first point
         if sat_points:
             sat_min = copy.deepcopy(sat_points[0])
-            print("initial min", sat_min)
+            if debug:
+                print("initial min", sat_min)
             sat_max = copy.deepcopy(sat_points[0])
-            print("initial max", sat_max)
+            if debug:
+                print("initial max", sat_max)
 
             ## TBD - POSSIBLE OPTIMISATION HERE DOING IT IN THE REVERSE ORDER AND STOPPING IF A BORDER OF THE REGION IS ADDED
             for point in sat_points:
-                print(point)
+                if debug:
+                    print(point)
                 for dimension in range(0, len(sat_points[0])):
-                    print(point[dimension])
+                    if debug:
+                        print(point[dimension])
                     if point[dimension] < sat_min[dimension]:
-                        print("current point:", point[dimension], "current min:", sat_min[dimension], "change min")
+                        if debug:
+                            print("current point:", point[dimension], "current min:", sat_min[dimension], "change min")
                         sat_min[dimension] = point[dimension]
                     if point[dimension] > sat_max[dimension]:
-                        print("current point:", point[dimension], "current max:", sat_max[dimension], "change max")
+                        if debug:
+                            print("current point:", point[dimension], "current max:", sat_max[dimension], "change max")
                         sat_max[dimension] = point[dimension]
-            print("sat_min ", sat_min)
-            print("sat_max ", sat_max)
+            if debug:
+                print("sat_min ", sat_min)
+                print("sat_max ", sat_max)
 
             if is_in(region, to_interval([sat_min, sat_max])):
-                print("The ORTHOGONAL hull of sat points actually covers the whole region")
+                print("The orthogonal hull of sat points actually covers the whole region")
             else:
                 ## SPLIT THE WHITE REGION INTO 3-5 AREAS (in 2D) (DEPENDING ON THE POSITION OF THE HULL)
-                print(colored("I was here", 'red'))
+                if debug:
+                    print(colored("I was here", 'red'))
                 space.remove_white(region)
-                regions = refine_by(region, to_interval([sat_min, sat_max]))
+                regions = refine_by(region, to_interval([sat_min, sat_max]), debug)
                 for subregion in regions:
                     space.add_white(subregion)
         else:
@@ -479,37 +494,46 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
                 for point in to_be_searched[point_index]:
                     if point[1] is False:
                         unsat_points.append(point[0])
-            print("unsatisfying points: ", unsat_points)
+            if debug:
+                print("unsatisfying points: ", unsat_points)
 
             ## COMPUTING THE ORTHOGONAL HULL OF UNSAT POINTS
             ## Initializing the min point and max point as the first point
 
             if unsat_points:
                 unsat_min = copy.deepcopy(unsat_points[0])
-                print("initial min", unsat_min)
+                if debug:
+                    print("initial min", unsat_min)
                 unsat_max = copy.deepcopy(unsat_points[0])
-                print("initial max", unsat_max)
+                if debug:
+                    print("initial max", unsat_max)
 
                 ## TBD - POSSIBLE OPTIMISATION HERE DOING IT IN THE REVERSE ORDER AND STOPPING IF A BORDER OF THE REGION IS ADDED
                 for point in unsat_points:
-                    print(point)
+                    if debug:
+                        print(point)
                     for dimension in range(0, len(unsat_points[0])):
-                        print(point[dimension])
+                        if debug:
+                            print(point[dimension])
                         if point[dimension] < unsat_min[dimension]:
-                            print("current point:", point[dimension], "current min:", unsat_min[dimension], "change min")
+                            if debug:
+                                print("current point:", point[dimension], "current min:", unsat_min[dimension], "change min")
                             unsat_min[dimension] = point[dimension]
                         if point[dimension] > unsat_max[dimension]:
-                            print("current point:", point[dimension], "current max:", unsat_max[dimension], "change max")
+                            if debug:
+                                print("current point:", point[dimension], "current max:", unsat_max[dimension], "change max")
                             unsat_max[dimension] = point[dimension]
-                print("unsat_min ", unsat_min)
-                print("unsat_max ", unsat_max)
+                if debug:
+                    print("unsat_min ", unsat_min)
+                    print("unsat_max ", unsat_max)
 
                 if is_in(region, to_interval([unsat_min, unsat_max])):
-                    print("The ORTHOGONAL hull of unsat points actually covers the whole region")
+                    print("The orthogonal hull of unsat points actually covers the whole region")
                 else:
                     ## SPLIT THE WHITE REGION INTO 3-5 AREAS (in 2D) (DEPENDING ON THE POSITION OF THE HULL)
-                    print(colored("I was here", 'red'))
-                    print("space white", space.get_white())
+                    if debug:
+                        print(colored("I was here", 'red'))
+                        print("space white", space.get_white())
                     space.remove_white(region)
                     regions = refine_by(region, to_interval([unsat_min, unsat_max]))
                     for subregion in regions:
@@ -517,8 +541,13 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
             else:
                 print("No unsat points in the samples")
 
-        print("region now", region)
-        print("space white", space.get_white())
+        if debug:
+            print("region now", region)
+            print("space white", space.get_white())
+
+        print("Presampling resulted in splicing the region into these subregions: ", space.get_white())
+
+        print(f"It took {socket.gethostname()} {round(time.time() - start_time)} second(s)")
         # space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time.time() - start_time)} second(s)")
 
         # spam = copy.deepcopy(space.get_white())
@@ -527,17 +556,21 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
         # private_check_deeper_interval(spam[2], props, intervals, n, epsilon, coverage, silent, time_out=time_out)
 
         spam = copy.deepcopy(space.get_white())
+
         for rectangle in spam:
+            start_time = time.time()
             ## To get more similar result substituting the number of splits from the max_depth
-            print("max_depth = ", max(1, n-(int(log(len(spam), 2)))))
-            print("refining", rectangle)
+            if debug:
+                print("max_depth = ", max(1, n-(int(log(len(spam), 2)))))
+                print("refining", rectangle)
             ## THE PROBLEM IS THAT COVERAGE IS COMPUTED FOR THE WHOLE SPACE NOT ONLY FOR THE GIVEN REGION
             rectangle_size = []
             for interval in rectangle:
                 rectangle_size.append(interval[1] - interval[0])
             rectangle_size = prod(rectangle_size)
+            print(f"Using interval method to solve spliced rectangle number {spam.index(rectangle)+1}")
             private_check_deeper_interval(rectangle, props, intervals, max(1, n-(int(log(len(spam), 2)))), epsilon, space.get_coverage() + (rectangle_size/space.get_volume())*coverage, silent, time_out=time_out)
-
+            space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time.time() - start_time)} second(s)")
 
         ## OLD REFINEMENT HERE
         # # to_be_searched = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y", "0"], [Interval(0, 1), Interval(0, 1)], , compress=True, silent=False)
