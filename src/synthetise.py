@@ -1122,6 +1122,8 @@ def check_interval_in(region, props, intervals, silent=False, called=False):
     called: (Bool): if called updates the global variables (use when calling it directly)
     """
     # print(f"props: {props}")
+    if not silent:
+        print("checking interval in", region, "current time is", datetime.datetime.now())
 
     if called:
         if not silent:
@@ -1150,12 +1152,11 @@ def check_interval_in(region, props, intervals, silent=False, called=False):
         # print(mpi(float(intervals[i].start), float(intervals[i].end)))
         if not eval(prop) in mpi(float(intervals[i].start), float(intervals[i].end)):
             if not silent:
-                print(f"region {region}, property {props.index(prop) + 1} ϵ {eval(prop)},")
-                print(f"which is not in the interval {mpi(float(intervals[i].start), float(intervals[i].end))}")
+                print(f"property {props.index(prop) + 1} ϵ {eval(prop)}, which is not in the interval {mpi(float(intervals[i].start), float(intervals[i].end))}")
             return False
         else:
             if not silent:
-                print(f"property {props.index(prop)+1} ϵ {eval(prop)} --safe")
+                print(f"property {props.index(prop)+1} ϵ {eval(prop)} -- safe")
 
         i = i + 1
 
@@ -1177,6 +1178,8 @@ def check_interval_out(region, props, intervals, silent=False, called=False):
     silent: (Bool): if silent printed output is set to minimum
     called: (Bool): if called updates the global variables (use when calling it directly)
     """
+    if not silent:
+        print("checking interval_out", region, "current time is", datetime.datetime.now())
 
     if called:
         if not silent:
@@ -1217,8 +1220,7 @@ def check_interval_out(region, props, intervals, silent=False, called=False):
         ## If there exists an intersection (neither of these interval is greater in all points)
         if not (prop_eval > interval or prop_eval < interval):
             if not silent:
-                print(f"region {region}, property {props.index(prop) + 1} ϵ {eval(prop)},")
-                print(f"which is not outside of interval {mpi(float(intervals[i].start), float(intervals[i].end))}")
+                print(f"property {props.index(prop) + 1} ϵ {eval(prop)}, which is not outside of interval {mpi(float(intervals[i].start), float(intervals[i].end))}")
         else:
             space.add_red(region)
             if not silent:
