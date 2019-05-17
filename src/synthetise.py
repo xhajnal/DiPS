@@ -458,18 +458,18 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
                         sat_max[dimension] = point[dimension]
             print("sat_min ", sat_min)
             print("sat_max ", sat_max)
+
+            if is_in(region, to_interval([sat_min, sat_max])):
+                print("The ORTHOGONAL hull of sat points actually covers the whole region")
+            else:
+                ## SPLIT THE WHITE REGION INTO 3-5 AREAS (in 2D) (DEPENDING ON THE POSITION OF THE HULL)
+                print(colored("I was here", 'red'))
+                space.remove_white(region)
+                regions = refine_by(region, to_interval([sat_min, sat_max]))
+                for subregion in regions:
+                    space.add_white(subregion)
         else:
             print("No sat points in the samples")
-
-        if is_in(region, to_interval([sat_min, sat_max])):
-            print("The ORTHOGONAL hull of sat points actually covers the whole region")
-        else:
-            ## SPLIT THE WHITE REGION INTO 3-5 AREAS (in 2D) (DEPENDING ON THE POSITION OF THE HULL)
-            print(colored("I was here", 'red'))
-            space.remove_white(region)
-            regions = refine_by(region, to_interval([sat_min, sat_max]))
-            for subregion in regions:
-                space.add_white(subregion)
 
         ## If there is only the default region to be refined in the whitespace
         if len(space.get_white()) == 1:
@@ -503,19 +503,19 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
                             unsat_max[dimension] = point[dimension]
                 print("unsat_min ", unsat_min)
                 print("unsat_max ", unsat_max)
+
+                if is_in(region, to_interval([unsat_min, unsat_max])):
+                    print("The ORTHOGONAL hull of unsat points actually covers the whole region")
+                else:
+                    ## SPLIT THE WHITE REGION INTO 3-5 AREAS (in 2D) (DEPENDING ON THE POSITION OF THE HULL)
+                    print(colored("I was here", 'red'))
+                    print("space white", space.get_white())
+                    space.remove_white(region)
+                    regions = refine_by(region, to_interval([unsat_min, unsat_max]))
+                    for subregion in regions:
+                        space.add_white(subregion)
             else:
                 print("No unsat points in the samples")
-
-            if is_in(region, to_interval([unsat_min, unsat_max])):
-                print("The ORTHOGONAL hull of unsat points actually covers the whole region")
-            else:
-                ## SPLIT THE WHITE REGION INTO 3-5 AREAS (in 2D) (DEPENDING ON THE POSITION OF THE HULL)
-                print(colored("I was here", 'red'))
-                print("space white", space.get_white())
-                space.remove_white(region)
-                regions = refine_by(region, to_interval([unsat_min, unsat_max]))
-                for subregion in regions:
-                    space.add_white(subregion)
 
         print("region now", region)
         print("space white", space.get_white())
