@@ -470,17 +470,25 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
                             print("current point:", point[dimension], "current max:", sat_max[dimension], "change max")
                         sat_max[dimension] = point[dimension]
             if debug:
-                print("sat_min ", sat_min)
-                print("sat_max ", sat_max)
-
+                print(f"Points bordering the sat hull are: {sat_min}, {sat_max}")
+            print(f"Points bordering the sat hull are: {sat_min}, {sat_max}")
             if is_in(region, to_interval([sat_min, sat_max])):
                 print("The orthogonal hull of sat points actually covers the whole region")
             else:
                 ## SPLIT THE WHITE REGION INTO 3-5 AREAS (in 2D) (DEPENDING ON THE POSITION OF THE HULL)
+
+                ## THIS FIXING WORKS ONLY FOR THE UNIFORM SAMPLING
+                spam = to_interval([sat_min, sat_max])
+                for interval_index in range(len(spam)):
+                    ## increase the space to the left
+                    spam[interval_index][0] = max(region[interval_index][0], spam[interval_index][0] - (region[interval_index][1]-region[interval_index][0])/(size_q-1))
+                    ## increase the space to the right
+                    spam[interval_index][1] = min(region[interval_index][1], spam[interval_index][1] + (region[interval_index][1] - region[interval_index][0]) / (size_q - 1))
+                print(f"Fixed intervals bordering the sat hull are: {spam}")
                 if debug:
                     print(colored("I was here", 'red'))
                 space.remove_white(region)
-                regions = refine_by(region, to_interval([sat_min, sat_max]), debug)
+                regions = refine_by(region, spam, debug)
                 for subregion in regions:
                     space.add_white(subregion)
         else:
@@ -524,8 +532,7 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
                                 print("current point:", point[dimension], "current max:", unsat_max[dimension], "change max")
                             unsat_max[dimension] = point[dimension]
                 if debug:
-                    print("unsat_min ", unsat_min)
-                    print("unsat_max ", unsat_max)
+                    print(f"Points bordering the unsat hull are: {unsat_min},{unsat_max}")
 
                 if is_in(region, to_interval([unsat_min, unsat_max])):
                     print("The orthogonal hull of unsat points actually covers the whole region")
