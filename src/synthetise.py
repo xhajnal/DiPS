@@ -1695,6 +1695,65 @@ def find_max_rectangle(sampled_space, starting_point, silent=True):
         print(f"Sorry, {dimensions} dimensions TBD")
 
 
+## CALL FUNCTION IN A SEPARATE THREAD WITH A GIVEN TIMEOUT
+def timeout(func, args=(), kwargs={}, timeout_duration=1, default=None):
+    class InterruptableThread(threading.Thread):
+        def __init__(self):
+            threading.Thread.__init__(self)
+            self.result = None
+
+        def run(self):
+            try:
+                self.result = func(*args, **kwargs)
+            except:
+                self.result = default
+
+    print("in timeout function, the timeout set to ", timeout_duration)
+    it = InterruptableThread()
+    ## added by matej
+    # it.daemon = True
+
+    it.start()
+    it.join(timeout_duration)
+    if it.isAlive():
+        it._stop()
+        return default
+    else:
+        return it.result
+
+
+class TimeoutError(Exception):
+    pass
+
+
+def timelimit(timeout):
+    def internal(function):
+        def internal2(*args, **kw):
+            class Calculator(threading.Thread):
+                def __init__(self):
+                    threading.Thread.__init__(self)
+                    self.result = None
+                    self.error = None
+
+                def run(self):
+                    try:
+                        self.result = function(*args, **kw)
+                    except:
+                        self.error = sys.exc_info()[0]
+
+            c = Calculator()
+            c.start()
+            c.join(timeout)
+            if c.isAlive():
+                raise TimeoutError
+            if c.error:
+                raise c.error
+            return c.result
+
+        return internal2
+
+    return internal
+
 
 class TestLoad(unittest.TestCase):
     def test_Interval(self):
