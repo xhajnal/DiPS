@@ -10,6 +10,7 @@ from collections.abc import Iterable
 from termcolor import colored
 from math import log
 from numpy import prod
+import itertools
 
 import numpy as np
 from sympy import Interval
@@ -415,6 +416,12 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
 
     start_time = time.time()
 
+    if debug:
+        print("region", region)
+        print("props", props)
+        print("intervals", intervals)
+
+    ## PRESAMPLING HERE
     if size_q:
         if version == 1:
             print("Using presampled DFS method")
@@ -443,10 +450,18 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
 
         ## PARSE SAT POINTS
         sat_points = []
-        for point_index in range(len(to_be_searched)):
-            for point in to_be_searched[point_index]:
-                if point[1] is True:
-                    sat_points.append(point[0])
+
+        while not isinstance(to_be_searched[0][1], type(True)):
+            to_be_searched = list(itertools.chain.from_iterable(to_be_searched))
+
+        if debug:
+            print(type(to_be_searched))
+            print("unfolded sampled space: ", to_be_searched)
+            print("an element from sampled space:", to_be_searched[0])
+
+        for point in to_be_searched:
+            if point[1] is True:
+                sat_points.append(point[0])
         if debug:
             print("satisfying points: ", sat_points)
 
@@ -504,10 +519,9 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
         if len(space.get_white()) == 1:
             ## PARSE UNSAT POINTS
             unsat_points = []
-            for point_index in range(len(to_be_searched)):
-                for point in to_be_searched[point_index]:
-                    if point[1] is False:
-                        unsat_points.append(point[0])
+            for point in to_be_searched:
+                if point[1] is False:
+                    unsat_points.append(point[0])
             if debug:
                 print("unsatisfying points: ", unsat_points)
 
@@ -594,6 +608,11 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
             next_coverage = min(coverage, (space.get_coverage() + (rectangle_size / space.get_volume())*coverage))
             # print("next coverage", next_coverage)
 
+            if debug:
+                print("region", rectangle)
+                print("props", props)
+                print("intervals", intervals)
+
             if version == 1:
                 print(f"Using DFS method to solve spliced rectangle number {white_space.index(rectangle)+1}")
                 private_check_deeper(rectangle, props, intervals, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, time_out=time_out)
@@ -615,6 +634,7 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
 
             ## Showing the step refinements of respective rectangles from the white space
             space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time.time() - start_time)} second(s)")
+            print()
 
         ## OLD REFINEMENT HERE
         # # to_be_searched = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y", "0"], [Interval(0, 1), Interval(0, 1)], , compress=True, silent=False)
@@ -648,6 +668,9 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
         private_check_deeper_queue_checking(region, props, intervals, n, epsilon, coverage, silent, None, time_out=time_out)
     elif version == 4:
         print("Using BFS method with passing examples and counterexamples")
+        print("rectangle", region)
+        print("props", props)
+        print("intervals", intervals)
         globals()["que"] = Queue()
         private_check_deeper_queue_checking_both(region, props, intervals, n, epsilon, coverage, silent, None, time_out=time_out)
     elif version == 5:
@@ -1037,16 +1060,16 @@ def private_check_deeper_queue_checking_both(region, props, intervals, n, epsilo
     if example is True:
         space.remove_white(region)
         if not silent:
-            print(n, region, space.get_coverage(), "unsafe")
+            print(n, region, colored(space.get_coverage(), "green"), "unsafe")
         return
     elif counterexample is True:
         space.remove_white(region)
         if not silent:
-            print(n, region, space.get_coverage(), "safe")
+            print(n, region, colored(space.get_coverage(), "green"), "safe")
         return
     else:  ## unknown
         if not silent:
-            print(n, region, space.get_coverage(), (example, counterexample))
+            print(n, region, colored(space.get_coverage(), "blue"), (example, counterexample))
 
     if n == 0:
         return
