@@ -180,8 +180,15 @@ def check_unsafe(region, props, intervals, silent=False, called=False):
     #    print("with parameters", globals()["parameters"])
 
     ## Adding regional restrictions to solver
+    # for param_index in range(len(space.params)):
+    #     s.add(space.params[param_index] >= region[param_index][0])
+    #     s.add(space.params[param_index] <= region[param_index][1])
+
+    ## Adding regional restrictions to solver
     j = 0
     for param in globals()["parameters"]:
+        # print("globals()[param]", globals()[param])
+        # print("region[j][0]", region[j][0])
         s.add(globals()[param] >= region[j][0])
         s.add(globals()[param] <= region[j][1])
         j = j + 1
@@ -247,6 +254,8 @@ def check_safe(region, props, intervals, silent=False, called=False):
     ## Adding regional restrictions to solver
     j = 0
     for param in globals()["parameters"]:
+        # print("globals()[param]", globals()[param])
+        # print("region[j][0]", region[j][0])
         s.add(globals()[param] >= region[j][0])
         s.add(globals()[param] <= region[j][1])
         j = j + 1
@@ -355,7 +364,7 @@ def refine_by(region1, region2, debug=False):
     return regions
 
 
-def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version, size_q=5, time_out=False, debug=False):
+def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version, size_q=False, time_out=False, debug=False):
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
     Args
     ----------
@@ -406,28 +415,25 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
 
     start_time = time.time()
 
-    if version == 1:
-        print("Using DFS method")
-        private_check_deeper(region, props, intervals, n, epsilon, coverage, silent, time_out=time_out)
-    elif version == 2:
-        print("Using BFS method")
-        globals()["que"] = Queue()
-        private_check_deeper_queue(region, props, intervals, n, epsilon, coverage, silent, time_out=time_out )
-    elif version == 3:
-        print("Using BFS method with passing examples")
-        globals()["que"] = Queue()
-        private_check_deeper_queue_checking(region, props, intervals, n, epsilon, coverage, silent, None, time_out=time_out)
-    elif version == 4:
-        print("Using BFS method with passing examples and counterexamples")
-        globals()["que"] = Queue()
-        private_check_deeper_queue_checking_both(region, props, intervals, n, epsilon, coverage, silent, None, time_out=time_out)
-    elif version == 5:
-        print("Using interval arithmetic")
-        globals()["que"] = Queue()
-        private_check_deeper_interval(region, props, intervals, n, epsilon, coverage, silent, time_out=time_out)
-    elif version == 6:
-        print("Using presampled interval method")
-        globals()["que"] = Queue()
+    if size_q:
+        if version == 1:
+            print("Using presampled DFS method")
+        elif version == 2:
+            print("Using presampled BFS method")
+            globals()["que"] = Queue()
+        elif version == 3:
+            print("Using presampled BFS method with passing examples")
+            globals()["que"] = Queue()
+        elif version == 4:
+            print("Using presampled BFS method with passing examples and counterexamples")
+            globals()["que"] = Queue()
+        elif version == 5:
+            print("Using presampled interval arithmetic")
+            globals()["que"] = Queue()
+        else:
+            print(colored("Chosen version not found", "red"))
+            return
+
         # globals()["space"] = RefinedSpace(copy.deepcopy(region), parameters, [], [])
 
         to_be_searched = sample(space, props, intervals, size_q, compress=True, silent=not debug)
@@ -471,7 +477,7 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
                         sat_max[dimension] = point[dimension]
             if debug:
                 print(f"Points bordering the sat hull are: {sat_min}, {sat_max}")
-            print(f"Points bordering the sat hull are: {sat_min}, {sat_max}")
+
             if is_in(region, to_interval([sat_min, sat_max])):
                 print("The orthogonal hull of sat points actually covers the whole region")
             else:
@@ -548,35 +554,66 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
             else:
                 print("No unsat points in the samples")
 
+        ## Make a copy of white space
+        white_space = copy.deepcopy(space.get_white())
+
+        # print(globals()["parameters"])
+        # print(space.params)
+        ## Setting the param back to z3 definition
+        if version <= 4:
+            for param in parameters:
+                globals()[param] = Real(param)
+
         if debug:
             print("region now", region)
-            print("space white", space.get_white())
+            print("space white", white_space)
 
-        print("Presampling resulted in splicing the region into these subregions: ", space.get_white())
-
+        print("Presampling resulted in splicing the region into these subregions: ", white_space)
         print(f"It took {socket.gethostname()} {round(time.time() - start_time)} second(s)")
-        # space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time.time() - start_time)} second(s)")
 
-        # spam = copy.deepcopy(space.get_white())
-        # private_check_deeper_interval(spam[0], props, intervals, n, epsilon, coverage, silent, time_out=time_out)
-        # private_check_deeper_interval(spam[1], props, intervals, n, epsilon, coverage, silent, time_out=time_out)
-        # private_check_deeper_interval(spam[2], props, intervals, n, epsilon, coverage, silent, time_out=time_out)
-
-        spam = copy.deepcopy(space.get_white())
-
-        for rectangle in spam:
+        ## Iterating through the regions
+        for rectangle in white_space:
             start_time = time.time()
             ## To get more similar result substituting the number of splits from the max_depth
             if debug:
-                print("max_depth = ", max(1, n-(int(log(len(spam), 2)))))
+                print("max_depth = ", max(1, n-(int(log(len(white_space), 2)))))
                 print("refining", rectangle)
+
             ## THE PROBLEM IS THAT COVERAGE IS COMPUTED FOR THE WHOLE SPACE NOT ONLY FOR THE GIVEN REGION
             rectangle_size = []
             for interval in rectangle:
                 rectangle_size.append(interval[1] - interval[0])
             rectangle_size = prod(rectangle_size)
-            print(f"Using interval method to solve spliced rectangle number {spam.index(rectangle)+1}")
-            private_check_deeper_interval(rectangle, props, intervals, max(1, n-(int(log(len(spam), 2)))), epsilon, space.get_coverage() + (rectangle_size/space.get_volume())*coverage, silent, time_out=time_out)
+
+            # print("rectangle", rectangle, " props", props, "intervals", intervals, "silent", silent)
+            # print("current coverage", space.get_coverage())
+            # print("whole area", space.get_volume())
+            # print("rectangle_size", rectangle_size)
+
+            ## Setting the coverage as lower value between desired coverage and the proportional expected coverage
+            next_coverage = min(coverage, (space.get_coverage() + (rectangle_size / space.get_volume())*coverage))
+            # print("next coverage", next_coverage)
+
+            if version == 1:
+                print(f"Using DFS method to solve spliced rectangle number {white_space.index(rectangle)+1}")
+                private_check_deeper(rectangle, props, intervals, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, time_out=time_out)
+            elif version == 2:
+                print(f"Using BFS method to solve spliced rectangle number {white_space.index(rectangle)+1}")
+                private_check_deeper_queue(rectangle, props, intervals, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, time_out=time_out)
+            elif version == 3:
+                print(f"Using BFS method with passing examples to solve spliced rectangle number {white_space.index(rectangle)+1}")
+                private_check_deeper_queue_checking(rectangle, props, intervals, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, None, time_out=time_out)
+            elif version == 4:
+                print(f"Using BFS method with passing examples and counterexamples to solve spliced rectangle number {white_space.index(rectangle)+1}")
+                private_check_deeper_queue_checking_both(rectangle, props, intervals, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, None, time_out=time_out)
+            elif version == 5:
+                print(f"Using interval method to solve spliced rectangle number {white_space.index(rectangle)+1}")
+                private_check_deeper_interval(rectangle, props, intervals, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, time_out=time_out)
+            else:
+                print(colored("Chosen version not found", "red"))
+                return
+
+            ## Showing the step refinements of respective rectangles from the white space
             space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time.time() - start_time)} second(s)")
 
         ## OLD REFINEMENT HERE
@@ -594,8 +631,35 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
         #     space.add_white(rectangle)
         #     private_check_deeper_interval(rectangle, props, intervals, 0, epsilon, coverage, silent)
 
+    elif version == 1:
+        print("Using DFS method")
+        if time_out:
+            print("using timeout", time_out)
+            timeout(private_check_deeper, (region, props, intervals, n, epsilon, coverage, silent), timeout_duration=time_out, default=4)
+        else:
+            private_check_deeper(region, props, intervals, n, epsilon, coverage, silent, time_out=time_out)
+    elif version == 2:
+        print("Using BFS method")
+        globals()["que"] = Queue()
+        private_check_deeper_queue(region, props, intervals, n, epsilon, coverage, silent, time_out=time_out)
+    elif version == 3:
+        print("Using BFS method with passing examples")
+        globals()["que"] = Queue()
+        private_check_deeper_queue_checking(region, props, intervals, n, epsilon, coverage, silent, None, time_out=time_out)
+    elif version == 4:
+        print("Using BFS method with passing examples and counterexamples")
+        globals()["que"] = Queue()
+        private_check_deeper_queue_checking_both(region, props, intervals, n, epsilon, coverage, silent, None, time_out=time_out)
+    elif version == 5:
+        print("Using interval arithmetic")
+        globals()["que"] = Queue()
+        private_check_deeper_interval(region, props, intervals, n, epsilon, coverage, silent, time_out=time_out)
+    else:
+        print(colored("Chosen version not found", "red"))
+
     ## VISUALISATION
-    space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time.time() - start_time)} second(s)")
+    if not size_q:
+        space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time.time() - start_time)} second(s)")
     print("result coverage is: ", space.get_coverage())
     return space
 

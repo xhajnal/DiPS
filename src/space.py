@@ -47,6 +47,7 @@ class RefinedSpace:
         self.params = params
         if not len(self.params) == len(self.region):
             print(colored(f"number of parameters ({len(params)}) and dimension of the region ({len(region)}) is not equal", 'red'))
+            raise Exception(f"number of parameters ({len(params)}) and dimension of the region ({len(region)}) is not equal")
             # print("region", self.region)
 
         # print("rectangles_sat", rectangles_sat)
