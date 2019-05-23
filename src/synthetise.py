@@ -668,9 +668,6 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
         private_check_deeper_queue_checking(region, props, intervals, n, epsilon, coverage, silent, None, time_out=time_out)
     elif version == 4:
         print("Using BFS method with passing examples and counterexamples")
-        print("rectangle", region)
-        print("props", props)
-        print("intervals", intervals)
         globals()["que"] = Queue()
         private_check_deeper_queue_checking_both(region, props, intervals, n, epsilon, coverage, silent, None, time_out=time_out)
     elif version == 5:

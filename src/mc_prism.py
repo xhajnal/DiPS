@@ -41,6 +41,11 @@ prism_results = config.get("paths", "prism_results")
 if not os.path.exists(prism_results):
     os.makedirs(prism_results)
 
+storm_results = config.get("paths", "storm_results")
+if not os.path.exists(storm_results):
+    os.makedirs(storm_results)
+
+
 if "prism" not in os.environ["PATH"]:
     print("prism was probably not in PATH, adding it there")
     if "wind" in platform.system().lower():
@@ -289,6 +294,7 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
     noprobchecks: (Bool) True if no noprobchecks option is to be used for prism
     model_path: (string) path to load  models from
     properties_path: (string) path to load properties from
+    param_intervals: (list of pairs) parameter intervals
     property_file: (string) file name of single property files to be used for all models
     output_path: (string) path for the output
     memory: (int) sets maximum memory in GB, see https://www.prismmodelchecker.org/manual/ConfiguringPRISM/OtherOptions
@@ -421,9 +427,143 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
         set_javaheap_win(previous_memory)
 
 
+def call_storm(args, silent=False, model_path=model_path, properties_path=properties_path,
+               prism_output_path=prism_results, std_output_path=storm_results, std_output_file=False, time=False):
+    """  Prints calls for prism model checking.
+
+    Args
+    ----------
+    args: (string) args for executing prism
+    silent: (Bool) if silent command line output is set to minimum
+    model_path: (string) path to load  models from
+    properties_path: (string) path to load properties from
+    prism_output_path: (string) path to save the files inside the command
+    std_output_path: (string) path to save the results of the command
+    std_output_file: (string) file name to save the output
+    time: (Bool) if True time measurement is added
+    """
+    # print("std_output_path", std_output_path)
+    # print("prism_results", prism_results)
+    # print("std_output_file", std_output_file)
+
+    if std_output_path is not None:
+        output_file_path = Path(args.split()[0]).stem
+        if not std_output_file:
+            output_file_path = os.path.join(std_output_path, Path(str(output_file_path) + ".txt"))
+        else:
+            output_file_path = os.path.join(prism_results, Path(str(std_output_file)))
+            # print("new output_file_path", output_file_path)
+    else:
+        output_file_path = ""
+
+    # print(std_output_file)
+
+    # os.chdir(config.get("paths","cwd"))
+    os.chdir(prism_path)
+    # print(os.getcwd())
+    prism_args = []
+
+    # print(args.split(" "))
+    args = args.split(" ")
+
+    # print(args)
+    for arg in args:
+        # print(arg)
+        # print(re.compile('\.[a-z]').search(arg))
+        if re.compile('\.pm').search(arg) is not None:
+            model_file_path = os.path.join(model_path, arg)
+            # print(model_file)
+            if not os.path.isfile(model_file_path):
+                print(f"{colored('file', 'red')} {model_file_path} {colored('not found -- skipped', 'red')}")
+                return 404
+            prism_args.append(model_file_path)
+        elif re.compile('\.pctl').search(arg) is not None:
+            property_file_path = os.path.join(properties_path, arg)
+            # print(property_file)
+            if not os.path.isfile(property_file_path):
+                print(f"{colored('file', 'red')} {property_file_path} {colored('not found -- skipped', 'red')}")
+                return 404
+            # prism_args.append(property_file_path)
+            prism_args.append("my_super_cool_string")
+        elif re.compile('\.txt').search(arg) is not None:
+            prism_output_file_path = os.path.join(prism_output_path, arg)
+            if not os.path.isfile(prism_output_file_path):
+                if not silent:
+                    print(
+                        f"{colored('file', 'red')} {prism_output_file_path} {colored('not found, this may cause trouble', 'red')}")
+            prism_args.append(os.path.join(prism_output_path, arg))
+        else:
+            prism_args.append(arg)
+
+    args = ["./storm-pars --prism"]
+    args.extend(prism_args)
+    if time:
+        args.append(")")
+    if output_file_path is not "":
+        args.append(">>")
+        args.append(output_file_path)
+        args.append("2>&1")
+
+    if time:
+        spam = "(time "
+    else:
+        spam = ""
+    for arg in args:
+        spam = spam + " " + arg
+    if time:
+        spam = spam + " "
+
+    with open(property_file_path, "r") as file:
+        content = file.readlines()
+        for line in content:
+            print(spam.replace("my_super_cool_string", f"--prop \"{line[:-1]}\""))
+
+    return True
+    # output = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8")
+    # write_to_file(std_output_path, output_file_path, output, silent, append=False)
+
+
+def call_storm_files(model_prefix, agents_quantities, model_path=model_path, properties_path=properties_path, property_file=False, output_path=storm_results, time=False):
+    """  Calls prism for each file matching the prefix
+
+    Args
+    ----------
+    model_prefix: file prefix to be matched
+    agents_quantities: (int) pop_sizes to be used
+    model_path: (string) path to load  models from
+    param_intervals (list of pairs): list of intervals to be used for respective parameter (default all intervals are from 0 to 1)
+    properties_path: (string) path to load properties from
+    property_file: (string) file name of single property files to be used for all models
+    output_path: (string) path for the output
+    time: (Bool) if True time measurement is added
+
+    """
+    print("docker pull movesrwth/storm:travis")
+    print(f'docker run --mount type=bind,source="$(pwd)",target=/{os.path.basename(os.path.normpath(os.getcwd()))} -w /opt/storm/build/bin --rm -it --name storm movesrwth/storm:travis')
+
+    for N in sorted(agents_quantities):
+        # print(glob.glob(os.path.join(model_path, file_prefix + str(N) + ".pm")))
+        if not glob.glob(os.path.join(model_path, model_prefix + str(N) + ".pm")):
+            print(colored("No files for N="+str(N)+" found", "red"))
+            continue
+        for file in glob.glob(os.path.join(model_path, model_prefix + str(N) + ".pm")):
+            file = Path(file)
+            # print("{} {}".format(file, property_file))
+            # call_storm("{} {}".format(file, property_file), model_path=model_path, properties_path=properties_path, std_output_path=output_path, std_output_file="{}_{}.txt".format(str(file.stem).split(".")[0], property_file.split(".")[0]), time=time)
+
+            if property_file:
+                # print("property_file", property_file)
+                # print("file", file)
+                # print("file stem", file.resolve().stem)
+                # print("{}_{}.txt".format(str(file.stem).split(".")[0], property_file.split(".")[0]))
+                call_storm("{} {}".format(file, property_file), model_path=model_path, properties_path=properties_path, std_output_path=output_path, std_output_file="{}_{}.txt".format(str(file.stem).split(".")[0], property_file.split(".")[0]))
+            else:
+                call_storm("{} prop_{}.pctl".format(file, N), model_path=model_path, properties_path=properties_path, std_output_path=output_path)
+
+
 class TestLoad(unittest.TestCase):
     def test_changing_javahep(self):
-        print(colored('test_changing_javahep on Windows', 'blue'))
+        print(colored('Test_changing_javaheap on Windows', 'blue'))
         if sys.platform.startswith("win"):
             a = (set_javaheap_win("9g"))
             print("previous memory:", a)
@@ -431,43 +571,59 @@ class TestLoad(unittest.TestCase):
         else:
             print("Skipping this test since not on windows")
 
-    def test_easy(self):
+    def test_storm_single_file(self):
+        print(colored('Test storm call with single file', 'blue'))
+        agents_quantities = [2, 3]
+        for population in agents_quantities:
+            call_storm("semisynchronous_{}.pm prop_{}.pctl".format(population, population), std_output_path=os.path.join(cwd, "test"))
+        print(colored('Test storm call with single file with timer', 'blue'))
+        for population in agents_quantities:
+            call_storm("semisynchronous_{}.pm prop_{}.pctl".format(population, population), std_output_path=os.path.join(cwd, "test"), time=True)
+
+    def test_astorm_multiple_files(self):
+        print(colored('Test storm call multiple files', 'blue'))
+        agents_quantities = [2, 3]
+        call_storm_files("syn*_", agents_quantities, output_path=os.path.join(cwd, "test"))
+        print(colored('Test storm call multiple files with specified files', 'blue'))
+        call_storm_files("syn*_", agents_quantities, property_file="moments.pctl", output_path=os.path.join(cwd, "test"))
+
+    def test_prism_easy(self):
+        print(colored('Test prism call with single file', 'blue'))
         agents_quantities = [2, 3]
         try:
             os.mkdir("test")
-        except:
+        except FileExistsError:
             print("folder src/test probably already exists, if not this will fail")
         os.chdir("test")
-        cwd = os.getcwd()
 
         call_prism(
-            "multiparam_synchronous_parallel_10.pm -const p=0.028502714675268215,q1=0.5057623641293089 -simpath 2 dummy_path1550773616.0244777.txt",
+            "multiparam_synchronous_10.pm -const p=0.028502714675268215,q1=0.5057623641293089 -simpath 2 dummy_path1550773616.0244777.txt",
             silent=True, prism_output_path="/home/matej/Git/mpm/src/test/new", std_output_path=None)
 
         ## Model checking
         print(colored('Testing simple model checking', 'blue'))
         for population in agents_quantities:
-            call_prism("semisynchronous_parallel_{}.pm prop_{}.pctl -param p=0:1,q=0:1,alpha=0:1"
+            call_prism("semisynchronous_{}.pm prop_{}.pctl -param p=0:1,q=0:1,alpha=0:1"
                        .format(population, population), seq=False, std_output_path=cwd)
 
         ## Simulating the path
         print(colored('Testing simulation', 'blue'))
         call_prism(
-            'synchronous_parallel_2.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '
+            'synchronous_2.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '
             'path1.txt', prism_output_path=cwd, std_output_path=None)
 
         print(colored('Test simulation change the path of the path files output', 'blue'))
         print(colored('This should produce a file in ', 'blue'))
         call_prism(
-            'synchronous_parallel_2.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '
+            'synchronous_2.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '
             'path1.txt', prism_output_path="../test/new", std_output_path=None)
 
         # print(colored('testing simulation with stdout', 'blue'))
-        # file = open("path_synchronous_parallel__2_3500_0.028502714675268215_0.5057623641293089.txt", "w+")
+        # file = open("path_synchronous__2_3500_0.028502714675268215_0.5057623641293089.txt", "w+")
         # print(colored('testing not existing input file', 'blue'))
         # call_prism(
         #    'fake.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '
-        #    'path_synchronous_parallel__2_3500_0.028502714675268215_0.5057623641293089.txt', prism_output_path=cwd,std_output_path=None)
+        #    'path_synchronous__2_3500_0.028502714675268215_0.5057623641293089.txt', prism_output_path=cwd,std_output_path=None)
 
         ## call_prism_files
         print(colored('Call_prism_files', 'blue'))
@@ -476,15 +632,16 @@ class TestLoad(unittest.TestCase):
         print(colored('Call_prism_files2', 'blue'))
         call_prism_files("multiparam_syn*_", agents_quantities)
 
-    def test_heavy_load(self):
+    def test_prism_heavy_load(self):
         agents_quantities = [20, 40]
         ## 20 should pass
         ## This will require noprobcheck for 40
-        call_prism_files("syn*_", agents_quantities)
+
+        call_prism_files("syn*_", agents_quantities, output_path=os.path.join(cwd, "test"))
         ## This will require seq for 40
-        call_prism_files("semi*_", agents_quantities)
+        call_prism_files("semi*_", agents_quantities, output_path=os.path.join(cwd, "test"))
         ## This will require seq with adding the memory for 40
-        call_prism_files("asyn*_", agents_quantities)
+        call_prism_files("asyn*_", agents_quantities, output_path=os.path.join(cwd, "test"))
 
 
 if __name__ == "__main__":
