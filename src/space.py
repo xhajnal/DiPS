@@ -36,7 +36,7 @@ class RefinedSpace:
     rectangles_unknown: (list of intervals): unknown (white) space
     """
 
-    def __init__(self, region, params, rectangles_sat=[], rectangles_unsat=[], rectangles_unknown=None, samples=None):
+    def __init__(self, region, params, rectangles_sat=[], rectangles_unsat=[], rectangles_unknown=None, sat_samples=None, unsat_samples=None):
         if not isinstance(region, Iterable):
             raise Exception("Given region is not iterable")
         if isinstance(region, tuple):
@@ -77,15 +77,23 @@ class RefinedSpace:
         else:
             self.unknown = rectangles_unknown
 
-        if samples is None:
-            self.samples = []
-        elif not isinstance(samples, Iterable):
+        if sat_samples is None:
+            self.sat_samples = []
+        elif not isinstance(sat_samples, Iterable):
             raise Exception("Given samples are not iterable")
         else:
             # print("samples", samples)
-            self.samples = samples
+            self.sat_samples = sat_samples
 
-    def show(self, title="", green=True, red=True, samples=False):
+        if unsat_samples is None:
+            self.unsat_samples = []
+        elif not isinstance(unsat_samples, Iterable):
+            raise Exception("Given samples are not iterable")
+        else:
+            # print("samples", samples)
+            self.unsat_samples = unsat_samples
+
+    def show(self, title="", green=True, red=True, sat_samples=False, unsat_samples=False):
         """
         Visualises the space
 
@@ -94,7 +102,8 @@ class RefinedSpace:
         title: (String) title of the figure
         green: (Bool) if True showing safe space
         red: (Bool) if True showing unsafe space
-        samples: (Bool) if True showing samples
+        sat_samples: (Bool) if True showing sat samples
+        unsat_samples: (Bool) if True showing unsat samples
         """
         if len(self.region) == 1 or len(self.region) == 2:
             # colored(globals()["default_region"], self.region)
@@ -116,41 +125,76 @@ class RefinedSpace:
                 if region[1][1] - region[1][0] < 0.1:
                     region[1] = (region[1][0] - 0.2, region[1][1] + 0.2)
                 pic.axis([region[0][0], region[0][1], region[1][0], region[1][1]])
-            pic.set_title("red = unsafe region, green = safe region, white = in between \n " + title)
 
+            pretitle = ""
+            if green or red:
+                pretitle = pretitle + " Refinement,"
+            if sat_samples or unsat_samples:
+                pretitle = pretitle + " Samples,"
+            if pretitle:
+                pretitle = pretitle + "\n"
             if green:
                 pic.add_collection(self.show_green())
             if red:
                 pic.add_collection(self.show_red())
-            if samples:
-                pic.add_collection(self.show_samples())
+            if sat_samples:
+                pic.add_collection(self.show_samples(True))
+            if unsat_samples:
+                pic.add_collection(self.show_samples(False))
+
+            pic.set_title(pretitle + "red = unsafe region, green = safe region, white = in between \n " + title)
             plt.show()
             del region
 
         else:
             print("Multidimensional space, showing only samples")
-            if self.samples:
-                fig, ax = plt.subplots()
-                ## Creates values of the horizontal axis
-                x_axis = []
-                i = 0
-                for dimension in self.samples[0]:
-                    i = i + 1
-                    x_axis.append(i)
+            if sat_samples:
+                if self.sat_samples:
+                    fig, ax = plt.subplots()
+                    ## Creates values of the horizontal axis
+                    x_axis = []
+                    i = 0
+                    for dimension in self.sat_samples[0]:
+                        i = i + 1
+                        x_axis.append(i)
 
-                ## Get values of the vertical axis for respective line
-                for sample in self.samples:
-                    # print("samples", sample)
-                    ax.scatter(x_axis, sample)
-                    ax.plot(x_axis, sample)
-                ax.set_xlabel('params')
-                ax.set_ylabel('parameter value')
-                ax.set_title("Sample points of the given hyperspace")
-                ax.autoscale()
-                ax.margins(0.1)
-                plt.show()
-            else:
-                print("No samples so far, nothing to show")
+                    ## Get values of the vertical axis for respective line
+                    for sample in self.sat_samples:
+                        # print("samples", sample)
+                        ax.scatter(x_axis, sample)
+                        ax.plot(x_axis, sample)
+                    ax.set_xlabel("param indices")
+                    ax.set_ylabel("parameter value")
+                    ax.set_title("Sat sample points of the given hyperspace")
+                    ax.autoscale()
+                    ax.margins(0.1)
+                    plt.show()
+                else:
+                    print("No sat samples so far, nothing to show")
+
+            if unsat_samples:
+                if self.unsat_samples:
+                    fig, ax = plt.subplots()
+                    ## Creates values of the horizontal axis
+                    x_axis = []
+                    i = 0
+                    for dimension in self.unsat_samples[0]:
+                        i = i + 1
+                        x_axis.append(i)
+
+                    ## Get values of the vertical axis for respective line
+                    for sample in self.unsat_samples:
+                        # print("samples", sample)
+                        ax.scatter(x_axis, sample)
+                        ax.plot(x_axis, sample)
+                    ax.set_xlabel("param indices")
+                    ax.set_ylabel("parameter value")
+                    ax.set_title("Unsat sample points of the given hyperspace")
+                    ax.autoscale()
+                    ax.margins(0.1)
+                    plt.show()
+                else:
+                    print("No unsat samples so far, nothing to show")
 
     def get_volume(self):
         intervals = []
@@ -167,9 +211,13 @@ class RefinedSpace:
     def add_white(self, white):
         self.unknown.append(white)
 
-    def add_samples(self, samples):
+    def add_sat_samples(self, sat_samples):
         # print("samples", samples)
-        self.samples = samples
+        self.sat_samples = sat_samples
+
+    def add_unsat_samples(self, unsat_samples):
+        # print("samples", samples)
+        self.unsat_samples = unsat_samples
 
     def remove_green(self, green):
         self.sat.remove(green)
@@ -257,18 +305,26 @@ class RefinedSpace:
                     Rectangle((rectangle[0][0], 0.33), rectangle[0][1] - rectangle[0][0], 0.33, fc='r'))
         return PatchCollection(rectangles_unsat, facecolor='r', alpha=0.5)
 
-    def show_samples(self):
+    def show_samples(self, which):
         samples = []
         if len(self.region) > 2:
             print("Error while visualising", len(self.region), "dimensional space")
             return
         elif len(self.region) == 2:
             # print("samples", self.samples)
-            for rectangle in self.samples:
-                ## (Rectangle((low_x,low_y), width, height, fc= color)
-                print("rectangle", rectangle)
-                samples.append(Rectangle((rectangle[0]-0.005, rectangle[1]-0.005), 0.01, 0.01, fc='r'))
-        return PatchCollection(samples, facecolor='r', alpha=0.5)
+            ## CHOOSING SAT OR UNSAT
+            if which:
+                for rectangle in self.sat_samples:
+                    ## (Rectangle((low_x,low_y), width, height, fc= color)
+                    # print("rectangle", rectangle)
+                    samples.append(Rectangle((rectangle[0]-0.005, rectangle[1]-0.005), 0.01, 0.01, fc='r'))
+                return PatchCollection(samples, facecolor='g', alpha=0.5)
+            else:
+                for rectangle in self.unsat_samples:
+                    ## (Rectangle((low_x,low_y), width, height, fc= color)
+                    # print("rectangle", rectangle)
+                    samples.append(Rectangle((rectangle[0]-0.005, rectangle[1]-0.005), 0.01, 0.01, fc='r'))
+                return PatchCollection(samples, facecolor='r', alpha=0.5)
 
     def __repr__(self):
         return str([self.sat, self.unsat, self.unknown])

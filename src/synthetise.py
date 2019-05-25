@@ -473,8 +473,8 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
         if debug:
             print("satisfying points: ", sat_points)
 
-        space.add_samples(sat_points)
-        space.show(red=False, green=False, samples=True)
+        space.add_sat_samples(sat_points)
+        space.show(red=False, green=False, sat_samples=True, unsat_samples=False)
 
         ## COMPUTING THE ORTHOGONAL HULL OF SAT POINTS
         ## Initializing the min point and max point as the first point
@@ -526,16 +526,19 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
         else:
             print("No sat points in the samples")
 
+        ## PARSE UNSAT POINTS
+        unsat_points = []
+        for point in to_be_searched:
+            if point[1] is False:
+                unsat_points.append(point[0])
+        if debug:
+            print("unsatisfying points: ", unsat_points)
+
+        space.add_unsat_samples(unsat_points)
+        space.show(red=False, green=False, sat_samples=False, unsat_samples=True)
+
         ## If there is only the default region to be refined in the whitespace
         if len(space.get_white()) == 1:
-            ## PARSE UNSAT POINTS
-            unsat_points = []
-            for point in to_be_searched:
-                if point[1] is False:
-                    unsat_points.append(point[0])
-            if debug:
-                print("unsatisfying points: ", unsat_points)
-
             ## COMPUTING THE ORTHOGONAL HULL OF UNSAT POINTS
             ## Initializing the min point and max point as the first point
 
@@ -2112,6 +2115,8 @@ class TestLoad(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    # unittest.main()
+    check_deeper([(0, 1), (2, 3)], ["x", "y"], [Interval(0, 3), Interval(2.5, 3)], 15, 0, 0.95, silent=False, version=5,
+                 size_q=3)
     # check_interval([(0, 1)], ["x"], [Interval(0, 1)], silent=False, called=False)
     # check_interval([(0, 3)], ["x"], [Interval(0, 2)], silent=False, called=False)
