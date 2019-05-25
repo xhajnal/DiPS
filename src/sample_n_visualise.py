@@ -276,7 +276,7 @@ def visualise_sampled_byparam(hyper_rectangles, sample_size):
         for dimension in hyper_rectangles[0]:
             i = i + 1
             x_axis.append(i)
-        # get values of the vertical axis for respective line
+        ## Get values of the vertical axis for respective line
         for sample in range(sample_size):
             rectangle = random.randint(0, len(hyper_rectangles) - 1)
             # print(rectangle)

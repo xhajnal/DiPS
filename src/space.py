@@ -36,7 +36,7 @@ class RefinedSpace:
     rectangles_unknown: (list of intervals): unknown (white) space
     """
 
-    def __init__(self, region, params, rectangles_sat=[], rectangles_unsat=[], rectangles_unknown=None):
+    def __init__(self, region, params, rectangles_sat=[], rectangles_unsat=[], rectangles_unknown=None, samples=None):
         if not isinstance(region, Iterable):
             raise Exception("Given region is not iterable")
         if isinstance(region, tuple):
@@ -68,6 +68,7 @@ class RefinedSpace:
 
         # print("rectangles_unknown", rectangles_unknown)
         if rectangles_unknown is None:
+            ## TBD THIS IS NOT CORRECT
             self.unknown = [region]
         elif not isinstance(rectangles_unknown, Iterable):
             raise Exception("Given rectangles_unknown is not iterable")
@@ -76,7 +77,25 @@ class RefinedSpace:
         else:
             self.unknown = rectangles_unknown
 
-    def show(self, title):
+        if samples is None:
+            self.samples = []
+        elif not isinstance(samples, Iterable):
+            raise Exception("Given samples are not iterable")
+        else:
+            # print("samples", samples)
+            self.samples = samples
+
+    def show(self, title="", green=True, red=True, samples=False):
+        """
+        Visualises the space
+
+        Args
+        ----------
+        title: (String) title of the figure
+        green: (Bool) if True showing safe space
+        red: (Bool) if True showing unsafe space
+        samples: (Bool) if True showing samples
+        """
         if len(self.region) == 1 or len(self.region) == 2:
             # colored(globals()["default_region"], self.region)
 
@@ -99,10 +118,39 @@ class RefinedSpace:
                 pic.axis([region[0][0], region[0][1], region[1][0], region[1][1]])
             pic.set_title("red = unsafe region, green = safe region, white = in between \n " + title)
 
-            pic.add_collection(self.show_green())
-            pic.add_collection(self.show_red())
+            if green:
+                pic.add_collection(self.show_green())
+            if red:
+                pic.add_collection(self.show_red())
+            if samples:
+                pic.add_collection(self.show_samples())
             plt.show()
             del region
+
+        else:
+            print("Multidimensional space, showing only samples")
+            if self.samples:
+                fig, ax = plt.subplots()
+                ## Creates values of the horizontal axis
+                x_axis = []
+                i = 0
+                for dimension in self.samples[0]:
+                    i = i + 1
+                    x_axis.append(i)
+
+                ## Get values of the vertical axis for respective line
+                for sample in self.samples:
+                    # print("samples", sample)
+                    ax.scatter(x_axis, sample)
+                    ax.plot(x_axis, sample)
+                ax.set_xlabel('params')
+                ax.set_ylabel('parameter value')
+                ax.set_title("Sample points of the given hyperspace")
+                ax.autoscale()
+                ax.margins(0.1)
+                plt.show()
+            else:
+                print("No samples so far, nothing to show")
 
     def get_volume(self):
         intervals = []
@@ -118,6 +166,10 @@ class RefinedSpace:
 
     def add_white(self, white):
         self.unknown.append(white)
+
+    def add_samples(self, samples):
+        # print("samples", samples)
+        self.samples = samples
 
     def remove_green(self, green):
         self.sat.remove(green)
@@ -204,6 +256,19 @@ class RefinedSpace:
                 rectangles_unsat.append(
                     Rectangle((rectangle[0][0], 0.33), rectangle[0][1] - rectangle[0][0], 0.33, fc='r'))
         return PatchCollection(rectangles_unsat, facecolor='r', alpha=0.5)
+
+    def show_samples(self):
+        samples = []
+        if len(self.region) > 2:
+            print("Error while visualising", len(self.region), "dimensional space")
+            return
+        elif len(self.region) == 2:
+            # print("samples", self.samples)
+            for rectangle in self.samples:
+                ## (Rectangle((low_x,low_y), width, height, fc= color)
+                print("rectangle", rectangle)
+                samples.append(Rectangle((rectangle[0]-0.005, rectangle[1]-0.005), 0.01, 0.01, fc='r'))
+        return PatchCollection(samples, facecolor='r', alpha=0.5)
 
     def __repr__(self):
         return str([self.sat, self.unsat, self.unknown])
