@@ -96,7 +96,7 @@ class RefinedSpace:
             # print("samples", samples)
             self.unsat_samples = unsat_samples
 
-    def show(self, title="", green=True, red=True, sat_samples=False, unsat_samples=False):
+    def show(self, title="", green=True, red=True, sat_samples=False, unsat_samples=False, save=False):
         """
         Visualises the space
 
@@ -107,7 +107,12 @@ class RefinedSpace:
         red: (Bool) if True showing unsafe space
         sat_samples: (Bool) if True showing sat samples
         unsat_samples: (Bool) if True showing unsat samples
+        save: (String/Bool) output file.format, if False or "" no saving
         """
+        if save is True:
+            if "." not in save:
+                save = f"{save}.png"
+
         if len(self.region) == 1 or len(self.region) == 2:
             # colored(globals()["default_region"], self.region)
 
@@ -146,6 +151,9 @@ class RefinedSpace:
                 pic.add_collection(self.show_samples(False))
 
             pic.set_title(pretitle + "red = unsafe region, green = safe region, white = in between \n " + title)
+            ## Save the figure
+            if save:
+                plt.savefig(save, bbox_inches='tight')
             plt.show()
             del region
 
@@ -171,6 +179,8 @@ class RefinedSpace:
                     ax.set_title("Sat sample points of the given hyperspace")
                     ax.autoscale()
                     ax.margins(0.1)
+                    if save:
+                        plt.savefig(save, bbox_inches='tight')
                     plt.show()
                 else:
                     print("No sat samples so far, nothing to show")
@@ -195,6 +205,8 @@ class RefinedSpace:
                     ax.set_title("Unsat sample points of the given hyperspace")
                     ax.autoscale()
                     ax.margins(0.1)
+                    if save:
+                        plt.savefig(save, bbox_inches='tight')
                     plt.show()
                 else:
                     print("No unsat samples so far, nothing to show")

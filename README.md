@@ -31,6 +31,8 @@ in the main folder there is `config.ini` file. Please fill in required paths.
 * `data`: path to data
 * `prism_results`: path to prism results
 * `storm_results`: path to storm results
+* `refinement_results`: path to refinement results 
+* `refine_timeout`: timeout for a refinement (in seconds)
 
 
 *****

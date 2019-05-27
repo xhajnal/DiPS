@@ -3,9 +3,8 @@ import os
 import re
 import socket
 import sys
-import threading
+import pickle
 import time
-import timeout_decorator
 import platform
 from collections.abc import Iterable
 
@@ -370,7 +369,7 @@ def refine_by(region1, region2, debug=False):
     return regions
 
 
-def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version, size_q=False, time_out=False, debug=False):
+def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version, size_q=False, time_out=False, debug=False, save=False):
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
     Args
     ----------
@@ -385,11 +384,19 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
     size_q: (Int): number of samples in dimension used for presampling
     time_out: (Int): time out in minutes
     debug: (Bool): if debug extensive print will be used
+    save: (Bool): Sets the file output
     """
 
     ## INITIALISATION
-    print("Timeout is set to: ", refine_timeout)
+    if time_out:
+        print("Timeout is set to: ", refine_timeout)
 
+    ## Save file
+    if save is True:
+        # save = f"{},{n},{epsilon},{coverage},{version}"
+        save = str(time.time()).replace(".", "")
+
+    ## Parameters
     globals()["parameters"] = set()
     for polynome in props:
         globals()["parameters"].update(find_param(polynome))
@@ -398,7 +405,6 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
 
     ## If the given region is space
     if isinstance(region, RefinedSpace):
-        print("My space says hello")
         space = region
         globals()["space"] = space
         del region
@@ -416,6 +422,7 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
         if not sorted(space.params) == sorted(parameters):
             raise Exception("The set of parameters of the given space and properties does not correspond")
 
+    ## If the region is just list of intervals - a space is to be created
     else:
         ### Regions
         ### Taking care of unchangable tuples
@@ -472,6 +479,8 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
         # globals()["space"] = RefinedSpace(copy.deepcopy(region), parameters, [], [])
 
         to_be_searched = sample(space, props, intervals, size_q, compress=True, silent=not debug)
+        if save:
+            pickle.dump(to_be_searched, ("Sampled_space_"+save).split(".")[0])
 
         if debug:
             print(type(to_be_searched))
@@ -495,7 +504,7 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
             print("satisfying points: ", sat_points)
 
         space.add_sat_samples(sat_points)
-        space.show(red=False, green=False, sat_samples=True, unsat_samples=False)
+        space.show(red=False, green=False, sat_samples=True, unsat_samples=False, save=(save, "sampling_sat_"+str(save))[save])
 
         ## COMPUTING THE ORTHOGONAL HULL OF SAT POINTS
         ## Initializing the min point and max point as the first point
@@ -556,7 +565,7 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
             print("unsatisfying points: ", unsat_points)
 
         space.add_unsat_samples(unsat_points)
-        space.show(red=False, green=False, sat_samples=False, unsat_samples=True)
+        space.show(red=False, green=False, sat_samples=False, unsat_samples=True, save=(save, "sampling_unsat"+str(save))[save])
 
         ## If there is only the default region to be refined in the whitespace
         if len(space.get_white()) == 1:
@@ -665,7 +674,7 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
                 return
 
             ## Showing the step refinements of respective rectangles from the white space
-            space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time.time() - start_time)} second(s)")
+            space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time.time() - start_time)} second(s)", save=(save, "refinement_"+str(save))[save])
             print()
 
         ## OLD REFINEMENT HERE
@@ -711,7 +720,7 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
 
     ## VISUALISATION
     if not size_q:
-        space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time.time() - start_time)} second(s)")
+        space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time.time() - start_time)} second(s)", save=(save, "refinement_"+str(save))[save])
     print("result coverage is: ", space.get_coverage())
     return space
 
