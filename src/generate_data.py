@@ -1,6 +1,5 @@
 import sys
 import time
-import numpy
 import os
 import socket
 import configparser
