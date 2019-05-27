@@ -42,6 +42,9 @@ class RefinedSpace:
         if isinstance(region, tuple):
             self.region = [region]
         else:
+            ### Taking care of unchangable tuples
+            for interval_index in range(len(region)):
+                region[interval_index] = [region[interval_index][0], region[interval_index][1]]
             self.region = region
 
         self.params = params
@@ -327,10 +330,10 @@ class RefinedSpace:
                 return PatchCollection(samples, facecolor='r', alpha=0.5)
 
     def __repr__(self):
-        return str([self.sat, self.unsat, self.unknown])
+        return str([self.region, self.sat, self.unsat, self.unknown])
 
     def __str__(self):
-        return [self.sat, self.unsat, self.unknown]
+        return str([self.region, self.sat, self.unsat, self.unknown])
 
 
 class TestLoad(unittest.TestCase):

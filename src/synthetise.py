@@ -370,13 +370,12 @@ def refine_by(region1, region2, debug=False):
     return regions
 
 
-@timeout_decorator.timeout(refine_timeout)
 def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version, size_q=False, time_out=False, debug=False):
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
     Args
     ----------
-    region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of polynomes
+    region: (list of intervals/space) array of pairs, low and high bound, defining the parameter space to be refined
+    props:  (list of strings): array of polynomials
     intervals: (list of sympy.Interval): array of intervals to constrain properties
     n: (Int): max number of recursions to do
     epsilon: (Float): minimal size of rectangle to be checked
@@ -390,14 +389,6 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
 
     ## INITIALISATION
     print("Timeout is set to: ", refine_timeout)
-    ### Regions
-    ### Taking care of unchangable tuples
-    for interval_index in range(len(region)):
-        region[interval_index] = [region[interval_index][0], region[interval_index][1]]
-
-    ### Params
-    if not isinstance(props, Iterable):
-        raise Exception("Given properties are not iterable, to use single property use list of length 1")
 
     globals()["parameters"] = set()
     for polynome in props:
@@ -405,10 +396,40 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
     globals()["parameters"] = sorted(list(globals()["parameters"]))
     parameters = globals()["parameters"]
 
-    globals()["space"] = RefinedSpace(copy.deepcopy(region), parameters, [], [])
-    space = globals()["space"]
+    ## If the given region is space
+    if isinstance(region, RefinedSpace):
+        print("My space says hello")
+        space = region
+        globals()["space"] = space
+        del region
+        # print(type(space))
+        region = space.region
+        # print(region)
 
-    globals()["default_region"] = copy.deepcopy(region)
+        ## Not required since space with no parameters cannot be created
+        # if not space.params:
+        #     space.params = parameters
+
+        ## Check whether the the set of params is equal
+        # print("space.params", space.params)
+        # print("parameters", parameters)
+        if not sorted(space.params) == sorted(parameters):
+            raise Exception("The set of parameters of the given space and properties does not correspond")
+
+    else:
+        ### Regions
+        ### Taking care of unchangable tuples
+        for interval_index in range(len(region)):
+            region[interval_index] = [region[interval_index][0], region[interval_index][1]]
+
+        ### Params
+        if not isinstance(props, Iterable):
+            raise Exception("Given properties are not iterable, to use single property use list of length 1")
+
+        globals()["space"] = RefinedSpace(copy.deepcopy(region), parameters, [], [])
+        space = globals()["space"]
+
+        globals()["default_region"] = copy.deepcopy(region)
 
     if not silent:
         print("the area is: ", space.region)
@@ -516,7 +537,7 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
                     spam[interval_index][0] = max(region[interval_index][0], spam[interval_index][0] - (region[interval_index][1]-region[interval_index][0])/(size_q-1))
                     ## increase the space to the right
                     spam[interval_index][1] = min(region[interval_index][1], spam[interval_index][1] + (region[interval_index][1] - region[interval_index][0]) / (size_q - 1))
-                print(f"Fixed intervals bordering the sat hull are: {spam}")
+                print(f"Intervals bordering the sat hull are: {spam}")
                 if debug:
                     print(colored("I was here", 'red'))
                 space.remove_white(region)
@@ -566,7 +587,7 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
                                 print("current point:", point[dimension], "current max:", unsat_max[dimension], "change max")
                             unsat_max[dimension] = point[dimension]
                 if debug:
-                    print(f"Points bordering the unsat hull are: {unsat_min},{unsat_max}")
+                    print(f"Intervals bordering the unsat hull are:: {unsat_min},{unsat_max}")
 
                 if is_in(region, to_interval([unsat_min, unsat_max])):
                     print("The orthogonal hull of unsat points actually covers the whole region")
@@ -1725,67 +1746,6 @@ def find_max_rectangle(sampled_space, starting_point, silent=True):
     else:
         print(f"Sorry, {dimensions} dimensions TBD")
 
-
-## CALL FUNCTION IN A SEPARATE THREAD WITH A GIVEN TIMEOUT
-def timeout(func, args=(), kwargs={}, timeout_duration=1, default=None):
-    class InterruptableThread(threading.Thread):
-        def __init__(self):
-            threading.Thread.__init__(self)
-            self.result = None
-
-        def run(self):
-            try:
-                self.result = func(*args, **kwargs)
-            except:
-                self.result = default
-
-    print("in timeout function, the timeout set to ", timeout_duration)
-    it = InterruptableThread()
-    ## added by matej
-    # it.daemon = True
-
-    it.start()
-    it.join(timeout_duration)
-    if it.isAlive():
-        it._stop()
-        return default
-    else:
-        return it.result
-
-
-class TimeoutError(Exception):
-    pass
-
-
-def timelimit(timeout):
-    def internal(function):
-        def internal2(*args, **kw):
-            class Calculator(threading.Thread):
-                def __init__(self):
-                    threading.Thread.__init__(self)
-                    self.result = None
-                    self.error = None
-
-                def run(self):
-                    try:
-                        self.result = function(*args, **kw)
-                    except:
-                        self.error = sys.exc_info()[0]
-
-            c = Calculator()
-            c.start()
-            c.join(timeout)
-            if c.isAlive():
-                raise TimeoutError
-            if c.error:
-                raise c.error
-            return c.result
-
-        return internal2
-
-    return internal
-
-
 class TestLoad(unittest.TestCase):
     def test_Interval(self):
         print()
@@ -2116,7 +2076,18 @@ class TestLoad(unittest.TestCase):
 
 if __name__ == "__main__":
     # unittest.main()
-    check_deeper([(0, 1), (2, 3)], ["x", "y"], [Interval(0, 3), Interval(2.5, 3)], 15, 0, 0.95, silent=False, version=5,
-                 size_q=3)
+
+    parameters = ["x", "y"]
+    region = [(0, 1), (2, 3)]
+    space = RefinedSpace(copy.deepcopy(region), parameters, [], [])
+
+    print(space)
+    check_deeper(space, ["x", "y"], [Interval(0, 3), Interval(2.5, 3)], 15, 0, 0.95, silent=False, version=5, size_q=3)
+    print(space)
+    print(space.get_coverage())
+
+    # check_deeper([(0, 1), (2, 3)], ["x", "y"], [Interval(0, 3), Interval(2.5, 3)], 15, 0, 0.95, silent=False, version=5, size_q=3)
+
+
     # check_interval([(0, 1)], ["x"], [Interval(0, 1)], silent=False, called=False)
     # check_interval([(0, 3)], ["x"], [Interval(0, 2)], silent=False, called=False)
