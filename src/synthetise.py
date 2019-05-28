@@ -4,8 +4,7 @@ import re
 import socket
 import sys
 import pickle
-from time import strftime, localtime
-from time import time as time
+from time import strftime, localtime, time
 import platform
 from collections.abc import Iterable
 
@@ -400,7 +399,9 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
         # save = f"{},{n},{epsilon},{coverage},{version}"
         save = strftime("%d-%b-%Y-%H:%M:%S", localtime())
         # save = os.path.join(refinement_results, str(strftime("%d-%b-%Y-%H:%M:%S", localtime())))
-        print(save)
+        if debug:
+            print(save)
+
     ## Parameters
     globals()["parameters"] = set()
     for polynome in props:
@@ -484,6 +485,8 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
         # globals()["space"] = RefinedSpace(copy.deepcopy(region), parameters, [], [])
 
         to_be_searched = sample(space, props, intervals, size_q, compress=True, silent=not debug)
+
+        ## Saving the sampled space as pickled dictionary
         if save:
             pickle.dump(to_be_searched, open(os.path.join(refinement_results, ("Sampled_space_"+save).split(".")[0]+".p"), "wb"))
 
@@ -509,7 +512,8 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
             print("satisfying points: ", sat_points)
 
         space.add_sat_samples(sat_points)
-        print("I am showing", (save, "sampling_sat_"+str(save))[bool(save)])
+        if debug and save:
+            print("I am showing sampling_sat_"+str(save))
         space.show(red=False, green=False, sat_samples=True, unsat_samples=False, save=(save, "sampling_sat_"+str(save))[bool(save)])
 
         ## COMPUTING THE ORTHOGONAL HULL OF SAT POINTS
@@ -571,6 +575,8 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
             print("unsatisfying points: ", unsat_points)
 
         space.add_unsat_samples(unsat_points)
+        if debug and save:
+            print("I am showing sampling_unsat_"+str(save))
         space.show(red=False, green=False, sat_samples=False, unsat_samples=True, save=(save, "sampling_unsat_"+str(save))[bool(save)])
 
         ## If there is only the default region to be refined in the whitespace
@@ -634,6 +640,7 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
 
         print("Presampling resulted in splicing the region into these subregions: ", white_space)
         print(f"It took {socket.gethostname()} {round(time() - start_time)} second(s)")
+        print()
 
         ## Iterating through the regions
         for rectangle in white_space:

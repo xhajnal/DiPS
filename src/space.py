@@ -130,14 +130,12 @@ class RefinedSpace:
         save: (String/Bool) output file.format, if False or "" no saving
         """
 
-        print("default figure name", save)
+        # print("default figure name", save)
         if isinstance(save, str):
             if "." not in save:
                 save = f"{save}.png"
                 save = os.path.join(refinement_results, save)
-                print("figure name:", save)
-        if save:
-            print("saving")
+                # print("figure name:", save)
 
         if len(self.region) == 1 or len(self.region) == 2:
             # colored(globals()["default_region"], self.region)
@@ -179,9 +177,10 @@ class RefinedSpace:
             pic.set_title(pretitle + "red = unsafe region, green = safe region, white = in between \n " + title)
 
             ## Save the figure
-            print("Save refine in space", save)
             if save:
                 plt.savefig(save, bbox_inches='tight')
+                print("Figure stored here: ", save)
+
             plt.show()
             del region
 
@@ -209,9 +208,10 @@ class RefinedSpace:
                     ax.margins(0.1)
 
                     ## Save the figure
-                    print("Save sat in space", save)
                     if save:
                         plt.savefig(save, bbox_inches='tight')
+                        print("Save sat in space", save)
+
                     plt.show()
                 else:
                     print("No sat samples so far, nothing to show")
@@ -238,9 +238,10 @@ class RefinedSpace:
                     ax.margins(0.1)
 
                     ## Save the figure
-                    print("Save unsat in space", save)
                     if save:
                         plt.savefig(save, bbox_inches='tight')
+                        print("Figure stored here: ", save)
+
                     plt.show()
                 else:
                     print("No unsat samples so far, nothing to show")
