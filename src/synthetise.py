@@ -4,7 +4,8 @@ import re
 import socket
 import sys
 import pickle
-import time
+from time import strftime, localtime
+from time import time as time
 import platform
 from collections.abc import Iterable
 
@@ -42,6 +43,9 @@ z3_path = config.get("paths", "z3_path")
 
 refine_timeout = int(config.get("paths", "refine_timeout"))
 
+refinement_results = config.get("paths", "refinement_results")
+if not os.path.exists(refinement_results):
+    os.makedirs(refinement_results)
 
 if not os.path.exists(z3_path):
     raise OSError("Directory does not exist: " + str(z3_path))
@@ -394,8 +398,9 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
     ## Save file
     if save is True:
         # save = f"{},{n},{epsilon},{coverage},{version}"
-        save = str(time.time()).replace(".", "")
-
+        save = strftime("%d-%b-%Y-%H:%M:%S", localtime())
+        # save = os.path.join(refinement_results, str(strftime("%d-%b-%Y-%H:%M:%S", localtime())))
+        print(save)
     ## Parameters
     globals()["parameters"] = set()
     for polynome in props:
@@ -449,7 +454,7 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
         for param in parameters:
             globals()[param] = Real(param)
 
-    start_time = time.time()
+    start_time = time()
 
     if debug:
         print("region", region)
@@ -480,7 +485,7 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
 
         to_be_searched = sample(space, props, intervals, size_q, compress=True, silent=not debug)
         if save:
-            pickle.dump(to_be_searched, ("Sampled_space_"+save).split(".")[0])
+            pickle.dump(to_be_searched, open(os.path.join(refinement_results, ("Sampled_space_"+save).split(".")[0]+".p"), "wb"))
 
         if debug:
             print(type(to_be_searched))
@@ -504,7 +509,8 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
             print("satisfying points: ", sat_points)
 
         space.add_sat_samples(sat_points)
-        space.show(red=False, green=False, sat_samples=True, unsat_samples=False, save=(save, "sampling_sat_"+str(save))[save])
+        print("I am showing", (save, "sampling_sat_"+str(save))[bool(save)])
+        space.show(red=False, green=False, sat_samples=True, unsat_samples=False, save=(save, "sampling_sat_"+str(save))[bool(save)])
 
         ## COMPUTING THE ORTHOGONAL HULL OF SAT POINTS
         ## Initializing the min point and max point as the first point
@@ -565,7 +571,7 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
             print("unsatisfying points: ", unsat_points)
 
         space.add_unsat_samples(unsat_points)
-        space.show(red=False, green=False, sat_samples=False, unsat_samples=True, save=(save, "sampling_unsat"+str(save))[save])
+        space.show(red=False, green=False, sat_samples=False, unsat_samples=True, save=(save, "sampling_unsat_"+str(save))[bool(save)])
 
         ## If there is only the default region to be refined in the whitespace
         if len(space.get_white()) == 1:
@@ -627,11 +633,11 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
             print("space white", white_space)
 
         print("Presampling resulted in splicing the region into these subregions: ", white_space)
-        print(f"It took {socket.gethostname()} {round(time.time() - start_time)} second(s)")
+        print(f"It took {socket.gethostname()} {round(time() - start_time)} second(s)")
 
         ## Iterating through the regions
         for rectangle in white_space:
-            start_time = time.time()
+            start_time = time()
             ## To get more similar result substituting the number of splits from the max_depth
             if debug:
                 print("max_depth = ", max(1, n-(int(log(len(white_space), 2)))))
@@ -674,7 +680,7 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
                 return
 
             ## Showing the step refinements of respective rectangles from the white space
-            space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time.time() - start_time)} second(s)", save=(save, "refinement_"+str(save))[save])
+            space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time() - start_time)} second(s)", save=(save, "refinement_"+str(save))[bool(save)])
             print()
 
         ## OLD REFINEMENT HERE
@@ -720,7 +726,7 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
 
     ## VISUALISATION
     if not size_q:
-        space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time.time() - start_time)} second(s)", save=(save, "refinement_"+str(save))[save])
+        space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time() - start_time)} second(s)", save=(save, "refinement_"+str(save))[bool(save)])
     print("result coverage is: ", space.get_coverage())
     return space
 
@@ -1999,18 +2005,18 @@ class TestLoad(unittest.TestCase):
         intervals = create_intervals(0.95, n_samples, experiment)
         replaced_f6 = f_multiparam[10][6].replace("p", "0.10400390625").replace("q1", "0.09326171875").replace("q2", "0.1064453125").replace("q3", "0.099609375").replace("q4", "0.072021484375")
         sys.setrecursionlimit(23000)
-        start_time = time.time()
+        start_time = time()
 
         # result6 = check_deeper([(0.0869140625000000, 0.112304687500000), (0, 1)], [replaced_f6], [intervals[6]], 16, 0.01**3*0.5, 0.999, False, 5)
 
         ## TO RUN THIS TEST UNCOMENT FOLLOWING LINE
         # result6 = check_deeper([(0.0869140625000000, 0.112304687500000), (0, 1)], [replaced_f6], [intervals[6]], 16, 0.01 ** 3 , 0.999, False, 4)
 
-        print("  It took", socket.gethostname(), time.time() - start_time, "seconds to run")
+        print("  It took", socket.gethostname(), time() - start_time, "seconds to run")
 
-        # start_time = time.time()
+        # start_time = time()
         # check_deeper([(0, 2)], ["x**2", "x+3"], [Interval(0, 1), Interval(0, 1)], 6, 0.01 ** 2, 0.9, False, 4)
-        # print("  It took", socket.gethostname(), time.time() - start_time, "seconds to run")
+        # print("  It took", socket.gethostname(), time() - start_time, "seconds to run")
 
         ## VERY VERY INTERESTING RESULT
         from load import load_all_data

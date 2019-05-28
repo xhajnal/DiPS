@@ -8,6 +8,26 @@ import unittest
 ## colored output
 from termcolor import colored
 
+## ONLY FOR SAVING FILES
+import os
+import sys
+workspace = os.path.dirname(__file__)
+sys.path.append(workspace)
+import configparser
+
+config = configparser.ConfigParser()
+workspace = os.path.dirname(__file__)
+# print("workspace", workspace)
+cwd = os.getcwd()
+os.chdir(workspace)
+
+config.read("../config.ini")
+refinement_results = config.get("paths", "refinement_results")
+if not os.path.exists(refinement_results):
+    os.makedirs(refinement_results)
+
+os.chdir(cwd)
+
 
 def get_rectangle_volume(rectangle):
     """Computes the volume of the given (hyper)rectangle
@@ -109,9 +129,15 @@ class RefinedSpace:
         unsat_samples: (Bool) if True showing unsat samples
         save: (String/Bool) output file.format, if False or "" no saving
         """
-        if save is True:
+
+        print("default figure name", save)
+        if isinstance(save, str):
             if "." not in save:
                 save = f"{save}.png"
+                save = os.path.join(refinement_results, save)
+                print("figure name:", save)
+        if save:
+            print("saving")
 
         if len(self.region) == 1 or len(self.region) == 2:
             # colored(globals()["default_region"], self.region)
@@ -151,7 +177,9 @@ class RefinedSpace:
                 pic.add_collection(self.show_samples(False))
 
             pic.set_title(pretitle + "red = unsafe region, green = safe region, white = in between \n " + title)
+
             ## Save the figure
+            print("Save refine in space", save)
             if save:
                 plt.savefig(save, bbox_inches='tight')
             plt.show()
@@ -179,6 +207,9 @@ class RefinedSpace:
                     ax.set_title("Sat sample points of the given hyperspace")
                     ax.autoscale()
                     ax.margins(0.1)
+
+                    ## Save the figure
+                    print("Save sat in space", save)
                     if save:
                         plt.savefig(save, bbox_inches='tight')
                     plt.show()
@@ -205,6 +236,9 @@ class RefinedSpace:
                     ax.set_title("Unsat sample points of the given hyperspace")
                     ax.autoscale()
                     ax.margins(0.1)
+
+                    ## Save the figure
+                    print("Save unsat in space", save)
                     if save:
                         plt.savefig(save, bbox_inches='tight')
                     plt.show()
