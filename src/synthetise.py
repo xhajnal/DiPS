@@ -154,7 +154,7 @@ def check_unsafe(region, props, intervals, silent=False, called=False):
     Args
     ----------
     region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of functions (polynomes or general rational functions in the case of Markov Chains)
+    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
     intervals: (list of sympy.Interval): array of intervals to constrain properties
     silent: (Bool): if silent printed output is set to minimum
     called: (Bool): if called updates the global variables (use when calling it directly)
@@ -229,7 +229,7 @@ def check_safe(region, props, intervals, silent=False, called=False):
     Args
     ----------
     region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of functions (polynomes or general rational functions in the case of Markov Chains)
+    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
     intervals: (list of sympy.Interval): array of intervals to constrain properties
     silent: (Bool): if silent printed output is set to minimum
     called: (Bool): if called updates the global variables (use when calling it directly)
@@ -299,9 +299,9 @@ def check_safe(region, props, intervals, silent=False, called=False):
 def to_interval(points):
     """ Transforms the set of points into set of intervals
 
-        Args
-        ----------
-        points: (list of pairs) which are the points
+    Args
+    ----------
+    points: (list of pairs) which are the points
     """
     intervals = []
     for dimension in range(len(points[0])):
@@ -318,8 +318,10 @@ def to_interval(points):
 def is_in(region1, region2):
     """Returns yes if the interval1 is in the other interval, returns False otherwise
 
-    interval1: (list of pairs) (hyper)space defined by the regions
-    interval2: (list of pairs) (hyper)space defined by the regions
+    Args
+    ----------
+    region1: (list of pairs) (hyper)space defined by the regions
+    region2: (list of pairs) (hyper)space defined by the regions
     """
     if len(region1) is not len(region2):
         print("The intervals does not have the same size")
@@ -334,8 +336,11 @@ def is_in(region1, region2):
 def refine_by(region1, region2, debug=False):
     """Returns the first (hyper)space refined/spliced by the second (hyperspace) into orthogonal subspaces
 
+    Args
+    ----------
     region1: (list of pairs) (hyper)space defined by the regions
     region2: (list of pairs) (hyper)space defined by the regions
+    debug: (Bool): if True extensive print will be used
     """
 
     if not is_in(region2, region1):
@@ -374,10 +379,11 @@ def refine_by(region1, region2, debug=False):
 
 def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version, size_q=False, time_out=False, debug=False, save=False):
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
+
     Args
     ----------
     region: (list of intervals/space) array of pairs, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of polynomials
+    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
     intervals: (list of sympy.Interval): array of intervals to constrain properties
     n: (Int): max number of recursions to do
     epsilon: (Float): minimal size of rectangle to be checked
@@ -386,8 +392,8 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
     version: (Int): version of the algorithm to be used
     size_q: (Int): number of samples in dimension used for presampling
     time_out: (Int): time out in minutes
-    debug: (Bool): if debug extensive print will be used
-    save: (Bool): Sets the file output
+    debug: (Bool): if True extensive print will be used
+    save: (Bool): if True output is stored
     """
 
     ## INITIALISATION
@@ -740,10 +746,11 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
 
 def private_check_deeper(region, props, intervals, n, epsilon, coverage, silent, time_out=False):
     """ Refining the parameter space into safe and unsafe regions
+
     Args
     ----------
     region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
-    props: (list of strings): array of polynomials
+    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
     intervals: (list of sympy.Interval): array of intervals to constrain properties
     n: (Int): max number of recursions to do
     epsilon: (Float): minimal size of rectangle to be checked
@@ -837,7 +844,7 @@ def private_check_deeper_queue(region, props, intervals, n, epsilon, coverage, s
     Args
     ----------
     region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
-    props: (list of strings): array of polynomes
+    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
     intervals: (list of sympy.Interval): array of intervals to constrain properties
     n: (Int): max number of recursions to do
     epsilon: (Float): minimal size of rectangle to be checked
@@ -933,7 +940,7 @@ def private_check_deeper_queue_checking(region, props, intervals, n, epsilon, co
     Args
     ----------
     region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
-    props: (list of strings): array of polynomes
+    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
     intervals: (list of sympy.Interval): array of intervals to constrain properties
     n: (Int): max number of recursions to do
     epsilon: (Float): minimal size of rectangle to be checked
@@ -1052,7 +1059,7 @@ def private_check_deeper_queue_checking_both(region, props, intervals, n, epsilo
     Args
     ----------
     region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of polynomes
+    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
     intervals: (list of sympy.Interval): array of intervals to constrain properties
     n: (Int): max number of recursions to do
     epsilon: (Float): minimal size of rectangle to be checked
@@ -1243,7 +1250,7 @@ def check_deeper_iter(region, props, intervals, n, epsilon, coverage, silent, ti
     Args
     ----------
     region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
-    props (list of strings): array of polynomes
+    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
     intervals: (list of sympy.Interval): array of intervals to constrain properties
     n: (Int): max number of recursions to do
     epsilon: (Float): minimal size of rectangle to be checked
@@ -1293,8 +1300,8 @@ def check_interval_in(region, props, intervals, silent=False, called=False):
 
     Args
     ----------
-    region: (list of intervals) low and high bound, defining the parameter space to be refined
-    props: (list of strings) array of functions (polynomes or general rational functions in the case of Markov Chains)
+    region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
+    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
     intervals: (list of sympy.Interval): array of intervals to constrain properties
     silent: (Bool): if silent printed output is set to minimum
     called: (Bool): if called updates the global variables (use when calling it directly)
@@ -1351,7 +1358,7 @@ def check_interval_out(region, props, intervals, silent=False, called=False):
     Args
     ----------
     region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
-    props: (list of strings) array of functions (polynomes or general rational functions in the case of Markov Chains)
+    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
     intervals: (list of sympy.Interval): array of intervals to constrain properties
     silent: (Bool): if silent printed output is set to minimum
     called: (Bool): if called updates the global variables (use when calling it directly)
@@ -1414,7 +1421,7 @@ def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage
     Args
     ----------
     region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
-    props: (list of strings) array of polynomes
+    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
     intervals: (list of sympy.Interval): array of intervals to constrain properties
     n (Int): max number of recursions to do
     epsilon: (Float): minimal size of rectangle to be checked
@@ -1511,10 +1518,10 @@ def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage
 def create_matrix(size_q, dim):
     """ Return **dim** dimensional array of length **size_q** in each dimension
 
-       Args
-       -------
-       size_q: (int): number of samples in dimension
-       dim: (int): number of dimensions
+    Args
+    -------
+    size_q: (int): number of samples in dimension
+    dim: (int): number of dimensions
 
     """
     return np.array(private_create_matrix(size_q, dim, dim))
@@ -1523,13 +1530,13 @@ def create_matrix(size_q, dim):
 def private_create_matrix(size_q, dim, n_param):
     """ Return **dim** dimensional array of length **size_q** in each dimension
 
-       Args
-       -------
-       size_q: (int): number of samples in dimension
-       dim: (int): number of dimensions
-       n_param: (int): dummy parameter
+    Args
+    -------
+    size_q: (int): number of samples in dimension
+    dim: (int): number of dimensions
+    n_param: (int): dummy parameter
 
-       @author: xtrojak, xhajnal
+    @author: xtrojak, xhajnal
     """
     if dim == 0:
         point = []
@@ -1545,7 +1552,7 @@ def sample(space, props, intervals, size_q, compress=False, silent=True):
     Args
     -------
     space: (space.RefinedSpace): space
-    props: (list of strings): array of functions (polynomials or general rational functions in the case of Markov Chains)
+    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
     intervals: (list of sympy.Interval): array of intervals to constrain properties
     size_q: (int): number of samples in dimension
     silent: (Bool): if silent printed output is set to minimum
@@ -1767,6 +1774,7 @@ def find_max_rectangle(sampled_space, starting_point, silent=True):
         return result
     else:
         print(f"Sorry, {dimensions} dimensions TBD")
+
 
 class TestLoad(unittest.TestCase):
     def test_Interval(self):

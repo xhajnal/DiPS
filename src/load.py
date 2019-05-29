@@ -45,7 +45,7 @@ os.chdir(cwd)
 
 
 def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewards_only=False, f_only=False):
-    """ Loads all results of parameter synthesis in *path* folder into two maps - f list of rational functions for each property, and rewards list of rational functions for each reward
+    """ Loads all results of parameter synthesis from *path* folder into two maps - f list of rational functions for each property, and rewards list of rational functions for each reward
     
     Args
     ----------
@@ -163,10 +163,12 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
 
 
 def get_f(path, tool, factorize, agents_quantities=False):
+    """ Loads all nonreward results of parameter synthesis from *path* folder"""
     return load_all_functions(path, tool, factorize, agents_quantities=agents_quantities, rewards_only=False, f_only=True)[0]
 
 
 def get_rewards(path, tool, factorize, agents_quantities=False):
+    """ Loads all reward results of parameter synthesis from *path* folder"""
     return load_all_functions(path, tool, factorize, agents_quantities=agents_quantities, rewards_only=True, f_only=False)[1]
 
 
@@ -343,16 +345,16 @@ def margin_experimental(alpha, n_samples, data_point):
         data_point * (1 - data_point) / n_samples) + 0.5 / n_samples + 0.005
 
 
-def find_param(polynome):
-    """ Finds parameters of a polynomes
+def find_param(polynomial):
+    """ Finds parameters of a polynomials
 
     Args
     ----------
-    polynome : polynome as string
+    polynomial : polynomial as string
     
     Returns set of strings - parameters
     """
-    parameters = polynome.replace('(', '').replace(')', '').replace('**', '*').replace(' ', '')
+    parameters = polynomial.replace('(', '').replace(')', '').replace('**', '*').replace(' ', '')
     parameters = re.split('\+|\*|\-|/', parameters)
     parameters = [i for i in parameters if not i.replace('.','',1).isdigit()]
     parameters = set(parameters)

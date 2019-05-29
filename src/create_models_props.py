@@ -45,6 +45,14 @@ def create_synchronous_model(file, N):
     ----------
     file: (string) - filename with extension
     N: (int) - agent quantity
+
+    Model meaning
+    ----------
+    Params:
+    N: (int) - number of agents (agents quantity)
+    p: (float) - probability to succeed in the first attempt
+    q: (float) - probability to succeed in the first attempt
+    ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
     """
     filename = model_path / Path(file.split(".")[0] + ".pm")
     file = open(filename, "w")
@@ -193,6 +201,14 @@ def create_semisynchronous_model(file, N):
     ----------
     file: (string) - filename with extesion
     N: (int) - agent quantity
+
+    Model meaning
+    ----------
+    Params:
+    N: (int) - number of agents (agents quantity)
+    p: (float) - probability to succeed in the first attempt
+    q: (float) - probability to succeed in the first attempt
+    ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
     """
     filename = model_path / Path(file.split(".")[0] + ".pm")
     file = open(filename, "w")
@@ -635,6 +651,14 @@ def create_multiparam_synchronous_model(file, N):
     ----------
     file: (string) - filename with extesion
     N: (int) - agent quantity
+
+    Model meaning
+    ----------
+    Params:
+    N: (int) - number of agents (agents quantity)
+    p: (float) - probability to succeed in the first attempt
+    q: (float) - probability to succeed in the first attempt
+    ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
     """
     filename = model_path / Path(file.split(".")[0] + ".pm")
     file = open(filename, "w")
@@ -785,6 +809,14 @@ def create_multiparam_semisynchronous_model(file, N):
     ----------
     file: (string) - filename with extension
     N: (int) - agent quantity
+
+    Model meaning
+    ----------
+    Params:
+    N: (int) - number of agents (agents quantity)
+    p: (float) - probability to succeed in the first attempt
+    q: (float) - probability to succeed in the first attempt
+    ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
     """
     filename = model_path / Path(file.split(".")[0] + ".pm")
     file = open(filename, "w")
@@ -957,6 +989,14 @@ def create_multiparam_asynchronous_model(file, N):
     ----------
     file: (string) - filename with extension
     N: (int) - agent quantity
+
+    Model meaning
+    ----------
+    Params:
+    N: (int) - number of agents (agents quantity)
+    p: (float) - probability to succeed in the first attempt
+    q: (float) - probability to succeed in the first attempt
+    ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
     """
     filename = model_path / Path(file.split(".")[0] + ".pm")
     file = open(filename, "w")

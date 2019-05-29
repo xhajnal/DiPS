@@ -247,35 +247,54 @@ class RefinedSpace:
                     print("No unsat samples so far, nothing to show")
 
     def get_volume(self):
+        """Returns the volume of the space"""
         intervals = []
         for interval in self.region:
             intervals.append(interval[1] - interval[0])
         return prod(intervals)
 
     def add_green(self, green):
+        """Adds green (hyper)rectangle"""
         self.sat.append(green)
 
     def add_red(self, red):
+        """Adds red (hyper)rectangle"""
         self.unsat.append(red)
 
     def add_white(self, white):
+        """Adds white (hyper)rectangle"""
         self.unknown.append(white)
 
     def add_sat_samples(self, sat_samples):
+        """Adds sat samples
+
+        Args
+        -------
+        sat_samples: (list) of sat points
+        """
         # print("samples", samples)
         self.sat_samples = sat_samples
 
     def add_unsat_samples(self, unsat_samples):
+        """Adds unsat samples
+
+        Args
+        -------
+        unsat_samples: (list) of unsat points
+        """
         # print("samples", samples)
         self.unsat_samples = unsat_samples
 
     def remove_green(self, green):
+        """Removes green (hyper)rectangle"""
         self.sat.remove(green)
 
     def remove_red(self, red):
+        """Removes red (hyper)rectangle"""
         self.unsat.remove(red)
 
     def remove_white(self, white):
+        """Removes white (hyper)rectangle"""
         try:
             self.unknown.remove(white)
         except:
@@ -284,15 +303,19 @@ class RefinedSpace:
         return True
 
     def get_green(self):
+        """Returns green (hyper)rectangles"""
         return self.sat
 
     def get_red(self):
+        """Returns red (hyper)rectangles"""
         return self.unsat
 
     def get_white(self):
+        """Returns white (hyper)rectangles"""
         return self.unknown
 
     def get_green_volume(self):
+        """Returns volume of green subspace"""
         cumulative_volume = 0
 
         ## If there is no hyperrectangle in the sat space
@@ -304,6 +327,7 @@ class RefinedSpace:
         return cumulative_volume
 
     def get_red_volume(self):
+        """Returns volume of red subspace"""
         cumulative_volume = 0
 
         ## If there is no hyperrectangle in the unsat space
@@ -315,13 +339,16 @@ class RefinedSpace:
         return cumulative_volume
 
     def get_nonwhite_volume(self):
+        """Returns volume of nonwhite subspace"""
         return self.get_green_volume() + self.get_red_volume()
 
     def get_coverage(self):
+        """Returns proption of nonwhite subspace (coverage)"""
         return self.get_nonwhite_volume() / self.get_volume()
 
     ## TBD generalise so that the code is not copied
     def show_green(self):
+        """Adds green (hyper)rectangles to be visualised"""
         rectangles_sat = []
         if len(self.region) > 2:
             print("Error while visualising", len(self.region), "dimensional space")
@@ -339,6 +366,7 @@ class RefinedSpace:
         return PatchCollection(rectangles_sat, facecolor='g', alpha=0.5)
 
     def show_red(self):
+        """Adds red (hyper)rectangles to be visualised"""
         rectangles_unsat = []
         if len(self.region) > 2:
             print("Error while visualising", len(self.region), "dimensional space")
@@ -356,6 +384,7 @@ class RefinedSpace:
         return PatchCollection(rectangles_unsat, facecolor='r', alpha=0.5)
 
     def show_samples(self, which):
+        """Visualises samples"""
         samples = []
         if len(self.region) > 2:
             print("Error while visualising", len(self.region), "dimensional space")

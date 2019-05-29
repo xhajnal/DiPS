@@ -33,7 +33,7 @@ def eval_and_show(fun_list, parameter_value, cumulative=False):
     ----------
     fun_list: (list of strings) list of rational functions
     parameter_value: (list of floats) array of param values
-    cumulative: (Bool) if true cdf instead of pdf is visualised
+    cumulative: (Bool) if True cdf instead of pdf is visualised
     """
     for polynome in fun_list:
         parameters = set()
@@ -81,7 +81,7 @@ def sample(dic_fun, agents_quantities, size_q):
 
     Returns
     ----------
-    Returns array of [N,i,parameters,value]
+    Array of [N, i, parameters, value]
 
     """
     arr = []
@@ -120,10 +120,10 @@ def visualise(dic_fun, agents_quantities, size_q, cumulative=False):
 
     Args
     ----------
-    dic_fun: (dictionary N -> list of polynomes)
+    dic_fun: (dictionary N -> list of polynomials)
     size_q: (int) sample size in each parameter
     agents_quantities: (int) pop sizes to be used
-    cumulative: (Bool) if true cdf instead of pdf is visualised
+    cumulative: (Bool) if True cdf instead of pdf is visualised
     """
 
     for N in agents_quantities:
@@ -175,11 +175,11 @@ def visualise(dic_fun, agents_quantities, size_q, cumulative=False):
 
 def visualise_byparam(hyper_rectangles):
     """
-    Visualise domain intervals of each dimension in a plot.
+    Visualises domain intervals of each dimension in a plot.
 
     Args
     ----------
-    hyper_rectangles: list of hyperrectangles
+    hyper_rectangles: list of (hyper)rectangles
     """
     from sympy import Interval
 
@@ -219,7 +219,7 @@ def heatmap(fun, region, sampling_sizes):
 
     Args
     ----------
-    fun: dictionary N -> list of polynomes
+    fun: dictionary N -> list of polynomials
     region: (list of intervals) boundaries of parameter space to be sampled
     sampling_sizes: (int) tuple of sample size of respective parameter
 
@@ -231,7 +231,7 @@ def heatmap(fun, region, sampling_sizes):
     parameters = sorted(list(find_param(fun)))
     # print(parameters)
     if len(parameters) != 2:
-        raise InvalidFunction("Number of paramters of given function is not equal to 2 but", len(parameters))
+        raise InvalidFunction("Number of parameters of given function is not equal to 2 but", len(parameters))
 
     arr = np.zeros((sampling_sizes[0] * sampling_sizes[1], 3))
 
@@ -261,12 +261,12 @@ def heatmap(fun, region, sampling_sizes):
 
 def visualise_sampled_byparam(hyper_rectangles, sample_size):
     """
-    Visualise sampled hyperspace by connecting the values in each dimension.
+    Visualises sampled hyperspace by connecting the values in each dimension.
 
     Args
     ----------
-    hyper_rectangles: list of hyperrectangles
-    sample_size: (int) -- number of points to be sampled
+    hyper_rectangles: (list of hyperrectangles)
+    sample_size: (int): number of points to be sampled
     """
     if hyper_rectangles:
         fig, ax = plt.subplots()
