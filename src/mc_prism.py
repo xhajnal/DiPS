@@ -243,21 +243,17 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
 
                     write_to_file(std_output_path, output_file_path, output, silent, append=True)
 
-                    if 'Type error' in output:
-                        print(colored(f"A type error occurred", "red"))
-                        return "type"
-                    if 'Syntax error' in output:
-                        print(colored(f"A syntax error occurred", "red"))
-                        return "syntax"
-                    if "Cannot allocate memory" in output:
-                        print(colored(f"A memory error occurred while seq, close some programs and try again", "red"))
-                        return "memory_fail"
-                    if 'NullPointerException' in output:
-                        print(colored(f"A NullPointerException occurred", "red"))
-                        return "NullPointerException"
-                    if 'use -noprobchecks' in output:
-                        print(colored(f"Outgoing transitions checksum error occurred", "red"))
-                        return "noprobchecks"
+                    ## Check for errors
+                    output = output.split("\n")
+                    for item in output:
+                        # print(item)
+                        if ("error" in item.lower()) or ("Cannot allocate memory" in item) or ('Exception' in item):
+                            spam = item.strip()
+                            print(colored(spam, "red"))
+                            return ("error", spam)
+                        if 'use -noprobchecks' in item:
+                            print(colored(f"Outgoing transitions checksum error occurred", "red"))
+                            return "noprobchecks"
 
         else:
             if not silent:
@@ -266,21 +262,16 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
             write_to_file(std_output_path, output_file_path, output, silent, append=False)
 
             ## Check for errors
-            if ('OutOfMemoryError' in output) or ("Cannot allocate memory" in output):
-                print(colored(f"A memory error occurred", "red"))
-                return "memory"
-            if 'Type error' in output:
-                print(colored(f"A type error occurred", "red"))
-                return "type"
-            if 'Syntax error' in output:
-                print(colored(f"A syntax error occurred", "red"))
-                return "syntax"
-            if 'NullPointerException' in output:
-                print(colored(f"A NullPointerException occurred", "red"))
-                return "NullPointerException"
-            if 'use -noprobchecks' in output:
-                print(colored(f"Outgoing transitions checksum error occurred", "red"))
-                return "noprobchecks"
+            output = output.split("\n")
+            for item in output:
+                # print(item)
+                if ("error" in item.lower()) or ("Cannot allocate memory" in item) or ('Exception' in item):
+                    spam = item.strip()
+                    print(colored(spam, "red"))
+                    return ("error", spam)
+                if 'use -noprobchecks' in item:
+                    print(colored(f"Outgoing transitions checksum error occurred", "red"))
+                    return "noprobchecks"
 
         return 0
     finally:
@@ -369,21 +360,11 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
                                    seq=seq, model_path=model_path, properties_path=properties_path, std_output_path=output_path,
                                    std_output_file="{}_{}.txt".format(str(file.stem).split(".")[0], property_file.split(".")[0]))
 
-            print(f"  Return code is: {error}")
+            # print(f"  Return code is: {error}")
             print(f"  It took {socket.gethostname()}, {time.time() - start_time} seconds to run")
 
             if error == 404:
                 print(colored("A file not found, skipped", "red"))
-                continue
-
-            ## Check for syntax error
-            if error == "syntax":
-                print(colored("A syntax error occurred, sorry we can not correct that", "red"))
-                continue
-
-            ## Check for type error
-            if error == "type":
-                print(colored("A type error occurred, sorry we can not correct that", "red"))
                 continue
 
             ## Check if there was problem with sum of probabilities
@@ -415,15 +396,25 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
                 ## A error occured even when seq and max memory, no reason to continue
                 break
 
-            if error == "NullPointerException":
-                if seq:
-                    print(colored("Sorry, I do not know to to fix this, please try it manually", "red"))
-                    break
-                else:
-                    print(colored("Trying to fix the null pointer exception by running prop by prop", "red"))
-                    seq = True
-                    ## Remove the file because appending would no overwrite the file
-                    os.remove(os.path.join(output_path, "{}.txt".format(file.stem)))
+            ## Check for other errors
+            if isinstance(error, tuple):
+                if error[0]:
+                    ## Check for NullPointerException
+                    if "NullPointerException" in error[1]:
+                        if seq:
+                            # print(colored(error[1], "red"))
+                            print(colored("Sorry, I do not know to to fix this, please try it manually", "red"))
+                            print()
+                            break
+                        else:
+                            print(colored("Trying to fix the null pointer exception by running prop by prop", "red"))
+                            seq = True
+                            ## Remove the file because appending would no overwrite the file
+                            os.remove(os.path.join(output_path, "{}.txt".format(file.stem)))
+                    else:
+                        # print(colored(error[1], "red"))
+                        print()
+                        continue
 
             if error is not 0:
                 ## If an error occurred call this function for this file again
