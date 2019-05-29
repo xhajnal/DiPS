@@ -145,7 +145,6 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
     else:
         output_file_path = ""
 
-
     # print(output_file)
 
     # os.chdir(config.get("paths","cwd"))
@@ -177,12 +176,17 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
                     return 404
                 prism_args.append(property_file_path)
             elif re.compile('\.txt').search(arg) is not None:
-                prism_output_file_path = os.path.join(prism_output_path, arg)
-                if not os.path.isfile(prism_output_file_path):
+                print("prism_output_path", prism_output_path)
+                if not os.path.isabs(prism_output_path):
+                    prism_output_path = os.path.join(Path(prism_results), Path(prism_output_path))
+
+                if not os.path.isdir(prism_output_path):
                     if not silent:
-                        print(
-                            f"{colored('file', 'red')} {prism_output_file_path} {colored('not found, this may cause trouble', 'red')}")
-                prism_args.append(os.path.join(prism_output_path, arg))
+                        print(f"{colored('The path', 'red')} {prism_output_path} {colored('not found, this may cause trouble', 'red')}")
+
+                prism_output_file_path = os.path.join(prism_output_path, arg)
+                print("prism_output_file_path", prism_output_file_path)
+                prism_args.append(prism_output_file_path)
             else:
                 prism_args.append(arg)
         # print(prism_args)
@@ -247,13 +251,13 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
                     output = output.split("\n")
                     for item in output:
                         # print(item)
+                        if 'use -noprobchecks' in item:
+                            print(colored(f"Outgoing transitions checksum error occurred", "red"))
+                            return "noprobchecks"
                         if ("error" in item.lower()) or ("Cannot allocate memory" in item) or ('Exception' in item):
                             spam = item.strip()
                             print(colored(spam, "red"))
                             return ("error", spam)
-                        if 'use -noprobchecks' in item:
-                            print(colored(f"Outgoing transitions checksum error occurred", "red"))
-                            return "noprobchecks"
 
         else:
             if not silent:
@@ -265,14 +269,13 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
             output = output.split("\n")
             for item in output:
                 # print(item)
+                if 'use -noprobchecks' in item:
+                    print(colored(f"Outgoing transitions checksum error occurred", "red"))
+                    return "noprobchecks"
                 if ("error" in item.lower()) or ("Cannot allocate memory" in item) or ('Exception' in item):
                     spam = item.strip()
                     print(colored(spam, "red"))
                     return ("error", spam)
-                if 'use -noprobchecks' in item:
-                    print(colored(f"Outgoing transitions checksum error occurred", "red"))
-                    return "noprobchecks"
-
         return 0
     finally:
         os.chdir(curr_dir)
@@ -430,22 +433,22 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
 
 
 def call_storm(args, silent=False, model_path=model_path, properties_path=properties_path,
-               prism_output_path=prism_results, std_output_path=storm_results, std_output_file=False, time=False):
-    """  Prints calls for prism model checking.
+               storm_output_path=storm_results, std_output_path=storm_results, std_output_file=False, time=False):
+    """  Prints calls for storm model checking.
 
     Args
     ----------
-    args: (string) args for executing prism
+    args: (string) args for executing storm
     silent: (Bool) if silent command line output is set to minimum
     model_path: (string) path to load  models from
     properties_path: (string) path to load properties from
-    prism_output_path: (string) path to save the files inside the command
+    storm_output_path: (string) path to save the files inside the command
     std_output_path: (string) path to save the results of the command
     std_output_file: (string) file name to save the output
     time: (Bool) if True time measurement is added
     """
     # print("std_output_path", std_output_path)
-    # print("prism_results", prism_results)
+    # print("storm_results", storm_results)
     # print("std_output_file", std_output_file)
 
     if std_output_path is not None:
@@ -453,7 +456,7 @@ def call_storm(args, silent=False, model_path=model_path, properties_path=proper
         if not std_output_file:
             output_file_path = os.path.join(std_output_path, Path(str(output_file_path) + ".txt"))
         else:
-            output_file_path = os.path.join(prism_results, Path(str(std_output_file)))
+            output_file_path = os.path.join(storm_results, Path(str(std_output_file)))
             # print("new output_file_path", output_file_path)
     else:
         output_file_path = ""
@@ -461,9 +464,8 @@ def call_storm(args, silent=False, model_path=model_path, properties_path=proper
     # print(std_output_file)
 
     # os.chdir(config.get("paths","cwd"))
-    os.chdir(prism_path)
     # print(os.getcwd())
-    prism_args = []
+    storm_args = []
 
     # print(args.split(" "))
     args = args.split(" ")
@@ -478,27 +480,33 @@ def call_storm(args, silent=False, model_path=model_path, properties_path=proper
             if not os.path.isfile(model_file_path):
                 print(f"{colored('file', 'red')} {model_file_path} {colored('not found -- skipped', 'red')}")
                 return 404
-            prism_args.append(model_file_path)
+            storm_args.append(model_file_path)
         elif re.compile('\.pctl').search(arg) is not None:
             property_file_path = os.path.join(properties_path, arg)
             # print(property_file)
             if not os.path.isfile(property_file_path):
                 print(f"{colored('file', 'red')} {property_file_path} {colored('not found -- skipped', 'red')}")
                 return 404
-            # prism_args.append(property_file_path)
-            prism_args.append("my_super_cool_string")
+            # storm_args.append(property_file_path)
+            storm_args.append("my_super_cool_string")
         elif re.compile('\.txt').search(arg) is not None:
-            prism_output_file_path = os.path.join(prism_output_path, arg)
-            if not os.path.isfile(prism_output_file_path):
+            print("storm_output_path", storm_output_path)
+            if not os.path.isabs(storm_output_path):
+                storm_output_path = os.path.join(Path(storm_results), Path(storm_output_path))
+
+            if not os.path.isdir(storm_output_path):
                 if not silent:
                     print(
-                        f"{colored('file', 'red')} {prism_output_file_path} {colored('not found, this may cause trouble', 'red')}")
-            prism_args.append(os.path.join(prism_output_path, arg))
-        else:
-            prism_args.append(arg)
+                        f"{colored('The path', 'red')} {storm_output_path} {colored('not found, this may cause trouble', 'red')}")
 
-    args = ["./storm-pars --prism"]
-    args.extend(prism_args)
+            storm_output_file_path = os.path.join(storm_output_path, arg)
+            print("storm_output_file_path", storm_output_file_path)
+            storm_args.append(storm_output_file_path)
+        else:
+            storm_args.append(arg)
+
+    args = ["./storm-pars --storm"]
+    args.extend(storm_args)
     if time:
         args.append(")")
     if output_file_path is not "":
@@ -526,7 +534,7 @@ def call_storm(args, silent=False, model_path=model_path, properties_path=proper
 
 
 def call_storm_files(model_prefix, agents_quantities, model_path=model_path, properties_path=properties_path, property_file=False, output_path=storm_results, time=False):
-    """  Calls prism for each file matching the prefix
+    """  Calls storm for each file matching the prefix
 
     Args
     ----------
@@ -599,26 +607,26 @@ class TestLoad(unittest.TestCase):
         os.chdir("test")
 
         call_prism(
-            "multiparam_synchronous_10.pm -const p=0.028502714675268215,q1=0.5057623641293089 -simpath 2 dummy_path1550773616.0244777.txt",
-            silent=True, prism_output_path="/home/matej/Git/mpm/src/test/new", std_output_path=None)
+            "synchronous_10.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 dummy_path1550773616.0244777.txt",
+            silent=True, prism_output_path="/home/matej/Git/mpm/src/test", std_output_path=None)
 
         ## Model checking
         print(colored('Testing simple model checking', 'blue'))
         for population in agents_quantities:
             call_prism("semisynchronous_{}.pm prop_{}.pctl -param p=0:1,q=0:1,alpha=0:1"
-                       .format(population, population), seq=False, std_output_path=cwd)
+                       .format(population, population), seq=False, std_output_path=os.path.join(cwd, "test"))
 
         ## Simulating the path
         print(colored('Testing simulation', 'blue'))
         call_prism(
             'synchronous_2.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '
-            'path1.txt', prism_output_path=cwd, std_output_path=None)
+            'path11.txt', prism_output_path=os.path.join(cwd, "test"), std_output_path=None)
 
         print(colored('Test simulation change the path of the path files output', 'blue'))
         print(colored('This should produce a file in ', 'blue'))
         call_prism(
             'synchronous_2.pm -const p=0.028502714675268215,q=0.5057623641293089 -simpath 2 '
-            'path1.txt', prism_output_path="../test/new", std_output_path=None)
+            'path12.txt', prism_output_path="../src/test", std_output_path=None)
 
         # print(colored('testing simulation with stdout', 'blue'))
         # file = open("path_synchronous__2_3500_0.028502714675268215_0.5057623641293089.txt", "w+")
@@ -638,7 +646,6 @@ class TestLoad(unittest.TestCase):
         agents_quantities = [20, 40]
         ## 20 should pass
         ## This will require noprobcheck for 40
-
         call_prism_files("syn*_", agents_quantities, output_path=os.path.join(cwd, "test"))
         ## This will require seq for 40
         call_prism_files("semi*_", agents_quantities, output_path=os.path.join(cwd, "test"))
