@@ -243,6 +243,9 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
 
                     write_to_file(std_output_path, output_file_path, output, silent, append=True)
 
+                    if 'Type error' in output:
+                        print(colored(f"A type error occurred", "red"))
+                        return "type"
                     if 'Syntax error' in output:
                         print(colored(f"A syntax error occurred", "red"))
                         return "syntax"
@@ -266,6 +269,9 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
             if ('OutOfMemoryError' in output) or ("Cannot allocate memory" in output):
                 print(colored(f"A memory error occurred", "red"))
                 return "memory"
+            if 'Type error' in output:
+                print(colored(f"A type error occurred", "red"))
+                return "type"
             if 'Syntax error' in output:
                 print(colored(f"A syntax error occurred", "red"))
                 return "syntax"
@@ -314,7 +320,7 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
     for N in sorted(agents_quantities):
         # print(glob.glob(os.path.join(model_path, file_prefix + str(N) + ".pm")))
         if not glob.glob(os.path.join(model_path, model_prefix + str(N) + ".pm")):
-            print(colored("No files for N="+str(N)+" found", "red"))
+            print(colored("No model files for N="+str(N)+" found", "red"))
         for file in glob.glob(os.path.join(model_path, model_prefix + str(N) + ".pm")):
             file = Path(file)
             start_time = time.time()
@@ -373,6 +379,11 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
             ## Check for syntax error
             if error == "syntax":
                 print(colored("A syntax error occurred, sorry we can not correct that", "red"))
+                continue
+
+            ## Check for type error
+            if error == "type":
+                print(colored("A type error occurred, sorry we can not correct that", "red"))
                 continue
 
             ## Check if there was problem with sum of probabilities
@@ -544,7 +555,7 @@ def call_storm_files(model_prefix, agents_quantities, model_path=model_path, pro
     for N in sorted(agents_quantities):
         # print(glob.glob(os.path.join(model_path, file_prefix + str(N) + ".pm")))
         if not glob.glob(os.path.join(model_path, model_prefix + str(N) + ".pm")):
-            print(colored("No files for N="+str(N)+" found", "red"))
+            print(colored("No model files for N="+str(N)+" found", "red"))
             continue
         for file in glob.glob(os.path.join(model_path, model_prefix + str(N) + ".pm")):
             file = Path(file)
