@@ -1300,7 +1300,7 @@ def create_rewards_prop():
     """ Creates rewards properties file of moments of reaching BSCC of the model.
     """
 
-    filename = properties_path / Path("moments2.pctl")
+    filename = properties_path / Path("moments(2).pctl")
     file = open(filename, "w")
     print(filename)
 

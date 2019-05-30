@@ -72,7 +72,7 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
             os.chdir(storm_results)
         else:
             print("Selected tool unsupported.")
-            return
+            return ({}, {})
 
     f = {}
     rewards = {}
@@ -82,7 +82,7 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
         if not Path(path).is_absolute():
             os.chdir(default_directory)
         print("No files match the pattern " + os.path.join(new_dir, path))
-        return
+        return ({}, {})
 
     ## Choosing files with the given pattern
     for file in glob.glob(str(path)):
@@ -145,14 +145,14 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
                             rewards[N].append(line[:-1])
                             # os.chdir(cwd)
                     else:
-                        rewards[N] = line[:-1]
+                        rewards[N].append(line[:-1])
                 elif not here == "r" and not rewards_only:
                     # print(f"pop: {N}, formula: {i+1}", line[:-1])
                     if factorize:
                         try:
                             f[N].append(str(factor(line[:-1])))
                         except TypeError:
-                            print(f"Error while factorising polynome f[{N}][{i+1}], used not factorised instead")
+                            print(f"Error while factorising polynomial f[{N}][{i+1}], used not factorised instead")
                             f[N].append(line[:-1])
                             # os.chdir(cwd)
                     else:
