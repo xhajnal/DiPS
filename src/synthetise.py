@@ -514,7 +514,6 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
     if debug:
         print("region", region)
         print("props", props)
-        print("intervals", intervals)
 
     ## PRESAMPLING HERE
     if size_q:
@@ -807,7 +806,6 @@ def private_check_deeper(region, props, n, epsilon, coverage, silent):
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
     silent: (Bool): if silent printed output is set to minimum
-    time_out: (Int): time out in minutes
     """
 
     ## TBD check consistency
@@ -889,7 +887,7 @@ def private_check_deeper(region, props, n, epsilon, coverage, silent):
     return result
 
 
-def private_check_deeper_queue(region, props, n, epsilon, coverage, silent, time_out=False):
+def private_check_deeper_queue(region, props, n, epsilon, coverage, silent):
     """ Refining the parameter space into safe and unsafe regions
 
     Args
@@ -900,7 +898,6 @@ def private_check_deeper_queue(region, props, n, epsilon, coverage, silent, time
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
     silent: (Bool): if silent printed output is set to minimum
-    time_out: (Int): time out in minutes
     """
 
     ## TBD check consitency
@@ -982,7 +979,7 @@ def private_check_deeper_queue(region, props, n, epsilon, coverage, silent, time
         private_check_deeper_queue(*que.dequeue())
 
 
-def private_check_deeper_queue_checking(region, props, n, epsilon, coverage, silent, model=None, time_out=False):
+def private_check_deeper_queue_checking(region, props, n, epsilon, coverage, silent, model=None):
     """ THIS IS OBSOLETE METHOD, HERE JUST TO BE COMPARED WITH THE NEW ONE
 
     Refining the parameter space into safe and unsafe regions
@@ -996,7 +993,6 @@ def private_check_deeper_queue_checking(region, props, n, epsilon, coverage, sil
     coverage: (Float): coverage threshold to stop computation
     silent: (Bool): if silent printed output is set to minimum
     model: (example,counterexample) of the satisfaction in the given region
-    time_out: (Int): time out in minutes
     """
 
     ## TBD check consitency
@@ -1290,7 +1286,7 @@ def color_margins(greater, smaller):
     # pic.add_collection(pc)
 
 
-def check_deeper_iter(region, props, n, epsilon, coverage, silent, time_out=False):
+def check_deeper_iter(region, props, n, epsilon, coverage, silent):
     """ New Refining the parameter space into safe and unsafe regions with iterative method using alg1
 
     Args
@@ -1301,7 +1297,6 @@ def check_deeper_iter(region, props, n, epsilon, coverage, silent, time_out=Fals
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
     silent: (Bool): if silent printed output is set to minimum
-    time_out: (Int): time out in minutes
     """
     new_tresh = copy.deepcopy(region)
 
@@ -1309,8 +1304,8 @@ def check_deeper_iter(region, props, n, epsilon, coverage, silent, time_out=Fals
     for i in range(len(props) - 1):
         if not silent:
             # print("white: ",globals()["hyper_rectangles_white"])
-            print("check_deeper(", new_tresh, [props[i]], [intervals[i]], ")")
-        check_deeper(new_tresh, [props[i]], [intervals[i]], n, epsilon, coverage, True, 1)
+            print("check_deeper(", new_tresh, [props[i]], ")")
+        check_deeper(new_tresh, [props[i]], n, epsilon, coverage, True, 1)
 
         new_tresh = []
         for interval_index in range(len(region)):
@@ -1461,7 +1456,7 @@ def check_interval_out(region, props, intervals, silent=False, called=False):
     return False
 
 
-def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage, silent, presampled=False, time_out=False):
+def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage, silent):
     """ Refining the parameter space into safe and unsafe regions
 
     Args
@@ -1473,8 +1468,6 @@ def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
     silent: (Bool): if silent printed output is set to minimum
-    presampled: (Bool) if True, use presampled subregions to start refinement with
-    time_out: (Int): time out in minutes
     """
 
     ## TBD check consistency
