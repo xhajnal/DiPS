@@ -391,18 +391,20 @@ class RefinedSpace:
             return
         elif len(self.region) == 2:
             # print("samples", self.samples)
+            size_correction =  min(1/(len(self.sat_samples) + len(self.unsat_samples))**(1/len(self.region)), 0.01)
+
             ## CHOOSING SAT OR UNSAT
             if which:
                 for rectangle in self.sat_samples:
                     ## (Rectangle((low_x,low_y), width, height, fc= color)
                     # print("rectangle", rectangle)
-                    samples.append(Rectangle((rectangle[0]-0.005, rectangle[1]-0.005), 0.01, 0.01, fc='r'))
+                    samples.append(Rectangle((rectangle[0]-0.005, rectangle[1]-0.005), size_correction, size_correction, fc='r'))
                 return PatchCollection(samples, facecolor='g', alpha=0.5)
             else:
                 for rectangle in self.unsat_samples:
                     ## (Rectangle((low_x,low_y), width, height, fc= color)
                     # print("rectangle", rectangle)
-                    samples.append(Rectangle((rectangle[0]-0.005, rectangle[1]-0.005), 0.01, 0.01, fc='r'))
+                    samples.append(Rectangle((rectangle[0]-0.005, rectangle[1]-0.005), size_correction, size_correction, fc='r'))
                 return PatchCollection(samples, facecolor='r', alpha=0.5)
 
     def __repr__(self):
