@@ -145,7 +145,88 @@ class Queue:
         return self.queue
 
 
-def check_unsafe(region, props, intervals, silent=False, called=False):
+def ineq_to_props(funcs, intervals):
+    """ Converts inequalities of the function given by the interval to properties
+
+    Example: ["x+3"],[[0,1]] ->  ["x+3>=0","x+3<=1"]
+
+    Args
+    ----------
+    funcs:  (list of strings) array of functions
+    intervals: (list of intervals) array of pairs, low and high bound
+    """
+
+    spam = []
+    for index in range(len(funcs)):
+        if isinstance(intervals[index], Interval):
+            spam.append(funcs[index] + ">=" + str(intervals[index].start))
+            spam.append(funcs[index] + "<=" + str(intervals[index].end))
+        else:
+            spam.append(funcs[index] + ">=" + str(intervals[index][0]))
+            spam.append(funcs[index] + "<=" + str(intervals[index][1]))
+    return spam
+
+
+def props_to_ineq(props, debug=False):
+    """ Converts properties to functions and inequalities if possible
+
+    Example: ["x+3>=0","x+3<=1"] -> ["x+3"],[[0,1]]
+
+    Args
+    ----------
+    props:  (list of strings) properties to be converted
+    debug: (Bool) if True extensive print will be used
+    """
+    if len(props) % 2:
+        print("Number of properties is not even, some interval will be invalid")
+        return False
+    funcs = []
+    intervals = []
+    is_odd = False
+    for prop in props:
+        try:
+            spam = prop.split("<=")
+            spam = spam.split(">=")
+            spam = spam.split("<")
+            spam = spam.split(">")
+        except AttributeError:
+            print()
+        if len(spam) <= 1:
+            print(" Some property is not in a form of inequality")
+            return False
+        elif len(spam) > 1:
+            print(" Some property has more than one inequality sign")
+            return False
+        else:
+            try:
+                ## The righthandside is number
+                float(spam[1])
+            except ValueError:
+                spam = [f"{spam[0]} -( {spam[1]})", 0]
+
+            ## If we are at odd position check
+            if is_odd:
+                ## whether the previous function is the same as the new one
+                if funcs[-1] is spam[0]:
+                    # if yes, add the other value of the interval
+                    intervals[len(funcs)] = [intervals[len(funcs)], spam[1]]
+            else:
+                funcs.append(spam[0])
+                intervals.append(spam[1])
+        is_odd = not is_odd
+
+    ## Sort the intervals
+    for interval_index in range(len(intervals)):
+        intervals[interval_index] = sorted(intervals[interval_index])
+
+    if debug:
+        print("funcs: ", funcs)
+        print("intervals: ", intervals)
+
+    return funcs, intervals
+
+
+def check_unsafe(region, props, silent=False, called=False):
     """ Check if the given region is unsafe or not.
 
     It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given
@@ -153,9 +234,8 @@ def check_unsafe(region, props, intervals, silent=False, called=False):
 
     Args
     ----------
-    region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
+    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
     props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
-    intervals: (list of sympy.Interval): array of intervals to constrain properties
     silent: (Bool): if silent printed output is set to minimum
     called: (Bool): if called updates the global variables (use when calling it directly)
     """
@@ -184,14 +264,6 @@ def check_unsafe(region, props, intervals, silent=False, called=False):
 
     s = Solver()
 
-    # if not silent:
-    #    print("with parameters", globals()["parameters"])
-
-    ## Adding regional restrictions to solver
-    # for param_index in range(len(space.params)):
-    #     s.add(space.params[param_index] >= region[param_index][0])
-    #     s.add(space.params[param_index] <= region[param_index][1])
-
     ## Adding regional restrictions to solver
     j = 0
     for param in globals()["parameters"]:
@@ -201,17 +273,10 @@ def check_unsafe(region, props, intervals, silent=False, called=False):
         s.add(globals()[param] <= region[j][1])
         j = j + 1
 
-    ## Adding property in the interval restrictions to solver
+    ## Adding properties to solver
     for i in range(0, len(props)):
-        # if intervals[i]<100/n_samples:
-        #    continue
-
-        ## ALTERNATIVE HEURISTIC APPROACH COMMENTED HERE
-        # if  intervals[i]<0.01:
-        #    continue
-
-        s.add(eval(props[i]) >= intervals[i].start, eval(props[i]) <= intervals[i].end)
-        # print(prop[i],intervals[i])
+        # print(props[i])
+        s.add(eval(props[i]))
 
     if s.check() == sat:
         return s.model()
@@ -220,7 +285,7 @@ def check_unsafe(region, props, intervals, silent=False, called=False):
         return True
 
 
-def check_safe(region, props, intervals, silent=False, called=False):
+def check_safe(region, props, silent=False, called=False):
     """ Check if the given region is safe or not
 
     It means whether for all parametrisations in **region** every property(prop) is evaluated within the given
@@ -228,9 +293,8 @@ def check_safe(region, props, intervals, silent=False, called=False):
 
     Args
     ----------
-    region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
-    intervals: (list of sympy.Interval): array of intervals to constrain properties
+    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
+    props:  (list of strings): array of properties
     silent: (Bool): if silent printed output is set to minimum
     called: (Bool): if called updates the global variables (use when calling it directly)
     """
@@ -268,25 +332,12 @@ def check_safe(region, props, intervals, silent=False, called=False):
         s.add(globals()[param] <= region[j][1])
         j = j + 1
 
-    ## Adding property in the interval restrictions to solver
-
-    formula = Or(Not(eval(props[0]) >= intervals[0].start), Not(eval(props[0]) <= intervals[0].end))
-
-    ## ALTERNATIVE HEURISTIC APPROACH COMMENTED HERE
-    # if intervals[0]<0.01:
-    #    formula = Or(Not(eval(prop[0]) > intervals[0][0])), Not(eval(prop[0]) < intervals[0][1])))
-    # else:
-    #    formula = False
-
+    ## Adding properties to solver
+    formula = Not(eval(props[0]))
     for i in range(1, len(props)):
-        # if intervals[i]<100/n_samples:
-        #    continue
-
-        ## ALTERNATIVE HEURISTIC APPROACH COMMENTED HERE
-        # if  intervals[i]<0.01:
-        #    continue
-        formula = Or(formula, Or(Not(eval(props[i]) >= intervals[i].start), Not(eval(props[i]) <= intervals[i].end)))
+        formula = Or(formula, Not(eval(props[i])))
     s.add(formula)
+
     # print(s.check_unsafe())
     # return s.check_unsafe()
     if s.check() == unsat:
@@ -377,29 +428,24 @@ def refine_by(region1, region2, debug=False):
     return regions
 
 
-def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version, size_q=False, time_out=False, debug=False, save=False):
+def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=False, debug=False, save=False):
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
 
     Args
     ----------
     region: (list of intervals/space) array of pairs, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
-    intervals: (list of sympy.Interval): array of intervals to constrain properties
+    props:  (list of strings): array of properties
     n: (Int): max number of recursions to do
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
     silent: (Bool): if silent printed output is set to minimum
     version: (Int): version of the algorithm to be used
     size_q: (Int): number of samples in dimension used for presampling
-    time_out: (Int): time out in minutes
     debug: (Bool): if True extensive print will be used
     save: (Bool): if True output is stored
     """
 
     ## INITIALISATION
-    if time_out:
-        print("Timeout is set to: ", refine_timeout)
-
     ## Save file
     if save is True:
         # save = f"{},{n},{epsilon},{coverage},{version}"
@@ -414,6 +460,8 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
         globals()["parameters"].update(find_param(polynome))
     globals()["parameters"] = sorted(list(globals()["parameters"]))
     parameters = globals()["parameters"]
+    if debug:
+        print("parameters", parameters)
 
     ## If the given region is space
     if isinstance(region, RefinedSpace):
@@ -490,7 +538,7 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
 
         # globals()["space"] = RefinedSpace(copy.deepcopy(region), parameters, [], [])
 
-        to_be_searched = sample(space, props, intervals, size_q, compress=True, silent=not debug)
+        to_be_searched = sample(space, props, size_q, compress=True, silent=not debug)
 
         ## Saving the sampled space as pickled dictionary
         if save:
@@ -659,7 +707,7 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
             ## THE PROBLEM IS THAT COVERAGE IS COMPUTED FOR THE WHOLE SPACE NOT ONLY FOR THE GIVEN REGION
             rectangle_size = get_rectangle_volume(rectangle)
 
-            # print("rectangle", rectangle, " props", props, "intervals", intervals, "silent", silent)
+            # print("rectangle", rectangle, " props", props, "silent", silent)
             # print("current coverage", space.get_coverage())
             # print("whole area", space.get_volume())
             # print("rectangle_size", rectangle_size)
@@ -671,26 +719,29 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
             if debug:
                 print("region", rectangle)
                 print("props", props)
-                print("intervals", intervals)
 
             if version == 1:
                 print(f"Using DFS method to solve spliced rectangle number {white_space.index(rectangle)+1}")
-                private_check_deeper(rectangle, props, intervals, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, time_out=time_out)
+                private_check_deeper(rectangle, props, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent)
             elif version == 2:
                 print(f"Using BFS method to solve spliced rectangle number {white_space.index(rectangle)+1}")
-                private_check_deeper_queue(rectangle, props, intervals, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, time_out=time_out)
+                private_check_deeper_queue(rectangle, props, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent)
             elif version == 3:
                 print(f"Using BFS method with passing examples to solve spliced rectangle number {white_space.index(rectangle)+1}")
-                private_check_deeper_queue_checking(rectangle, props, intervals, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, None, time_out=time_out)
+                private_check_deeper_queue_checking(rectangle, props, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, None)
             elif version == 4:
                 print(f"Using BFS method with passing examples and counterexamples to solve spliced rectangle number {white_space.index(rectangle)+1}")
-                private_check_deeper_queue_checking_both(rectangle, props, intervals, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, None, time_out=time_out)
+                private_check_deeper_queue_checking_both(rectangle, props, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, None)
             elif version == 5:
                 print(f"Using interval method to solve spliced rectangle number {white_space.index(rectangle)+1}")
-                private_check_deeper_interval(rectangle, props, intervals, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, time_out=time_out)
+
+                egg = props_to_ineq(props, debug=False)
+                if not egg:
+                    return space
+                private_check_deeper_interval(rectangle, egg[0], egg[1], max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent)
             else:
                 print(colored("Chosen version not found", "red"))
-                return
+                return space
 
             ## Showing the step refinements of respective rectangles from the white space
             space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time() - start_time)} second(s)", save=(save, "refinement_"+str(save))[bool(save)])
@@ -709,31 +760,32 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
         #     # print("safe", space.sat)
         #     print("unsafe", space.unsat)
         #     space.add_white(rectangle)
-        #     private_check_deeper_interval(rectangle, props, intervals, 0, epsilon, coverage, silent)
+        #     private_check_deeper_interval(rectangle, props, 0, epsilon, coverage, silent)
 
     elif version == 1:
         print("Using DFS method")
-        if time_out:
-            print("using timeout", time_out)
-            timeout(private_check_deeper, (region, props, intervals, n, epsilon, coverage, silent), timeout_duration=time_out, default=4)
-        else:
-            private_check_deeper(region, props, intervals, n, epsilon, coverage, silent, time_out=time_out)
+        private_check_deeper(region, props, n, epsilon, coverage, silent)
     elif version == 2:
         print("Using BFS method")
         globals()["que"] = Queue()
-        private_check_deeper_queue(region, props, intervals, n, epsilon, coverage, silent, time_out=time_out)
+        private_check_deeper_queue(region, props, n, epsilon, coverage, silent)
     elif version == 3:
         print("Using BFS method with passing examples")
         globals()["que"] = Queue()
-        private_check_deeper_queue_checking(region, props, intervals, n, epsilon, coverage, silent, None, time_out=time_out)
+        private_check_deeper_queue_checking(region, props, n, epsilon, coverage, silent, None)
     elif version == 4:
         print("Using BFS method with passing examples and counterexamples")
         globals()["que"] = Queue()
-        private_check_deeper_queue_checking_both(region, props, intervals, n, epsilon, coverage, silent, None, time_out=time_out)
+        private_check_deeper_queue_checking_both(region, props, n, epsilon, coverage, silent, None)
     elif version == 5:
         print("Using interval arithmetic")
         globals()["que"] = Queue()
-        private_check_deeper_interval(region, props, intervals, n, epsilon, coverage, silent, time_out=time_out)
+
+        egg = props_to_ineq(props, debug=False)
+        if not egg:
+            return space
+
+        private_check_deeper_interval(region, egg[0], egg[1], n, epsilon, coverage, silent)
     else:
         print(colored("Chosen version not found", "red"))
 
@@ -744,14 +796,13 @@ def check_deeper(region, props, intervals, n, epsilon, coverage, silent, version
     return space
 
 
-def private_check_deeper(region, props, intervals, n, epsilon, coverage, silent, time_out=False):
+def private_check_deeper(region, props, n, epsilon, coverage, silent):
     """ Refining the parameter space into safe and unsafe regions
 
     Args
     ----------
-    region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
-    intervals: (list of sympy.Interval): array of intervals to constrain properties
+    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
+    props:  (list of strings): array of properties
     n: (Int): max number of recursions to do
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
@@ -760,7 +811,7 @@ def private_check_deeper(region, props, intervals, n, epsilon, coverage, silent,
     """
 
     ## TBD check consistency
-    # print(region,prop,intervals,n,epsilon,coverage,silent)
+    # print(region,prop,n,epsilon,coverage,silent)
     # print("check equal", globals()["non_white_area"],non_white_area)
     # print("check equal", globals()["whole_area"],whole_area)
 
@@ -786,9 +837,9 @@ def private_check_deeper(region, props, intervals, n, epsilon, coverage, silent,
         return "coverage ", space.get_coverage(), " is above the threshold"
 
     # HERE MAY ADDING THE MODEL
-    if check_unsafe(region, props, intervals, silent) is True:
+    if check_unsafe(region, props, silent) is True:
         result = "unsafe"
-    elif check_safe(region, props, intervals, silent) is True:
+    elif check_safe(region, props, silent) is True:
         result = "safe"
     else:
         result = "unknown"
@@ -824,28 +875,27 @@ def private_check_deeper(region, props, intervals, n, epsilon, coverage, silent,
             space.add_white(foo2)  # add this region as white
             # print("white area",globals()["hyper_rectangles_white"])
             if silent:
-                private_check_deeper(foo, props, intervals, n - 1, epsilon, coverage, silent)
+                private_check_deeper(foo, props, n - 1, epsilon, coverage, silent)
                 if space.get_coverage() > coverage:
                     return f"coverage {space.get_coverage()} is above the threshold"
-                private_check_deeper(foo2, props, intervals, n - 1, epsilon, coverage, silent)
+                private_check_deeper(foo2, props, n - 1, epsilon, coverage, silent)
             else:
                 print(n, foo, space.get_coverage(),
-                      private_check_deeper(foo, props, intervals, n - 1, epsilon, coverage, silent))
+                      private_check_deeper(foo, props, n - 1, epsilon, coverage, silent))
                 if space.get_coverage() > coverage:
                     return f"coverage {space.get_coverage()} is above the threshold"
                 print(n, foo2, space.get_coverage(),
-                      private_check_deeper(foo2, props, intervals, n - 1, epsilon, coverage, silent))
+                      private_check_deeper(foo2, props, n - 1, epsilon, coverage, silent))
     return result
 
 
-def private_check_deeper_queue(region, props, intervals, n, epsilon, coverage, silent, time_out=False):
+def private_check_deeper_queue(region, props, n, epsilon, coverage, silent, time_out=False):
     """ Refining the parameter space into safe and unsafe regions
 
     Args
     ----------
-    region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
-    intervals: (list of sympy.Interval): array of intervals to constrain properties
+    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
+    props:  (list of strings): array of properties
     n: (Int): max number of recursions to do
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
@@ -854,7 +904,7 @@ def private_check_deeper_queue(region, props, intervals, n, epsilon, coverage, s
     """
 
     ## TBD check consitency
-    # print(region,prop,intervals,n,epsilon,coverage,silent)
+    # print(region,prop,n,epsilon,coverage,silent)
     # print("check equal", globals()["non_white_area"],non_white_area)
     # print("check equal", globals()["whole_area"],whole_area)
 
@@ -881,11 +931,11 @@ def private_check_deeper_queue(region, props, intervals, n, epsilon, coverage, s
         return "coverage ", space.get_coverage(), " is above the threshold"
 
     ## HERE I CAN APPEND THE VALUE OF EXAMPLE AND COUNTEREXAMPLE
-    # print("hello check =",check_unsafe(region,prop,intervals,silent))
+    # print("hello check =",check_unsafe(region,prop,silent))
     # print("hello check safe =",check_safe(region,prop,n_samples,silent))
-    if check_unsafe(region, props, intervals, silent) is True:
+    if check_unsafe(region, props, silent) is True:
         result = "unsafe"
-    elif check_safe(region, props, intervals, silent) is True:
+    elif check_safe(region, props, silent) is True:
         result = "safe"
     else:
         result = "unknown"
@@ -921,10 +971,10 @@ def private_check_deeper_queue(region, props, intervals, n, epsilon, coverage, s
     space.add_white(foo2)
 
     ## Add calls to the Queue
-    # print("adding",[copy.deepcopy(foo),prop,intervals,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo),prop,intervals,n-1,epsilon,coverage,silent]))
-    # print("adding",[copy.deepcopy(foo2),prop,intervals,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo2),prop,intervals,n-1,epsilon,coverage,silent]))
-    globals()["que"].enqueue([copy.deepcopy(foo), props, intervals, n - 1, epsilon, coverage, silent])
-    globals()["que"].enqueue([copy.deepcopy(foo2), props, intervals, n - 1, epsilon, coverage, silent])
+    # print("adding",[copy.deepcopy(foo),prop,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo),prop,n-1,epsilon,coverage,silent]))
+    # print("adding",[copy.deepcopy(foo2),prop,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo2),prop,n-1,epsilon,coverage,silent]))
+    globals()["que"].enqueue([copy.deepcopy(foo), props, n - 1, epsilon, coverage, silent])
+    globals()["que"].enqueue([copy.deepcopy(foo2), props, n - 1, epsilon, coverage, silent])
 
     ## Execute the Queue
     # print(globals()["que"].printQueue())
@@ -932,16 +982,15 @@ def private_check_deeper_queue(region, props, intervals, n, epsilon, coverage, s
         private_check_deeper_queue(*que.dequeue())
 
 
-def private_check_deeper_queue_checking(region, props, intervals, n, epsilon, coverage, silent, model=None, time_out=False):
+def private_check_deeper_queue_checking(region, props, n, epsilon, coverage, silent, model=None, time_out=False):
     """ THIS IS OBSOLETE METHOD, HERE JUST TO BE COMPARED WITH THE NEW ONE
 
     Refining the parameter space into safe and unsafe regions
 
     Args
     ----------
-    region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
-    intervals: (list of sympy.Interval): array of intervals to constrain properties
+    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
+    props:  (list of strings): array of properties
     n: (Int): max number of recursions to do
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
@@ -951,7 +1000,7 @@ def private_check_deeper_queue_checking(region, props, intervals, n, epsilon, co
     """
 
     ## TBD check consitency
-    # print(region,prop,intervals,n,epsilon,coverage,silent)
+    # print(region,prop,n,epsilon,coverage,silent)
     # print("check equal", globals()["non_white_area"],non_white_area)
     # print("check equal", globals()["whole_area"],whole_area)
 
@@ -978,10 +1027,10 @@ def private_check_deeper_queue_checking(region, props, intervals, n, epsilon, co
         return "coverage ", space.get_coverage(), " is above the threshold"
 
     if model is None:
-        example = check_unsafe(region, props, intervals, silent)
-        # counterexample = check_safe(region,prop,intervals,silent)
+        example = check_unsafe(region, props, silent)
+        # counterexample = check_safe(region,prop,silent)
     elif model[0] is None:
-        example = check_unsafe(region, props, intervals, silent)
+        example = check_unsafe(region, props, silent)
     else:
         if not silent:
             print("skipping check_unsafe at", region, "since example", model[0])
@@ -993,7 +1042,7 @@ def private_check_deeper_queue_checking(region, props, intervals, n, epsilon, co
         if not silent:
             print(n, region, space.get_coverage(), "unsafe")
         return
-    elif check_safe(region, props, intervals, silent) is True:
+    elif check_safe(region, props, silent) is True:
         space.remove_white(region)
         if not silent:
             print(n, region, space.get_coverage(), "safe")
@@ -1042,9 +1091,9 @@ def private_check_deeper_queue_checking(region, props, intervals, n, epsilon, co
 
     ## Add calls to the Queue
     globals()["que"].enqueue(
-        [copy.deepcopy(foo), props, intervals, n - 1, epsilon, coverage, silent, model_low])
+        [copy.deepcopy(foo), props, n - 1, epsilon, coverage, silent, model_low])
     globals()["que"].enqueue(
-        [copy.deepcopy(foo2), props, intervals, n - 1, epsilon, coverage, silent, model_high])
+        [copy.deepcopy(foo2), props, n - 1, epsilon, coverage, silent, model_high])
 
     ## Execute the Queue
     # print(globals()["que"].printQueue())
@@ -1052,25 +1101,22 @@ def private_check_deeper_queue_checking(region, props, intervals, n, epsilon, co
         private_check_deeper_queue_checking(*que.dequeue())
 
 
-def private_check_deeper_queue_checking_both(region, props, intervals, n, epsilon, coverage, silent,
-                                             model=None, time_out=False):
+def private_check_deeper_queue_checking_both(region, props, n, epsilon, coverage, silent, model=None):
     """ Refining the parameter space into safe and unsafe regions
 
     Args
     ----------
-    region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
-    intervals: (list of sympy.Interval): array of intervals to constrain properties
+    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
+    props:  (list of strings): array of properties
     n: (Int): max number of recursions to do
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
     silent: (Bool): if silent printed output is set to minimum
     model: (example, counterexample) of the satisfaction in the given region
-    time_out: (Int): time out in minutes
     """
 
     ## TBD check consitency
-    # print(region,prop,intervals,n,epsilon,coverage,silent)
+    # print(region,prop,n,epsilon,coverage,silent)
     # print("check equal", globals()["non_white_area"],non_white_area)
     # print("check equal", globals()["whole_area"],whole_area)
 
@@ -1098,17 +1144,17 @@ def private_check_deeper_queue_checking_both(region, props, intervals, n, epsilo
 
     ## Resolving if the region safe/unsafe/unknown
     if model is None:
-        example = check_unsafe(region, props, intervals, silent)
-        counterexample = check_safe(region, props, intervals, silent)
+        example = check_unsafe(region, props, silent)
+        counterexample = check_safe(region, props, silent)
     elif model[0] is None:
-        example = check_unsafe(region, props, intervals, silent)
+        example = check_unsafe(region, props, silent)
     else:
         if not silent:
             print("skipping check_unsafe at", region, "since example", model[0])
         example = model[0]
     if model is not None:
         if model[1] is None:
-            counterexample = check_safe(region, props, intervals, silent)
+            counterexample = check_safe(region, props, silent)
         else:
             if not silent:
                 print("skipping check_safe at", region, "since counterexample", model[1])
@@ -1178,8 +1224,8 @@ def private_check_deeper_queue_checking_both(region, props, intervals, n, epsilo
         model_high[1] = None
 
     ## Add calls to the Queue
-    globals()["que"].enqueue([copy.deepcopy(foo), props, intervals, n - 1, epsilon, coverage, silent, model_low])
-    globals()["que"].enqueue([copy.deepcopy(foo2), props, intervals, n - 1, epsilon, coverage, silent, model_high])
+    globals()["que"].enqueue([copy.deepcopy(foo), props, n - 1, epsilon, coverage, silent, model_low])
+    globals()["que"].enqueue([copy.deepcopy(foo2), props, n - 1, epsilon, coverage, silent, model_high])
 
     ## Execute the Queue
     # print(globals()["que"].printQueue())
@@ -1244,14 +1290,13 @@ def color_margins(greater, smaller):
     # pic.add_collection(pc)
 
 
-def check_deeper_iter(region, props, intervals, n, epsilon, coverage, silent, time_out=False):
+def check_deeper_iter(region, props, n, epsilon, coverage, silent, time_out=False):
     """ New Refining the parameter space into safe and unsafe regions with iterative method using alg1
 
     Args
     ----------
-    region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
-    intervals: (list of sympy.Interval): array of intervals to constrain properties
+    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
+    props:  (list of strings): array of properties
     n: (Int): max number of recursions to do
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
@@ -1289,7 +1334,7 @@ def check_deeper_iter(region, props, intervals, n, epsilon, coverage, silent, ti
             print("Computed hull of nonred region is:", new_tresh)
         # globals()["hyper_rectangles_white"]=[new_tresh]
     globals()["default_region"] = None
-    check_deeper(new_tresh, props, intervals, n, epsilon, coverage, True, 1)
+    check_deeper(new_tresh, props, n, epsilon, coverage, True, 1)
 
 
 def check_interval_in(region, props, intervals, silent=False, called=False):
@@ -1300,9 +1345,9 @@ def check_interval_in(region, props, intervals, silent=False, called=False):
 
     Args
     ----------
-    region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
-    intervals: (list of sympy.Interval): array of intervals to constrain properties
+    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
+    props:  (list of strings): array of properties
+    intervals: (list of pairs/ sympy.Intervals): array of interval to constrain props
     silent: (Bool): if silent printed output is set to minimum
     called: (Bool): if called updates the global variables (use when calling it directly)
     """
@@ -1357,12 +1402,13 @@ def check_interval_out(region, props, intervals, silent=False, called=False):
 
     Args
     ----------
-    region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
-    intervals: (list of sympy.Interval): array of intervals to constrain properties
+    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
+    props:  (list of strings): of functions
+    intervals: (list of pairs/ sympy.Intervals): array of interval to constrain props
     silent: (Bool): if silent printed output is set to minimum
     called: (Bool): if called updates the global variables (use when calling it directly)
     """
+
     if not silent:
         print("checking interval_out", region, "current time is", datetime.datetime.now())
 
@@ -1420,9 +1466,9 @@ def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage
 
     Args
     ----------
-    region: (list of intervals) array of pairs, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
-    intervals: (list of sympy.Interval): array of intervals to constrain properties
+    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
+    props:  (list of strings): array of properties
+    intervals: (list of pairs/ sympy.Intervals): array of interval to constrain props
     n (Int): max number of recursions to do
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
@@ -1432,7 +1478,7 @@ def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage
     """
 
     ## TBD check consistency
-    # print(region,prop,intervals,n,epsilon,coverage,silent)
+    # print(region,prop,n,epsilon,coverage,silent)
     # print("check equal", globals()["non_white_area"],non_white_area)
     # print("check equal", globals()["whole_area"],whole_area)
 
@@ -1504,10 +1550,10 @@ def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage
     space.add_white(foo2)
 
     ## Add calls to the Queue
-    # print("adding",[copy.deepcopy(foo),prop,intervals,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo),prop,intervals,n-1,epsilon,coverage,silent]))
-    # print("adding",[copy.deepcopy(foo2),prop,intervals,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo2),prop,intervals,n-1,epsilon,coverage,silent]))
-    globals()["que"].enqueue([copy.deepcopy(foo), props, intervals, n - 1, epsilon, coverage, silent])
-    globals()["que"].enqueue([copy.deepcopy(foo2), props, intervals, n - 1, epsilon, coverage, silent])
+    # print("adding",[copy.deepcopy(foo),prop,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo),prop,n-1,epsilon,coverage,silent]))
+    # print("adding",[copy.deepcopy(foo2),prop,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo2),prop,n-1,epsilon,coverage,silent]))
+    globals()["que"].enqueue([copy.deepcopy(foo), props, n - 1, epsilon, coverage, silent])
+    globals()["que"].enqueue([copy.deepcopy(foo2), props, n - 1, epsilon, coverage, silent])
 
     ## Execute the queue
     # print(globals()["que"].printQueue())
@@ -1546,14 +1592,13 @@ def private_create_matrix(size_q, dim, n_param):
     return [private_create_matrix(size_q, dim - 1, n_param) for _ in range(size_q)]
 
 
-def sample(space, props, intervals, size_q, compress=False, silent=True):
+def sample(space, props, size_q, compress=False, silent=True):
     """ Samples the space in **size_q** samples in each dimension and saves if the point is in respective interval
 
     Args
     -------
     space: (space.RefinedSpace): space
-    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
-    intervals: (list of sympy.Interval): array of intervals to constrain properties
+    props:  (list of strings): array of properties
     size_q: (int): number of samples in dimension
     silent: (Bool): if silent printed output is set to minimum
     compress: (Bool): if True, only a conjunction of the values (prop in the interval) is used
@@ -1614,7 +1659,7 @@ def sample(space, props, intervals, size_q, compress=False, silent=True):
         satisfied_list = []
         ## For each property,interval
         for index in range(len(props)):
-            if eval(props[index]) in mpi(float(intervals[index].start), float(intervals[index].end)):
+            if eval(props[index]):
                 satisfied_list.append(True)
             else:
                 satisfied_list.append(False)
@@ -1822,102 +1867,102 @@ class TestLoad(unittest.TestCase):
     def test_check_single(self):
         print(colored("Check (un)safe with single properties here", 'blue'))
         ## IS IN
-        ## def check_safe(region, props, intervals, silent=False, called=False):
+        ## def check_safe(region, props, silent=False, called=False):
         # check_deeper([(0, 1)], ["x"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
-        self.assertEqual(check_safe([(0, 1)], ["x"], [Interval(0, 1)], silent=True, called=True), True)
+        self.assertEqual(check_safe([(0, 1)], ineq_to_props(["x"], [Interval(0, 1)]), silent=True, called=True), True)
 
         # check_deeper([(1, 1)], ["x"], [Interval(0, 2)], 0, 0.1, 1, True, 4)
-        self.assertEqual(check_safe([(1, 1)], ["x"], [Interval(0, 2)], silent=True, called=True), True)
+        self.assertEqual(check_safe([(1, 1)], ineq_to_props(["x"], [Interval(0, 2)]), silent=True, called=True), True)
 
         # check_deeper([(0, 1)], ["x"], [Interval(0.5, 3)], 10, 0.1, 1, True, 4)
-        self.assertIsInstance(check_safe([(0, 1)], ["x"], [Interval(0.5, 3)], silent=True, called=True),
+        self.assertIsInstance(check_safe([(0, 1)], ineq_to_props(["x"], [Interval(0.5, 3)]), silent=True, called=True),
                               z3.z3.ModelRef)  ## has an counter example
 
         # check_deeper([(0, 1)], ["x"], [Interval(2, 3)], 0, 0.1, 1, True, 4)
-        self.assertIsInstance(check_safe([(0, 1)], ["x"], [Interval(2, 3)], silent=True, called=True),
+        self.assertIsInstance(check_safe([(0, 1)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True),
                               z3.z3.ModelRef)  ## has an counter example
 
         # check_deeper([(1, 4)], ["x"], [Interval(2, 3)], 0, 0.1, 1, True, 4)
-        self.assertIsInstance(check_safe([(1, 4)], ["x"], [Interval(2, 3)], silent=True, called=True),
+        self.assertIsInstance(check_safe([(1, 4)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True),
                               z3.z3.ModelRef)  ## has an counter example
 
         # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 2)], 0, 0.1, 1, True, 4)
-        self.assertEqual(check_safe([(0, 1), (0, 1)], ["x+y"], [Interval(0, 2)], silent=True, called=True), True)
+        self.assertEqual(check_safe([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 2)]), silent=True, called=True), True)
 
         # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
-        self.assertIsInstance(check_safe([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], silent=True, called="safe"),
+        self.assertIsInstance(check_safe([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), silent=True, called="safe"),
                               z3.z3.ModelRef)  ## has an counter example
 
         ## IS OUT
-        ## def check_unsafe(region, props, intervals, silent=False, called=False):
+        ## def check_unsafe(region, props, silent=False, called=False):
         # check_deeper([(0, 1)], ["x"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
-        self.assertIsInstance(check_unsafe([(0, 1)], ["x"], [Interval(0, 1)], silent=True, called=True),
+        self.assertIsInstance(check_unsafe([(0, 1)], ineq_to_props(["x"], [Interval(0, 1)]), silent=True, called=True),
                               z3.z3.ModelRef)  ## has an example
 
         # check_deeper([(1, 1)], ["x"], [Interval(0, 2)], 0, 0.1, 1, True, 4)
-        self.assertIsInstance(check_unsafe([(1, 1)], ["x"], [Interval(0, 2)], silent=True, called=True),
+        self.assertIsInstance(check_unsafe([(1, 1)], ineq_to_props(["x"], [Interval(0, 2)]), silent=True, called=True),
                               z3.z3.ModelRef)  ## has an example
 
         # check_deeper([(0, 1)], ["x"], [Interval(0.5, 3)], 10, 0.1, 1, True, 4)
-        self.assertIsInstance(check_unsafe([(0, 1)], ["x"], [Interval(0.5, 3)], silent=True, called=True),
+        self.assertIsInstance(check_unsafe([(0, 1)], ineq_to_props(["x"], [Interval(0.5, 3)]), silent=True, called=True),
                               z3.z3.ModelRef)  ## has an example
 
         # check_deeper([(0, 1)], ["x"], [Interval(2, 3)], 0, 0.1, 1, True, 4)
-        self.assertEqual(check_unsafe([(0, 1)], ["x"], [Interval(2, 3)], silent=True, called=True), True)
+        self.assertEqual(check_unsafe([(0, 1)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True), True)
 
         # check_deeper([(1, 4)], ["x"], [Interval(2, 3)], 0, 0.1, 1, True, 4)
-        self.assertIsInstance(check_unsafe([(1, 4)], ["x"], [Interval(2, 3)], silent=True, called=True),
+        self.assertIsInstance(check_unsafe([(1, 4)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True),
                               z3.z3.ModelRef)  ## has an example
 
         # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 2)], 0, 0.1, 1, True, 4)
-        self.assertIsInstance(check_unsafe([(0, 1), (0, 1)], ["x+y"], [Interval(0, 2)], silent=True, called=True),
+        self.assertIsInstance(check_unsafe([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 2)]), silent=True, called=True),
                               z3.z3.ModelRef)  ## has an example
 
         # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
-        self.assertIsInstance(check_unsafe([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], silent=True, called=True),
+        self.assertIsInstance(check_unsafe([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), silent=True, called=True),
                               z3.z3.ModelRef)  ## has an example
 
-        self.assertEqual(check_unsafe([(0, 1)], ["x"], [Interval(2, 3)], silent=True, called=True), True)
-        self.assertEqual(check_unsafe([(1, 1)], ["x"], [Interval(2, 3)], silent=True, called=True), True)
-        self.assertIsInstance(check_unsafe([(0, 1)], ["x"], [Interval(1, 3)], silent=True, called=True), z3.z3.ModelRef)
-        self.assertIsInstance(check_unsafe([(0, 3)], ["x"], [Interval(2, 3)], silent=True, called=True), z3.z3.ModelRef)
-        self.assertIsInstance(check_unsafe([(1, 4)], ["x"], [Interval(2, 3)], silent=True, called=True), z3.z3.ModelRef)
-        self.assertIsInstance(check_unsafe([(0, 1), (0, 1)], ["x+y"], [Interval(0, 2)], silent=True, called=True), z3.z3.ModelRef)
-        self.assertEqual(check_unsafe([(0, 1), (0, 1)], ["x+y"], [Interval(4, 5)], silent=True, called=True), True)
+        self.assertEqual(check_unsafe([(0, 1)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True), True)
+        self.assertEqual(check_unsafe([(1, 1)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True), True)
+        self.assertIsInstance(check_unsafe([(0, 1)], ineq_to_props(["x"], [Interval(1, 3)]), silent=True, called=True), z3.z3.ModelRef)
+        self.assertIsInstance(check_unsafe([(0, 3)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True), z3.z3.ModelRef)
+        self.assertIsInstance(check_unsafe([(1, 4)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True), z3.z3.ModelRef)
+        self.assertIsInstance(check_unsafe([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 2)]), silent=True, called=True), z3.z3.ModelRef)
+        self.assertEqual(check_unsafe([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(4, 5)]), silent=True, called=True), True)
 
     def test_check_multiple(self):
         print(colored("Check (un)safe with multiple properties here", 'blue'))
         ## IS IN
-        ## def check_safe(region, props, intervals, silent=False, called=False):
+        ## def check_safe(region, props, silent=False, called=False):
         self.assertEqual(
-            check_safe([(0, 1)], ["x", "2*x"], [Interval(0, 1), Interval(0, 2)], silent=True, called=True), True)
+            check_safe([(0, 1)], ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 2)]), silent=True, called=True), True)
         self.assertIsInstance(
-            check_safe([(0, 1)], ["x", "2*x"], [Interval(0, 1), Interval(0, 1)], silent=True, called=True), z3.z3.ModelRef)
+            check_safe([(0, 1)], ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=True, called=True), z3.z3.ModelRef)
 
         ## !!!TRICKY
         self.assertIsInstance(
-            check_safe([(0, 2)], ["x", "2*x"], [Interval(0, 1), Interval(0, 1)], silent=True, called=True), z3.z3.ModelRef)
+            check_safe([(0, 2)], ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=True, called=True), z3.z3.ModelRef)
 
         self.assertEqual(
-            check_safe([(0, 1), (0, 1)], ["x", "y"], [Interval(0, 1), Interval(0, 1)], silent=True, called=True), True)
+            check_safe([(0, 1), (0, 1)], ineq_to_props(["x", "y"], [Interval(0, 1), Interval(0, 1)]), silent=True, called=True), True)
         self.assertIsInstance(
-            check_safe([(0, 1), (0, 2)], ["x", "y"], [Interval(0, 1), Interval(0, 1)], silent=True, called=True), z3.z3.ModelRef)
+            check_safe([(0, 1), (0, 2)], ineq_to_props(["x", "y"], [Interval(0, 1), Interval(0, 1)]), silent=True, called=True), z3.z3.ModelRef)
 
         ## IS OUT
-        ## def check_unsafe(region, props, intervals, silent=False, called=False):
+        ## def check_unsafe(region, props, silent=False, called=False):
         self.assertEqual(
-            check_unsafe([(0, 1)], ["x", "2*x"], [Interval(2, 3), Interval(3, 4)], silent=True, called=True), True)
+            check_unsafe([(0, 1)], ineq_to_props(["x", "2*x"], [Interval(2, 3), Interval(3, 4)]), silent=True, called=True), True)
         self.assertIsInstance(
-            check_unsafe([(0, 1)], ["x", "2*x"], [Interval(0, 1), Interval(0, 1)], silent=True, called=True), z3.z3.ModelRef)
+            check_unsafe([(0, 1)], ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=True, called=True), z3.z3.ModelRef)
 
         ## !!!TRICKY
         self.assertIsInstance(
-            check_unsafe([(0, 2)], ["x", "2*x"], [Interval(0, 1), Interval(0, 1)], silent=False, called=True), z3.z3.ModelRef)
+            check_unsafe([(0, 2)], ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=False, called=True), z3.z3.ModelRef)
 
         self.assertEqual(
-            check_unsafe([(0, 1), (0, 1)], ["x", "y"], [Interval(2, 3), Interval(2, 3)], silent=True, called=True), True)
+            check_unsafe([(0, 1), (0, 1)], ineq_to_props(["x", "y"], [Interval(2, 3), Interval(2, 3)]), silent=True, called=True), True)
         self.assertIsInstance(
-            check_unsafe([(0, 1), (0, 2)], ["x", "y"], [Interval(0, 1), Interval(0, 1)], silent=True, called=True), z3.z3.ModelRef)
+            check_unsafe([(0, 1), (0, 2)], ineq_to_props(["x", "y"], [Interval(0, 1), Interval(0, 1)]), silent=True, called=True), z3.z3.ModelRef)
 
     def test_check_interval_single(self):
         print(colored("Check interval (un)safe with single properties here", 'blue'))
@@ -1951,13 +1996,10 @@ class TestLoad(unittest.TestCase):
         ## !!!TRICKY
         self.assertEqual(
             check_interval_in([(0, 2)], ["x", "2*x"], [Interval(0, 1)], silent=True, called=True), False)
-
         self.assertEqual(
-            check_interval_in([(0, 1), (0, 1)], ["x", "y"], [Interval(0, 1), Interval(0, 1)], silent=True,
-                              called=True), True)
+            check_interval_in([(0, 1), (0, 1)], ["x", "y"], [Interval(0, 1), Interval(0, 1)], silent=True, called=True), True)
         self.assertEqual(
-            check_interval_in([(0, 1), (0, 2)], ["x", "y"], [Interval(0, 1), Interval(0, 1)], silent=True,
-                              called=True), False)
+            check_interval_in([(0, 1), (0, 2)], ["x", "y"], [Interval(0, 1), Interval(0, 1)], silent=True, called=True), False)
 
         ## IS OUT
         self.assertEqual(
@@ -1969,20 +2011,18 @@ class TestLoad(unittest.TestCase):
             check_interval_out([(0, 2)], ["x", "2*x"], [Interval(0, 1), Interval(0, 1)], silent=True, called=True), False)
 
         self.assertEqual(
-            check_interval_out([(0, 1), (0, 1)], ["x", "y"], [Interval(2, 3), Interval(2, 3)], silent=True,
-                               called=True), True)
+            check_interval_out([(0, 1), (0, 1)], ["x", "y"], [Interval(2, 3), Interval(2, 3)], silent=True, called=True), True)
         self.assertEqual(
-            check_interval_out([(0, 1), (0, 2)], ["x", "y"], [Interval(0, 1), Interval(0, 1)], silent=True,
-                               called=True), False)
+            check_interval_out([(0, 1), (0, 2)], ["x", "y"], [Interval(0, 1), Interval(0, 1)], silent=True, called=True), False)
 
     def test_refine(self):
         print(colored("Refinement here", 'blue'))
-        ## check_deeper_interval(region, prop, intervals, n, epsilon, cov, silent, version)
+        ## check_deeper_interval(region, prop, n, epsilon, cov, silent, version)
 
         ## UNCOMMENT FOLLOWING to run this test
-        # check_deeper([(0, 4)], ["x"], [Interval(0, 3)], 5, 0, 0.95, silent=False, version=5)
-        # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 5, 0, 0.95, silent=True, version=5)
-        # check_deeper([(0, 0.5), (0, 0.5)], ["x+y"], [Interval(0, 1)], 5, 0, 0.95, silent=False, version=5)
+        # check_deeper([(0, 4)], ineq_to_props(["x"], [Interval(0, 3)]), 5, 0, 0.95, silent=False, version=5)
+        # check_deeper([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), 5, 0, 0.95, silent=True, version=5)
+        # check_deeper([(0, 0.5), (0, 0.5)], ineq_to_props(["x+y"], [Interval(0, 1)]), 5, 0, 0.95, silent=False, version=5)
 
 
         ## NORMAL TEST
@@ -1995,8 +2035,8 @@ class TestLoad(unittest.TestCase):
         coverage_thresh = 0.95
         alpha, n_samples, max_depth, min_rect_size, N, algorithm, v_p, v_q = 0.95, 100, 10, 1e-05, 2, 5, 0.028502714675268215, 0.03259111103419188
 
-        space = check_deeper([(0, 1), (0, 0.9)], f[N],
-                             create_intervals(alpha, n_samples, D3[("synchronous_", N, n_samples, v_p, v_q)]),
+        space = check_deeper([(0, 1), (0, 0.9)], ineq_to_props(f[N],
+                             create_intervals(alpha, n_samples, D3[("synchronous_", N, n_samples, v_p, v_q)])),
                              max_depth, min_rect_size, coverage_thresh, False, algorithm)
         print(colored('End of two-param test', 'blue'))
 
@@ -2022,25 +2062,25 @@ class TestLoad(unittest.TestCase):
         sys.setrecursionlimit(23000)
         start_time = time()
 
-        # result6 = check_deeper([(0.0869140625000000, 0.112304687500000), (0, 1)], [replaced_f6], [intervals[6]], 16, 0.01**3*0.5, 0.999, False, 5)
+        # result6 = check_deeper([(0.0869140625000000, 0.112304687500000), (0, 1)], ineq_to_props([replaced_f6], [intervals[6]], 16, 0.01**3*0.5, 0.999, False, 5)
 
         ## TO RUN THIS TEST UNCOMENT FOLLOWING LINE
-        # result6 = check_deeper([(0.0869140625000000, 0.112304687500000), (0, 1)], [replaced_f6], [intervals[6]], 16, 0.01 ** 3 , 0.999, False, 4)
+        # result6 = check_deeper([(0.0869140625000000, 0.112304687500000), (0, 1)], ineq_to_props([replaced_f6], [intervals[6]], 16, 0.01 ** 3 , 0.999, False, 4)
 
         print("  It took", socket.gethostname(), time() - start_time, "seconds to run")
 
         # start_time = time()
-        # check_deeper([(0, 2)], ["x**2", "x+3"], [Interval(0, 1), Interval(0, 1)], 6, 0.01 ** 2, 0.9, False, 4)
+        # check_deeper([(0, 2)], ["x**2", "x+3"], ineq_to_props([Interval(0, 1), Interval(0, 1)], 6, 0.01 ** 2, 0.9, False, 4)
         # print("  It took", socket.gethostname(), time() - start_time, "seconds to run")
 
         ## VERY VERY INTERESTING RESULT
         from load import load_all_data
         D = load_all_data("data/data*.csv")
-        check_deeper([(0, 1), (0, 1)], f[2], create_intervals(0.95, 1500, D[2]), 14, 0.01 ** 2, 0.997, False, 5)
+        check_deeper([(0, 1), (0, 1)], ineq_to_props(f[2], create_intervals(0.95, 1500, D[2])), 14, 0.01 ** 2, 0.997, False, 5)
 
     def test_sample(self):
         print(colored("Sample test here", 'blue'))
-        ## def sample(space, props, intervals, size_q, compress)
+        ## def sample(space, props, size_q, compress)
         # print(sample(RefinedSpace((0, 1), ["x"]), ["x"], [Interval(0, 1)], 3))
         # print(sample(RefinedSpace((0, 1), ["x"]), ["x"], [Interval(0, 1)], 3, compress=True))
 
@@ -2065,22 +2105,33 @@ class TestLoad(unittest.TestCase):
 
     def test_presampled(self):
         print(colored("Presampled refinement here", 'blue'))
+
+        parameters = ["x", "y"]
+        region = [(0, 1), (2, 3)]
+        space = RefinedSpace(copy.deepcopy(region), parameters, [], [])
+
+        print(space)
+        check_deeper(space, ineq_to_props(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 15, 0, 0.95, silent=False, version=5, size_q=3)
+        print(space)
+        print(space.get_coverage())
+
+
         ## UNCOMMENT THIS TBD
-        # check_deeper([(0, 1), (2, 3)], ["x+y"], [Interval(0, 3)], 5, 0, 0.95, silent=False, version=5)
+        # check_deeper([(0, 1), (2, 3)], ineq_to_props(["x+y"], [Interval(0, 3)]), 5, 0, 0.95, silent=False, version=5)
 
-        # check_deeper([(0, 1), (2, 3)], ["x+y"], [Interval(0, 3)], 5, 0, 0.95, silent=True, version=5)
-        # check_deeper([(0, 1), (2, 3)], ["x+y"], [Interval(0, 3)], 5, 0, 0.95, silent=True, version=5, size_q=11)
+        # check_deeper([(0, 1), (2, 3)], ineq_to_props(["x+y"], [Interval(0, 3)]), 5, 0, 0.95, silent=True, version=5)
+        # check_deeper([(0, 1), (2, 3)], ineq_to_props(["x+y"], [Interval(0, 3)]), 5, 0, 0.95, silent=True, version=5, size_q=11)
 
-        # check_deeper([(0, 1), (2, 3)], ["x", "y"], [Interval(0.5, 3), Interval(2.5, 3)], 5, 0, 0.95, silent=True, version=5)
-        # check_deeper([(0, 1), (2, 3)], ["x", "y"], [Interval(0, 3), Interval(2.5, 3)], 20, 0, 0.95, silent=True, version=5)
+        # check_deeper([(0, 1), (2, 3)], ineq_to_props(["x", "y"], [Interval(0.5, 3), Interval(2.5, 3)]), 5, 0, 0.95, silent=True, version=5)
+        # check_deeper([(0, 1), (2, 3)], ineq_to_props(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 20, 0, 0.95, silent=True, version=5)
 
-        # check_deeper([[0, 1], [2, 2.5]], ["x", "y"], [Interval(0, 3), Interval(2.5, 3)], 20, 0, 0.95, silent=False, version=5)
+        # check_deeper([[0, 1], [2, 2.5]], ineq_to_props(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 20, 0, 0.95, silent=False, version=5)
 
-        check_deeper([(0, 1), (2, 3)], ["x", "y"], [Interval(0, 3), Interval(2.5, 3)], 15, 0, 0.95, silent=False, version=5, size_q=11)
+        check_deeper([(0, 1), (2, 3)], ineq_to_props(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 15, 0, 0.95, silent=False, version=5, size_q=11)
 
-        # check_deeper([(0, 0.5), (0, 0.5)], ["x+y"], [Interval(0, 1)], 5, 0, 0.95, silent=False, version=5)
+        # check_deeper([(0, 0.5), (0, 0.5)], ineq_to_props(["x+y"], [Interval(0, 1)]), 5, 0, 0.95, silent=False, version=5)
 
-        # a = sample(RefinedSpace([(0, 1), (0, 1), (0, 1)], ["x", "y", "z"]), ["x+y"], [Interval(0, 1)], 3, compress=True)
+        # a = sample(RefinedSpace([(0, 1), (0, 1), (0, 1)], ineq_to_props(["x", "y", "z"]), ["x+y"], [Interval(0, 1)]), 3, compress=True)
         # print(a)
         # b = refine_into_rectangles(a)
         print(colored("Presampled refinement ends here", 'blue'))
@@ -2088,36 +2139,39 @@ class TestLoad(unittest.TestCase):
     def test_timeout(self):
         print(colored("Timeout test here", 'blue'))
 
-        check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 10, 0, 0.95, True, 1)
+        check_deeper([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), 10, 0, 0.95, True, 1)
 
         ## TIMEOUT TEST
         # print("TIMEOUT TEST not finish")
-        # print(timeout(check_deeper, ([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 10, 0, 0.95, True, 1), timeout_duration=20, default=4))
+        # print(timeout(check_deeper, ([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), 10, 0, 0.95, True, 1), timeout_duration=20, default=4))
 
         # print("TIMEOUT TEST2 not finish")
-        # print(type(check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 10, 0, 0.95, silent=True, version=1, time_out=2)))
+        # print(type(check_deeper([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), 10, 0, 0.95, silent=True, version=1, time_out=2)))
 
         # print("TIMEOUT TEST finish")
-        # timeout(check_deeper, ([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 10, 0, 0.95, True, 1), timeout_duration=20, default=4)
+        # timeout(check_deeper, ([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), 10, 0, 0.95, True, 1), timeout_duration=20, default=4)
 
         # print("TIMEOUT TEST2 finish")
-        # print(type(check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 10, 0, 0.95, silent=True, version=1, time_out=20)))
+        # print(type(check_deeper([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), 10, 0, 0.95, silent=True, version=1, time_out=20)))
 
 
 if __name__ == "__main__":
-    # unittest.main()
+    unittest.main()
 
-    parameters = ["x", "y"]
-    region = [(0, 1), (2, 3)]
-    space = RefinedSpace(copy.deepcopy(region), parameters, [], [])
+    # print(Interval(0, 1))
+    # print(type(float(Interval(0, 1).start)))
 
-    print(space)
-    check_deeper(space, ["x", "y"], [Interval(0, 3), Interval(2.5, 3)], 15, 0, 0.95, silent=False, version=5, size_q=3)
-    print(space)
-    print(space.get_coverage())
+    print(ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 2)]))
+
+    print(check_safe([(0, 1)], ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 2)]), silent=True, called=True))
+
+    # print(check_safe_new([(0, 1)], ["x>5"], silent=True, called=True))
+    # print(check_unsafe_new([(0, 1)], ["x>5"], silent=True, called=True))
+
+    # print(check_safe_new([(0, 6)], ["x>5"], silent=True, called=True))
+    # print(check_unsafe_new([(0, 6)], ["x>5"], silent=True, called=True))
 
     # check_deeper([(0, 1), (2, 3)], ["x", "y"], [Interval(0, 3), Interval(2.5, 3)], 15, 0, 0.95, silent=False, version=5, size_q=3)
-
 
     # check_interval([(0, 1)], ["x"], [Interval(0, 1)], silent=False, called=False)
     # check_interval([(0, 3)], ["x"], [Interval(0, 2)], silent=False, called=False)

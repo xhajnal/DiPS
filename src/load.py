@@ -351,6 +351,27 @@ def find_param(polynomial):
     Args
     ----------
     polynomial : polynomial as string
+
+    Returns set of strings - parameters
+    """
+    parameters = polynomial.replace('(', '').replace(')', '').replace('**', '*').replace(' ', '')
+    parameters = parameters.replace("Not", " ").replace("Or", " ").replace("And", " ").replace("Implies", " ").replace("If", " ").replace(',', ' ')
+    parameters = parameters.replace("<", " ").replace(">", " ").replace("=", " ")
+    parameters = re.split('\+|\*|\-|/| ', parameters)
+    parameters = [i for i in parameters if not i.replace('.', '', 1).isdigit()]
+    parameters = set(parameters)
+    parameters.add("")
+    parameters.remove("")
+    # print("hello",set(parameters))
+    return set(parameters)
+
+
+def find_param_old(polynomial):
+    """ Finds parameters of a polynomials
+
+    Args
+    ----------
+    polynomial : polynomial as string
     
     Returns set of strings - parameters
     """
@@ -378,6 +399,8 @@ class TestLoad(unittest.TestCase):
     def test_find_param(self):
         self.assertEqual(find_param("56*4+4**6 +   0.1"), set())
         self.assertEqual(find_param("x+0.1"), {'x'})
+        self.assertEqual(find_param("(-2)*q1*p**2+2*q1*p+2*p"), {'p', 'q1'})
+        self.assertEqual(find_param('-p*(2*p*If(Or(low<1,1<=high),qmin,qmax)-p-2*If(Or(low<1,1<=high),qmin,qmax))'), {'qmin', 'p', 'low', 'qmax', 'high'})
 
     def test_intervals(self):
         my_interval = mpi(0, 5)

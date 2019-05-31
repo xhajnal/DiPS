@@ -127,6 +127,7 @@ storm_results/*
 performance_results/*
 
 src/test/*
+src/other_sources/*
 
 data/*
 !data/*.p
