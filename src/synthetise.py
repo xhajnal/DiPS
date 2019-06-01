@@ -145,7 +145,7 @@ class Queue:
         return self.queue
 
 
-def ineq_to_props(funcs, intervals):
+def ineq_to_props(funcs, intervals, silent=True):
     """ Converts inequalities of the function given by the interval to properties
 
     Example: ["x+3"],[[0,1]] ->  ["x+3>=0","x+3<=1"]
@@ -154,7 +154,13 @@ def ineq_to_props(funcs, intervals):
     ----------
     funcs:  (list of strings) array of functions
     intervals: (list of intervals) array of pairs, low and high bound
+    silent: (Bool): if silent printed output is set to minimum
     """
+
+    if len(funcs) is not len(intervals):
+        if not silent:
+            print(colored(f"len of functions {len(funcs)} and intervals {len(intervals)} does not correspond", "red"))
+        return False
 
     spam = []
     for index in range(len(funcs)):
@@ -167,7 +173,7 @@ def ineq_to_props(funcs, intervals):
     return spam
 
 
-def props_to_ineq(props, debug=False):
+def props_to_ineq(props, silent=True, debug=False):
     """ Converts properties to functions and inequalities if possible
 
     Example: ["x+3>=0","x+3<=1"] -> ["x+3"],[[0,1]]
@@ -175,10 +181,12 @@ def props_to_ineq(props, debug=False):
     Args
     ----------
     props:  (list of strings) properties to be converted
+    silent: (Bool): if silent printed output is set to minimum
     debug: (Bool) if True extensive print will be used
     """
     if len(props) % 2:
-        print("Number of properties is not even, some interval will be invalid")
+        if not silent:
+            print(colored("Number of properties is not even, some interval will be invalid", "red"))
         return False
     funcs = []
     intervals = []
@@ -196,10 +204,12 @@ def props_to_ineq(props, debug=False):
         if debug:
             print(f"property {index+1} after splitting", spam)
         if len(spam) <= 1:
-            print(colored(f"Property {index+1} is not in a form of inequality", "red"))
+            if not silent:
+                print(colored(f"Property {index+1} is not in a form of inequality", "red"))
             return False
         elif len(spam) > 2:
-            print(colored(f"Property {index+1} has more than one inequality sign", "red"))
+            if not silent:
+                print(colored(f"Property {index+1} has more than one inequality sign", "red"))
             return False
         else:
             try:
@@ -228,8 +238,15 @@ def props_to_ineq(props, debug=False):
         index = index + 1
 
     ## Sort the intervals
+    index = 0
     for interval_index in range(len(intervals)):
+        if len(intervals[interval_index]) is not 2:
+            if not silent:
+                print(colored(f"Property {index + 1} does not have proper number of boundaries", "red"))
+            return False
         intervals[interval_index] = sorted(intervals[interval_index])
+        intervals[interval_index] = Interval(float(intervals[interval_index][0]), float(intervals[interval_index][1]))
+        index = index + 1
 
     if debug:
         print("funcs: ", funcs)
@@ -1896,11 +1913,18 @@ class TestLoad(unittest.TestCase):
     def test_ineq_to_props(self):
         print(colored("Checking conversion from a list of inequalities to list of properties", 'blue'))
         self.assertEqual(ineq_to_props(["x+3"], [[0, 1]]), ["x+3>=0", "x+3<=1"])
+        self.assertEqual(ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 2)]), ['x>=0', 'x<=1', '2*x>=0', '2*x<=2'])
+
+        self.assertEqual(ineq_to_props(["x+3"], []), False)
 
     def test_props_to_ineq(self):
         print(colored("Checking conversion from a list properties to a list of inequalities", 'blue'))
-        props_to_ineq(["x+3>=0", "x+3<=1"], debug=True)
-        self.assertEqual(props_to_ineq(["x+3>=0", "x+3<=1"]), (["x+3"], [["0", "1"]]))
+        self.assertEqual(props_to_ineq(["x+3>=0", "x+3<=1"]), (["x+3"], [Interval(0, 1)]))
+        self.assertEqual(props_to_ineq(['x>=0', 'x<=1', '2*x>=0', '2*x<=2']), (["x", "2*x"], [Interval(0, 1), Interval(0, 2)]))
+
+        ## Properties not in a form of inequalities
+        self.assertEqual(props_to_ineq(["x+3>=0", "x+4<=1"]), False)
+        self.assertEqual(props_to_ineq(["x+3"]), False)
 
     def test_check_single(self):
         print(colored("Checking (un)safe with single properties here", 'blue'))
@@ -2062,7 +2086,6 @@ class TestLoad(unittest.TestCase):
         # check_deeper([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), 5, 0, 0.95, silent=True, version=5)
         # check_deeper([(0, 0.5), (0, 0.5)], ineq_to_props(["x+y"], [Interval(0, 1)]), 5, 0, 0.95, silent=False, version=5)
 
-
         ## NORMAL TEST
         print(colored('Two-param test here', 'blue'))
         from load import create_intervals, get_f, load_pickled_data
@@ -2174,10 +2197,10 @@ class TestLoad(unittest.TestCase):
         # b = refine_into_rectangles(a)
         print(colored("Presampled refinement ends here", 'blue'))
 
-    def test_timeout(self):
-        print(colored("Timeout test here", 'blue'))
+    #def test_timeout(self):
+        #print(colored("Timeout test here", 'blue'))
 
-        check_deeper([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), 10, 0, 0.95, True, 1)
+        #check_deeper([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), 10, 0, 0.95, True, 1)
 
         ## TIMEOUT TEST
         # print("TIMEOUT TEST not finish")
@@ -2198,8 +2221,6 @@ if __name__ == "__main__":
 
     # print(Interval(0, 1))
     # print(type(float(Interval(0, 1).start)))
-
-    print(ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 2)]))
 
     print(check_safe([(0, 1)], ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 2)]), silent=True, called=True))
 
