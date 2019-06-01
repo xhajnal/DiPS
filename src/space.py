@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from numpy import prod
 import copy
 import unittest
-## colored output
+## Colored output
 from termcolor import colored
 
 ## ONLY FOR SAVING FILES
@@ -48,15 +48,34 @@ def get_rectangle_volume(rectangle):
 class RefinedSpace:
     """ Class to represent space refinement into sat(green), unsat(red), and unknown(white) regions
 
-    Args
+    Attributes
     ------
     region: (list of intervals): whole space
+    params: (list of strings): parameter names
+    types: (list of string): parameter types (Real, Int, Bool, ...)
     rectangles_sat: (list of intervals): sat (green) space
     rectangles_unsat: (list of intervals): unsat (red) space
     rectangles_unknown: (list of intervals): unknown (white) space
+    sat_samples: (list of points): satisfying points
+    unsat_samples: (list of points): unsatisfying points
+
     """
 
-    def __init__(self, region, params, rectangles_sat=[], rectangles_unsat=[], rectangles_unknown=None, sat_samples=None, unsat_samples=None):
+    def __init__(self, region, params, types=None, rectangles_sat=[], rectangles_unsat=[], rectangles_unknown=None, sat_samples=None, unsat_samples=None):
+        """
+        Args
+        ------
+        region: (list of intervals): whole space
+        params: (list of strings): parameter names
+        types: (list of string): parameter types (Real, Int, Bool, ...)
+        rectangles_sat: (list of intervals): sat (green) space
+        rectangles_unsat: (list of intervals): unsat (red) space
+        rectangles_unknown: (list of intervals): unknown (white) space
+        sat_samples: (list of points): satisfying points
+        unsat_samples: (list of points): unsatisfying points
+        """
+
+        ## REGION
         if not isinstance(region, Iterable):
             raise Exception("Given region is not iterable")
         if isinstance(region, tuple):
@@ -67,12 +86,34 @@ class RefinedSpace:
                 region[interval_index] = [region[interval_index][0], region[interval_index][1]]
             self.region = region
 
+        ## PARAMS
         self.params = params
         if not len(self.params) == len(self.region):
             print(colored(f"number of parameters ({len(params)}) and dimension of the region ({len(region)}) is not equal", 'red'))
             raise Exception(f"number of parameters ({len(params)}) and dimension of the region ({len(region)}) is not equal")
-            # print("region", self.region)
 
+        if types is None or types is False:
+            self.types = []
+            ## IF no types are given
+            for i in region:
+                self.types.append("Real")
+        else:
+            self.types = types
+            if not isinstance(types, Iterable):
+                raise Exception("Given types is not iterable")
+            if isinstance(types, tuple):
+                self.types = [types]
+            else:
+                self.types = types
+
+            if not len(self.types) == len(self.region):
+                print(colored(
+                    f"number of types of parameters ({len(types)}) and dimension of the region ({len(region)}) is not equal",
+                    'red'))
+                raise Exception(
+                    f"number of types ({len(types)}) and dimension of the region ({len(region)}) is not equal")
+
+        ## SAT RECTANGLES
         # print("rectangles_sat", rectangles_sat)
         if not isinstance(rectangles_sat, Iterable):
             raise Exception("Given rectangles_sat is not iterable")
@@ -81,6 +122,7 @@ class RefinedSpace:
         else:
             self.sat = rectangles_sat
 
+        ## UNSAT RECTANGLES
         # print("rectangles_unsat", rectangles_unsat)
         if not isinstance(rectangles_unsat, Iterable):
             raise Exception("Given rectangles_unsat is not iterable")
@@ -89,6 +131,7 @@ class RefinedSpace:
         else:
             self.unsat = rectangles_unsat
 
+        ## UNKNOWN RECTANGLES
         # print("rectangles_unknown", rectangles_unknown)
         if rectangles_unknown is None:
             ## TBD THIS IS NOT CORRECT
@@ -100,6 +143,7 @@ class RefinedSpace:
         else:
             self.unknown = rectangles_unknown
 
+        ## SAT SAMPLES
         if sat_samples is None:
             self.sat_samples = []
         elif not isinstance(sat_samples, Iterable):
@@ -108,6 +152,7 @@ class RefinedSpace:
             # print("samples", samples)
             self.sat_samples = sat_samples
 
+        ## UNSAT SAMPLES
         if unsat_samples is None:
             self.unsat_samples = []
         elif not isinstance(unsat_samples, Iterable):
