@@ -183,19 +183,23 @@ def props_to_ineq(props, debug=False):
     funcs = []
     intervals = []
     is_odd = False
+    index = 0
+
     for prop in props:
+        if debug:
+            print(f"property {index + 1} before splitting", prop)
         try:
-            spam = prop.split("<=")
-            spam = spam.split(">=")
-            spam = spam.split("<")
-            spam = spam.split(">")
+            prop = prop.replace("<=", "<").replace(">=", "<").replace("=>", "<").replace("=<", "<").replace(">", "<")
+            spam = prop.split("<")
         except AttributeError:
             print()
+        if debug:
+            print(f"property {index+1} after splitting", spam)
         if len(spam) <= 1:
-            print(" Some property is not in a form of inequality")
+            print(colored(f"Property {index+1} is not in a form of inequality", "red"))
             return False
-        elif len(spam) > 1:
-            print(" Some property has more than one inequality sign")
+        elif len(spam) > 2:
+            print(colored(f"Property {index+1} has more than one inequality sign", "red"))
             return False
         else:
             try:
@@ -206,14 +210,22 @@ def props_to_ineq(props, debug=False):
 
             ## If we are at odd position check
             if is_odd:
+                if debug:
+                    print("is odd")
+                    print("funcs[-1]", funcs[-1])
+                    print("spam[0]", spam[0])
                 ## whether the previous function is the same as the new one
-                if funcs[-1] is spam[0]:
+                if funcs[-1] == spam[0]:
                     # if yes, add the other value of the interval
-                    intervals[len(funcs)] = [intervals[len(funcs)], spam[1]]
+                    if debug:
+                        print("Adding value")
+                        print("len(funcs)", len(funcs))
+                    intervals[len(funcs)-1] = [intervals[len(funcs)-1], spam[1]]
             else:
                 funcs.append(spam[0])
                 intervals.append(spam[1])
         is_odd = not is_odd
+        index = index + 1
 
     ## Sort the intervals
     for interval_index in range(len(intervals)):
@@ -224,127 +236,6 @@ def props_to_ineq(props, debug=False):
         print("intervals: ", intervals)
 
     return funcs, intervals
-
-
-def check_unsafe(region, props, silent=False, called=False):
-    """ Check if the given region is unsafe or not.
-
-    It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given
-    **interval** (called a model in SMT), otherwise it is unsafe.
-
-    Args
-    ----------
-    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
-    silent: (Bool): if silent printed output is set to minimum
-    called: (Bool): if called updates the global variables (use when calling it directly)
-    """
-    ## Initialisation
-    if not silent:
-        print("checking unsafe", region, "current time is", datetime.datetime.now())
-
-    # p = Real('p')
-    # print(p)
-    # print(type(p))
-
-    if called:
-        globals()["parameters"] = set()
-        parameters = globals()["parameters"]
-        for polynome in props:
-            parameters.update(find_param(polynome))
-        globals()["parameters"] = sorted(list( globals()["parameters"]))
-        ## EXAMPLE:  parameters >> ['p','q']
-        for param in parameters:
-            globals()[param] = Real(param)
-        ## EXAMPLE: p = Real(p)
-
-        space = RefinedSpace(copy.deepcopy(region), parameters, [], [])
-    else:
-        space = globals()["space"]
-
-    s = Solver()
-
-    ## Adding regional restrictions to solver
-    j = 0
-    for param in globals()["parameters"]:
-        # print("globals()[param]", globals()[param])
-        # print("region[j][0]", region[j][0])
-        s.add(globals()[param] >= region[j][0])
-        s.add(globals()[param] <= region[j][1])
-        j = j + 1
-
-    ## Adding properties to solver
-    for i in range(0, len(props)):
-        # print(props[i])
-        s.add(eval(props[i]))
-
-    if s.check() == sat:
-        return s.model()
-    else:
-        space.add_red(region)
-        return True
-
-
-def check_safe(region, props, silent=False, called=False):
-    """ Check if the given region is safe or not
-
-    It means whether for all parametrisations in **region** every property(prop) is evaluated within the given
-    **interval**, otherwise it is not safe and counterexample is returned.
-
-    Args
-    ----------
-    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of properties
-    silent: (Bool): if silent printed output is set to minimum
-    called: (Bool): if called updates the global variables (use when calling it directly)
-    """
-    # initialisation
-    if not silent:
-        print("checking safe", region, "current time is", datetime.datetime.now())
-
-    if called:
-        globals()["parameters"] = set()
-        parameters = globals()["parameters"]
-        for polynome in props:
-            parameters.update(find_param(polynome))
-        globals()["parameters"] = sorted(list(globals()["parameters"]))
-        ## EXAMPLE:  parameters >> ['p','q']
-
-        for param in globals()["parameters"]:
-            globals()[param] = Real(param)
-        ## EXAMPLE: p = Real(p)
-
-        space = RefinedSpace(copy.deepcopy(region), parameters, [], [])
-    else:
-        space = globals()["space"]
-
-    s = Solver()
-
-    # if not silent:
-    #    print("with parameters", globals()["parameters"])
-
-    ## Adding regional restrictions to solver
-    j = 0
-    for param in globals()["parameters"]:
-        # print("globals()[param]", globals()[param])
-        # print("region[j][0]", region[j][0])
-        s.add(globals()[param] >= region[j][0])
-        s.add(globals()[param] <= region[j][1])
-        j = j + 1
-
-    ## Adding properties to solver
-    formula = Not(eval(props[0]))
-    for i in range(1, len(props)):
-        formula = Or(formula, Not(eval(props[i])))
-    s.add(formula)
-
-    # print(s.check_unsafe())
-    # return s.check_unsafe()
-    if s.check() == unsat:
-        space.add_green(region)
-        return True
-    else:
-        return s.model()
 
 
 def to_interval(points):
@@ -428,6 +319,127 @@ def refine_by(region1, region2, debug=False):
     return regions
 
 
+def check_unsafe(region, props, silent=False, called=False):
+    """ Check if the given region is unsafe or not.
+
+    It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given
+    **interval** (called a model in SMT), otherwise it is unsafe.
+
+    Args
+    ----------
+    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
+    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
+    silent: (Bool): if silent printed output is set to minimum
+    called: (Bool): if called updates the global variables (use when calling it directly)
+    """
+    ## Initialisation
+    if not silent:
+        print("checking unsafe", region, "current time is", datetime.datetime.now())
+
+    # p = Real('p')
+    # print(p)
+    # print(type(p))
+
+    if called:
+        globals()["parameters"] = set()
+        parameters = globals()["parameters"]
+        for polynome in props:
+            parameters.update(find_param(polynome))
+        globals()["parameters"] = sorted(list( globals()["parameters"]))
+        ## EXAMPLE:  parameters >> ['p','q']
+        for param in parameters:
+            globals()[param] = Real(param)
+        ## EXAMPLE: p = Real(p)
+
+        space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
+    else:
+        space = globals()["space"]
+
+    s = Solver()
+
+    ## Adding regional restrictions to solver
+    j = 0
+    for param in globals()["parameters"]:
+        # print("globals()[param]", globals()[param])
+        # print("region[j][0]", region[j][0])
+        s.add(globals()[param] >= region[j][0])
+        s.add(globals()[param] <= region[j][1])
+        j = j + 1
+
+    ## Adding properties to solver
+    for i in range(0, len(props)):
+        # print(props[i])
+        s.add(eval(props[i]))
+
+    if s.check() == sat:
+        return s.model()
+    else:
+        space.add_red(region)
+        return True
+
+
+def check_safe(region, props, silent=False, called=False):
+    """ Check if the given region is safe or not
+
+    It means whether for all parametrisations in **region** every property(prop) is evaluated within the given
+    **interval**, otherwise it is not safe and counterexample is returned.
+
+    Args
+    ----------
+    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
+    props:  (list of strings): array of properties
+    silent: (Bool): if silent printed output is set to minimum
+    called: (Bool): if called updates the global variables (use when calling it directly)
+    """
+    # initialisation
+    if not silent:
+        print("checking safe", region, "current time is", datetime.datetime.now())
+
+    if called:
+        globals()["parameters"] = set()
+        parameters = globals()["parameters"]
+        for polynome in props:
+            parameters.update(find_param(polynome))
+        globals()["parameters"] = sorted(list(globals()["parameters"]))
+        ## EXAMPLE:  parameters >> ['p','q']
+
+        for param in globals()["parameters"]:
+            globals()[param] = Real(param)
+        ## EXAMPLE: p = Real(p)
+
+        space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
+    else:
+        space = globals()["space"]
+
+    s = Solver()
+
+    # if not silent:
+    #    print("with parameters", globals()["parameters"])
+
+    ## Adding regional restrictions to solver
+    j = 0
+    for param in globals()["parameters"]:
+        # print("globals()[param]", globals()[param])
+        # print("region[j][0]", region[j][0])
+        s.add(globals()[param] >= region[j][0])
+        s.add(globals()[param] <= region[j][1])
+        j = j + 1
+
+    ## Adding properties to solver
+    formula = Not(eval(props[0]))
+    for i in range(1, len(props)):
+        formula = Or(formula, Not(eval(props[i])))
+    s.add(formula)
+
+    # print(s.check_unsafe())
+    # return s.check_unsafe()
+    if s.check() == unsat:
+        space.add_green(region)
+        return True
+    else:
+        return s.model()
+
+
 def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=False, debug=False, save=False):
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
 
@@ -493,7 +505,7 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
         if not isinstance(props, Iterable):
             raise Exception("Given properties are not iterable, to use single property use list of length 1")
 
-        globals()["space"] = RefinedSpace(copy.deepcopy(region), parameters, [], [])
+        globals()["space"] = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
         space = globals()["space"]
 
         globals()["default_region"] = copy.deepcopy(region)
@@ -535,7 +547,7 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
             print(colored("Chosen version not found", "red"))
             return
 
-        # globals()["space"] = RefinedSpace(copy.deepcopy(region), parameters, [], [])
+        # globals()["space"] = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
 
         to_be_searched = sample(space, props, size_q, compress=True, silent=not debug)
 
@@ -684,8 +696,20 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
         # print(space.params)
         ## Setting the param back to z3 definition
         if version <= 4:
+            index = 0
             for param in parameters:
-                globals()[param] = Real(param)
+                if space.types[index] is "Real":
+                    globals()[param] = Real(param)
+                elif space.types[index] is "Int":
+                    globals()[param] = Int(param)
+                elif space.types[index] is "Bool":
+                    globals()[param] = Bool(param)
+                elif space.types[index][0] is "BitVec":
+                    globals()[param] = BitVec(param, space.types[index][1])
+                else:
+                    print(colored(f"Type of parameter {param} which was set as {space.types[index]} does not correspond with any known type", "red"))
+                    raise TypeError(f"Type of parameter {param} which was set as {space.types[index]} does not correspond with any known type")
+                index = index + 1
 
         if debug:
             print("region now", region)
@@ -1358,7 +1382,7 @@ def check_interval_in(region, props, intervals, silent=False, called=False):
         for polynome in props:
             parameters.update(find_param(polynome))
         parameters = sorted(list(parameters))
-        space = RefinedSpace(copy.deepcopy(region), parameters, [], [])
+        space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
     else:
         space = globals()["space"]
 
@@ -1375,9 +1399,16 @@ def check_interval_in(region, props, intervals, silent=False, called=False):
         # print(intervals[i])
         # print(float(intervals[i].start), float(intervals[i].end))
         # print(mpi(float(intervals[i].start), float(intervals[i].end)))
-        if not eval(prop) in mpi(float(intervals[i].start), float(intervals[i].end)):
+
+        ## TBD THIS CAN BE OPTIMISED
+        try:
+            interval = mpi(float(intervals[i].start), float(intervals[i].end))
+        except AttributeError:
+            interval = mpi(float(intervals[i][0]), float(intervals[i][1]))
+
+        if not eval(prop) in interval:
             if not silent:
-                print(f"property {props.index(prop) + 1} ϵ {eval(prop)}, which is not in the interval {mpi(float(intervals[i].start), float(intervals[i].end))}")
+                print(f"property {props.index(prop) + 1} ϵ {eval(prop)}, which is not in the interval {interval}")
             return False
         else:
             if not silent:
@@ -1415,7 +1446,7 @@ def check_interval_out(region, props, intervals, silent=False, called=False):
         for polynome in props:
             parameters.update(find_param(polynome))
         parameters = sorted(list(parameters))
-        space = RefinedSpace(copy.deepcopy(region), parameters, [], [])
+        space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
     else:
         space = globals()["space"]
     ## Assign each parameter its interval
@@ -1442,11 +1473,16 @@ def check_interval_out(region, props, intervals, silent=False, called=False):
         # except :
         #    raise ValueError("Error with prop: ", prop)
 
-        interval = mpi(float(intervals[i].start), float(intervals[i].end))
+        ## TBD THIS CAN BE OPTIMISED
+        try:
+            interval = mpi(float(intervals[i].start), float(intervals[i].end))
+        except AttributeError:
+            interval = mpi(float(intervals[i][0]), float(intervals[i][1]))
+
         ## If there exists an intersection (neither of these interval is greater in all points)
         if not (prop_eval > interval or prop_eval < interval):
             if not silent:
-                print(f"property {props.index(prop) + 1} ϵ {eval(prop)}, which is not outside of interval {mpi(float(intervals[i].start), float(intervals[i].end))}")
+                print(f"property {props.index(prop) + 1} ϵ {eval(prop)}, which is not outside of interval {interval}")
         else:
             space.add_red(region)
             if not silent:
@@ -1545,8 +1581,8 @@ def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage
     ## Add calls to the Queue
     # print("adding",[copy.deepcopy(foo),prop,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo),prop,n-1,epsilon,coverage,silent]))
     # print("adding",[copy.deepcopy(foo2),prop,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo2),prop,n-1,epsilon,coverage,silent]))
-    globals()["que"].enqueue([copy.deepcopy(foo), props, n - 1, epsilon, coverage, silent])
-    globals()["que"].enqueue([copy.deepcopy(foo2), props, n - 1, epsilon, coverage, silent])
+    globals()["que"].enqueue([copy.deepcopy(foo), props, intervals, n - 1, epsilon, coverage, silent])
+    globals()["que"].enqueue([copy.deepcopy(foo2), props, intervals, n - 1, epsilon, coverage, silent])
 
     ## Execute the queue
     # print(globals()["que"].printQueue())
@@ -1857,8 +1893,17 @@ class TestLoad(unittest.TestCase):
         self.assertEqual(is_in([(0, 2), (1, 3)], [(0, 1), (1, 4)]), False)
         self.assertEqual(is_in([(0, 2), (1, 3)], [(0, 2), (1, 2)]), False)
 
+    def test_ineq_to_props(self):
+        print(colored("Checking conversion from a list of inequalities to list of properties", 'blue'))
+        self.assertEqual(ineq_to_props(["x+3"], [[0, 1]]), ["x+3>=0", "x+3<=1"])
+
+    def test_props_to_ineq(self):
+        print(colored("Checking conversion from a list properties to a list of inequalities", 'blue'))
+        props_to_ineq(["x+3>=0", "x+3<=1"], debug=True)
+        self.assertEqual(props_to_ineq(["x+3>=0", "x+3<=1"]), (["x+3"], [["0", "1"]]))
+
     def test_check_single(self):
-        print(colored("Check (un)safe with single properties here", 'blue'))
+        print(colored("Checking (un)safe with single properties here", 'blue'))
         ## IS IN
         ## def check_safe(region, props, silent=False, called=False):
         # check_deeper([(0, 1)], ["x"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
@@ -2101,7 +2146,7 @@ class TestLoad(unittest.TestCase):
 
         parameters = ["x", "y"]
         region = [(0, 1), (2, 3)]
-        space = RefinedSpace(copy.deepcopy(region), parameters, [], [])
+        space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
 
         print(space)
         check_deeper(space, ineq_to_props(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 15, 0, 0.95, silent=False, version=5, size_q=3)
