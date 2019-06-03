@@ -61,7 +61,7 @@ class RefinedSpace:
 
     """
 
-    def __init__(self, region, params, types=None, rectangles_sat=[], rectangles_unsat=[], rectangles_unknown=None, sat_samples=None, unsat_samples=None):
+    def __init__(self, region, params, types=None, rectangles_sat=False, rectangles_unsat=False, rectangles_unknown=None, sat_samples=None, unsat_samples=None):
         """
         Args
         ------
@@ -115,6 +115,8 @@ class RefinedSpace:
 
         ## SAT RECTANGLES
         # print("rectangles_sat", rectangles_sat)
+        if rectangles_sat is False:
+            rectangles_sat = []
         if not isinstance(rectangles_sat, Iterable):
             raise Exception("Given rectangles_sat is not iterable")
         if isinstance(rectangles_sat, tuple):
@@ -123,6 +125,8 @@ class RefinedSpace:
             self.sat = rectangles_sat
 
         ## UNSAT RECTANGLES
+        if rectangles_unsat is False:
+            rectangles_sat = []
         # print("rectangles_unsat", rectangles_unsat)
         if not isinstance(rectangles_unsat, Iterable):
             raise Exception("Given rectangles_unsat is not iterable")
