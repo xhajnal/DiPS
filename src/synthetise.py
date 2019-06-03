@@ -493,7 +493,8 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
         print("parameters", parameters)
 
     ## If the given region is space
-    if isinstance(region, RefinedSpace):
+    ## TBD correct this
+    if not isinstance(region, list):
         space = region
         globals()["space"] = space
         del region
@@ -531,12 +532,6 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
         print("the area is: ", space.region)
         print("the volume of the whole area is:", space.get_volume())
         print()
-
-    ## Choosing version/algorithm here
-    ## If using z3 initialise the parameters
-    if version <= 4:
-        for param in parameters:
-            globals()[param] = Real(param)
 
     start_time = time()
 
@@ -707,27 +702,11 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
                 print("No unsat points in the samples")
 
         ## Make a copy of white space
-        white_space = copy.deepcopy(space.get_white())
+        white_space = space.get_white()
 
         # print(globals()["parameters"])
         # print(space.params)
         ## Setting the param back to z3 definition
-        if version <= 4:
-            index = 0
-            for param in parameters:
-                if space.types[index] is "Real":
-                    globals()[param] = Real(param)
-                elif space.types[index] is "Int":
-                    globals()[param] = Int(param)
-                elif space.types[index] is "Bool":
-                    globals()[param] = Bool(param)
-                elif space.types[index][0] is "BitVec":
-                    globals()[param] = BitVec(param, space.types[index][1])
-                else:
-                    print(colored(f"Type of parameter {param} which was set as {space.types[index]} does not correspond with any known type", "red"))
-                    raise TypeError(f"Type of parameter {param} which was set as {space.types[index]} does not correspond with any known type")
-                index = index + 1
-
         if debug:
             print("region now", region)
             print("space white", white_space)
@@ -736,7 +715,54 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
         print(f"It took {socket.gethostname()} {round(time() - start_time)} second(s)")
         print()
 
-        ## Iterating through the regions
+    ## Choosing version/algorithm here
+    ## If using z3 initialise the parameters
+    if version <= 4:
+        index = 0
+        for param in parameters:
+            if space.types[index] is "Real":
+                globals()[param] = Real(param)
+            elif space.types[index] is "Int":
+                globals()[param] = Int(param)
+            elif space.types[index] is "Bool":
+                globals()[param] = Bool(param)
+            elif space.types[index][0] is "BitVec":
+                globals()[param] = BitVec(param, space.types[index][1])
+            else:
+                print(colored(f"Type of parameter {param} which was set as {space.types[index]} does not correspond with any known type", "red"))
+                raise TypeError(f"Type of parameter {param} which was set as {space.types[index]} does not correspond with any known type")
+            index = index + 1
+
+    ## Iterating through the regions
+    white_space = space.get_white()
+    if len(white_space) is 1:
+        if version == 1:
+            print("Using DFS method")
+            private_check_deeper(region, props, n, epsilon, coverage, silent)
+        elif version == 2:
+            print("Using BFS method")
+            globals()["que"] = Queue()
+            private_check_deeper_queue(region, props, n, epsilon, coverage, silent)
+        elif version == 3:
+            print("Using BFS method with passing examples")
+            globals()["que"] = Queue()
+            private_check_deeper_queue_checking(region, props, n, epsilon, coverage, silent, None)
+        elif version == 4:
+            print("Using BFS method with passing examples and counterexamples")
+            globals()["que"] = Queue()
+            private_check_deeper_queue_checking_both(region, props, n, epsilon, coverage, silent, None)
+        elif version == 5:
+            print("Using interval arithmetic")
+            globals()["que"] = Queue()
+
+            egg = props_to_ineq(props, debug=False)
+            if not egg:
+                return space
+
+            private_check_deeper_interval(region, egg[0], egg[1], n, epsilon, coverage, silent)
+        else:
+            print(colored("Chosen version not found", "red"))
+    else:
         for rectangle in white_space:
             start_time = time()
             ## To get more similar result substituting the number of splits from the max_depth
@@ -787,47 +813,20 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
             space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time() - start_time)} second(s)", save=(save, "refinement_"+str(save))[bool(save)])
             print()
 
-        ## OLD REFINEMENT HERE
-        # # to_be_searched = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y", "0"], [Interval(0, 1), Interval(0, 1)], , compress=True, silent=False)
+            ## OLD REFINEMENT HERE
+            # # to_be_searched = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y", "0"], [Interval(0, 1), Interval(0, 1)], , compress=True, silent=False)
 
-        # to_be_searched = refine_into_rectangles(to_be_searched, silent=False)
+            # to_be_searched = refine_into_rectangles(to_be_searched, silent=False)
 
-        # print("to_be_searched: ", to_be_searched)
-        # globals()["que"] = Queue()
+            # print("to_be_searched: ", to_be_searched)
+            # globals()["que"] = Queue()
 
-        # for rectangle in to_be_searched:
-        #     print(rectangle)
-        #     # print("safe", space.sat)
-        #     print("unsafe", space.unsat)
-        #     space.add_white(rectangle)
-        #     private_check_deeper_interval(rectangle, props, 0, epsilon, coverage, silent)
-
-    elif version == 1:
-        print("Using DFS method")
-        private_check_deeper(region, props, n, epsilon, coverage, silent)
-    elif version == 2:
-        print("Using BFS method")
-        globals()["que"] = Queue()
-        private_check_deeper_queue(region, props, n, epsilon, coverage, silent)
-    elif version == 3:
-        print("Using BFS method with passing examples")
-        globals()["que"] = Queue()
-        private_check_deeper_queue_checking(region, props, n, epsilon, coverage, silent, None)
-    elif version == 4:
-        print("Using BFS method with passing examples and counterexamples")
-        globals()["que"] = Queue()
-        private_check_deeper_queue_checking_both(region, props, n, epsilon, coverage, silent, None)
-    elif version == 5:
-        print("Using interval arithmetic")
-        globals()["que"] = Queue()
-
-        egg = props_to_ineq(props, debug=False)
-        if not egg:
-            return space
-
-        private_check_deeper_interval(region, egg[0], egg[1], n, epsilon, coverage, silent)
-    else:
-        print(colored("Chosen version not found", "red"))
+            # for rectangle in to_be_searched:
+            #     print(rectangle)
+            #     # print("safe", space.sat)
+            #     print("unsafe", space.unsat)
+            #     space.add_white(rectangle)
+            #     private_check_deeper_interval(rectangle, props, 0, epsilon, coverage, silent)
 
     ## VISUALISATION
     if not size_q:
@@ -1077,12 +1076,12 @@ def private_check_deeper_queue_checking(region, props, n, epsilon, coverage, sil
     if example is True:
         space.remove_white(region)
         if not silent:
-            print(n, region, space.get_coverage(), "unsafe")
+            print(n, region, colored(space.get_coverage()+"unsafe", "red"))
         return
     elif check_safe(region, props, silent) is True:
         space.remove_white(region)
         if not silent:
-            print(n, region, space.get_coverage(), "safe")
+            print(n, region, colored(space.get_coverage()+"safe", "red"))
         return
     else:  ## unknown
         if not silent:
