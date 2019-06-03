@@ -561,6 +561,8 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
 
         # globals()["space"] = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
 
+        # funcs, intervals = props_to_ineq(props)
+
         to_be_searched = sample(space, props, size_q, compress=True, silent=not debug)
 
         ## Saving the sampled space as pickled dictionary
@@ -982,7 +984,12 @@ def private_check_deeper_queue(region, props, n, epsilon, coverage, silent):
         space.remove_white(region)
 
     if not silent:
-        print(n, region, space.get_coverage(), result)
+        if result is "safe":
+            print(n, region, colored(f"{space.get_coverage()} {result}", "green"))
+        elif result is "unsafe":
+            print(n, region, colored(f"{space.get_coverage()} {result}", "red"))
+        else:
+            print(n, region, space.get_coverage(), result)
 
     # print("hello")
     if n == 0:
@@ -1680,7 +1687,7 @@ def sample(space, props, size_q, compress=False, silent=True):
     for parameter_value in parameter_values:
         ## For each parameter
         for param in range(len(space.params)):
-            globals()[space.params[param]] = parameter_value[param]
+            locals()[space.params[param]] = float(parameter_value[param])
         ## print("parameter_value", parameter_value)
         # print(str(parameter_value))
         # print(type(parameter_value))
@@ -1704,10 +1711,24 @@ def sample(space, props, size_q, compress=False, silent=True):
         satisfied_list = []
         ## For each property,interval
         for index in range(len(props)):
-            if eval(props[index]):
-                satisfied_list.append(True)
+            # print(props[index])
+            # print("type(props[index])", type(props[index]))
+            # for param in range(len(space.params)):
+            #     print(space.params[param], parameter_value[param])
+            #     print("type(space.params[param])", type(space.params[param]))
+            #     print("type(parameter_value[param])", type(parameter_value[param]))
+
+            spam = (eval(props[index]))
+            if isinstance(spam, z3.z3.BoolRef):
+                if z3.simplify(spam):
+                    satisfied_list.append(True)
+                else:
+                    satisfied_list.append(False)
             else:
-                satisfied_list.append(False)
+                if spam:
+                    satisfied_list.append(True)
+                else:
+                    satisfied_list.append(False)
 
             ## print("cycle")
             ## print(sampling[tuple(parameter_indices[i])])
@@ -2216,12 +2237,63 @@ class TestLoad(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    # from load import get_f, get_rewards
+    # from load import create_intervals
+    # from load import load_all_data
+    #
+    # p = 0.0
+    # low = 0.0
+    # high = 0.0
+    # qmin = 0.0
+    # qmax = 0.0
+    # print("EVaaaal ", eval("2*p*(p - 1)*( If ( Or( low < 1 , 1 <= high), qmin, qmax) - 1)>=0.0125818193201294"))
+    #
+    # agents_quantities = [2, 3, 5]
+    # D = load_all_data("data/data*.csv")
+    #
+    # f_multiparam_syn = get_f("./multiparam_syn*_[0-9].txt", "prism", True, agents_quantities)
+    # f_multiparam_semisyn = get_f("./multiparam_se*_[0-9].txt", "prism", True, agents_quantities)
+    # f_multiparam_asyn = get_f("./multiparam_asyn*_[0-9].txt", "prism", True, agents_quantities)
+    #
+    # f_low_high_low_syn = copy.deepcopy(f_multiparam_syn)
+    # f_low_high_low_semisyn = copy.deepcopy(f_multiparam_semisyn)
+    # f_low_high_low_asyn = copy.deepcopy(f_multiparam_asyn)
+    #
+    # ## Replacing the q(i) with respective function
+    # for structure in [f_low_high_low_syn, f_multiparam_semisyn, f_multiparam_asyn]:
+    #     # print(type(structure))
+    #     for dictionary in structure.keys():
+    #         # print(type(population))
+    #         # print(type(structure[population]))
+    #         # print(structure[dictionary])
+    #         for population in range(len(structure[dictionary])):
+    #             # print(structure[dictionary][population])
+    #             # print("structure", [f_low_high_low_syn].index(structure))
+    #             # print("dictionary", dictionary)
+    #             # print("population", population)
+    #             # print(structure[dictionary][population])
+    #             for BSCC in range(1, dictionary):
+    #                 # print(structure[dictionary][population])
+    #                 # print()
+    #                 structure[dictionary][population] = structure[dictionary][population].replace("q" + str(BSCC), (
+    #                     f" If ( Or( low < {BSCC} , {BSCC} <= high), qmin, qmax)"))
+    #                 # print(structure[dictionary][population])
+    #             # break
+    #
+    # ## Showing the difference in an example:
+    # print(f_low_high_low_syn[3])
+    # print(f_multiparam_syn[3])
+    #
+    # space = RefinedSpace([(0, 1), (0, 1), (0, 1), (0, 1), (0, 1)], ["p", "low", "high", "qmin", "qmax"],
+    #                                ["Real", "Real", "Real", "Real", "Real"], [], [])
+    # check_deeper(space, ineq_to_props(f_low_high_low_syn[2],create_intervals(0.95, 1500, D[2])),10,10e-6,0.95,False,4, size_q=5)
+
     unittest.main()
 
     # print(Interval(0, 1))
     # print(type(float(Interval(0, 1).start)))
 
-    print(check_safe([(0, 1)], ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 2)]), silent=True, called=True))
+    # print(check_safe([(0, 1)], ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 2)]), silent=True, called=True))
 
     # print(check_safe_new([(0, 1)], ["x>5"], silent=True, called=True))
     # print(check_unsafe_new([(0, 1)], ["x>5"], silent=True, called=True))
