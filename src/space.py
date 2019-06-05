@@ -248,7 +248,7 @@ class RefinedSpace:
                         ax.plot(x_axis, sample)
                     ax.set_xlabel("param indices")
                     ax.set_ylabel("parameter value")
-                    ax.set_title("Sat sample points of the given hyperspace")
+                    ax.set_title(f"Sat sample points of the given hyperspace {self.region},{self.params},{self.types}")
                     ax.autoscale()
                     ax.margins(0.1)
 
@@ -278,7 +278,7 @@ class RefinedSpace:
                         ax.plot(x_axis, sample)
                     ax.set_xlabel("param indices")
                     ax.set_ylabel("parameter value")
-                    ax.set_title("Unsat sample points of the given hyperspace")
+                    ax.set_title(f"Unsat sample points of the given hyperspace {self.region},{self.params},{self.types}")
                     ax.autoscale()
                     ax.margins(0.1)
 

@@ -86,6 +86,9 @@ def set_javaheap_win(size):
     ----------
     size: (str) sets maximum memory, see https://www.prismmodelchecker.org/manual/ConfiguringPRISM/OtherOptions
 
+    Returns
+    ----------
+    previous value of memory
     """
     previous_size = -5
     output = ""
@@ -429,7 +432,10 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
             print()
 
     if sys.platform.startswith("win"):
-        set_javaheap_win(previous_memory)
+        try:
+            set_javaheap_win(previous_memory)
+        except UnboundLocalError:
+            print()
 
 
 def call_storm(args, silent=False, model_path=model_path, properties_path=properties_path,

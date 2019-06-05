@@ -113,7 +113,7 @@ except:
 ## Try to run z3
 try:
     p = Real('p')
-except:
+except NameError:
     raise Exception("z3 not loaded properly")
 
 
@@ -2170,9 +2170,9 @@ class TestLoad(unittest.TestCase):
         region = [(0, 1), (2, 3)]
         space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
 
-        print(space)
+        print("space", space)
         check_deeper(space, ineq_to_props(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 15, 0, 0.95, silent=False, version=5, size_q=3)
-        print(space)
+        print("space", space)
         print(space.get_coverage())
 
 
@@ -2216,12 +2216,24 @@ class TestLoad(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    # unittest.main()
+
+    print(colored("Presampled refinement here", 'blue'))
+
+    parameters = ["x", "y"]
+    region = [(0, 1), (2, 3)]
+    space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
+
+    print("space", space)
+    check_deeper(space, ineq_to_props(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 15, 0, 0.95, silent=False,
+                 version=5)
+    print("space", space)
+    print(space.get_coverage())
 
     # print(Interval(0, 1))
     # print(type(float(Interval(0, 1).start)))
 
-    print(check_safe([(0, 1)], ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 2)]), silent=True, called=True))
+    # print(check_safe([(0, 1)], ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 2)]), silent=True, called=True))
 
     # print(check_safe_new([(0, 1)], ["x>5"], silent=True, called=True))
     # print(check_unsafe_new([(0, 1)], ["x>5"], silent=True, called=True))
