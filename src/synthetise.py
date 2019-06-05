@@ -113,7 +113,7 @@ except:
 ## Try to run z3
 try:
     p = Real('p')
-except:
+except NameError:
     raise Exception("z3 not loaded properly")
 
 
@@ -2191,9 +2191,9 @@ class TestLoad(unittest.TestCase):
         region = [(0, 1), (2, 3)]
         space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
 
-        print(space)
+        print("space", space)
         check_deeper(space, ineq_to_props(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 15, 0, 0.95, silent=False, version=5, size_q=3)
-        print(space)
+        print("space", space)
         print(space.get_coverage())
 
 
@@ -2289,6 +2289,18 @@ if __name__ == "__main__":
     # check_deeper(space, ineq_to_props(f_low_high_low_syn[2],create_intervals(0.95, 1500, D[2])),10,10e-6,0.95,False,4, size_q=5)
 
     unittest.main()
+
+    print(colored("Presampled refinement here", 'blue'))
+
+    parameters = ["x", "y"]
+    region = [(0, 1), (2, 3)]
+    space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
+
+    print("space", space)
+    check_deeper(space, ineq_to_props(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 15, 0, 0.95, silent=False,
+                 version=5)
+    print("space", space)
+    print(space.get_coverage())
 
     # print(Interval(0, 1))
     # print(type(float(Interval(0, 1).start)))
