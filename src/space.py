@@ -61,7 +61,7 @@ class RefinedSpace:
 
     """
 
-    def __init__(self, region, params, types=None, rectangles_sat=False, rectangles_unsat=False, rectangles_unknown=None, sat_samples=None, unsat_samples=None):
+    def __init__(self, region, params, types=None, rectangles_sat=False, rectangles_unsat=False, rectangles_unknown=None, sat_samples=None, unsat_samples=None, title=False):
         """
         Args
         ------
@@ -165,6 +165,12 @@ class RefinedSpace:
             # print("samples", samples)
             self.unsat_samples = unsat_samples
 
+        ## SET TITLE SUFFIX
+        if title:
+            self.title = title
+        else:
+            self.title = ""
+
     def show(self, title="", green=True, red=True, sat_samples=False, unsat_samples=False, save=False):
         """
         Visualises the space
@@ -223,12 +229,17 @@ class RefinedSpace:
             if unsat_samples:
                 pic.add_collection(self.show_samples(False))
 
-            pic.set_title(pretitle + "red = unsafe region, green = safe region, white = in between \n " + title)
+            whole_title =  f"{pretitle} red = unsafe region, green = safe region, white = in between \n {title}\n{self.title}"
+            pic.set_title(whole_title)
+            with open(os.path.join(refinement_results, "figure_to_title.txt"), "a+") as file:
+                file.write(f"{save} : {whole_title}")
 
             ## Save the figure
             if save:
                 plt.savefig(save, bbox_inches='tight')
                 print("Figure stored here: ", save)
+                with open(os.path.join(refinement_results, "figure_to_title.txt"), "a+") as file:
+                    file.write(f"{save} : {whole_title}")
 
             plt.show()
             del region
@@ -252,7 +263,8 @@ class RefinedSpace:
                         ax.plot(x_axis, sample)
                     ax.set_xlabel("param indices")
                     ax.set_ylabel("parameter value")
-                    ax.set_title(f"Sat sample points of the given hyperspace {self.region},{self.params},{self.types}")
+                    whole_title = f"Sat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}, \n{self.title}"
+                    ax.set_title(whole_title)
                     ax.autoscale()
                     ax.margins(0.1)
 
@@ -282,7 +294,8 @@ class RefinedSpace:
                         ax.plot(x_axis, sample)
                     ax.set_xlabel("param indices")
                     ax.set_ylabel("parameter value")
-                    ax.set_title(f"Unsat sample points of the given hyperspace {self.region},{self.params},{self.types}")
+                    whole_title = f"Unsat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}, \n{self.title}"
+                    ax.set_title(whole_title)
                     ax.autoscale()
                     ax.margins(0.1)
 
@@ -290,6 +303,8 @@ class RefinedSpace:
                     if save:
                         plt.savefig(save, bbox_inches='tight')
                         print("Figure stored here: ", save)
+                        with open(os.path.join(refinement_results, "figure_to_title.txt"), "a+") as file:
+                            file.write(f"{save} : {whole_title}")
 
                     plt.show()
                 else:
