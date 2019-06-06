@@ -78,7 +78,7 @@ def generate_all_data_twoparam(agents_quantities, dic_fun, p_v=None, q_v=None):
 
 
 def generate_experiments_and_data(model_types, multiparam, n_samples, populations, dimension_sample_size,
-                                modular_param_space=None, debugging=False):
+                                modular_param_space=None, silent=False):
     """Generate experiment data for given settings
 
     Args
@@ -89,6 +89,7 @@ def generate_experiments_and_data(model_types, multiparam, n_samples, population
     populations: (list of ints) list of agent populations
     dimension_sample_size: (list of ints) number of samples of in each paramter dimension to be used
     modular_param_space: (numpy array) parameter space to be used
+    silent: (Bool): if silent printed output is set to minimum
     """
     max_sample = max(n_samples)
     start_time = time.time()
@@ -99,13 +100,15 @@ def generate_experiments_and_data(model_types, multiparam, n_samples, population
     for model_type in model_types:
         if multiparam:
             model_type = "multiparam_" + model_type
-        if debugging:
-            print("model_type", model_type)
+        if not silent:
+            print("model_type: ", model_type)
         if "synchronous" in model_type:
             sim_lenght = 2
         Data[model_type] = {}
         Experiments[model_type] = {}
         for N in populations:
+            if not silent:
+                print("population size: ", N)
             if "semisynchronous" in model_type:
                 sim_lenght = 2 * N
             if "asynchronous" in model_type:
@@ -116,7 +119,8 @@ def generate_experiments_and_data(model_types, multiparam, n_samples, population
                     parameters.append("q" + str(agents))
             else:
                 parameters.append("q")
-            print("parameters: ", parameters)
+            if not silent:
+                print("parameters: ", parameters)
 
             ## Modulate parameter space
             if modular_param_space is not None:
@@ -124,8 +128,9 @@ def generate_experiments_and_data(model_types, multiparam, n_samples, population
             else:
                 param_space = numpy.random.random((len(parameters), dimension_sample_size))
 
-            print("parameter space:")
-            print(param_space)
+            if not silent:
+                print("parameter space: ")
+                print(param_space)
 
             model = model_type + str(N) + ".pm"
 
@@ -141,7 +146,8 @@ def generate_experiments_and_data(model_types, multiparam, n_samples, population
                 for value in param_space[:, column]:
                     column_values.append(value)
                 column_values = tuple(column_values)
-                print("parametrisation:", column_values)
+                if not silent:
+                    print("parametrisation: ", column_values)
                 for n_sample in n_samples:
                     Experiments[model_type][N][n_sample][column_values] = []
                     Data[model_type][N][n_sample][column_values] = []
@@ -152,7 +158,7 @@ def generate_experiments_and_data(model_types, multiparam, n_samples, population
                     parameter_values = ""
                     prism_parameter_values = ""
 
-                    for value in range(len(column_values)):
+                    for value in range(len(parameters)):
                         parameter_values = parameter_values + "_" + str(column_values[value])
                         prism_parameter_values = prism_parameter_values + str(parameters[value]) + "=" + str(
                             column_values[value]) + ","
@@ -164,29 +170,25 @@ def generate_experiments_and_data(model_types, multiparam, n_samples, population
                     ## path_file = f"path_{model_type}{N}_{max_sample}_{parameter_values}.txt"
                     path_file = "dump_file_{}_{}_{}_{}.txt".format(model_type, N, max_sample, str(time.time()).replace(".", ""))
                     # print(path_file)
-                    if debugging:
-                        print(f"calling prism {model} -const {prism_parameter_values} -simpath {str(sim_lenght)} {path_file}")
 
                     ## Here is the PRISM called
+                    if not silent:
+                        print(f"calling: \n {model} -const {prism_parameter_values} -simpath {str(sim_lenght)} {path_file}")
                     call_prism(f"{model} -const {prism_parameter_values} -simpath {str(sim_lenght)} {path_file}",
                                silent=True, prism_output_path=cwd, std_output_path=None)
+                   
                     ## Parse the dump file
                     # print("curr dir:", os.getcwd())
-                    file = open(path_file, "rt")
-                    last_line = file.readlines()[-1]
-
-                    ## Close dump file
-                    file.close()
-                    ## Remove dump file
-                    os.remove(path_file)
+                    with open(path_file, "rt") as file:
+                        last_line = file.readlines()[-1]
 
                     ## Append the experiment
                     state = sum(list(map(lambda x: int(x), last_line.split(" ")[2:-1])))
 
                     ## If some error occurred
-                    if state > N or debugging or "2" in last_line.split(" ")[2:-1]:
+                    if state > N or not silent or "2" in last_line.split(" ")[2:-1]:
                         print(last_line[:-1])
-                        print("state:", state)
+                        print("state: ", state)
                         print()
                     else:  ## If no error remove the file
                         os.remove(path_file)
@@ -197,7 +199,7 @@ def generate_experiments_and_data(model_types, multiparam, n_samples, population
                     for i in range(N + 1):
                         Data[model_type][N][n_sample][column_values].append(len(list(
                             filter(lambda x: x == i, Experiments[model_type][N][n_sample][column_values]))) / n_sample)
-                print("states:", Experiments[model_type][N][max_sample][column_values])
+                print("states: ", Experiments[model_type][N][max_sample][column_values])
 
     print(f"  It took {socket.gethostname()} {time.time() - start_time} seconds to run")
     return Experiments, Data
