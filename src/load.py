@@ -354,7 +354,10 @@ def find_param(polynomial):
 
     Returns set of strings - parameters
     """
-    parameters = polynomial.replace('(', '').replace(')', '').replace('**', '*').replace(' ', '')
+
+    ## Get the e-/e+ notation away
+    parameters = re.sub('[0-9]e[+|-][0-9]', '0', polynomial)
+    parameters = parameters.replace('(', '').replace(')', '').replace('**', '*').replace(' ', '')
     parameters = parameters.replace("Not", " ").replace("Or", " ").replace("And", " ").replace("Implies", " ").replace("If", " ").replace(',', ' ')
     parameters = parameters.replace("<", " ").replace(">", " ").replace("=", " ")
     parameters = re.split('\+|\*|\-|/| ', parameters)

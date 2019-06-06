@@ -215,6 +215,8 @@ def props_to_ineq(props, silent=True, debug=False):
             try:
                 ## The righthandside is number
                 float(spam[1])
+                if debug:
+                    print("righthandside ",float(spam[1]))
             except ValueError:
                 spam = [f"{spam[0]} -( {spam[1]})", 0]
 
@@ -230,6 +232,7 @@ def props_to_ineq(props, silent=True, debug=False):
                     if debug:
                         print("Adding value")
                         print("len(funcs)", len(funcs))
+                        print("[intervals[len(funcs)-1], spam[1]]", [intervals[len(funcs)-1], spam[1]])
                     intervals[len(funcs)-1] = [intervals[len(funcs)-1], spam[1]]
             else:
                 funcs.append(spam[0])
@@ -244,8 +247,12 @@ def props_to_ineq(props, silent=True, debug=False):
             if not silent:
                 print(colored(f"Property {index + 1} does not have proper number of boundaries", "red"))
             return False
-        intervals[interval_index] = sorted(intervals[interval_index])
-        intervals[interval_index] = Interval(float(intervals[interval_index][0]), float(intervals[interval_index][1]))
+        if debug:
+            print("sorted([float(intervals[interval_index][0]), float(intervals[interval_index][1])])", sorted([float(intervals[interval_index][0]), float(intervals[interval_index][1])]))
+        intervals[interval_index] = sorted([float(intervals[interval_index][0]), float(intervals[interval_index][1])])
+        if debug:
+            print("Interval(intervals[interval_index][0], intervals[interval_index][1]) ", Interval(intervals[interval_index][0], intervals[interval_index][1]))
+        intervals[interval_index] = Interval(intervals[interval_index][0], intervals[interval_index][1])
         index = index + 1
 
     if debug:
@@ -507,8 +514,8 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
         #     space.params = parameters
 
         ## Check whether the the set of params is equal
-        # print("space.params", space.params)
-        # print("parameters", parameters)
+        print("space.params", space.params)
+        print("parameters", parameters)
         if not sorted(space.params) == sorted(parameters):
             raise Exception("The set of parameters of the given space and properties does not correspond")
 
@@ -760,6 +767,8 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
             egg = props_to_ineq(props, debug=False)
             if not egg:
                 return space
+            print("props", props)
+            print("coverted_intervals", egg)
 
             private_check_deeper_interval(region, egg[0], egg[1], n, epsilon, coverage, silent)
         else:
@@ -1498,6 +1507,7 @@ def check_interval_out(region, props, intervals, silent=False, called=False):
 
         ## TBD THIS CAN BE OPTIMISED
         try:
+            print(intervals)
             interval = mpi(float(intervals[i].start), float(intervals[i].end))
         except AttributeError:
             interval = mpi(float(intervals[i][0]), float(intervals[i][1]))
