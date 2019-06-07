@@ -583,6 +583,7 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
         ## PARSE SAT POINTS
         sat_points = []
 
+        print(to_be_searched)
         while not isinstance(to_be_searched[0][1], type(True)):
             to_be_searched = list(itertools.chain.from_iterable(to_be_searched))
 
@@ -1223,7 +1224,7 @@ def private_check_deeper_queue_checking_both(region, props, n, epsilon, coverage
         if not silent:
             print(n, region, colored(space.get_coverage(), "green"), "safe")
         return
-    else:  ## unknown
+    else:  # Unknown
         if not silent:
             print(n, region, colored(space.get_coverage(), "blue"), (example, counterexample))
 
@@ -2206,7 +2207,6 @@ class TestLoad(unittest.TestCase):
         print("space", space)
         print(space.get_coverage())
 
-
         ## UNCOMMENT THIS TBD
         # check_deeper([(0, 1), (2, 3)], ineq_to_props(["x+y"], [Interval(0, 3)]), 5, 0, 0.95, silent=False, version=5)
 
@@ -2227,10 +2227,10 @@ class TestLoad(unittest.TestCase):
         # b = refine_into_rectangles(a)
         print(colored("Presampled refinement ends here", 'blue'))
 
-    #def test_timeout(self):
-        #print(colored("Timeout test here", 'blue'))
+    # def test_timeout(self):
+        # print(colored("Timeout test here", 'blue'))
 
-        #check_deeper([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), 10, 0, 0.95, True, 1)
+        # check_deeper([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), 10, 0, 0.95, True, 1)
 
         ## TIMEOUT TEST
         # print("TIMEOUT TEST not finish")

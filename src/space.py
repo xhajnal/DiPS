@@ -61,7 +61,7 @@ class RefinedSpace:
 
     """
 
-    def __init__(self, region, params, types=None, rectangles_sat=False, rectangles_unsat=False, rectangles_unknown=None, sat_samples=None, unsat_samples=None, title=False):
+    def __init__(self, region, params, types=None, rectangles_sat=False, rectangles_unsat=False, rectangles_unknown=None, sat_samples=None, unsat_samples=None, true_point=False, title=False):
         """
         Args
         ------
@@ -89,8 +89,8 @@ class RefinedSpace:
         ## PARAMS
         self.params = params
         if not len(self.params) == len(self.region):
-            print(colored(f"number of parameters ({len(params)}) and dimension of the region ({len(region)}) is not equal", 'red'))
-            raise Exception(f"number of parameters ({len(params)}) and dimension of the region ({len(region)}) is not equal")
+            print(colored(f"Number of parameters ({len(params)}) and dimension of the region ({len(region)}) is not equal", 'red'))
+            raise Exception(f"Number of parameters ({len(params)}) and dimension of the region ({len(region)}) is not equal")
 
         if types is None or types is False:
             self.types = []
@@ -108,10 +108,10 @@ class RefinedSpace:
 
             if not len(self.types) == len(self.region):
                 print(colored(
-                    f"number of types of parameters ({len(types)}) and dimension of the region ({len(region)}) is not equal",
+                    f"Number of types of parameters ({len(types)}) and dimension of the region ({len(region)}) is not equal",
                     'red'))
                 raise Exception(
-                    f"number of types ({len(types)}) and dimension of the region ({len(region)}) is not equal")
+                    f"Number of types ({len(types)}) and dimension of the region ({len(region)}) is not equal")
 
         ## SAT RECTANGLES
         # print("rectangles_sat", rectangles_sat)
@@ -164,6 +164,13 @@ class RefinedSpace:
         else:
             # print("samples", samples)
             self.unsat_samples = unsat_samples
+
+        ## SET THE TRUE POINT
+        if true_point:
+            if len(true_point) is len(self.params):
+                self.true_point = true_point
+            else:
+                raise Exception(f"The dimension of the given true point ({len(true_point)}) does not match")
 
         ## SET TITLE SUFFIX
         if title:

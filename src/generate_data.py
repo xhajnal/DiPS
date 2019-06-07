@@ -78,7 +78,7 @@ def generate_all_data_twoparam(agents_quantities, dic_fun, p_v=None, q_v=None):
 
 
 def generate_experiments_and_data(model_types, multiparam, n_samples, populations, dimension_sample_size,
-                                modular_param_space=None, silent=False):
+                                modular_param_space=None, silent=False, debug=False):
     """Generate experiment data for given settings
 
     Args
@@ -90,6 +90,7 @@ def generate_experiments_and_data(model_types, multiparam, n_samples, population
     dimension_sample_size: (list of ints) number of samples of in each paramter dimension to be used
     modular_param_space: (numpy array) parameter space to be used
     silent: (Bool): if silent printed output is set to minimum
+    debug: (Bool): if True extensive print will be used
     """
     max_sample = max(n_samples)
     start_time = time.time()
@@ -186,7 +187,7 @@ def generate_experiments_and_data(model_types, multiparam, n_samples, population
                     state = sum(list(map(lambda x: int(x), last_line.split(" ")[2:-1])))
 
                     ## If some error occurred
-                    if state > N or not silent or "2" in last_line.split(" ")[2:-1]:
+                    if state > N or debug or "2" in last_line.split(" ")[2:-1]:
                         print(last_line[:-1])
                         print("state: ", state)
                         print()
