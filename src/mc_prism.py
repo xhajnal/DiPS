@@ -511,7 +511,7 @@ def call_storm(args, silent=False, model_path=model_path, properties_path=proper
         else:
             storm_args.append(arg)
 
-    args = ["./storm-pars --storm"]
+    args = ["./storm-pars --prism"]
     args.extend(storm_args)
     if time:
         args.append(")")
@@ -554,8 +554,11 @@ def call_storm_files(model_prefix, agents_quantities, model_path=model_path, pro
     time: (Bool) if True time measurement is added
 
     """
-    print("docker pull movesrwth/storm:travis")
-    print(f'docker run --mount type=bind,source="$(pwd)",target=/{os.path.basename(os.path.normpath(os.getcwd()))} -w /opt/storm/build/bin --rm -it --name storm movesrwth/storm:travis')
+    root = str(output_path).split("/")[1]
+    print(f"cd /{root}")
+
+    print("sudo docker pull movesrwth/storm:travis")
+    print(f'sudo docker run --mount type=bind,source="$(pwd)",target=/{root} -w /opt/storm/build/bin --rm -it --name storm movesrwth/storm:travis')
 
     for N in sorted(agents_quantities):
         # print(glob.glob(os.path.join(model_path, file_prefix + str(N) + ".pm")))
