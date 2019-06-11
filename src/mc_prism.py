@@ -532,6 +532,8 @@ def call_storm(args, silent=False, model_path=model_path, properties_path=proper
     with open(property_file_path, "r") as file:
         content = file.readlines()
         for line in content:
+            # print(colored(line, "blue"))
+            line = line.replace('"', '\\"')
             print(spam.replace("my_super_cool_string", f"--prop \"{line[:-1]}\""))
 
     return True
