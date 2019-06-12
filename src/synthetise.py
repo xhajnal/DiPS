@@ -598,7 +598,6 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
         if debug:
             print("satisfying points: ", sat_points)
 
-        space.add_sat_samples(sat_points)
         if debug and save:
             print("I am showing sampling_sat_"+str(save))
         space.show(red=False, green=False, sat_samples=True, unsat_samples=False, save=(save, "sampling_sat_"+str(save))[bool(save)])
@@ -661,7 +660,6 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
         if debug:
             print("unsatisfying points: ", unsat_points)
 
-        space.add_unsat_samples(unsat_points)
         if debug and save:
             print("I am showing sampling_unsat_"+str(save))
         space.show(red=False, green=False, sat_samples=False, unsat_samples=True, save=(save, "sampling_unsat_"+str(save))[bool(save)])
@@ -729,7 +727,7 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
     ## If using z3 initialise the parameters
     if version <= 4:
         index = 0
-        for param in parameters:
+        for param in space.params:
             if space.types[index] is "Real":
                 globals()[param] = Real(param)
             elif space.types[index] is "Int":
@@ -824,6 +822,8 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
             ## Showing the step refinements of respective rectangles from the white space
             space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time() - start_time)} second(s)", save=(save, "refinement_"+str(save))[bool(save)])
             print()
+            if space.get_coverage() >= coverage:
+                break
 
             ## OLD REFINEMENT HERE
             # # to_be_searched = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y", "0"], [Interval(0, 1), Interval(0, 1)], , compress=True, silent=False)
@@ -1744,13 +1744,20 @@ def sample(space, props, size_q, compress=False, silent=True):
             ## print("cycle")
             ## print(sampling[tuple(parameter_indices[i])])
 
-        if compress:
-            if False in satisfied_list:
+        if False in satisfied_list:
+            # print("adding unsat", sampling[tuple(parameter_indices[i])][0])
+            space.add_unsat_samples([sampling[tuple(parameter_indices[i])][0]])
+            if compress:
                 sampling[tuple(parameter_indices[i])][1] = False
             else:
-                sampling[tuple(parameter_indices[i])][1] = True
+                sampling[tuple(parameter_indices[i])][1] = satisfied_list
         else:
-            sampling[tuple(parameter_indices[i])][1] = satisfied_list
+            # print("adding sat", sampling[tuple(parameter_indices[i])][0])
+            space.add_sat_samples([sampling[tuple(parameter_indices[i])][0]])
+            if compress:
+                sampling[tuple(parameter_indices[i])][1] = True
+            else:
+                sampling[tuple(parameter_indices[i])][1] = satisfied_list
         i = i + 1
     return sampling
 

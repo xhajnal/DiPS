@@ -77,13 +77,14 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
     f = {}
     rewards = {}
     # print(str(path))
+    new_dir = os.getcwd()
     if not glob.glob(str(path)):
-        new_dir = os.getcwd()
         if not Path(path).is_absolute():
             os.chdir(default_directory)
         print("No files match the pattern " + os.path.join(new_dir, path))
         return ({}, {})
 
+    no_files = True
     ## Choosing files with the given pattern
     for file in glob.glob(str(path)):
         N = int(re.findall('\d+', file)[0])
@@ -92,7 +93,8 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
             if N not in agents_quantities:
                 continue
             else:
-                print(os.path.join(os.getcwd(), file))
+                no_files = False
+                print("parsing ", os.path.join(os.getcwd(), file))
         # print(os.getcwd(), file)
         file = open(file, "r")
         i = -1
@@ -159,6 +161,8 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
                         f[N].append(line[:-1])
         file.close()
     os.chdir(default_directory)
+    if no_files and agents_quantities:
+        print("No files match the pattern " + os.path.join(new_dir, path) + "and restriction " + agents_quantities)
     return (f, rewards)
 
 

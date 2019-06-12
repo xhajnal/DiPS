@@ -129,5 +129,10 @@ performance_results/*
 src/test/*
 src/other_sources/*
 
+refinement_results/*.p
+refinement_results/*.P
+refinement_results/*.png
+refinement_results/*.PNG
+
 data/*
 !data/*.p

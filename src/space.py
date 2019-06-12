@@ -58,7 +58,8 @@ class RefinedSpace:
     rectangles_unknown: (list of intervals): unknown (white) space
     sat_samples: (list of points): satisfying points
     unsat_samples: (list of points): unsatisfying points
-
+    true_point: (list of numbers): The true value in the parameter space 
+    title: (string): text to added in the end of the Figure titles
     """
 
     def __init__(self, region, params, types=None, rectangles_sat=False, rectangles_unsat=False, rectangles_unknown=None, sat_samples=None, unsat_samples=None, true_point=False, title=False):
@@ -73,6 +74,8 @@ class RefinedSpace:
         rectangles_unknown: (list of intervals): unknown (white) space
         sat_samples: (list of points): satisfying points
         unsat_samples: (list of points): unsatisfying points
+        true_point: (list of numbers): The true value in the parameter space 
+        title: (string): text to added in the end of the Figure titles
         """
 
         ## REGION
@@ -344,7 +347,7 @@ class RefinedSpace:
         sat_samples: (list) of sat points
         """
         # print("samples", samples)
-        self.sat_samples = sat_samples
+        self.sat_samples.extend(sat_samples)
 
     def add_unsat_samples(self, unsat_samples):
         """Adds unsat samples
@@ -354,7 +357,7 @@ class RefinedSpace:
         unsat_samples: (list) of unsat points
         """
         # print("samples", samples)
-        self.unsat_samples = unsat_samples
+        self.unsat_samples.extend(unsat_samples)
 
     def remove_green(self, green):
         """Removes green (hyper)rectangle"""
@@ -454,6 +457,17 @@ class RefinedSpace:
                     Rectangle((rectangle[0][0], 0.33), rectangle[0][1] - rectangle[0][0], 0.33, fc='r'))
         return PatchCollection(rectangles_unsat, facecolor='r', alpha=0.5)
 
+    def sample(self, props, size_q):
+        """ Executes grid sampling
+
+            Args
+            -------
+            props:  (list of strings): array of properties
+            size_q: (int): number of samples in dimension
+        """
+        from synthetise import sample
+        sample(self, props, size_q, compress=True, silent=False)
+
     def show_samples(self, which):
         """Visualises samples"""
         samples = []
@@ -462,8 +476,13 @@ class RefinedSpace:
             return
         elif len(self.region) == 2:
             # print("samples", self.samples)
-            size_correction =  min(1/(len(self.sat_samples) + len(self.unsat_samples))**(1/len(self.region)), 0.01)
-
+            try:
+                size_correction = min(1/(len(self.sat_samples) + len(self.unsat_samples))**(1/len(self.region)), 0.01)
+            except:
+                print("len(self.sat_samples)", len(self.sat_samples))
+                print("len(self.unsat_samples)", len(self.unsat_samples))
+                print("len(self.region)", len(self.region))
+                raise Exception()
             ## CHOOSING SAT OR UNSAT
             if which:
                 for rectangle in self.sat_samples:
