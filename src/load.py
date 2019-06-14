@@ -370,12 +370,23 @@ def find_param(my_string):
             parameter = str(str(my_error).split("'")[1])
             parameters.add(parameter)
             locals()[parameter] = 0
-            # print("my_string ",my_string)
-            # print("parameter ",parameter)
-            # my_string = my_string.replace(parameter,"0")
+            # print("my_string ", my_string)
+            # print("parameter ", parameter)
+            my_string = my_string.replace(parameter, "2")
+            # print("my_string ", my_string)
         except TypeError as my_error:
-            # print(f"Dunno why this error '{my_error}' happened, sorry ")
-            hippie = False
+            # print(str(my_error))
+            if str(my_error) == "'int' object is not callable":
+                # print("I am catching the bloody bastard")
+                my_string = my_string.replace(",", "-")
+                my_string = my_string.replace("(", "+").replace(")", "")
+                my_string = my_string.replace("<=", "+").replace(">=", "+")
+                my_string = my_string.replace("<", "+").replace(">", "+")
+                my_string = my_string.replace("++", "+")
+                # print("my_string ", my_string)
+            else:
+                # print(f"Dunno why this error '{my_error}' happened, sorry ")
+                hippie = False
 
     parameters.discard("Not")
     parameters.discard("Or")
@@ -442,6 +453,7 @@ class TestLoad(unittest.TestCase):
         self.assertEqual(find_param("x+0.1"), {'x'})
         self.assertEqual(find_param("(-2)*q1*p**2+2*q1*p+2*p"), {'p', 'q1'})
         self.assertEqual(find_param('-p*(2*p*If(Or(low<1,1<=high),qmin,qmax)-p-2*If(Or(low<1,1<=high),qmin,qmax))'), {'qmin', 'p', 'low', 'qmax', 'high'})
+        self.assertEqual(find_param('10*p*(p - 1)**9*( If ( Or( low < 1 , 1 <= high), qmin, qmax) - 1)**9'), {'p', 'low', "high", "qmin", "qmax"})
 
     def test_intervals(self):
         my_interval = mpi(0, 5)

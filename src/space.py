@@ -61,7 +61,7 @@ class RefinedSpace:
     sat_samples: (list of points): satisfying points
     unsat_samples: (list of points): unsatisfying points
     true_point: (list of numbers): The true value in the parameter space 
-    title: (string): text to added in the end of the Figure titles
+    title: (string): text to be added in the end of the Figure titles
     """
 
     def __init__(self, region, params, types=None, rectangles_sat=False, rectangles_unsat=False, rectangles_unknown=None, sat_samples=None, unsat_samples=None, true_point=False, title=False):
@@ -77,7 +77,7 @@ class RefinedSpace:
         sat_samples: (list of points): satisfying points
         unsat_samples: (list of points): unsatisfying points
         true_point: (list of numbers): The true value in the parameter space 
-        title: (string): text to added in the end of the Figure titles
+        title: (string): text to added in the end of the Figure titles, CASE STUDY STANDARD: f"model: {model_type}, population = {population}, size_q = {size_q},  \n Dataset = {dataset}, alpha={alpha}, #samples={n_samples}"
         """
 
         ## REGION
@@ -93,9 +93,13 @@ class RefinedSpace:
 
         ## PARAMS
         self.params = params
+
         if not len(self.params) == len(self.region):
-            print(colored(f"Number of parameters ({len(params)}) and dimension of the region ({len(region)}) is not equal", 'red'))
-            raise Exception(f"Number of parameters ({len(params)}) and dimension of the region ({len(region)}) is not equal")
+            if len(self.params) > len(self.region):
+                print(colored(f"Number of parameters ({len(params)}) and dimension of the region ({len(region)}) is not equal", 'red'))
+                raise Exception(f"Number of parameters ({len(params)}) and dimension of the region ({len(region)}) is not equal")
+            else:
+                print(colored(f" Warning: Number of parameters ({len(params)}) and dimension of the region ({len(region)}) is not equal", 'red'))
 
         if types is None or types is False:
             self.types = []
@@ -189,7 +193,7 @@ class RefinedSpace:
 
         Args
         ----------
-        title: (String) title of the figure, CASE STUDY STANDARD: f"model: {model_type}, population = {population}, size_q = {size_q},  \n Dataset = {dataset}, alpha={alpha}, #samples={n_samples}"
+        title: (String) title of the figure
         green: (Bool) if True showing safe space
         red: (Bool) if True showing unsafe space
         sat_samples: (Bool) if True showing sat samples
@@ -237,7 +241,7 @@ class RefinedSpace:
             if unsat_samples:
                 pic.add_collection(self.show_samples(False))
 
-            whole_title =  f"{pretitle} red = unsafe region, green = safe region, white = in between \n {title}\n{self.title}"
+            whole_title = f"{pretitle} red = unsafe region, green = safe region, white = in between \n{self.title} \n {title}"
             pic.set_title(whole_title)
             with open(os.path.join(refinement_results, "figure_to_title.txt"), "a+") as file:
                 file.write(f"{save} : {whole_title}\n")
@@ -271,7 +275,7 @@ class RefinedSpace:
                         ax.plot(x_axis, sample)
                     ax.set_xlabel("param indices")
                     ax.set_ylabel("parameter value")
-                    whole_title = f"Sat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}, \n{self.title}"
+                    whole_title = f"Sat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}, \n{self.title} \n {title}"
                     ax.set_title(whole_title)
                     ax.autoscale()
                     ax.margins(0.1)
@@ -304,7 +308,7 @@ class RefinedSpace:
                         ax.plot(x_axis, sample)
                     ax.set_xlabel("param indices")
                     ax.set_ylabel("parameter value")
-                    whole_title = f"Unsat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}, \n{self.title}"
+                    whole_title = f"Unsat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}, \n{self.title} \n {title}"
                     ax.set_title(whole_title)
                     ax.autoscale()
                     ax.margins(0.1)

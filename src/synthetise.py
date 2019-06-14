@@ -464,7 +464,7 @@ def check_safe(region, props, silent=False, called=False):
         return s.model()
 
 
-def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=False, debug=False, save=False):
+def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=False, debug=False, save=False, title=""):
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
 
     Args
@@ -479,6 +479,7 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
     size_q: (Int): number of samples in dimension used for presampling
     debug: (Bool): if True extensive print will be used
     save: (Bool): if True output is stored
+    title: (string): text to be added in Figure titles
     """
 
     ## INITIALISATION
@@ -530,7 +531,7 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
         if not isinstance(props, Iterable):
             raise Exception("Given properties are not iterable, to use single property use list of length 1")
 
-        globals()["space"] = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
+        globals()["space"] = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[], title=title)
         space = globals()["space"]
 
         globals()["default_region"] = copy.deepcopy(region)
