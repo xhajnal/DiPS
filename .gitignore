@@ -133,6 +133,7 @@ refinement_results/*.p
 refinement_results/*.P
 refinement_results/*.png
 refinement_results/*.PNG
+refinement_results/figure_to_title.txt
 
 data/*
 !data/*.p
