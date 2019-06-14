@@ -3,6 +3,7 @@ import glob
 import math
 import os
 import pickle
+import copy
 import re
 from pathlib import Path
 from collections.abc import Iterable
@@ -349,8 +350,43 @@ def margin_experimental(alpha, n_samples, data_point):
         data_point * (1 - data_point) / n_samples) + 0.5 / n_samples + 0.005
 
 
-def find_param(polynomial):
-    """ Finds parameters of a polynomials
+def find_param(my_string):
+    """ Finds parameters of a string (also deals with Z3 expressions)
+
+    Args
+    ----------
+    my_string : input string
+
+    Returns set of strings - parameters
+    """
+    my_string = copy.copy(my_string)
+    parameters = set()
+    hippie = True
+    while hippie:
+        try:
+            eval(str(my_string))
+            hippie = False
+        except NameError as my_error:
+            parameter = str(str(my_error).split("'")[1])
+            parameters.add(parameter)
+            locals()[parameter] = 0
+            # print("my_string ",my_string)
+            # print("parameter ",parameter)
+            # my_string = my_string.replace(parameter,"0")
+        except TypeError as my_error:
+            # print(f"Dunno why this error '{my_error}' happened, sorry ")
+            hippie = False
+
+    parameters.discard("Not")
+    parameters.discard("Or")
+    parameters.discard("And")
+    parameters.discard("If")
+    parameters.discard("Implies")
+    return parameters
+
+
+def find_param_old(polynomial):
+    """ Finds parameters of a polynomials (also deals with Z3 expressions)
 
     Args
     ----------
@@ -367,13 +403,12 @@ def find_param(polynomial):
     parameters = re.split('\+|\*|\-|/| ', parameters)
     parameters = [i for i in parameters if not i.replace('.', '', 1).isdigit()]
     parameters = set(parameters)
-    parameters.add("")
-    parameters.remove("")
+    parameters.discard("")
     # print("hello",set(parameters))
     return set(parameters)
 
 
-def find_param_old(polynomial):
+def find_param_older(polynomial):
     """ Finds parameters of a polynomials
 
     Args
@@ -386,8 +421,7 @@ def find_param_old(polynomial):
     parameters = re.split('\+|\*|\-|/', parameters)
     parameters = [i for i in parameters if not i.replace('.','',1).isdigit()]
     parameters = set(parameters)
-    parameters.add("")
-    parameters.remove("")
+    parameters.discard("")
     # print("hello",set(parameters))
     return set(parameters)
 

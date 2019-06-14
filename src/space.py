@@ -1,4 +1,6 @@
 from collections import Iterable
+from time import localtime, strftime
+
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 import matplotlib.pyplot as plt
@@ -187,20 +189,16 @@ class RefinedSpace:
 
         Args
         ----------
-        title: (String) title of the figure
+        title: (String) title of the figure, CASE STUDY STANDARD: f"model: {model_type}, population = {population}, size_q = {size_q},  \n Dataset = {dataset}, alpha={alpha}, #samples={n_samples}"
         green: (Bool) if True showing safe space
         red: (Bool) if True showing unsafe space
         sat_samples: (Bool) if True showing sat samples
         unsat_samples: (Bool) if True showing unsat samples
-        save: (String/Bool) output file.format, if False or "" no saving
+        save: (Bool) if True, the output is saved
         """
 
-        # print("default figure name", save)
-        if isinstance(save, str):
-            if "." not in save:
-                save = f"{save}.png"
-                save = os.path.join(refinement_results, save)
-                # print("figure name:", save)
+        if save is True:
+            save = str(strftime("%d-%b-%Y-%H:%M:%S", localtime()))+".png"
 
         if len(self.region) == 1 or len(self.region) == 2:
             # colored(globals()["default_region"], self.region)
@@ -242,14 +240,14 @@ class RefinedSpace:
             whole_title =  f"{pretitle} red = unsafe region, green = safe region, white = in between \n {title}\n{self.title}"
             pic.set_title(whole_title)
             with open(os.path.join(refinement_results, "figure_to_title.txt"), "a+") as file:
-                file.write(f"{save} : {whole_title}")
+                file.write(f"{save} : {whole_title}\n")
 
             ## Save the figure
             if save:
-                plt.savefig(save, bbox_inches='tight')
-                print("Figure stored here: ", save)
+                plt.savefig(os.path.join(refinement_results, f"Refinement_{save}"), bbox_inches='tight')
+                print("Figure stored here: ", os.path.join(refinement_results, f"Refinement_{save}"))
                 with open(os.path.join(refinement_results, "figure_to_title.txt"), "a+") as file:
-                    file.write(f"{save} : {whole_title}")
+                    file.write(f"Refinement{save} : {whole_title}\n")
 
             plt.show()
             del region
@@ -280,8 +278,10 @@ class RefinedSpace:
 
                     ## Save the figure
                     if save:
-                        plt.savefig(save, bbox_inches='tight')
-                        print("Save sat in space", save)
+                        plt.savefig(os.path.join(refinement_results, f"Samples_sat_{save}"), bbox_inches='tight')
+                        print("Figure stored here: ", os.path.join(refinement_results, f"Samples_sat_{save}"))
+                        with open(os.path.join(refinement_results, "figure_to_title.txt"), "a+") as file:
+                            file.write(f"Samples_sat{save} : {whole_title}\n")
 
                     plt.show()
                 else:
@@ -311,10 +311,10 @@ class RefinedSpace:
 
                     ## Save the figure
                     if save:
-                        plt.savefig(save, bbox_inches='tight')
-                        print("Figure stored here: ", save)
+                        plt.savefig(os.path.join(refinement_results, f"Samples_unsat_{save}"), bbox_inches='tight')
+                        print("Figure stored here: ", os.path.join(refinement_results, f"Samples_unsat_{save}"))
                         with open(os.path.join(refinement_results, "figure_to_title.txt"), "a+") as file:
-                            file.write(f"{save} : {whole_title}")
+                            file.write(f"Samples_unsat{save} : {whole_title}\n")
 
                     plt.show()
                 else:
@@ -346,7 +346,7 @@ class RefinedSpace:
         -------
         sat_samples: (list) of sat points
         """
-        # print("samples", samples)
+        # print("sat_samples", sat_samples)
         self.sat_samples.extend(sat_samples)
 
     def add_unsat_samples(self, unsat_samples):
@@ -356,7 +356,7 @@ class RefinedSpace:
         -------
         unsat_samples: (list) of unsat points
         """
-        # print("samples", samples)
+        # print("unsat_samples", unsat_samples)
         self.unsat_samples.extend(unsat_samples)
 
     def remove_green(self, green):
@@ -417,7 +417,7 @@ class RefinedSpace:
         return self.get_green_volume() + self.get_red_volume()
 
     def get_coverage(self):
-        """Returns proption of nonwhite subspace (coverage)"""
+        """Returns proportion of nonwhite subspace (coverage)"""
         return self.get_nonwhite_volume() / self.get_volume()
 
     ## TBD generalise so that the code is not copied
@@ -457,19 +457,34 @@ class RefinedSpace:
                     Rectangle((rectangle[0][0], 0.33), rectangle[0][1] - rectangle[0][0], 0.33, fc='r'))
         return PatchCollection(rectangles_unsat, facecolor='r', alpha=0.5)
 
-    def sample(self, props, size_q):
+    ## TBD DELETED AS IT IS GRID SAMPLING
+    def sample(self, props, size_q, silent=False, save=False):
         """ Executes grid sampling
 
             Args
             -------
             props:  (list of strings): array of properties
             size_q: (int): number of samples in dimension
+            silent: (Bool): if silent printed output is set to minimum
+            save: (Bool): if True output is pickled
         """
         from synthetise import sample
-        sample(self, props, size_q, compress=True, silent=False)
+        sample(self, props, size_q, compress=True, silent=silent, save=save)
+
+    def grid_sample(self, props, size_q, silent=False, save=False):
+        """ Executes grid sampling
+
+            Args
+            -------
+            props:  (list of strings): array of properties
+            size_q: (int): number of samples in dimension
+            silent: (Bool): if silent printed output is set to minimum
+            save: (Bool): if True output is pickled
+        """
+        self.sample(self, props, size_q, silent=silent, save=save)
 
     def show_samples(self, which):
-        """Visualises samples"""
+        """ Visualises samples in 2D"""
         samples = []
         if len(self.region) > 2:
             print("Error while visualising", len(self.region), "dimensional space")

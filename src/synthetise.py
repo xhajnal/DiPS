@@ -570,11 +570,7 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
 
         # funcs, intervals = props_to_ineq(props)
 
-        to_be_searched = sample(space, props, size_q, compress=True, silent=not debug)
-
-        ## Saving the sampled space as pickled dictionary
-        if save:
-            pickle.dump(to_be_searched, open(os.path.join(refinement_results, ("Sampled_space_"+save).split(".")[0]+".p"), "wb"))
+        to_be_searched = sample(space, props, size_q, compress=True, silent=not debug, save=save)
 
         if debug:
             print(type(to_be_searched))
@@ -600,7 +596,7 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
 
         if debug and save:
             print("I am showing sampling_sat_"+str(save))
-        space.show(red=False, green=False, sat_samples=True, unsat_samples=False, save=(save, "sampling_sat_"+str(save))[bool(save)])
+        space.show(red=False, green=False, sat_samples=True, unsat_samples=False, save=save)
 
         ## COMPUTING THE ORTHOGONAL HULL OF SAT POINTS
         ## Initializing the min point and max point as the first point
@@ -662,7 +658,7 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
 
         if debug and save:
             print("I am showing sampling_unsat_"+str(save))
-        space.show(red=False, green=False, sat_samples=False, unsat_samples=True, save=(save, "sampling_unsat_"+str(save))[bool(save)])
+        space.show(red=False, green=False, sat_samples=False, unsat_samples=True, save=save)
 
         ## If there is only the default region to be refined in the whitespace
         if len(space.get_white()) == 1:
@@ -820,7 +816,7 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
                 return space
 
             ## Showing the step refinements of respective rectangles from the white space
-            space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time() - start_time)} second(s)", save=(save, "refinement_"+str(save))[bool(save)])
+            space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time() - start_time)} second(s)", save=save)
             print()
             if space.get_coverage() >= coverage:
                 break
@@ -842,7 +838,7 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
 
     ## VISUALISATION
     if not size_q:
-        space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time() - start_time)} second(s)", save=(save, "refinement_"+str(save))[bool(save)])
+        space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time() - start_time)} second(s)", save=save)
     print("result coverage is: ", space.get_coverage())
     return space
 
@@ -1655,7 +1651,7 @@ def private_create_matrix(size_q, dim, n_param):
     return [private_create_matrix(size_q, dim - 1, n_param) for _ in range(size_q)]
 
 
-def sample(space, props, size_q, compress=False, silent=True):
+def sample(space, props, size_q, compress=False, silent=True, save=False):
     """ Samples the space in **size_q** samples in each dimension and saves if the point is in respective interval
 
     Args
@@ -1665,12 +1661,14 @@ def sample(space, props, size_q, compress=False, silent=True):
     size_q: (int): number of samples in dimension
     silent: (Bool): if silent printed output is set to minimum
     compress: (Bool): if True, only a conjunction of the values (prop in the interval) is used
+    save: (Bool): if True output is pickled
 
     Returns
     --------
     A map from point to list of Bool whether f(point) in interval[index]
 
     """
+    ## Saving the sampled space as pickled dictionary
 
     parameter_values = []
     parameter_indices = []
@@ -1759,6 +1757,10 @@ def sample(space, props, size_q, compress=False, silent=True):
             else:
                 sampling[tuple(parameter_indices[i])][1] = satisfied_list
         i = i + 1
+
+    if save:
+        pickle.dump(sampling, open(os.path.join(refinement_results, ("Sampled_space_" + save).split(".")[0] + ".p"), "wb"))
+
     return sampling
 
 
