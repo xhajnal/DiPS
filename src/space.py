@@ -516,6 +516,18 @@ class RefinedSpace:
                     samples.append(Rectangle((rectangle[0]-0.005, rectangle[1]-0.005), size_correction, size_correction, fc='r'))
                 return PatchCollection(samples, facecolor='r', alpha=0.5)
 
+    def nice_print(self):
+        """ Prints the class in a human readable format"""
+        print("region: ", self.region)
+        print("params: ", self.params)
+        print("types: ", self.types)
+        print("rectangles_sat: ", self.sat)
+        print("rectangles_unsat: ", self.unsat)
+        print("rectangles_unknown: ", self.unknown)
+        print("sat_samples: ", self.sat_samples)
+        print("unsat_samples: ", self.unsat_samples)
+        print("true_point: ", self.true_point)
+
     def __repr__(self):
         return str([self.region, self.sat, self.unsat, self.unknown])
 
