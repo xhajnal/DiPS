@@ -174,12 +174,20 @@ class RefinedSpace:
             # print("samples", samples)
             self.unsat_samples = unsat_samples
 
+        if (sat_samples is None) and (unsat_samples is None):
+            self.gridsampled = True
+        else:
+            print("Not sure about the source of the sample points")
+            self.gridsampled = False
+
         ## SET THE TRUE POINT
         if true_point:
             if len(true_point) is len(self.params):
                 self.true_point = true_point
             else:
                 raise Exception(f"The dimension of the given true point ({len(true_point)}) does not match")
+        else:
+            self.true_point = None
 
         ## SET TITLE SUFFIX
         if title:
@@ -258,7 +266,8 @@ class RefinedSpace:
 
         else:
             print("Multidimensional space, showing only samples")
-            if sat_samples:
+            ## Show only if sat_samples selected and either there are some unsat samples or the sampling was not grid
+            if sat_samples and (not self.gridsampled or self.unsat_samples):
                 if self.sat_samples:
                     fig, ax = plt.subplots()
                     ## Creates values of the horizontal axis
@@ -291,7 +300,11 @@ class RefinedSpace:
                 else:
                     print("No sat samples so far, nothing to show")
 
-            if unsat_samples:
+            if sat_samples and self.gridsampled and not self.unsat_samples:
+                print("Since no unsat samples, the whole grid of points are sat, not visualising this trivial case.")
+
+            ## Show only if unsat_samples selected and either there are some sat samples or the sampling was not grid
+            if unsat_samples and (not self.gridsampled or self.sat_samples):
                 if self.unsat_samples:
                     fig, ax = plt.subplots()
                     ## Creates values of the horizontal axis
@@ -323,6 +336,9 @@ class RefinedSpace:
                     plt.show()
                 else:
                     print("No unsat samples so far, nothing to show")
+
+            if unsat_samples and self.gridsampled and not self.sat_samples:
+                print("Since no sat samples, the whole grid of points are unsat, not visualising this trivial case.")
 
     def get_volume(self):
         """Returns the volume of the space"""
@@ -473,6 +489,7 @@ class RefinedSpace:
             save: (Bool): if True output is pickled
         """
         from synthetise import sample
+        self.gridsampled = True
         sample(self, props, size_q, compress=True, silent=silent, save=save)
 
     def grid_sample(self, props, size_q, silent=False, save=False):
@@ -485,6 +502,7 @@ class RefinedSpace:
             silent: (Bool): if silent printed output is set to minimum
             save: (Bool): if True output is pickled
         """
+        self.gridsampled = True
         self.sample(self, props, size_q, silent=silent, save=save)
 
     def show_samples(self, which):

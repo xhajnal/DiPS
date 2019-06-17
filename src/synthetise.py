@@ -1669,8 +1669,6 @@ def sample(space, props, size_q, compress=False, silent=True, save=False):
     A map from point to list of Bool whether f(point) in interval[index]
 
     """
-    ## Saving the sampled space as pickled dictionary
-
     parameter_values = []
     parameter_indices = []
     for param in range(len(space.params)):
@@ -1759,6 +1757,10 @@ def sample(space, props, size_q, compress=False, silent=True, save=False):
                 sampling[tuple(parameter_indices[i])][1] = satisfied_list
         i = i + 1
 
+    ## Setting flag to not visualise sat if no unsat and vice versa
+    space.gridsampled = True
+
+    ## Saving the sampled space as pickled dictionary
     if save:
         pickle.dump(sampling, open(os.path.join(refinement_results, ("Sampled_space_" + save).split(".")[0] + ".p"), "wb"))
 
