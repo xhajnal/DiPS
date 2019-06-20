@@ -11,11 +11,18 @@ from tkinter import filedialog
 import configparser
 config = configparser.ConfigParser()
 workspace = os.path.dirname(__file__)
+sys.path.append(workspace)
+from load import create_intervals
+import space
+from synthetise import *
+from mc_prism import *
+
 cwd = os.getcwd()
 
 
 class Gui:
     def __init__(self, root):
+        ## INIT
         root.title('mpm')
         frame = Frame(root, width=400, height=300)
         frame.pack()
@@ -32,10 +39,22 @@ class Gui:
         self.model = ""
         self.property = ""
         self.data = ""
+        self.alpha = ""
+        self.n_samples = ""
+        self.interval = ""
         self.space = ""
 
-        ## DESIGN
+        self.props = ""
+        self.n = ""
+        self.coverage = ""
+        self.epsilon = ""
+        self.version = ""
 
+        self.size_q = ""
+        self.save = ""
+
+
+        ## DESIGN
         ## MENU
         main_menu = Menu(root)
         root.config(menu=main_menu)
@@ -97,6 +116,7 @@ class Gui:
         self.status = Label(root, text="", bd=1, relief=SUNKEN, anchor=W)
         self.status.pack(side=BOTTOM, fill=X)
 
+    ## INIT
     def load_config(self):
         os.chdir(workspace)
         config.read(os.path.join(workspace, "../config.ini"))
@@ -187,7 +207,7 @@ class Gui:
             ## os.copy the file
         else:
             with open(save_property) as file:
-                for line in self.properties:
+                for line in self.property:
                     file.write(line)
         self.status_set("Property saved.")
 
@@ -217,38 +237,40 @@ class Gui:
     ## SHOW
     def show_space(self):
         self.status_set("Please select which parts to be shown.")
-        print("show_space")
-        ## TBD
-        # space.show(self, title="", green=True, red=True, sat_samples=False, unsat_samples=False, save=False)
+        ## TBD choose what to show
+        self.space.show(self, title="", green=True, red=True, sat_samples=False, unsat_samples=False, save=False)
 
     ## ANALYSIS
     def synth_params(self):
         self.status_set("Parameter synthesis running ...")
-        print("synth params")
-        ## TBD takes model, and prism/storm
-        # mc_prism.call_prism(args, seq=False, silent=False, model_path=model_path, properties_path=properties_path,
-        #                prism_output_path=prism_results, std_output_path=prism_results, std_output_file=False)
+        ## TBD solve agents_quantities
+
+        if self.program.lower() is "prism":
+            call_prism_files(self.model, agents_quantities, param_intervals=False, seq=False, noprobchecks=False, memory="", model_path=model_path, properties_path=properties_path, property_file=False, output_path=prism_results)
+
+        if self.program.lower() is "storm":
+            call_storm_files(self.model, agents_quantities, model_path=model_path, properties_path=properties_path, property_file=False, output_path=storm_results, time=False)
         self.status_set("Parameter synthesised. Output here: {}", [os.path.join(self.prism_results, filename)])
 
     def create_intervals(self):
         self.status_set("Intervals are being created ...")
-        print("create_intervals")
-        ## TBD, takes data, alpha, n_samples
-        # load.create_intervals(alpha, n_samples, data)
+        if self.data is "":
+            self.load_data()
+        ## TBD,  LOAD alpha, n_samples
+        self.interval = create_intervals(self.alpha, self.n_samples, self.data)
         self.status_set("Intervals created.")
 
     def sample_space(self):
         self.status_set("Space sampling running ...")
-        print("sample_space")
-        ## TBD takes size_q (so far only grid sample implemented)
-        # space.grid_sample(self, props, size_q, silent=False, save=False)
+        ## TBD LOAD props, size_q
+        self.space.grid_sample(self.props, self.size_q, silent=False, save=self.save)
         self.status_set("Space sampling done.")
 
     def refine_space(self):
         self.status_set("Space refinement running ...")
         print("refine_space")
-        ## TBD takes nothing
-        # synthetise.check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=False, debug=False, save=False, title="")
+        ## TBD LOAD props, n, epsilon, coverage
+        check_deeper(self.space, self.props, self.n, self.epsilon, self.coverage, silent=True, version=self.version, size_q=False, debug=False, save=False, title="")
         self.status_set("Space refinement done.")
 
     ## SETTINGS
