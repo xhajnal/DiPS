@@ -8,14 +8,18 @@ class Gui:
 
     def __init__(self, root):
         root.title('mpm')
+        frame = Frame(root, width=400, height=300)
+        frame.pack()
 
         self.model = None
         self.property = None
         self.data = None
         self.space = None
 
+        ## DESIGN
+
+        ## MENU
         main_menu = Menu(root)
-        frame = Frame(root)
         root.config(menu=main_menu)
 
         ## FILE
@@ -71,31 +75,45 @@ class Gui:
         help_menu.add_command(label="Check for updates", command=self.checkupdates)
         help_menu.add_command(label="About", command=self.printabout)
 
+        ## STATUS BAR
+        self.status = Label(root, text="", bd=1, relief=SUNKEN, anchor=W)
+        self.status.pack(side=BOTTOM, fill=X)
+
+    ## LOGIC
     ## FILE
     def load_model(self):
+        self.status_set("Please select the model to be loaded.")
         print("load model")
         ## TBD
         ## just load the path
         # self.model = filepath
+        self.status_set("Model loaded.")
 
     def load_property(self):
+        self.status_set("Please select the property to be loaded.")
         print("load model")
         ## TBD
         ## just load the path
         # self.property = filepath
+        self.status_set("Property loaded.")
 
     def load_data(self):
+        self.status_set("Please select the data to be loaded.")
         print("load model")
         ## TBD
         ## just load the path
         # self.data = filepath
+        self.status_set("Data loaded.")
 
     def load_space(self):
+        self.status_set("Please select the space to be loaded.")
         print("load space")
         ## TBD
         # self.space = pickle.load(open(filepath, "rb"))
+        self.status_set("Space loaded")
 
     def save_model(self):
+        self.status_set("Please select folder to store the model in.")
         print("save model")
         ## TBD
         if isinstance(self.model, os.path):
@@ -105,8 +123,11 @@ class Gui:
             with open(filepath) as file:
                 for line in self.model:
                     file.write(line)
+        self.status_set("Model saved.")
 
     def save_property(self):
+        self.status_set("Please select folder to store the property in.")
+        self.status_set("property saved")
         print("save_property")
         ## TBD
         if isinstance(self.model, os.path):
@@ -116,69 +137,91 @@ class Gui:
             with open(filepath) as file:
                 for line in self.properties:
                     file.write(line)
+        self.status_set("Property saved.")
 
     def save_data(self):
+        self.status_set("Please select folder to store the data in.")
         print("save_data")
         ## TBD
         ## get the filename
         pickle.dump(self.data, open(filename, 'wb'))
+        self.status_set("Data saved.")
 
     def save_space(self):
+        self.status_set("Please select folder to store the space in.")
         print("save space")
         ## TBD
         ## get the filename
         pickle.dump(self.data, open(filename, 'wb'))
+        self.status_set("Space saved.")
 
     ## EDIT
 
     ## SHOW
     def show_space(self):
+        self.status_set("Please select which parts to be shown.")
         print("show_space")
         ## TBD
         # space.show(self, title="", green=True, red=True, sat_samples=False, unsat_samples=False, save=False)
 
     ## ANALYSIS
     def synth_params(self):
+        self.status_set("Parameter synthesis running ...")
         print("synth params")
         ## TBD takes model, and prism/storm
         # mc_prism.call_prism(args, seq=False, silent=False, model_path=model_path, properties_path=properties_path,
         #                prism_output_path=prism_results, std_output_path=prism_results, std_output_file=False)
+        self.status_set("Parameter synthesised. Output here: {}", [os.path.join(prism_results, filename)])
 
     def create_intervals(self):
+        self.status_set("Intervals are being created ...")
         print("create_intervals")
         ## TBD, takes data, alpha, n_samples
         # load.create_intervals(alpha, n_samples, data)
+        self.status_set("Intervals created.")
 
     def sample_space(self):
+        self.status_set("Space sampling running ...")
         print("sample_space")
         ## TBD takes size_q (so far only grid sample implemented)
         # space.grid_sample(self, props, size_q, silent=False, save=False)
+        self.status_set("Space sampling done.")
 
     def refine_space(self):
+        self.status_set("Space refinement running ...")
         print("refine_space")
         ## TBD takes nothing
         # synthetise.check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=False, debug=False, save=False, title="")
+        self.status_set("Space refinement done.")
 
     ## SETTINGS
     def edit_config(self):
         print("edit config")
         ## TBD edit config
+        self.status_set("Config file saved.")
 
     ## HELP
     def show_help(self):
         print("show_help")
-        webbrowser.open_new("https://github.com/xhajnal/mpm")
-        # TBD open browser at https://github.com/xhajnal/mpm
+        webbrowser.open_new("https://github.com/xhajnal/mpm#mpm")
 
     def checkupdates(self):
         print("check updates")
-        webbrowser.open_new("https://github.com/xhajnal/mpm")
-        # TBD open browser at https://github.com/xhajnal/mpm
+        webbrowser.open_new("https://github.com/xhajnal/mpm/releases")
 
     def printabout(self):
         print("Mpm version alpha")
         print("More info here: https://github.com/xhajnal/mpm")
         print("Powered by University of Constance and Masaryk University")
+
+    ## STATUS BAR
+    def status_set(self, text, *args):
+        self.status.config(text=text.format(args))
+        self.status.update_idletasks()
+
+    def status_clear(self):
+        self.status.config(text="")
+        self.status.update_idletasks()
 
 
 root = Tk()
