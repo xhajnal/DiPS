@@ -27,6 +27,8 @@ class Gui:
         frame = Frame(root, width=400, height=300)
         frame.pack()
 
+        self.version = "alpha"
+
         self.model_path = ""
         self.properties_path = ""
         self.data_path = ""
@@ -48,7 +50,7 @@ class Gui:
         self.n = ""
         self.coverage = ""
         self.epsilon = ""
-        self.version = ""
+        self.alg = ""
 
         self.size_q = ""
         self.save = ""
@@ -270,7 +272,7 @@ class Gui:
         self.status_set("Space refinement running ...")
         print("refine_space")
         ## TBD LOAD props, n, epsilon, coverage
-        check_deeper(self.space, self.props, self.n, self.epsilon, self.coverage, silent=True, version=self.version, size_q=False, debug=False, save=False, title="")
+        check_deeper(self.space, self.props, self.n, self.epsilon, self.coverage, silent=True, version=self.alg, size_q=False, debug=False, save=False, title="")
         self.status_set("Space refinement done.")
 
     ## SETTINGS
@@ -294,6 +296,15 @@ class Gui:
         webbrowser.open_new("https://github.com/xhajnal/mpm/releases")
 
     def printabout(self):
+        top2 = Toplevel(root)
+        top2.title("About")
+        top2.resizable(0, 0)
+        explanation = f" Mpm version: {self.version} \n More info here: https://github.com/xhajnal/mpm \n Powered by University of Constance and Masaryk University"
+        Label(top2, justify=LEFT, text=explanation).pack(padx=13, pady=20)
+        top2.transient(root)
+        top2.grab_set()
+        root.wait_window(top2)
+
         print("Mpm version alpha")
         print("More info here: https://github.com/xhajnal/mpm")
         print("Powered by University of Constance and Masaryk University")
