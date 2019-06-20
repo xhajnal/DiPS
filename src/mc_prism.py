@@ -35,7 +35,7 @@ if not os.path.exists(model_path):
 
 properties_path = Path(config.get("paths", "properties"))
 if not os.path.exists(properties_path):
-    raise OSError("Directory does not exist: " + str(model_path))
+    raise OSError("Directory does not exist: " + str(properties_path))
 
 prism_results = config.get("paths", "prism_results")
 if not os.path.exists(prism_results):

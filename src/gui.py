@@ -1,20 +1,38 @@
+import platform
+from os.path import isfile
 from tkinter import *
 import webbrowser
 import pickle
 import os
+from pathlib import Path
+from tkinter import filedialog
+
+
+import configparser
+config = configparser.ConfigParser()
+workspace = os.path.dirname(__file__)
+cwd = os.getcwd()
 
 
 class Gui:
-
     def __init__(self, root):
         root.title('mpm')
         frame = Frame(root, width=400, height=300)
         frame.pack()
 
-        self.model = None
-        self.property = None
-        self.data = None
-        self.space = None
+        self.model_path = ""
+        self.properties_path = ""
+        self.data_path = ""
+        self.prism_results = ""
+        self.storm_results = ""
+        self.refinement_results = ""
+        self.figures = ""
+
+        self.load_config()
+        self.model = ""
+        self.property = ""
+        self.data = ""
+        self.space = ""
 
         ## DESIGN
 
@@ -79,80 +97,119 @@ class Gui:
         self.status = Label(root, text="", bd=1, relief=SUNKEN, anchor=W)
         self.status.pack(side=BOTTOM, fill=X)
 
+    def load_config(self):
+        os.chdir(workspace)
+        config.read(os.path.join(workspace, "../config.ini"))
+
+        self.model_path = Path(config.get("paths", "models"))
+        if not os.path.exists(self.model_path):
+            os.makedirs(self.model_path)
+
+        self.properties_path = Path(config.get("paths", "properties"))
+        if not os.path.exists(self.properties_path):
+            os.makedirs(self.properties_path)
+
+        self.data_path = config.get("paths", "data")
+        if not os.path.exists(self.data_path):
+            os.makedirs(self.data_path)
+
+        self.prism_results = config.get("paths", "prism_results")
+        if not os.path.exists(self.prism_results):
+            os.makedirs(self.prism_results)
+
+        self.storm_results = config.get("paths", "storm_results")
+        if not os.path.exists(self.storm_results):
+            os.makedirs(self.storm_results)
+
+        self.refinement_results = config.get("paths", "refinement_results")
+        if not os.path.exists(self.refinement_results):
+            os.makedirs(self.refinement_results)
+
+        self.figures = config.get("paths", "figures")
+        if not os.path.exists(self.figures):
+            os.makedirs(self.figures)
+
+        os.chdir(cwd)
+
     ## LOGIC
     ## FILE
     def load_model(self):
         self.status_set("Please select the model to be loaded.")
-        print("load model")
-        ## TBD
-        ## just load the path
-        # self.model = filepath
+        self.model = filedialog.askopenfilename(initialdir=self.model_path, title="Select file", filetypes=(("pm files", "*.pm"), ("all files", "*.*")))
+        # print(self.model)
         self.status_set("Model loaded.")
 
     def load_property(self):
         self.status_set("Please select the property to be loaded.")
-        print("load model")
-        ## TBD
-        ## just load the path
-        # self.property = filepath
+        self.property = filedialog.askopenfilename(initialdir=self.properties_path, title="Select file", filetypes=(("property files", "*.pctl"), ("all files", "*.*")))
+        # print(self.property)
         self.status_set("Property loaded.")
 
     def load_data(self):
         self.status_set("Please select the data to be loaded.")
-        print("load model")
-        ## TBD
-        ## just load the path
-        # self.data = filepath
+        self.data = filedialog.askopenfilename(initialdir=self.data_path, title="Select file", filetypes=(("pickled files", "*.p"), ("all files", "*.*")))
+        # print(self.data)
         self.status_set("Data loaded.")
 
     def load_space(self):
         self.status_set("Please select the space to be loaded.")
-        print("load space")
-        ## TBD
-        # self.space = pickle.load(open(filepath, "rb"))
+        self.space = filedialog.askopenfilename(initialdir=self.data_path, title="Select file", filetypes=(("pickled files", "*.p"), ("all files", "*.*")))
+        # print(self.space)
         self.status_set("Space loaded")
 
     def save_model(self):
+        if self.model is "":
+            self.status_set("There is no model to be saved.")
+            return
+
         self.status_set("Please select folder to store the model in.")
-        print("save model")
-        ## TBD
-        if isinstance(self.model, os.path):
-            print()
+        save_model = filedialog.asksaveasfilename(initialdir=self.model_path, title="Select file", filetypes=(("pm files", "*.pm"), ("all files", "*.*")))
+        print(save_model)
+        if isfile(self.model):
+            print(self.model)
             ## os.copy the file
         else:
-            with open(filepath) as file:
+            with open(save_model) as file:
                 for line in self.model:
                     file.write(line)
         self.status_set("Model saved.")
 
     def save_property(self):
+        if self.property is "":
+            self.status_set("There is no property to be saved.")
+            return
+
         self.status_set("Please select folder to store the property in.")
-        self.status_set("property saved")
-        print("save_property")
-        ## TBD
-        if isinstance(self.model, os.path):
-            print()
+        save_property = filedialog.asksaveasfilename(initialdir=self.model_path, title="Select file", filetypes=(("pctl files", "*.pctl"), ("all files", "*.*")))
+        print(save_property)
+        if isfile(self.property):
+            print(self.property)
             ## os.copy the file
         else:
-            with open(filepath) as file:
+            with open(save_property) as file:
                 for line in self.properties:
                     file.write(line)
         self.status_set("Property saved.")
 
     def save_data(self):
+        if self.data is "":
+            self.status_set("There is no data to be saved.")
+            return
+
         self.status_set("Please select folder to store the data in.")
-        print("save_data")
-        ## TBD
-        ## get the filename
-        pickle.dump(self.data, open(filename, 'wb'))
+        save_data = filedialog.asksaveasfilename(initialdir=self.data_path, title="Select file", filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+        print(save_data)
+        pickle.dump(self.data, open(save_data, 'wb'))
         self.status_set("Data saved.")
 
     def save_space(self):
+        if self.space is "":
+            self.status_set("There is no space to be saved.")
+            return
         self.status_set("Please select folder to store the space in.")
-        print("save space")
-        ## TBD
-        ## get the filename
-        pickle.dump(self.data, open(filename, 'wb'))
+        save_space = filedialog.asksaveasfilename(initialdir=self.data_path, title="Select file", filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+        print(save_space)
+        pickle.dump(self.data, open(save_space, 'wb'))
         self.status_set("Space saved.")
 
     ## EDIT
@@ -171,7 +228,7 @@ class Gui:
         ## TBD takes model, and prism/storm
         # mc_prism.call_prism(args, seq=False, silent=False, model_path=model_path, properties_path=properties_path,
         #                prism_output_path=prism_results, std_output_path=prism_results, std_output_file=False)
-        self.status_set("Parameter synthesised. Output here: {}", [os.path.join(prism_results, filename)])
+        self.status_set("Parameter synthesised. Output here: {}", [os.path.join(self.prism_results, filename)])
 
     def create_intervals(self):
         self.status_set("Intervals are being created ...")
@@ -196,8 +253,13 @@ class Gui:
 
     ## SETTINGS
     def edit_config(self):
-        print("edit config")
-        ## TBD edit config
+        if "wind" in platform.system().lower():
+            os.startfile(f'{os.path.join(workspace, "../config.ini")}')
+        else:
+            os.system(f'gedit {os.path.join(workspace, "../config.ini")}')
+        ## RELOAD CONFIG FILE AFTER CHANGE
+        ## TBD CHECK WAITING TO CLOSE THE FILE
+        self.load_config()
         self.status_set("Config file saved.")
 
     ## HELP
