@@ -23,6 +23,7 @@ class Gui:
     def __init__(self, root):
         ## INIT
         root.title('mpm')
+        root.minsize(400, 300)
 
         self.version = "alpha"
 
@@ -43,6 +44,7 @@ class Gui:
         self.interval = ""
         self.space = ""
 
+        self.program = ""
         self.props = ""
         self.n = ""
         self.coverage = ""
@@ -183,24 +185,24 @@ class Gui:
     ## FILE
     def load_model(self):
         self.status_set("Please select the model to be loaded.")
-        self.model.set(filedialog.askopenfilename(initialdir=self.model_path, title="Select file", filetypes=(("pm files", "*.pm"), ("all files", "*.*"))))
+        self.model.set(filedialog.askopenfilename(initialdir=self.model_path, title="Model loading - Select file", filetypes=(("pm files", "*.pm"), ("all files", "*.*"))))
         self.status_set("Model loaded.")
 
     def load_property(self):
         self.status_set("Please select the property to be loaded.")
-        self.property.set(filedialog.askopenfilename(initialdir=self.properties_path, title="Select file", filetypes=(("property files", "*.pctl"), ("all files", "*.*"))))
+        self.property.set(filedialog.askopenfilename(initialdir=self.properties_path, title="Property loading - Select file", filetypes=(("property files", "*.pctl"), ("all files", "*.*"))))
         # print(self.property)
         self.status_set("Property loaded.")
 
     def load_data(self):
         self.status_set("Please select the data to be loaded.")
-        self.data.set(filedialog.askopenfilename(initialdir=self.data_path, title="Select file", filetypes=(("pickled files", "*.p"), ("all files", "*.*"))))
+        self.data.set(filedialog.askopenfilename(initialdir=self.data_path, title="Data loading - Select file", filetypes=(("pickled files", "*.p"), ("all files", "*.*"))))
         # print(self.data)
         self.status_set("Data loaded.")
 
     def load_space(self):
         self.status_set("Please select the space to be loaded.")
-        self.space.set(filedialog.askopenfilename(initialdir=self.data_path, title="Select file", filetypes=(("pickled files", "*.p"), ("all files", "*.*"))))
+        self.space.set(filedialog.askopenfilename(initialdir=self.data_path, title="Space loading - Select file", filetypes=(("pickled files", "*.p"), ("all files", "*.*"))))
         # print(self.space)
         self.status_set("Space loaded")
 
@@ -210,7 +212,7 @@ class Gui:
             return
 
         self.status_set("Please select folder to store the model in.")
-        save_model = filedialog.asksaveasfilename(initialdir=self.model_path, title="Select file", filetypes=(("pm files", "*.pm"), ("all files", "*.*")))
+        save_model = filedialog.asksaveasfilename(initialdir=self.model_path, title="Model saving - Select file", filetypes=(("pm files", "*.pm"), ("all files", "*.*")))
         print(save_model)
         if isfile(self.model):
             print(self.model)
@@ -227,7 +229,7 @@ class Gui:
             return
 
         self.status_set("Please select folder to store the property in.")
-        save_property = filedialog.asksaveasfilename(initialdir=self.model_path, title="Select file", filetypes=(("pctl files", "*.pctl"), ("all files", "*.*")))
+        save_property = filedialog.asksaveasfilename(initialdir=self.model_path, title="Property saving - Select file", filetypes=(("pctl files", "*.pctl"), ("all files", "*.*")))
         print(save_property)
         if isfile(self.property):
             print(self.property)
@@ -244,7 +246,7 @@ class Gui:
             return
 
         self.status_set("Please select folder to store the data in.")
-        save_data = filedialog.asksaveasfilename(initialdir=self.data_path, title="Select file", filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+        save_data = filedialog.asksaveasfilename(initialdir=self.data_path, title="Data saving - Select file", filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
         print(save_data)
         pickle.dump(self.data, open(save_data, 'wb'))
         self.status_set("Data saved.")
@@ -254,7 +256,7 @@ class Gui:
             self.status_set("There is no space to be saved.")
             return
         self.status_set("Please select folder to store the space in.")
-        save_space = filedialog.asksaveasfilename(initialdir=self.data_path, title="Select file", filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+        save_space = filedialog.asksaveasfilename(initialdir=self.data_path, title="Space saving - Select file", filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
         print(save_space)
         pickle.dump(self.data, open(save_space, 'wb'))
         self.status_set("Space saved.")
@@ -272,12 +274,25 @@ class Gui:
         self.status_set("Parameter synthesis running ...")
         ## TBD solve agents_quantities
 
+        if self.model.get() is "":
+            self.load_model()
+
+        if self.property.get() is "":
+            self.load_property()
+
+        ## TBD Window where to choose between PRISM and Storm
+        self.program = "prism"
+
         if self.program.lower() is "prism":
-            call_prism_files(self.model, agents_quantities, param_intervals=False, seq=False, noprobchecks=False, memory="", model_path=model_path, properties_path=properties_path, property_file=False, output_path=prism_results)
+            call_prism_files(self.model, agents_quantities, param_intervals=False, seq=False, noprobchecks=False, memory="", model_path=self.model_path, properties_path=self.properties_path, property_file=False, output_path=prism_results)
+            self.status_set("Parameter synthesised. Output here: {}", [os.path.join(self.prism_results, filename)])
+            return
 
         if self.program.lower() is "storm":
             call_storm_files(self.model, agents_quantities, model_path=model_path, properties_path=properties_path, property_file=False, output_path=storm_results, time=False)
-        self.status_set("Parameter synthesised. Output here: {}", [os.path.join(self.prism_results, filename)])
+            self.status_set("Parameter synthesised. Output here: {}", [os.path.join(self.prism_results, filename)])
+            return
+        self.status_set("Selected program not recognised")
 
     def create_intervals(self):
         self.status_set("Intervals are being created ...")
