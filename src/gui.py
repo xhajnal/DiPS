@@ -16,7 +16,6 @@ from load import create_intervals
 import space
 from synthetise import *
 from mc_prism import *
-
 cwd = os.getcwd()
 
 
@@ -24,8 +23,6 @@ class Gui:
     def __init__(self, root):
         ## INIT
         root.title('mpm')
-        frame = Frame(root, width=400, height=300)
-        frame.pack()
 
         self.version = "alpha"
 
@@ -38,9 +35,9 @@ class Gui:
         self.figures = ""
 
         self.load_config()
-        self.model = ""
-        self.property = ""
-        self.data = ""
+        self.model = StringVar()
+        self.property = StringVar()
+        self.data = StringVar()
         self.alpha = ""
         self.n_samples = ""
         self.interval = ""
@@ -55,6 +52,35 @@ class Gui:
         self.size_q = ""
         self.save = ""
 
+        frame = Frame(root)
+        frame.pack(fill=X)
+
+        Label(frame, text=f"Loaded model:", anchor=W, justify=LEFT).pack(side=LEFT)
+        self.model_label = Label(frame, textvariable=self.model, anchor=W, justify=LEFT)
+        self.model_label.pack(side=LEFT, fill=X)
+        #label1.grid(row=1, column=0, sticky=W)
+
+        frame = Frame(root)
+        frame.pack(fill=X)
+        Label(frame, text=f"Loaded property:", anchor=W, justify=LEFT).pack(side=LEFT)
+        self.property_label = Label(frame, textvariable=self.property, anchor=W, justify=LEFT)
+        #property_label.grid(row=2, column=0)
+        self.property_label.pack(side=TOP, fill=X)
+
+        frame = Frame(root)
+        frame.pack(fill=X)
+        Label(frame, text=f"Loaded data:", anchor=W, justify=LEFT).pack(side=LEFT)
+
+        self.data_label = Label(frame, textvariable=self.data, anchor=W, justify=LEFT)
+        #data_label.grid(row=3, column=0)
+        self.data_label.pack(side=TOP, fill=X)
+
+        frame = Frame(root)
+        frame.pack(fill=X)
+        Label(frame, text=f"Loaded space:", anchor=W, justify=LEFT).pack(side=LEFT)
+        self.space_label = Label(frame, textvariable=self.space, anchor=W, justify=LEFT)
+        #space_label.grid(row=4, column=0)
+        self.space_label.pack(side=TOP, fill=X)
 
         ## DESIGN
         ## MENU
@@ -83,7 +109,7 @@ class Gui:
         save_menu.add_command(label="Save space", command=self.save_space)
         file_menu.add_separator()
 
-        file_menu.add_command(label="Exit", command=frame.quit)
+        file_menu.add_command(label="Exit", command=root.quit)
 
         ## EDIT
         edit_menu = Menu(main_menu, tearoff=0)
@@ -157,25 +183,24 @@ class Gui:
     ## FILE
     def load_model(self):
         self.status_set("Please select the model to be loaded.")
-        self.model = filedialog.askopenfilename(initialdir=self.model_path, title="Select file", filetypes=(("pm files", "*.pm"), ("all files", "*.*")))
-        # print(self.model)
+        self.model.set(filedialog.askopenfilename(initialdir=self.model_path, title="Select file", filetypes=(("pm files", "*.pm"), ("all files", "*.*"))))
         self.status_set("Model loaded.")
 
     def load_property(self):
         self.status_set("Please select the property to be loaded.")
-        self.property = filedialog.askopenfilename(initialdir=self.properties_path, title="Select file", filetypes=(("property files", "*.pctl"), ("all files", "*.*")))
+        self.property.set(filedialog.askopenfilename(initialdir=self.properties_path, title="Select file", filetypes=(("property files", "*.pctl"), ("all files", "*.*"))))
         # print(self.property)
         self.status_set("Property loaded.")
 
     def load_data(self):
         self.status_set("Please select the data to be loaded.")
-        self.data = filedialog.askopenfilename(initialdir=self.data_path, title="Select file", filetypes=(("pickled files", "*.p"), ("all files", "*.*")))
+        self.data.set(filedialog.askopenfilename(initialdir=self.data_path, title="Select file", filetypes=(("pickled files", "*.p"), ("all files", "*.*"))))
         # print(self.data)
         self.status_set("Data loaded.")
 
     def load_space(self):
         self.status_set("Please select the space to be loaded.")
-        self.space = filedialog.askopenfilename(initialdir=self.data_path, title="Select file", filetypes=(("pickled files", "*.p"), ("all files", "*.*")))
+        self.space.set(filedialog.askopenfilename(initialdir=self.data_path, title="Select file", filetypes=(("pickled files", "*.p"), ("all files", "*.*"))))
         # print(self.space)
         self.status_set("Space loaded")
 
