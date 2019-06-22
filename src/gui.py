@@ -216,9 +216,7 @@ class Gui:
 
     def load_functions(self):
         self.status_set("Please select the prism/storm symbolic results to be loaded.")
-        ## TBD find out from the file what program it is
-
-        self.functions_file.set(filedialog.askopenfilename(initialdir=self.data_path, title="Rational functions loading - Select file", filetypes=(("text files", "*.txt"), ("all files", "*.*"))))
+        self.functions_file.set(filedialog.askopenfilename(initialdir=self.prism_results, title="Rational functions loading - Select file", filetypes=(("text files", "*.txt"), ("all files", "*.*"))))
         # print(self.functions)
         self.functions, self.rewards = load_all_functions( self.functions_file.get(), tool="unknown", factorize=True, agents_quantities=False, rewards_only=False, f_only=False)
         # print("self.functions", self.functions)
