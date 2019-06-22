@@ -103,7 +103,17 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
         f[N] = []
         rewards[N] = []
         ## PARSING PRISM/STORM OUTPUT
+        line_index = 0
         for line in file:
+            if line_index == 0:
+                if tool is "unknown":
+                    # print(line)
+                    if line.lower().startswith("prism"):
+                        tool = "prism"
+                    elif line.lower().startswith("storm"):
+                        tool = "storm"
+                    else:
+                        print("Tool not recognised!!")
             if line.startswith('Parametric model checking:') or line.startswith('Model checking property'):
                 i = i + 1
                 here = ""
@@ -160,6 +170,7 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
                             # os.chdir(cwd)
                     else:
                         f[N].append(line[:-1])
+            line_index = line_index + 1
         file.close()
     os.chdir(default_directory)
     if no_files and agents_quantities:
