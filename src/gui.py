@@ -5,8 +5,7 @@ import webbrowser
 import pickle
 import os
 from pathlib import Path
-from tkinter import filedialog
-
+from tkinter import filedialog, ttk
 
 import configparser
 config = configparser.ConfigParser()
@@ -35,9 +34,8 @@ class Gui:
         self.property = StringVar()  ## Property file / property as a string
         self.data = StringVar()  ## Data file / data as a dictionary of/ list of numbers
         self.functions_file = StringVar()  ## Rational functions file
-        self.functions = ""  ## Model checking nonreward results
-        self.rewards = ""  ## Model checking reward results
-        self.interval = ""  ## Computed intervals
+        self.functions = ""  ## Model checking results
+        self.intervals = ""  ## Computed intervals
         self.space = StringVar()  ## Space file / class
         self.props = ""  ## Derived properties
 
@@ -59,11 +57,11 @@ class Gui:
         ## GUI INIT
         root.title('mpm')
         root.minsize(400, 300)
-        frame = Frame(root)
-        frame.pack(fill=X)
 
         ## DESIGN
         ## DESIGN - STATUS
+        frame = Frame(root)
+        frame.pack(fill=X)
         Label(frame, text=f"Loaded model:", anchor=W, justify=LEFT).pack(side=LEFT)
         self.model_label = Label(frame, textvariable=self.model, anchor=W, justify=LEFT)
         self.model_label.pack(side=LEFT, fill=X)
@@ -96,6 +94,32 @@ class Gui:
         self.space_label = Label(frame, textvariable=self.space, anchor=W, justify=LEFT)
         # space_label.grid(row=5, column=0)
         self.space_label.pack(side=TOP, fill=X)
+
+        ## DESIGN - TABS
+        # Defines and places the notebook widget
+        nb = ttk.Notebook(root, height=500, width=500)
+        nb.pack(fill=BOTH)
+
+        page1 = ttk.Frame(nb)  # Adds tab 1 of the notebook
+        nb.add(page1, text='Edit')
+        Label(page1, text=f"Loaded model:", anchor=W, justify=LEFT).pack(side=LEFT)
+        Label(page1, text=f"Loaded property:", anchor=W, justify=LEFT).pack(side=LEFT)
+        ## TBD ADD THE TEXT OF THE MODELS
+        ## TBD ADD THE TEXT OF THE PROPERTY
+
+        # Adds tab 2 of the notebook
+        page2 = ttk.Frame(nb)
+        nb.add(page2, text='Synthesise')
+        ## TBD ADD checkbox to choose the program to synthesise rational functions
+        ## TBD ADD THE TEXT TO SHOW THE FILE / RATIONAL FUNCTIONS
+
+        page3 = ttk.Frame(nb)
+        nb.add(page3, text='Conversion data + functions to properties')
+        ## TBD ADD setting for creating  intervals - alpha, n_samples
+
+        page4 = ttk.Frame(nb)
+        nb.add(page4, text='Refine')
+        ## TBD ADD setting for creating refinement -  max_dept, coverage, epsilon, alg
 
         ## MENU
         main_menu = Menu(root)
@@ -218,10 +242,12 @@ class Gui:
         self.status_set("Please select the prism/storm symbolic results to be loaded.")
         self.functions_file.set(filedialog.askopenfilename(initialdir=self.prism_results, title="Rational functions loading - Select file", filetypes=(("text files", "*.txt"), ("all files", "*.*"))))
         # print(self.functions)
-        self.functions, self.rewards = load_all_functions( self.functions_file.get(), tool="unknown", factorize=True, agents_quantities=False, rewards_only=False, f_only=False)
+        self.functions, rewards = load_all_functions( self.functions_file.get(), tool="unknown", factorize=True, agents_quantities=False, rewards_only=False, f_only=False)
         # print("self.functions", self.functions)
         # print("self.rewards", self.rewards)
-        self.status_set("Rational functions loaded")
+        self.functions.update(rewards)
+        print(self.functions)
+        self.status_set(f"{len(self.functions.keys())} rational functions loaded")
 
     def load_space(self):
         self.status_set("Please select the space to be loaded.")
@@ -346,12 +372,13 @@ class Gui:
         self.status_set("Intervals are being created ...")
         if self.data is "":
             self.load_data()
-        ## TBD,  LOAD alpha, n_samples
-        self.interval = create_intervals(self.alpha, self.n_samples, self.data)
+        ## TBD DESIGN THIS POPUP WINDOW AFTER CLICK to set alpha, n_samples
+        self.intervals = create_intervals(self.alpha, self.n_samples, self.data)
         self.status_set("Intervals created.")
 
     def sample_space(self):
         self.status_set("Space sampling running ...")
+        ## TBD DESIGN THIS POPUP WINDOW AFTER CLICK
         ## TBD LOAD props, size_q
         self.space.grid_sample(self.props, self.size_q, silent=False, save=self.save)
         self.status_set("Space sampling done.")
@@ -360,7 +387,15 @@ class Gui:
         self.status_set("Space refinement running ...")
         print("refine_space")
 
+        ## TBD DESIGN THIS POPUP WINDOW AFTER CLICK to set max_depth, epsilon, coverage, algorithm
+
+        if self.intervals is "":
+            ## TBD Error window, compute the intervals beforehead
+            print("Intervals not computed, properties cannot be computed")
+
         if self.props is "":
+
+            self.props = ineq_to_props(self.functions, self.intervals, silent=True)
             ## TBD
             print("Properties not computed")
 
@@ -371,12 +406,11 @@ class Gui:
     ## SETTINGS
     def edit_config(self):
         if "wind" in platform.system().lower():
+            ## TBD TEST THIS ON WINDOWS
             os.startfile(f'{os.path.join(workspace, "../config.ini")}')
         else:
             os.system(f'gedit {os.path.join(workspace, "../config.ini")}')
-        ## RELOAD CONFIG FILE AFTER CHANGE
-        ## TBD CHECK WAITING TO CLOSE THE FILE
-        self.load_config()
+        self.load_config()  ## Reloading the config file after change
         self.status_set("Config file saved.")
 
     ## HELP
