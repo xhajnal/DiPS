@@ -290,7 +290,7 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
 
     Args
     ----------
-    model_prefix: file prefix to be matched
+    model_prefix: (string) file prefix to be matched
     agents_quantities: (int) pop_sizes to be used
     param_intervals (list of pairs): list of intervals to be used for respective parameter (default all intervals are from 0 to 1)
     seq: (Bool) if true it will take properties one by one and append the results (helps to deal with memory)
@@ -303,6 +303,8 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
     memory: (int) sets maximum memory in GB, see https://www.prismmodelchecker.org/manual/ConfiguringPRISM/OtherOptions
 
     """
+    print("model_path ", model_path)
+    print("model_prefix ", model_prefix)
     # os.chdir(config.get("paths","cwd"))
     if noprobchecks:
         noprobchecks = '-noprobchecks '
@@ -314,11 +316,20 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
     elif "javamaxmem" not in str(memory):
         memory = f'-javamaxmem {memory}g '
 
+    if not agents_quantities:
+        print("I was here")
+        agents_quantities = [""]
+
     for N in sorted(agents_quantities):
-        # print(glob.glob(os.path.join(model_path, file_prefix + str(N) + ".pm")))
-        if not glob.glob(os.path.join(model_path, model_prefix + str(N) + ".pm")):
+        if "." in model_prefix:
+            files = glob.glob(os.path.join(model_path, model_prefix + str(N) + ".pm"))
+        else:
+            files = glob.glob(os.path.join(model_path, model_prefix))
+        print(files)
+        if not files:
             print(colored("No model files for N="+str(N)+" found", "red"))
-        for file in glob.glob(os.path.join(model_path, model_prefix + str(N) + ".pm")):
+
+        for file in files:
             file = Path(file)
             start_time = time.time()
             # print("{} seq={}{} >> {}".format(file, seq, noprobchecks, str(prism_results)))
