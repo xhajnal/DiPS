@@ -206,9 +206,11 @@ class RefinedSpace:
         red: (Bool) if True showing unsafe space
         sat_samples: (Bool) if True showing sat samples
         unsat_samples: (Bool) if True showing unsat samples
+        true_point: (Bool) if True showing true point
         save: (Bool) if True, the output is saved
         """
 
+        # print("self.true_point", self.true_point)
         if save is True:
             save = str(strftime("%d-%b-%Y-%H:%M:%S", localtime()))+".png"
 
@@ -248,6 +250,11 @@ class RefinedSpace:
                 pic.add_collection(self.show_samples(True))
             if unsat_samples:
                 pic.add_collection(self.show_samples(False))
+            if self.true_point and true_point:
+                # print(self.true_point)
+                size_correction = min(1 / (len(self.sat_samples) + len(self.unsat_samples)) ** (1 / len(self.region)), 0.01)
+                circle = plt.Circle((self.true_point[0], self.true_point[1]), size_correction*1, color='b', fill=False)
+                plt.gcf().gca().add_artist(circle)
 
             whole_title = f"{pretitle} red = unsafe region, green = safe region, white = in between \n{self.title} \n {title}"
             pic.set_title(whole_title)
@@ -276,6 +283,10 @@ class RefinedSpace:
                     for dimension in self.sat_samples[0]:
                         i = i + 1
                         x_axis.append(i)
+                    if self.true_point and true_point:
+                        spam = ax.scatter(x_axis, self.true_point, marker='x', label="true_point")
+                        ax.plot(x_axis, self.true_point)
+                        plt.legend(loc='upper right', numpoints=1, ncol=3, fontsize=8)
 
                     ## Get values of the vertical axis for respective line
                     for sample in self.sat_samples:
@@ -332,7 +343,6 @@ class RefinedSpace:
                         print("Figure stored here: ", os.path.join(refinement_results, f"Samples_unsat_{save}"))
                         with open(os.path.join(refinement_results, "figure_to_title.txt"), "a+") as file:
                             file.write(f"Samples_unsat{save} : {whole_title}\n")
-
                     plt.show()
                 else:
                     print("No unsat samples so far, nothing to show")
