@@ -13,8 +13,8 @@ workspace = os.path.dirname(__file__)
 sys.path.append(workspace)
 from load import create_intervals, load_all_functions
 import space
-from synthetise import *
-from mc_prism import *
+from synthetise import ineq_to_props, check_deeper
+from mc_prism import call_prism_files, call_storm_files
 cwd = os.getcwd()
 
 
@@ -43,9 +43,9 @@ class Gui:
         self.version = "alpha"  ## version of the gui
 
         ## Settings/data
-        self.alpha = ""  ## confidence
-        self.n_samples = ""  ## number of samples
-        self.program = ""  ## prism/storm
+        # self.alpha = ""  ## confidence
+        # self.n_samples = ""  ## number of samples
+        self.program = StringVar()  ## prism/storm
         self.max_depth = ""  ## max recursion depth
         self.coverage = ""  ## coverage threshold
         self.epsilon = ""  ## rectangle size threshold
@@ -110,12 +110,30 @@ class Gui:
         # Adds tab 2 of the notebook
         page2 = ttk.Frame(nb)
         nb.add(page2, text='Synthesise')
+
+        ## SELECTING THE PROGRAM
+        Label(page2, text="Select the program: ", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, pady=4)
+        Radiobutton(page2, text="Prism", variable=self.program, value="prism").grid(row=1, column=1, sticky=W, pady=4)
+        Radiobutton(page2, text="Storm", variable=self.program, value="storm").grid(row=1, column=2, sticky=W, pady=4)
+        Button(page2, text='Run parameter synthesis', command=self.synth_params).grid(row=2, column=0, sticky=W, pady=4)
         ## TBD ADD checkbox to choose the program to synthesise rational functions
         ## TBD ADD THE TEXT TO SHOW THE FILE / RATIONAL FUNCTIONS
 
         page3 = ttk.Frame(nb)
         nb.add(page3, text='Conversion data + functions to properties')
+
+        ## SET THE INTERVAL COMPUTATION SETTINGS
+        Label(page3, text="Set alpha, the confidence:", anchor=W, justify=LEFT).grid(row=0)
+        Label(page3, text="Set n_samples, number of samples: ", anchor=W, justify=LEFT).grid(row=1)
+
+        self.alpha_entry = Entry(page3)
+        self.n_samples_entry = Entry(page3)
+
+        self.alpha_entry.grid(row=0, column=1)
+        self.n_samples_entry.grid(row=1, column=1)
+
         ## TBD ADD setting for creating  intervals - alpha, n_samples
+        Button(page3, text='Create intervals', command=self.create_intervals).grid(row=3, column=0, sticky=W, pady=4)
 
         page4 = ttk.Frame(nb)
         nb.add(page4, text='Refine')
@@ -354,17 +372,16 @@ class Gui:
         if self.property.get() is "":
             self.load_property()
 
-        ## TBD Window where to choose between PRISM and Storm
-        self.program = "prism"
+        print(self.program.get())
 
-        if self.program.lower() is "prism":
-            call_prism_files(self.model, agents_quantities, param_intervals=False, seq=False, noprobchecks=False, memory="", model_path=self.model_path, properties_path=self.properties_path, property_file=False, output_path=prism_results)
-            self.status_set("Parameter synthesised. Output here: {}", [os.path.join(self.prism_results, filename)])
+        if self.program.get().lower() == "prism":
+            call_prism_files(self.model.get(), [], param_intervals=False, seq=False, noprobchecks=False, memory="", model_path="", properties_path=self.properties_path, property_file=self.property.get(), output_path=self.prism_results)
+            # self.status_set("Parameter synthesised. Output here: {}", [os.path.join(self.prism_results, filename)])
             return
 
-        if self.program.lower() is "storm":
-            call_storm_files(self.model, agents_quantities, model_path=model_path, properties_path=properties_path, property_file=False, output_path=storm_results, time=False)
-            self.status_set("Parameter synthesised. Output here: {}", [os.path.join(self.prism_results, filename)])
+        if self.program.get().lower() == "storm":
+            call_storm_files(self.model.get(), [], model_path=self.model_path, properties_path=self.properties_path, property_file=self.property.get(), output_path=self.storm_results, time=False)
+            # self.status_set("Parameter synthesised. Output here: {}", [os.path.join(self.prism_results, filename)])
             return
         self.status_set("Selected program not recognised")
 
@@ -373,7 +390,7 @@ class Gui:
         if self.data is "":
             self.load_data()
         ## TBD DESIGN THIS POPUP WINDOW AFTER CLICK to set alpha, n_samples
-        self.intervals = create_intervals(self.alpha, self.n_samples, self.data)
+        self.intervals = create_intervals(self.alpha_entry.get(), self.n_samples_entry.get(), self.data)
         self.status_set("Intervals created.")
 
     def sample_space(self):
