@@ -8,6 +8,7 @@ from pathlib import Path
 from tkinter import filedialog, ttk
 
 import configparser
+
 config = configparser.ConfigParser()
 workspace = os.path.dirname(__file__)
 sys.path.append(workspace)
@@ -15,28 +16,37 @@ from load import create_intervals, load_all_functions
 import space
 from synthetise import ineq_to_props, check_deeper
 from mc_prism import call_prism_files, call_storm_files
+
 cwd = os.getcwd()
 
 
 class Gui:
     def __init__(self, root):
         ## Variables
-        self.model_path = ""
-        self.properties_path = ""
-        self.data_path = ""
+        ## Directories
+        self.model_dir = ""
+        self.properties_dir = ""
+        self.data_dir = ""
         self.prism_results = ""  ## Path to prism results
         self.storm_results = ""  ## Path to Storm results
         self.refinement_results = ""  ## Path to refinement results
-        self.figures = ""  ## Path to saved figures
+        self.figures_dir = ""  ## Path to saved figures
         self.load_config()  ## Load the config file
 
-        self.model = StringVar()  ## Model file / Model as a string
-        self.property = StringVar()  ## Property file / property as a string
-        self.data = StringVar()  ## Data file / data as a dictionary of/ list of numbers
+        ## Files
+        self.model_file = StringVar()  ## Model file
+        self.property_file = StringVar()  ## Property file
+        self.data_file = StringVar()  ## Data file
         self.functions_file = StringVar()  ## Rational functions file
+        self.space_file = StringVar()  ## Space file
+
+        ## True Variables
+        self.model = ""
+        self.property = ""
+        self.data = ""
         self.functions = ""  ## Model checking results
         self.intervals = ""  ## Computed intervals
-        self.space = StringVar()  ## Space file / class
+        self.space = ""  ## Instance of a space Class
         self.props = ""  ## Derived properties
 
         ## Settings
@@ -63,14 +73,14 @@ class Gui:
         frame = Frame(root)
         frame.pack(fill=X)
         Label(frame, text=f"Loaded model:", anchor=W, justify=LEFT).pack(side=LEFT)
-        self.model_label = Label(frame, textvariable=self.model, anchor=W, justify=LEFT)
+        self.model_label = Label(frame, textvariable=self.model_file, anchor=W, justify=LEFT)
         self.model_label.pack(side=LEFT, fill=X)
         # label1.grid(row=1, column=0, sticky=W)
 
         frame = Frame(root)
         frame.pack(fill=X)
         Label(frame, text=f"Loaded property:", anchor=W, justify=LEFT).pack(side=LEFT)
-        self.property_label = Label(frame, textvariable=self.property, anchor=W, justify=LEFT)
+        self.property_label = Label(frame, textvariable=self.property_file, anchor=W, justify=LEFT)
         # property_label.grid(row=2, column=0)
         self.property_label.pack(side=TOP, fill=X)
 
@@ -84,7 +94,7 @@ class Gui:
         frame = Frame(root)
         frame.pack(fill=X)
         Label(frame, text=f"Loaded data:", anchor=W, justify=LEFT).pack(side=LEFT)
-        self.data_label = Label(frame, textvariable=self.data, anchor=W, justify=LEFT)
+        self.data_label = Label(frame, textvariable=self.data_file, anchor=W, justify=LEFT)
         # data_label.grid(row=4, column=0)
         self.data_label.pack(side=TOP, fill=X)
 
@@ -98,12 +108,39 @@ class Gui:
         ## DESIGN - TABS
         # Defines and places the notebook widget
         nb = ttk.Notebook(root, height=500, width=500)
+
         nb.pack(fill=BOTH)
 
         page1 = ttk.Frame(nb)  # Adds tab 1 of the notebook
-        nb.add(page1, text='Edit')
-        Label(page1, text=f"Loaded model:", anchor=W, justify=LEFT).pack(side=LEFT)
-        Label(page1, text=f"Loaded property:", anchor=W, justify=LEFT).pack(side=LEFT)
+
+        ## TBD CHANGE THE STATE OF THE TAB WHILE RUNNING
+        # style = ttk.Style()
+        # style.configure("BW.TLabel", foreground="black", background="white")
+        # print("self.model.get()", self.model_file.get())
+        # print("self.property.get()", self.property_file.get())
+        # print(self.model_file.get() is "")
+        # state = ("disabled", "normal")[(self.model_file.get() is not "") or (self.property_file.get() is not "")]
+        # print("state", state)
+        # lambdaaa = lambda: "disabled" if (self.model_file.get() is "") else "normal"
+        # print("lambdaaa", lambdaaa())
+        nb.add(page1, text='Edit', state="normal")
+        # self.model_file.set("dsada")
+        # nb.update()
+        # page1.update()
+        # print("lambdaaa", lambdaaa())
+
+        Button(page1, text='Load model', command=self.load_model).grid(row=0, column=0, sticky=W, pady=4)
+        Button(page1, text='Load property', command=self.load_property).grid(row=0, column=1, sticky=W, pady=4)
+
+        Label(page1, text=f"Loaded model:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, pady=4)
+        Label(page1, text=f"Loaded property:", anchor=W, justify=LEFT).grid(row=1, column=1, sticky=W, pady=4)
+
+        print(nb.select(0), type(nb.select(0)))
+        # print(page1, type(page1))
+
+        # page1.state(("normal",))
+        # page1.s
+
         ## TBD ADD THE TEXT OF THE MODELS
         ## TBD ADD THE TEXT OF THE PROPERTY
 
@@ -112,11 +149,12 @@ class Gui:
         nb.add(page2, text='Synthesise')
 
         ## SELECTING THE PROGRAM
+        self.program.set(1)
         Label(page2, text="Select the program: ", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, pady=4)
         Radiobutton(page2, text="Prism", variable=self.program, value="prism").grid(row=1, column=1, sticky=W, pady=4)
         Radiobutton(page2, text="Storm", variable=self.program, value="storm").grid(row=1, column=2, sticky=W, pady=4)
         Button(page2, text='Run parameter synthesis', command=self.synth_params).grid(row=2, column=0, sticky=W, pady=4)
-        ## TBD ADD checkbox to choose the program to synthesise rational functions
+        Button(page2, text='Load results', command=self.load_functions).grid(row=2, column=1, sticky=W, pady=4)
         ## TBD ADD THE TEXT TO SHOW THE FILE / RATIONAL FUNCTIONS
 
         page3 = ttk.Frame(nb)
@@ -137,6 +175,25 @@ class Gui:
 
         page4 = ttk.Frame(nb)
         nb.add(page4, text='Refine')
+
+        Label(page4, text="Set max_dept: ", anchor=W, justify=LEFT).grid(row=0)
+        Label(page4, text="Set coverage: ", anchor=W, justify=LEFT).grid(row=1)
+        Label(page4, text="Set epsilon: ", anchor=W, justify=LEFT).grid(row=2)
+        Label(page4, text="Set algorithm: ", anchor=W, justify=LEFT).grid(row=3)
+
+        self.max_dept_entry = Entry(page4)
+        self.coverage_entry = Entry(page4)
+        self.epsilon_entry = Entry(page4)
+        self.algorithm_entry = Entry(page4)
+
+        self.max_dept_entry.grid(row=0, column=1)
+        self.coverage_entry.grid(row=1, column=1)
+        self.epsilon_entry.grid(row=2, column=1)
+        self.algorithm_entry.grid(row=3, column=1)
+
+        Button(page4, text='Refine space', command=self.refine_space).grid(row=4, column=0, sticky=W, pady=4)
+        Button(page4, text='Load space', command=self.load_space).grid(row=4, column=1, sticky=W, pady=4)
+
         ## TBD ADD setting for creating refinement -  max_dept, coverage, epsilon, alg
 
         ## MENU
@@ -207,17 +264,17 @@ class Gui:
         os.chdir(workspace)
         config.read(os.path.join(workspace, "../config.ini"))
 
-        self.model_path = Path(config.get("paths", "models"))
-        if not os.path.exists(self.model_path):
-            os.makedirs(self.model_path)
+        self.model_dir = Path(config.get("paths", "models"))
+        if not os.path.exists(self.model_dir):
+            os.makedirs(self.model_dir)
 
-        self.properties_path = Path(config.get("paths", "properties"))
-        if not os.path.exists(self.properties_path):
-            os.makedirs(self.properties_path)
+        self.properties_dir = Path(config.get("paths", "properties"))
+        if not os.path.exists(self.properties_dir):
+            os.makedirs(self.properties_dir)
 
-        self.data_path = config.get("paths", "data")
-        if not os.path.exists(self.data_path):
-            os.makedirs(self.data_path)
+        self.data_dir = config.get("paths", "data")
+        if not os.path.exists(self.data_dir):
+            os.makedirs(self.data_dir)
 
         self.prism_results = config.get("paths", "prism_results")
         if not os.path.exists(self.prism_results):
@@ -231,9 +288,9 @@ class Gui:
         if not os.path.exists(self.refinement_results):
             os.makedirs(self.refinement_results)
 
-        self.figures = config.get("paths", "figures")
-        if not os.path.exists(self.figures):
-            os.makedirs(self.figures)
+        self.figures_dir = config.get("paths", "figures")
+        if not os.path.exists(self.figures_dir):
+            os.makedirs(self.figures_dir)
 
         os.chdir(cwd)
 
@@ -241,26 +298,38 @@ class Gui:
     ## FILE
     def load_model(self):
         self.status_set("Please select the model to be loaded.")
-        self.model.set(filedialog.askopenfilename(initialdir=self.model_path, title="Model loading - Select file", filetypes=(("pm files", "*.pm"), ("all files", "*.*"))))
+        self.model_file.set(filedialog.askopenfilename(initialdir=self.model_dir, title="Model loading - Select file",
+                                                       filetypes=(("pm files", "*.pm"), ("all files", "*.*"))))
         self.status_set("Model loaded.")
+        # print("self.model", self.model.get())
 
     def load_property(self):
         self.status_set("Please select the property to be loaded.")
-        self.property.set(filedialog.askopenfilename(initialdir=self.properties_path, title="Property loading - Select file", filetypes=(("property files", "*.pctl"), ("all files", "*.*"))))
-        # print(self.property)
+        self.property_file.set(
+            filedialog.askopenfilename(initialdir=self.properties_dir, title="Property loading - Select file",
+                                       filetypes=(("property files", "*.pctl"), ("all files", "*.*"))))
         self.status_set("Property loaded.")
+        # print("self.property", self.property.get())
 
     def load_data(self):
         self.status_set("Please select the data to be loaded.")
-        self.data.set(filedialog.askopenfilename(initialdir=self.data_path, title="Data loading - Select file", filetypes=(("pickled files", "*.p"), ("all files", "*.*"))))
-        # print(self.data)
+        self.data_file.set(filedialog.askopenfilename(initialdir=self.data_dir, title="Data loading - Select file",
+                                                      filetypes=(("pickled files", "*.p"), ("all files", "*.*"))))
+        ## TBD
+        # self.data = PARSE THE DATA
         self.status_set("Data loaded.")
 
     def load_functions(self):
         self.status_set("Please select the prism/storm symbolic results to be loaded.")
-        self.functions_file.set(filedialog.askopenfilename(initialdir=self.prism_results, title="Rational functions loading - Select file", filetypes=(("text files", "*.txt"), ("all files", "*.*"))))
+
+        print("self.program.get()", self.program.get())
+        if self.program.get() == "prism":
+            self.functions_file.set(filedialog.askopenfilename(initialdir=self.prism_results, title="Rational functions loading - Select file", filetypes=(("text files", "*.txt"), ("all files", "*.*"))))
+        else:
+            self.functions_file.set(filedialog.askopenfilename(initialdir=self.storm_results, title="Rational functions loading - Select file", filetypes=(("text files", "*.txt"), ("all files", "*.*"))))
         # print(self.functions)
-        self.functions, rewards = load_all_functions( self.functions_file.get(), tool="unknown", factorize=True, agents_quantities=False, rewards_only=False, f_only=False)
+        self.functions, rewards = load_all_functions(self.functions_file.get(), tool="unknown", factorize=True,
+                                                     agents_quantities=False, rewards_only=False, f_only=False)
         # print("self.functions", self.functions)
         # print("self.rewards", self.rewards)
         self.functions.update(rewards)
@@ -269,42 +338,43 @@ class Gui:
 
     def load_space(self):
         self.status_set("Please select the space to be loaded.")
-        self.space.set(filedialog.askopenfilename(initialdir=self.data_path, title="Space loading - Select file", filetypes=(("pickled files", "*.p"), ("all files", "*.*"))))
+        self.space_file.set(filedialog.askopenfilename(initialdir=self.data_dir, title="Space loading - Select file", filetypes=(("pickled files", "*.p"), ("all files", "*.*"))))
         # print(self.space)
         self.status_set("Space loaded")
 
     def save_model(self):
-        if self.model is "":
+        if self.model_file is "":
             self.status_set("There is no model to be saved.")
             return
 
         self.status_set("Please select folder to store the model in.")
-        save_model = filedialog.asksaveasfilename(initialdir=self.model_path, title="Model saving - Select file", filetypes=(("pm files", "*.pm"), ("all files", "*.*")))
+        save_model = filedialog.asksaveasfilename(initialdir=self.model_dir, title="Model saving - Select file", filetypes=(("pm files", "*.pm"), ("all files", "*.*")))
         print(save_model)
 
-        if isfile(self.model.get()):
-            print(self.model)
+        if isfile(self.model_file.get()):
+            print(self.model_file)
             ## os.copy the file
         else:
             with open(save_model, "w") as file:
-                for line in self.model:
+                for line in self.model_file:
                     file.write(line)
         self.status_set("Model saved.")
 
     def save_property(self):
-        if self.property is "":
+        if self.property_file is "":
             self.status_set("There is no property to be saved.")
             return
 
         self.status_set("Please select folder to store the property in.")
-        save_property = filedialog.asksaveasfilename(initialdir=self.model_path, title="Property saving - Select file", filetypes=(("pctl files", "*.pctl"), ("all files", "*.*")))
+        save_property = filedialog.asksaveasfilename(initialdir=self.model_dir, title="Property saving - Select file",
+                                                     filetypes=(("pctl files", "*.pctl"), ("all files", "*.*")))
         print(save_property)
-        if isfile(self.property.get()):
-            print(self.property)
+        if isfile(self.property_file.get()):
+            print(self.property_file)
             ## os.copy the file
         else:
             with open(save_property, "w") as file:
-                for line in self.property:
+                for line in self.property_file:
                     file.write(line)
         self.status_set("Property saved.")
 
@@ -318,29 +388,34 @@ class Gui:
 
         self.status_set("Please select folder to store the rational functions in.")
         if self.program is "prism":
-            save_functions = filedialog.asksaveasfilename(initialdir=self.prism_results, title="Rational functions saving - Select file", filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+            save_functions = filedialog.asksaveasfilename(initialdir=self.prism_results,
+                                                          title="Rational functions saving - Select file",
+                                                          filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
         if self.program is "storm":
-            save_functions = filedialog.asksaveasfilename(initialdir=self.storm_results, title="Rational functions saving - Select file", filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+            save_functions = filedialog.asksaveasfilename(initialdir=self.storm_results,
+                                                          title="Rational functions saving - Select file",
+                                                          filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
 
         print(save_functions)
-        if isfile(self.property.get()):
-            print(self.property)
+        if isfile(self.property_file.get()):
+            print(self.property_file)
             ## os.copy the file
         else:
             with open(save_functions, "w") as file:
-                for line in self.property:
+                for line in self.property_file:
                     file.write(line)
         self.status_set("Property saved.")
 
     def save_data(self):
-        if self.data is "":
+        if self.data_file is "":
             self.status_set("There is no data to be saved.")
             return
 
         self.status_set("Please select folder to store the data in.")
-        save_data = filedialog.asksaveasfilename(initialdir=self.data_path, title="Data saving - Select file", filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+        save_data = filedialog.asksaveasfilename(initialdir=self.data_dir, title="Data saving - Select file",
+                                                 filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
         print(save_data)
-        pickle.dump(self.data, open(save_data, 'wb'))
+        pickle.dump(self.data_file, open(save_data, 'wb'))
         self.status_set("Data saved.")
 
     def save_space(self):
@@ -348,9 +423,10 @@ class Gui:
             self.status_set("There is no space to be saved.")
             return
         self.status_set("Please select folder to store the space in.")
-        save_space = filedialog.asksaveasfilename(initialdir=self.data_path, title="Space saving - Select file", filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+        save_space = filedialog.asksaveasfilename(initialdir=self.data_dir, title="Space saving - Select file",
+                                                  filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
         print(save_space)
-        pickle.dump(self.data, open(save_space, 'wb'))
+        pickle.dump(self.data_file, open(save_space, 'wb'))
         self.status_set("Space saved.")
 
     ## EDIT
@@ -366,31 +442,36 @@ class Gui:
         self.status_set("Parameter synthesis running ...")
         ## TBD solve agents_quantities
 
-        if self.model.get() is "":
+        if self.model_file.get() is "":
             self.load_model()
 
-        if self.property.get() is "":
+        if self.property_file.get() is "":
             self.load_property()
 
         print(self.program.get())
 
         if self.program.get().lower() == "prism":
-            call_prism_files(self.model.get(), [], param_intervals=False, seq=False, noprobchecks=False, memory="", model_path="", properties_path=self.properties_path, property_file=self.property.get(), output_path=self.prism_results)
+            call_prism_files(self.model_file.get(), [], param_intervals=False, seq=False, noprobchecks=False, memory="",
+                             model_path="", properties_path=self.properties_dir, property_file=self.property_file.get(),
+                             output_path=self.prism_results)
             # self.status_set("Parameter synthesised. Output here: {}", [os.path.join(self.prism_results, filename)])
             return
 
         if self.program.get().lower() == "storm":
-            call_storm_files(self.model.get(), [], model_path=self.model_path, properties_path=self.properties_path, property_file=self.property.get(), output_path=self.storm_results, time=False)
+            call_storm_files(self.model_file.get(), [], model_path=self.model_dir, properties_path=self.properties_dir,
+                             property_file=self.property_file.get(), output_path=self.storm_results, time=False)
             # self.status_set("Parameter synthesised. Output here: {}", [os.path.join(self.prism_results, filename)])
             return
         self.status_set("Selected program not recognised")
 
     def create_intervals(self):
         self.status_set("Intervals are being created ...")
-        if self.data is "":
+        if self.data_file.get() is "":
             self.load_data()
+
+        print(self.data_file.get())
         ## TBD DESIGN THIS POPUP WINDOW AFTER CLICK to set alpha, n_samples
-        self.intervals = create_intervals(self.alpha_entry.get(), self.n_samples_entry.get(), self.data)
+        self.intervals = create_intervals(self.alpha_entry.get(), self.n_samples_entry.get(), self.data_file)
         self.status_set("Intervals created.")
 
     def sample_space(self):
@@ -406,18 +487,18 @@ class Gui:
 
         ## TBD DESIGN THIS POPUP WINDOW AFTER CLICK to set max_depth, epsilon, coverage, algorithm
 
-        if self.intervals is "":
+        if self.intervals == "":
             ## TBD Error window, compute the intervals beforehead
             print("Intervals not computed, properties cannot be computed")
 
-        if self.props is "":
-
+        if self.props == "":
             self.props = ineq_to_props(self.functions, self.intervals, silent=True)
             ## TBD
             print("Properties not computed")
 
         ## TBD LOAD props, n, epsilon, coverage
-        self.space = check_deeper(self.space, self.props, self.max_depth, self.epsilon, self.coverage, silent=True, version=self.alg, size_q=False, debug=False, save=False, title="")
+        self.space = check_deeper(self.space, self.props, self.max_depth, self.epsilon, self.coverage, silent=True,
+                                  version=self.alg, size_q=False, debug=False, save=False, title="")
         self.status_set("Space refinement done.")
 
     ## SETTINGS
