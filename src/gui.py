@@ -69,6 +69,11 @@ class Gui:
         root.minsize(400, 300)
 
         ## DESIGN
+
+        ## STATUS BAR
+        self.status = Label(root, text="", bd=1, relief=SUNKEN, anchor=W)
+        self.status.pack(side=BOTTOM, fill=X)
+
         ## DESIGN - STATUS
         frame = Frame(root)
         frame.pack(fill=X)
@@ -107,12 +112,11 @@ class Gui:
 
         ## DESIGN - TABS
         # Defines and places the notebook widget
-        nb = ttk.Notebook(root, height=500, width=500)
+        nb = ttk.Notebook(root)
+        nb.pack(fill="both", expand=1)
 
-        nb.pack(fill=BOTH)
-
-        page1 = ttk.Frame(nb)  # Adds tab 1 of the notebook
-
+        ## TAB EDIT
+        page1 = ttk.Frame(nb, width=400, height=200, name="edit")  # Adds tab 1 of the notebook
         ## TBD CHANGE THE STATE OF THE TAB WHILE RUNNING
         # style = ttk.Style()
         # style.configure("BW.TLabel", foreground="black", background="white")
@@ -123,7 +127,8 @@ class Gui:
         # print("state", state)
         # lambdaaa = lambda: "disabled" if (self.model_file.get() is "") else "normal"
         # print("lambdaaa", lambdaaa())
-        nb.add(page1, text='Edit', state="normal")
+        nb.add(page1, text='Edit', state="normal", sticky="nsew")
+
         # self.model_file.set("dsada")
         # nb.update()
         # page1.update()
@@ -135,6 +140,14 @@ class Gui:
         Label(page1, text=f"Loaded model:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, pady=4)
         Label(page1, text=f"Loaded property:", anchor=W, justify=LEFT).grid(row=1, column=1, sticky=W, pady=4)
 
+        self.model_text = Text(page1, height=100)
+        # self.model_text.config(state="disabled")
+        self.model_text.grid(row=2, column=0, sticky=W+E+N+S, pady=4)
+
+        self.property_text = Text(page1, height=100)
+        # self.property_text.config(state="disabled")
+        self.property_text.grid(row=2, column=1, sticky=W+E+N+S, pady=4)
+
         print(nb.select(0), type(nb.select(0)))
         # print(page1, type(page1))
 
@@ -144,8 +157,8 @@ class Gui:
         ## TBD ADD THE TEXT OF THE MODELS
         ## TBD ADD THE TEXT OF THE PROPERTY
 
-        # Adds tab 2 of the notebook
-        page2 = ttk.Frame(nb)
+        ## TAB SYNTHESISE
+        page2 = ttk.Frame(nb, width=400, height=200, name="synthetise")  # Adds tab 2 of the notebook
         nb.add(page2, text='Synthesise')
 
         ## SELECTING THE PROGRAM
@@ -157,7 +170,9 @@ class Gui:
         Button(page2, text='Load results', command=self.load_functions).grid(row=2, column=1, sticky=W, pady=4)
         ## TBD ADD THE TEXT TO SHOW THE FILE / RATIONAL FUNCTIONS
 
-        page3 = ttk.Frame(nb)
+
+        ## TAB DATA CONVERSION
+        page3 = ttk.Frame(nb, width=400, height=200, name="conversion")
         nb.add(page3, text='Conversion data + functions to properties')
 
         ## SET THE INTERVAL COMPUTATION SETTINGS
@@ -173,7 +188,14 @@ class Gui:
         ## TBD ADD setting for creating  intervals - alpha, n_samples
         Button(page3, text='Create intervals', command=self.create_intervals).grid(row=3, column=0, sticky=W, pady=4)
 
-        page4 = ttk.Frame(nb)
+        Label(page3, text=f"Intervals:", anchor=W, justify=LEFT).grid(row=4, column=0, sticky=W, pady=4)
+
+        self.data_text = Text(page3, height=10, width=30)
+        # self.data_text.config(state="disabled")
+        self.data_text.grid(row=5, column=0, sticky=W, pady=4)
+
+        ## TAB DATA REFINEMENT
+        page4 = ttk.Frame(nb, width=400, height=200, name="refine")
         nb.add(page4, text='Refine')
 
         Label(page4, text="Set max_dept: ", anchor=W, justify=LEFT).grid(row=0)
@@ -194,7 +216,14 @@ class Gui:
         Button(page4, text='Refine space', command=self.refine_space).grid(row=4, column=0, sticky=W, pady=4)
         Button(page4, text='Load space', command=self.load_space).grid(row=4, column=1, sticky=W, pady=4)
 
-        ## TBD ADD setting for creating refinement -  max_dept, coverage, epsilon, alg
+        page5 = ttk.Frame(nb, name="testy")
+        # page5.pack(expand=True)
+        nb.add(page5, text='testy')
+
+        self.model_text = Text(page5, height=100)
+        # self.model_text.config(state="disabled")
+        # self.model_text.grid(row=0, column=0, sticky=W + E + N + S, pady=4)
+        self.model_text.pack(fill="both")
 
         ## MENU
         main_menu = Menu(root)
@@ -256,10 +285,6 @@ class Gui:
         help_menu.add_command(label="Check for updates", command=self.checkupdates)
         help_menu.add_command(label="About", command=self.printabout)
 
-        ## STATUS BAR
-        self.status = Label(root, text="", bd=1, relief=SUNKEN, anchor=W)
-        self.status.pack(side=BOTTOM, fill=X)
-
     def load_config(self):
         os.chdir(workspace)
         config.read(os.path.join(workspace, "../config.ini"))
@@ -301,6 +326,8 @@ class Gui:
         self.model_file.set(filedialog.askopenfilename(initialdir=self.model_dir, title="Model loading - Select file",
                                                        filetypes=(("pm files", "*.pm"), ("all files", "*.*"))))
         self.status_set("Model loaded.")
+        self.model_text.delete('1.0', END)
+        self.model_text.insert('end', open(self.model_file.get(), 'r').read())
         # print("self.model", self.model.get())
 
     def load_property(self):
@@ -309,6 +336,8 @@ class Gui:
             filedialog.askopenfilename(initialdir=self.properties_dir, title="Property loading - Select file",
                                        filetypes=(("property files", "*.pctl"), ("all files", "*.*"))))
         self.status_set("Property loaded.")
+        self.property_text.delete('1.0', END)
+        self.property_text.insert('end', open(self.property_file.get(), 'r').read())
         # print("self.property", self.property.get())
 
     def load_data(self):
@@ -356,7 +385,7 @@ class Gui:
             ## os.copy the file
         else:
             with open(save_model, "w") as file:
-                for line in self.model_file:
+                for line in self.model:
                     file.write(line)
         self.status_set("Model saved.")
 
@@ -374,13 +403,13 @@ class Gui:
             ## os.copy the file
         else:
             with open(save_property, "w") as file:
-                for line in self.property_file:
+                for line in self.property:
                     file.write(line)
         self.status_set("Property saved.")
 
     ## MAYBE IN THE FUTURE
     def save_functions(self):
-        if self.functions is "" and self.rewards is "":
+        if self.functions is "":
             self.status_set("There are no rational functions to be saved.")
             return
 
@@ -391,18 +420,19 @@ class Gui:
             save_functions = filedialog.asksaveasfilename(initialdir=self.prism_results,
                                                           title="Rational functions saving - Select file",
                                                           filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
-        if self.program is "storm":
+        elif self.program is "storm":
             save_functions = filedialog.asksaveasfilename(initialdir=self.storm_results,
                                                           title="Rational functions saving - Select file",
                                                           filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
-
+        else:
+            save_functions = "save_functions Error"
         print(save_functions)
         if isfile(self.property_file.get()):
             print(self.property_file)
             ## os.copy the file
         else:
             with open(save_functions, "w") as file:
-                for line in self.property_file:
+                for line in self.property:
                     file.write(line)
         self.status_set("Property saved.")
 
@@ -472,6 +502,8 @@ class Gui:
         print(self.data_file.get())
         ## TBD DESIGN THIS POPUP WINDOW AFTER CLICK to set alpha, n_samples
         self.intervals = create_intervals(self.alpha_entry.get(), self.n_samples_entry.get(), self.data_file)
+        self.data_text.delete('1.0', END)
+        self.data_text.insert('end', self.intervals)
         self.status_set("Intervals created.")
 
     def sample_space(self):
