@@ -138,21 +138,25 @@ class Gui:
 
         frame_left = Frame(page1, width=600, height=200)
         frame_left.pack(side=LEFT, fill=X)
-        frame_right = Frame(page1)
-        frame_right.pack(side=RIGHT, fill=X)
-        Button(frame_left, text='Load model', command=self.load_model).pack(anchor=W)  #grid(row=0, column=0, sticky=W, pady=4)
-        Button(frame_right, text='Load property', command=self.load_property).pack(anchor=W)  #grid(row=0, column=1, sticky=W, pady=4)
 
-        Label(frame_left, text=f"Loaded model:", anchor=W, justify=LEFT).pack(anchor=W)  #grid(row=1, column=0, sticky=W, pady=4)
-        Label(frame_right, text=f"Loaded property:", anchor=W, justify=LEFT).pack(anchor=W)  #grid(row=1, column=1, sticky=W, pady=4)
+        Button(frame_left, text='Load model', command=self.load_model).grid(row=0, column=0, sticky=W, pady=4)  # pack(anchor=W)
+        Button(frame_left, text='Save model', command=self.save_model).grid(row=0, column=1, sticky=W, pady=4)  # pack(anchor=W)
+        Label(frame_left, text=f"Loaded model:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, pady=4)  # pack(anchor=W)
 
         self.model_text = scrolledtext.ScrolledText(frame_left, height=100)
         # self.model_text.config(state="disabled")
-        self.model_text.pack(anchor=W, fill=X, expand=True)  #grid(row=2, column=0, sticky=W+E+N+S, pady=4)
+        self.model_text.grid(row=2, column=0, columnspan=16, sticky=W+E+N+S, pady=4)  # pack(anchor=W, fill=X, expand=True)
+
+        frame_right = Frame(page1)
+        frame_right.pack(side=RIGHT, fill=X)
+
+        Button(frame_right, text='Load property', command=self.load_property).grid(row=0, column=0, sticky=W, pady=4)  # pack(anchor=W)
+        Button(frame_right, text='Save property', command=self.save_property).grid(row=0, column=1, sticky=W, pady=4)  # pack(anchor=W)
+        Label(frame_right, text=f"Loaded property:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, pady=4)  # pack(anchor=W)
 
         self.property_text = scrolledtext.ScrolledText(frame_right, height=100)
         # self.property_text.config(state="disabled")
-        self.property_text.pack(anchor=W, fill=X)  #grid(row=2, column=1, sticky=W+E+N+S, pady=4)
+        self.property_text.grid(row=2, column=0, columnspan=16, rowspan=2, sticky=W+E+N+S, pady=4)  # pack(anchor=W, fill=X)
 
         print(nb.select(0), type(nb.select(0)))
         # print(page1, type(page1))
@@ -380,39 +384,39 @@ class Gui:
         self.status_set("Space loaded")
 
     def save_model(self):
-        if self.model_file is "":
+        ## TBD fix this check
+        if self.model_text.get(1.0, END) == "":
             self.status_set("There is no model to be saved.")
             return
 
         self.status_set("Please select folder to store the model in.")
-        save_model = filedialog.asksaveasfilename(initialdir=self.model_dir, title="Model saving - Select file", filetypes=(("pm files", "*.pm"), ("all files", "*.*")))
-        print(save_model)
+        save_model = filedialog.asksaveasfilename(initialdir=self.model_dir, title="Model saving - Select file",
+                                                  filetypes=(("pm files", "*.pm"), ("all files", "*.*")))
+        if "." not in save_model:
+            save_model = save_model + ".pm"
+        print("save_model", save_model)
 
-        if isfile(self.model_file.get()):
-            print(self.model_file)
-            ## os.copy the file
-        else:
-            with open(save_model, "w") as file:
-                for line in self.model:
-                    file.write(line)
+        with open(save_model, "w") as file:
+            file.write(self.model_text.get(1.0, END))
+
         self.status_set("Model saved.")
 
     def save_property(self):
-        if self.property_file is "":
+        ## TBD fix this check
+        if self.property_text.get(1.0, END) == "":
             self.status_set("There is no property to be saved.")
             return
 
         self.status_set("Please select folder to store the property in.")
-        save_property = filedialog.asksaveasfilename(initialdir=self.model_dir, title="Property saving - Select file",
+        save_property = filedialog.asksaveasfilename(initialdir=self.properties_dir, title="Property saving - Select file",
                                                      filetypes=(("pctl files", "*.pctl"), ("all files", "*.*")))
-        print(save_property)
-        if isfile(self.property_file.get()):
-            print(self.property_file)
-            ## os.copy the file
-        else:
-            with open(save_property, "w") as file:
-                for line in self.property:
-                    file.write(line)
+        if "." not in save_property:
+            save_model = save_property + ".pctl"
+        print("save_model", save_model)
+
+        with open(save_model, "w") as file:
+            file.write(self.property_text.get(1.0, END))
+
         self.status_set("Property saved.")
 
     ## MAYBE IN THE FUTURE
