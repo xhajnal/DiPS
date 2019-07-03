@@ -220,10 +220,10 @@ class Gui:
         # page5.pack(expand=True)
         nb.add(page5, text='testy')
 
-        self.model_text = Text(page5, height=100)
-        # self.model_text.config(state="disabled")
-        # self.model_text.grid(row=0, column=0, sticky=W + E + N + S, pady=4)
-        self.model_text.pack(fill="both")
+        self.testy_text = Text(page5, height=100)
+        # self.testy_text.config(state="disabled")
+        # self.testy_text.grid(row=0, column=0, sticky=W + E + N + S, pady=4)
+        self.testy_text.pack(fill="both")
 
         ## MENU
         main_menu = Menu(root)
