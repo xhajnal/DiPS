@@ -1,6 +1,7 @@
 import platform
 from os.path import isfile
 from tkinter import *
+from tkinter import scrolledtext
 import webbrowser
 import pickle
 import os
@@ -22,6 +23,7 @@ cwd = os.getcwd()
 
 class Gui:
     def __init__(self, root):
+
         ## Variables
         ## Directories
         self.model_dir = ""
@@ -66,7 +68,7 @@ class Gui:
 
         ## GUI INIT
         root.title('mpm')
-        root.minsize(400, 300)
+        root.minsize(1000, 300)
 
         ## DESIGN
 
@@ -116,7 +118,7 @@ class Gui:
         nb.pack(fill="both", expand=1)
 
         ## TAB EDIT
-        page1 = ttk.Frame(nb, width=400, height=200, name="edit")  # Adds tab 1 of the notebook
+        page1 = ttk.Frame(nb, width=600, height=200, name="edit")  # Adds tab 1 of the notebook
         ## TBD CHANGE THE STATE OF THE TAB WHILE RUNNING
         # style = ttk.Style()
         # style.configure("BW.TLabel", foreground="black", background="white")
@@ -134,19 +136,23 @@ class Gui:
         # page1.update()
         # print("lambdaaa", lambdaaa())
 
-        Button(page1, text='Load model', command=self.load_model).grid(row=0, column=0, sticky=W, pady=4)
-        Button(page1, text='Load property', command=self.load_property).grid(row=0, column=1, sticky=W, pady=4)
+        frame_left = Frame(page1, width=600, height=200)
+        frame_left.pack(side=LEFT, fill=X)
+        frame_right = Frame(page1)
+        frame_right.pack(side=RIGHT, fill=X)
+        Button(frame_left, text='Load model', command=self.load_model).pack(anchor=W)  #grid(row=0, column=0, sticky=W, pady=4)
+        Button(frame_right, text='Load property', command=self.load_property).pack(anchor=W)  #grid(row=0, column=1, sticky=W, pady=4)
 
-        Label(page1, text=f"Loaded model:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, pady=4)
-        Label(page1, text=f"Loaded property:", anchor=W, justify=LEFT).grid(row=1, column=1, sticky=W, pady=4)
+        Label(frame_left, text=f"Loaded model:", anchor=W, justify=LEFT).pack(anchor=W)  #grid(row=1, column=0, sticky=W, pady=4)
+        Label(frame_right, text=f"Loaded property:", anchor=W, justify=LEFT).pack(anchor=W)  #grid(row=1, column=1, sticky=W, pady=4)
 
-        self.model_text = Text(page1, height=100)
+        self.model_text = scrolledtext.ScrolledText(frame_left, height=100)
         # self.model_text.config(state="disabled")
-        self.model_text.grid(row=2, column=0, sticky=W+E+N+S, pady=4)
+        self.model_text.pack(anchor=W, fill=X, expand=True)  #grid(row=2, column=0, sticky=W+E+N+S, pady=4)
 
-        self.property_text = Text(page1, height=100)
+        self.property_text = scrolledtext.ScrolledText(frame_right, height=100)
         # self.property_text.config(state="disabled")
-        self.property_text.grid(row=2, column=1, sticky=W+E+N+S, pady=4)
+        self.property_text.pack(anchor=W, fill=X)  #grid(row=2, column=1, sticky=W+E+N+S, pady=4)
 
         print(nb.select(0), type(nb.select(0)))
         # print(page1, type(page1))
@@ -175,20 +181,22 @@ class Gui:
         page3 = ttk.Frame(nb, width=400, height=200, name="conversion")
         nb.add(page3, text='Conversion data + functions to properties')
 
+        Button(page3, text='Load data', command=self.load_data).grid(row=0, column=0, sticky=W, pady=4)
+
         ## SET THE INTERVAL COMPUTATION SETTINGS
-        Label(page3, text="Set alpha, the confidence:", anchor=W, justify=LEFT).grid(row=0)
-        Label(page3, text="Set n_samples, number of samples: ", anchor=W, justify=LEFT).grid(row=1)
+        Label(page3, text="Set alpha, the confidence:", anchor=W, justify=LEFT).grid(row=1)
+        Label(page3, text="Set n_samples, number of samples: ", anchor=W, justify=LEFT).grid(row=2)
 
         self.alpha_entry = Entry(page3)
         self.n_samples_entry = Entry(page3)
 
-        self.alpha_entry.grid(row=0, column=1)
-        self.n_samples_entry.grid(row=1, column=1)
+        self.alpha_entry.grid(row=1, column=1)
+        self.n_samples_entry.grid(row=2, column=1)
 
         ## TBD ADD setting for creating  intervals - alpha, n_samples
-        Button(page3, text='Create intervals', command=self.create_intervals).grid(row=3, column=0, sticky=W, pady=4)
+        Button(page3, text='Create intervals', command=self.create_intervals).grid(row=4, column=0, sticky=W, pady=4)
 
-        Label(page3, text=f"Intervals:", anchor=W, justify=LEFT).grid(row=4, column=0, sticky=W, pady=4)
+        Label(page3, text=f"Intervals:", anchor=W, justify=LEFT).grid(row=5, column=0, sticky=W, pady=4)
 
         self.data_text = Text(page3, height=10, width=30)
         # self.data_text.config(state="disabled")
@@ -578,6 +586,10 @@ class Gui:
 
 root = Tk()
 spam = Gui(root)
+
+## ON UBUNTU
+# root.attributes('-zoomed', True)
+root.state('zoomed')
 root.mainloop()
 
 # root = Tk()
