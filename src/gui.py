@@ -13,7 +13,7 @@ import configparser
 config = configparser.ConfigParser()
 workspace = os.path.dirname(__file__)
 sys.path.append(workspace)
-from load import create_intervals, load_all_functions
+from load import create_intervals, load_all_functions, find_param
 import space
 from synthetise import ineq_to_props, check_deeper
 from mc_prism import call_prism_files, call_storm_files
@@ -348,9 +348,9 @@ class Gui:
         self.status_set("Please select the model to be loaded.")
         self.model_file.set(filedialog.askopenfilename(initialdir=self.model_dir, title="Model loading - Select file",
                                                        filetypes=(("pm files", "*.pm"), ("all files", "*.*"))))
-        self.status_set("Model loaded.")
         self.model_text.delete('1.0', END)
         self.model_text.insert('end', open(self.model_file.get(), 'r').read())
+        self.status_set("Model loaded.")
         # print("self.model", self.model.get())
 
     def load_property(self):
@@ -358,17 +358,22 @@ class Gui:
         self.property_file.set(
             filedialog.askopenfilename(initialdir=self.properties_dir, title="Property loading - Select file",
                                        filetypes=(("property files", "*.pctl"), ("all files", "*.*"))))
-        self.status_set("Property loaded.")
         self.property_text.delete('1.0', END)
         self.property_text.insert('end', open(self.property_file.get(), 'r').read())
+        self.status_set("Property loaded.")
         # print("self.property", self.property.get())
 
     def load_data(self):
         self.status_set("Please select the data to be loaded.")
         self.data_file.set(filedialog.askopenfilename(initialdir=self.data_dir, title="Data loading - Select file",
                                                       filetypes=(("pickled files", "*.p"), ("all files", "*.*"))))
-        ## TBD
-        # self.data = PARSE THE DATA
+        if ".p" in self.data_file.get():
+            self.data = pickle.load(open(self.data_file.get(), "rb"))
+        else:
+            print()
+            ## TBD
+            # self.data = PARSE THE DATA
+        # print(self.data)
         self.status_set("Data loaded.")
 
     def load_functions(self):
@@ -392,6 +397,10 @@ class Gui:
         self.status_set("Please select the space to be loaded.")
         self.space_file.set(filedialog.askopenfilename(initialdir=self.data_dir, title="Space loading - Select file", filetypes=(("pickled files", "*.p"), ("all files", "*.*"))))
         # print(self.space)
+
+        ## pickle load
+        self.space = pickle.load(open(self.space_file.get(), "rb"))
+        print(self.space)
         self.status_set("Space loaded")
 
     def save_model(self):
@@ -550,6 +559,13 @@ class Gui:
             self.props = ineq_to_props(self.functions, self.intervals, silent=True)
             ## TBD
             print("Properties not computed")
+
+        if self.space == "":
+            print("space is empty creating new one")
+            parameters = globals()["parameters"]
+            for polynome in self.props:
+                parameters.update(load.find_param(polynome))
+            self.space = space.RefinedSpace(region, parameters, types=None,  rectangles_sat=False, rectangles_unsat=False, rectangles_unknown=None, sat_samples=None, unsat_samples=None, true_point=False, title=False, proxy_params=False, decoding=False)
 
         ## TBD LOAD props, n, epsilon, coverage
         self.space = check_deeper(self.space, self.props, self.max_depth, self.epsilon, self.coverage, silent=True,
