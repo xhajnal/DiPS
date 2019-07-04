@@ -1,7 +1,7 @@
 import platform
 from os.path import isfile
 from tkinter import *
-from tkinter import scrolledtext
+from tkinter import scrolledtext, messagebox
 import webbrowser
 import pickle
 import os
@@ -19,6 +19,17 @@ from synthetise import ineq_to_props, check_deeper
 from mc_prism import call_prism_files, call_storm_files
 
 cwd = os.getcwd()
+
+
+class MyDialog:
+
+    def __init__(self, parent, text):
+        top = self.top = Toplevel(parent)
+        Label(top, text=text).pack()
+        self.e.pack(padx=5)
+
+        b = Button(top, text="OK", command=quit)
+        b.pack(pady=5)
 
 
 class Gui:
@@ -384,17 +395,17 @@ class Gui:
         self.status_set("Space loaded")
 
     def save_model(self):
-        ## TBD fix this check
-        if self.model_text.get(1.0, END) == "":
-            self.status_set("There is no model to be saved.")
-            return
+        ## CHECK IF THE MODEL IS NON EMPTY
+        # if len(self.model_text.get('1.0', END)) <= 1:
+        #    self.status_set("There is no model to be saved.")
+        #    return
 
         self.status_set("Please select folder to store the model in.")
         save_model = filedialog.asksaveasfilename(initialdir=self.model_dir, title="Model saving - Select file",
                                                   filetypes=(("pm files", "*.pm"), ("all files", "*.*")))
         if "." not in save_model:
             save_model = save_model + ".pm"
-        print("save_model", save_model)
+        # print("save_model", save_model)
 
         with open(save_model, "w") as file:
             file.write(self.model_text.get(1.0, END))
@@ -402,19 +413,19 @@ class Gui:
         self.status_set("Model saved.")
 
     def save_property(self):
-        ## TBD fix this check
-        if self.property_text.get(1.0, END) == "":
-            self.status_set("There is no property to be saved.")
-            return
+        ## CHECK IF THE PROPERTY IS NON EMPTY
+        # if len(self.property_text.get('1.0', END)) <= 1:
+        #    self.status_set("There is no property to be saved.")
+        #    return
 
         self.status_set("Please select folder to store the property in.")
         save_property = filedialog.asksaveasfilename(initialdir=self.properties_dir, title="Property saving - Select file",
                                                      filetypes=(("pctl files", "*.pctl"), ("all files", "*.*")))
         if "." not in save_property:
-            save_model = save_property + ".pctl"
-        print("save_model", save_model)
+            save_property = save_property + ".pctl"
+        # print("save_property", save_property)
 
-        with open(save_model, "w") as file:
+        with open(save_property, "w") as file:
             file.write(self.property_text.get(1.0, END))
 
         self.status_set("Property saved.")
@@ -482,15 +493,14 @@ class Gui:
     ## ANALYSIS
     def synth_params(self):
         self.status_set("Parameter synthesis running ...")
-        ## TBD solve agents_quantities
 
+        ## If model file not selected load model
         if self.model_file.get() is "":
             self.load_model()
 
+        ## If property file not selected load property
         if self.property_file.get() is "":
             self.load_property()
-
-        print(self.program.get())
 
         if self.program.get().lower() == "prism":
             call_prism_files(self.model_file.get(), [], param_intervals=False, seq=False, noprobchecks=False, memory="",
@@ -498,13 +508,14 @@ class Gui:
                              output_path=self.prism_results)
             # self.status_set("Parameter synthesised. Output here: {}", [os.path.join(self.prism_results, filename)])
             return
-
-        if self.program.get().lower() == "storm":
+        elif self.program.get().lower() == "storm":
             call_storm_files(self.model_file.get(), [], model_path=self.model_dir, properties_path=self.properties_dir,
                              property_file=self.property_file.get(), output_path=self.storm_results, time=False)
             # self.status_set("Parameter synthesised. Output here: {}", [os.path.join(self.prism_results, filename)])
             return
-        self.status_set("Selected program not recognised")
+        else:
+            ## Show window to inform to select the program
+            messagebox.showinfo("Synthesise", "Select a program for parameter synthesis first.")
 
     def create_intervals(self):
         self.status_set("Intervals are being created ...")
