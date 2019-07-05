@@ -147,21 +147,28 @@ class Gui:
         # page1.update()
         # print("lambdaaa", lambdaaa())
 
+        # page1.rowconfigure(5, weight=1)
+        # page1.columnconfigure(6, weight=1)
+
         frame_left = Frame(page1, width=600, height=200)
+        frame_left.rowconfigure(3, weight=1)
+        frame_left.columnconfigure(6, weight=1)
         frame_left.pack(side=LEFT, fill=X)
 
-        Button(frame_left, text='Load model', command=self.load_model).grid(row=0, column=0, sticky=W, pady=4)  # pack(anchor=W)
+        Button(frame_left, text='Load model', command=self.load_model).grid(row=0, column=0, sticky=W, pady=4, padx=4)  # pack(anchor=W)
         Button(frame_left, text='Save model', command=self.save_model).grid(row=0, column=1, sticky=W, pady=4)  # pack(anchor=W)
         Label(frame_left, text=f"Loaded model:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, pady=4)  # pack(anchor=W)
 
         self.model_text = scrolledtext.ScrolledText(frame_left, height=100)
         # self.model_text.config(state="disabled")
-        self.model_text.grid(row=2, column=0, columnspan=16, sticky=W+E+N+S, pady=4)  # pack(anchor=W, fill=X, expand=True)
+        self.model_text.grid(row=2, column=0, columnspan=16, rowspan=2, sticky=W+E+N+S, pady=4)  # pack(anchor=W, fill=X, expand=True)
 
         frame_right = Frame(page1)
+        frame_right.rowconfigure(3, weight=1)
+        frame_right.columnconfigure(6, weight=1)
         frame_right.pack(side=RIGHT, fill=X)
 
-        Button(frame_right, text='Load property', command=self.load_property).grid(row=0, column=0, sticky=W, pady=4)  # pack(anchor=W)
+        Button(frame_right, text='Load property', command=self.load_property).grid(row=0, column=0, sticky=W, pady=4, padx=4)  # pack(anchor=W)
         Button(frame_right, text='Save property', command=self.save_property).grid(row=0, column=1, sticky=W, pady=4)  # pack(anchor=W)
         Label(frame_right, text=f"Loaded property:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, pady=4)  # pack(anchor=W)
 
@@ -179,17 +186,26 @@ class Gui:
         ## TBD ADD THE TEXT OF THE PROPERTY
 
         ## TAB SYNTHESISE
-        page2 = ttk.Frame(nb, width=400, height=200, name="synthetise")  # Adds tab 2 of the notebook
+        page2 = ttk.Frame(nb, width=400, height=100, name="synthetise")  # Adds tab 2 of the notebook
         nb.add(page2, text='Synthesise')
+
+        page2.rowconfigure(5, weight=1)
+        page2.columnconfigure(6, weight=1)
 
         ## SELECTING THE PROGRAM
         self.program.set(1)
         Label(page2, text="Select the program: ", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, pady=4)
         Radiobutton(page2, text="Prism", variable=self.program, value="prism").grid(row=1, column=1, sticky=W, pady=4)
         Radiobutton(page2, text="Storm", variable=self.program, value="storm").grid(row=1, column=2, sticky=W, pady=4)
-        Button(page2, text='Run parameter synthesis', command=self.synth_params).grid(row=2, column=0, sticky=W, pady=4)
+        Button(page2, text='Run parameter synthesis', command=self.synth_params).grid(row=2, column=0, sticky=W, pady=4, padx=4)
         Button(page2, text='Load results', command=self.load_functions).grid(row=2, column=1, sticky=W, pady=4)
-        ## TBD ADD THE TEXT TO SHOW THE FILE / RATIONAL FUNCTIONS
+
+        Label(page2, text=f"Loaded function file:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, pady=4)
+
+        #functions_text_frame = Frame(page2)
+        #functions_text_frame.
+        self.functions_text = scrolledtext.ScrolledText(page2, height=100)
+        self.functions_text.grid(row=4, column=0, columnspan=16, rowspan=2, sticky=W, pady=4)
 
 
         ## TAB DATA CONVERSION
@@ -217,6 +233,8 @@ class Gui:
         # self.data_text.config(state="disabled")
         self.data_text.grid(row=5, column=0, sticky=W, pady=4)
 
+
+
         ## TAB DATA REFINEMENT
         page4 = ttk.Frame(nb, width=400, height=200, name="refine")
         nb.add(page4, text='Refine')
@@ -239,14 +257,25 @@ class Gui:
         Button(page4, text='Refine space', command=self.refine_space).grid(row=4, column=0, sticky=W, pady=4)
         Button(page4, text='Load space', command=self.load_space).grid(row=4, column=1, sticky=W, pady=4)
 
-        page5 = ttk.Frame(nb, name="testy")
-        # page5.pack(expand=True)
-        nb.add(page5, text='testy')
-
-        self.testy_text = Text(page5, height=100)
-        # self.testy_text.config(state="disabled")
-        # self.testy_text.grid(row=0, column=0, sticky=W + E + N + S, pady=4)
-        self.testy_text.pack(fill="both")
+        # page5 = ttk.Frame(nb, name="testy")
+        # # page5.pack(expand=True)
+        # nb.add(page5, text='testy')
+        #
+        # self.testy_text = scrolledtext.ScrolledText(page5, height=100)
+        # # self.testy_text.config(state="disabled")
+        # # self.testy_text.grid(row=0, column=0, sticky=W + E + N + S, pady=4)
+        # Button(page5, text='Load results', command=self.load_functions).pack()
+        # self.testy_text.pack()
+        #
+        # page6 = ttk.Frame(nb, name="testyy")
+        # # page5.pack(expand=True)
+        # nb.add(page6, text='testy')
+        #
+        # self.testy_text2 = scrolledtext.ScrolledText(page6, height=100)
+        # # self.testy_text.config(state="disabled")
+        # # self.testy_text.grid(row=0, column=0, sticky=W + E + N + S, pady=4)
+        # Button(page6, text='Load results', command=self.load_functions).grid()
+        # self.testy_text2.grid()
 
         ## MENU
         main_menu = Menu(root)
@@ -350,6 +379,7 @@ class Gui:
                                                        filetypes=(("pm files", "*.pm"), ("all files", "*.*"))))
         self.model_text.delete('1.0', END)
         self.model_text.insert('end', open(self.model_file.get(), 'r').read())
+
         self.status_set("Model loaded.")
         # print("self.model", self.model.get())
 
@@ -392,6 +422,15 @@ class Gui:
         self.functions.update(rewards)
         print(self.functions)
         self.status_set(f"{len(self.functions.keys())} rational functions loaded")
+
+        self.functions_text.delete('1.0', END)
+        self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
+
+        # self.testy_text.delete('1.0', END)
+        # self.testy_text.insert('1.0', open(self.functions_file.get(), 'r').read())
+        #
+        # self.testy_text2.delete('1.0', END)
+        # self.testy_text2.insert('1.0', open(self.functions_file.get(), 'r').read())
 
     def load_space(self):
         self.status_set("Please select the space to be loaded.")
