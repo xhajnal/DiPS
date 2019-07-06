@@ -412,17 +412,22 @@ class Gui:
         print("self.program.get()", self.program.get())
         if self.program.get() == "prism":
             self.functions_file.set(filedialog.askopenfilename(initialdir=self.prism_results, title="Rational functions loading - Select file", filetypes=(("text files", "*.txt"), ("all files", "*.*"))))
-        else:
+            self.functions, rewards = load_all_functions(self.functions_file.get(), tool="unknown", factorize=True, agents_quantities=False, rewards_only=False, f_only=False)
+        elif self.program.get() == "storm":
             self.functions_file.set(filedialog.askopenfilename(initialdir=self.storm_results, title="Rational functions loading - Select file", filetypes=(("text files", "*.txt"), ("all files", "*.*"))))
-        # print(self.functions)
-        self.functions, rewards = load_all_functions(self.functions_file.get(), tool="unknown", factorize=True,
-                                                     agents_quantities=False, rewards_only=False, f_only=False)
+            self.functions, rewards = load_all_functions(self.functions_file.get(), tool="unknown", factorize=True, agents_quantities=False, rewards_only=False, f_only=False)
+        else:
+            messagebox.showinfo("Load functions", "Select a program for which you want to load data.")
+
         # print("self.functions", self.functions)
         # print("self.rewards", self.rewards)
+
+        ## Merge functions and rewards
         self.functions.update(rewards)
         print(self.functions)
         self.status_set(f"{len(self.functions.keys())} rational functions loaded")
 
+        ## Show loaded functions
         self.functions_text.delete('1.0', END)
         self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
 
@@ -540,29 +545,32 @@ class Gui:
 
     ## ANALYSIS
     def synth_params(self):
-        self.status_set("Parameter synthesis running ...")
-
         ## If model file not selected load model
         if self.model_file.get() is "":
+            self.status_set("Load model for parameter synthesis")
             self.load_model()
 
         ## If property file not selected load property
         if self.property_file.get() is "":
+            self.status_set("Load property for parameter synthesis")
             self.load_property()
 
         if self.program.get().lower() == "prism":
+            self.status_set("Parameter synthesis running ...")
             call_prism_files(self.model_file.get(), [], param_intervals=False, seq=False, noprobchecks=False, memory="",
                              model_path="", properties_path=self.properties_dir, property_file=self.property_file.get(),
                              output_path=self.prism_results)
             # self.status_set("Parameter synthesised. Output here: {}", [os.path.join(self.prism_results, filename)])
             return
         elif self.program.get().lower() == "storm":
+            self.status_set("Parameter synthesis running ...")
             call_storm_files(self.model_file.get(), [], model_path=self.model_dir, properties_path=self.properties_dir,
                              property_file=self.property_file.get(), output_path=self.storm_results, time=False)
             # self.status_set("Parameter synthesised. Output here: {}", [os.path.join(self.prism_results, filename)])
             return
         else:
             ## Show window to inform to select the program
+            self.status_set("Program for parameter synthesis not selected")
             messagebox.showinfo("Synthesise", "Select a program for parameter synthesis first.")
 
     def create_intervals(self):
@@ -658,9 +666,12 @@ root = Tk()
 spam = Gui(root)
 
 ## ON UBUNTU
-# root.attributes('-zoomed', True)
-root.state('zoomed')
+if "wind" in platform.system().lower():
+    root.state('zoomed')
+else:
+    root.attributes('-zoomed', True)
 root.mainloop()
+
 
 # root = Tk()
 # # theLabel = Label(root, text="Hello")
