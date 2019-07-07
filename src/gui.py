@@ -560,13 +560,21 @@ class Gui:
             call_prism_files(self.model_file.get(), [], param_intervals=False, seq=False, noprobchecks=False, memory="",
                              model_path="", properties_path=self.properties_dir, property_file=self.property_file.get(),
                              output_path=self.prism_results)
-            # self.status_set("Parameter synthesised. Output here: {}", [os.path.join(self.prism_results, filename)])
+            self.functions_file.set(str(os.path.join(Path(self.prism_results), str(Path(self.model_file.get()).stem)+"_"+str(Path(self.property_file.get()).stem)+".txt")))
+            self.status_set("Parameter synthesised. Output here: {}", self.functions_file.get())
+            self.functions_text.delete('1.0', END)
+            self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
             return
+
         elif self.program.get().lower() == "storm":
             self.status_set("Parameter synthesis running ...")
-            call_storm_files(self.model_file.get(), [], model_path=self.model_dir, properties_path=self.properties_dir,
+            call_storm_files(self.model_file.get(), [], model_path="", properties_path=self.properties_dir,
                              property_file=self.property_file.get(), output_path=self.storm_results, time=False)
             # self.status_set("Parameter synthesised. Output here: {}", [os.path.join(self.prism_results, filename)])
+            self.functions_file.set(str(os.path.join(Path(self.storm_results), str(Path(self.model_file.get()).stem) + "_" + str(Path(self.property_file.get()).stem) + ".cmd")))
+            self.status_set("Command here: {}", self.functions_file.get())
+            self.functions_text.delete('1.0', END)
+            self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
             return
         else:
             ## Show window to inform to select the program

@@ -134,21 +134,24 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
     std_output_path: (string) path to save the results of the command
     std_output_file: (string) file name to save the output
     """
-    # print("std_output_path", std_output_path)
     # print("prism_results", prism_results)
+    # print("std_output_path", std_output_path)
     # print("std_output_file", std_output_file)
 
     if std_output_path is not None:
         output_file_path = Path(args.split()[0]).stem
+        # print("output_file_path", output_file_path)
         if not std_output_file:
-            output_file_path = os.path.join(std_output_path, Path(str(output_file_path) + ".txt"))
+            # print("if")
+            output_file_path = os.path.join(std_output_path, Path((output_file_path) + ".txt"))
         else:
+            # print("else")
             output_file_path = os.path.join(prism_results, Path(str(std_output_file)))
             # print("new output_file_path", output_file_path)
     else:
         output_file_path = ""
 
-    # print(output_file)
+    # print("output_file_path", output_file_path)
 
     # os.chdir(config.get("paths","cwd"))
     curr_dir = os.getcwd()
@@ -303,8 +306,8 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
     memory: (int) sets maximum memory in GB, see https://www.prismmodelchecker.org/manual/ConfiguringPRISM/OtherOptions
 
     """
-    print("model_path ", model_path)
-    print("model_prefix ", model_prefix)
+    # print("model_path ", model_path)
+    # print("model_prefix ", model_prefix)
     # os.chdir(config.get("paths","cwd"))
     if noprobchecks:
         noprobchecks = '-noprobchecks '
@@ -317,14 +320,17 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
         memory = f'-javamaxmem {memory}g '
 
     if not agents_quantities:
-        print("I was here")
+        # print("I was here")
         agents_quantities = [""]
 
     for N in sorted(agents_quantities):
+        # print("glob.glob(os.path.join(model_path, model_prefix + str(N) + .pm))", glob.glob(os.path.join(model_path, model_prefix + str(N) + ".pm")))
+        # print("glob.glob(os.path.join(model_path, model_prefix))", glob.glob(os.path.join(model_path, model_prefix)))
+        # print("model_prefix", model_prefix)
         if "." in model_prefix:
-            files = glob.glob(os.path.join(model_path, model_prefix + str(N) + ".pm"))
-        else:
             files = glob.glob(os.path.join(model_path, model_prefix))
+        else:
+            files = glob.glob(os.path.join(model_path, model_prefix + str(N) + ".pm"))
         print(files)
         if not files:
             print(colored("No model files for N="+str(N)+" found", "red"))
@@ -375,7 +381,7 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
                 # print("file", file.stem)
                 error = call_prism("{} {} {}{}-param {}".format(file, property_file, memory, noprobchecks, params),
                                    seq=seq, model_path=model_path, properties_path=properties_path, std_output_path=output_path,
-                                   std_output_file="{}_{}.txt".format(str(file.stem).split(".")[0], property_file.split(".")[0]))
+                                   std_output_file="{}_{}.txt".format(str(file.stem).split(".")[0], str(Path(property_file).stem).split(".")[0]))
 
             # print(f"  Return code is: {error}")
             print(f"  It took {socket.gethostname()}, {time.time() - start_time} seconds to run")
@@ -487,65 +493,74 @@ def call_storm(args, silent=False, model_path=model_path, properties_path=proper
     # print(args.split(" "))
     args = args.split(" ")
 
-    # print(args)
-    for arg in args:
-        # print(arg)
-        # print(re.compile('\.[a-z]').search(arg))
-        if re.compile('\.pm').search(arg) is not None:
-            model_file_path = os.path.join(model_path, arg)
-            # print(model_file)
-            if not os.path.isfile(model_file_path):
-                print(f"{colored('file', 'red')} {model_file_path} {colored('not found -- skipped', 'red')}")
-                return 404
-            storm_args.append(model_file_path)
-        elif re.compile('\.pctl').search(arg) is not None:
-            property_file_path = os.path.join(properties_path, arg)
-            # print(property_file)
-            if not os.path.isfile(property_file_path):
-                print(f"{colored('file', 'red')} {property_file_path} {colored('not found -- skipped', 'red')}")
-                return 404
-            # storm_args.append(property_file_path)
-            storm_args.append("my_super_cool_string")
-        elif re.compile('\.txt').search(arg) is not None:
-            print("storm_output_path", storm_output_path)
-            if not os.path.isabs(storm_output_path):
-                storm_output_path = os.path.join(Path(storm_results), Path(storm_output_path))
+    with open(output_file_path.split(".")[0]+".cmd", "a+") as command_file_path:
+        # print(args)
+        for arg in args:
+            # print(arg)
+            # print(re.compile('\.[a-z]').search(arg))
+            if re.compile('\.pm').search(arg) is not None:
+                model_file_path = os.path.join(model_path, arg)
+                # print(model_file)
+                if not os.path.isfile(model_file_path):
+                    command_file_path.write(f"file {model_file_path} not found -- skipped \n")
+                    print(f"{colored('file', 'red')} {model_file_path} {colored('not found -- skipped', 'red')}")
+                    return 404
+                storm_args.append(model_file_path)
+            elif re.compile('\.pctl').search(arg) is not None:
+                property_file_path = os.path.join(properties_path, arg)
+                # print(property_file)
+                if not os.path.isfile(property_file_path):
+                    command_file_path.write(f"file {property_file_path} not found -- skipped \n")
+                    print(f"{colored('file', 'red')} {property_file_path} {colored('not found -- skipped', 'red')}")
+                    return 404
+                # storm_args.append(property_file_path)
+                storm_args.append("my_super_cool_string")
+            elif re.compile('\.txt').search(arg) is not None:
+                command_file_path.write(f"storm_output_path {storm_output_path} \n")
+                print("storm_output_path", storm_output_path)
+                if not os.path.isabs(storm_output_path):
+                    storm_output_path = os.path.join(Path(storm_results), Path(storm_output_path))
 
-            if not os.path.isdir(storm_output_path):
-                if not silent:
-                    print(
-                        f"{colored('The path', 'red')} {storm_output_path} {colored('not found, this may cause trouble', 'red')}")
+                if not os.path.isdir(storm_output_path):
+                    if not silent:
+                        command_file_path.write(f"The path {storm_output_path} not found, this may cause trouble \n")
+                        print(
+                            f"{colored('The path', 'red')} {storm_output_path} {colored('not found, this may cause trouble', 'red')}")
 
-            storm_output_file_path = os.path.join(storm_output_path, arg)
-            print("storm_output_file_path", storm_output_file_path)
-            storm_args.append(storm_output_file_path)
+                storm_output_file_path = os.path.join(storm_output_path, arg)
+                command_file_path.write(f"storm_output_file_path {storm_output_file_path} \n")
+                print("storm_output_file_path", storm_output_file_path)
+                storm_args.append(storm_output_file_path)
+            else:
+                storm_args.append(arg)
+
+        args = ["./storm-pars --prism"]
+        args.extend(storm_args)
+        if time:
+            args.append(")")
+        if output_file_path is not "":
+            args.append(">>")
+            args.append(output_file_path)
+            args.append("2>&1")
+
+        if time:
+            spam = "(time "
         else:
-            storm_args.append(arg)
+            spam = ""
+        for arg in args:
+            spam = spam + " " + arg
+        if time:
+            spam = spam + " "
 
-    args = ["./storm-pars --prism"]
-    args.extend(storm_args)
-    if time:
-        args.append(")")
-    if output_file_path is not "":
-        args.append(">>")
-        args.append(output_file_path)
-        args.append("2>&1")
+        with open(property_file_path, "r") as file:
+            content = file.readlines()
+            for line in content:
+                # print(colored(line, "blue"))
+                line = line.replace('"', '\\"')
 
-    if time:
-        spam = "(time "
-    else:
-        spam = ""
-    for arg in args:
-        spam = spam + " " + arg
-    if time:
-        spam = spam + " "
-
-    with open(property_file_path, "r") as file:
-        content = file.readlines()
-        for line in content:
-            # print(colored(line, "blue"))
-            line = line.replace('"', '\\"')
-            print(spam.replace("my_super_cool_string", f"--prop \"{line[:-1]}\""))
+                output = spam.replace("my_super_cool_string", f"--prop \"{line[:-1]}\"")
+                command_file_path.write(output)
+                print(output)
 
     return True
     # output = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8")
@@ -568,17 +583,35 @@ def call_storm_files(model_prefix, agents_quantities, model_path=model_path, pro
 
     """
     root = str(output_path).split("/")[1]
-    print(f"cd /{root}")
 
-    print("sudo docker pull movesrwth/storm:travis")
-    print(f'sudo docker run --mount type=bind,source="$(pwd)",target=/{root} -w /opt/storm/build/bin --rm -it --name storm movesrwth/storm:travis')
+    output_file = str(os.path.join(Path(output_path), str(Path(model_prefix).stem) + "_" + str(Path(property_file).stem) + ".cmd"))
+    with open(output_file, "w") as output_file:
+        output_file.write(f"cd /{root} \n")
+        print(f"cd /{root}")
 
+        output_file.write("sudo docker pull movesrwth/storm:travis \n")
+        print("sudo docker pull movesrwth/storm:travis")
+        output_file.write(f'sudo docker run --mount type=bind,source="$(pwd)",target=/{root} -w /opt/storm/build/bin --rm -it --name storm movesrwth/storm:travis \n')
+        print(f'sudo docker run --mount type=bind,source="$(pwd)",target=/{root} -w /opt/storm/build/bin --rm -it --name storm movesrwth/storm:travis')
+
+    if not agents_quantities:
+        # print("I was here")
+        agents_quantities = [""]
+
+    # print("model_path", model_path)
+    # print("model_prefix", model_prefix)
     for N in sorted(agents_quantities):
-        # print(glob.glob(os.path.join(model_path, file_prefix + str(N) + ".pm")))
-        if not glob.glob(os.path.join(model_path, model_prefix + str(N) + ".pm")):
-            print(colored("No model files for N="+str(N)+" found", "red"))
+        if "." in model_prefix:
+            files = glob.glob(os.path.join(model_path, model_prefix))
+        else:
+            files = glob.glob(os.path.join(model_path, model_prefix + str(N) + ".pm"))
+        print("files", files)
+        if not files:
+            with open(output_file, "w") as output_file:
+                output_file.write("No model files for N="+str(N)+" found")
+                print(colored("No model files for N="+str(N)+" found", "red"))
             continue
-        for file in glob.glob(os.path.join(model_path, model_prefix + str(N) + ".pm")):
+        for file in files:
             file = Path(file)
             # print("{} {}".format(file, property_file))
             # call_storm("{} {}".format(file, property_file), model_path=model_path, properties_path=properties_path, std_output_path=output_path, std_output_file="{}_{}.txt".format(str(file.stem).split(".")[0], property_file.split(".")[0]), time=time)
@@ -588,7 +621,7 @@ def call_storm_files(model_prefix, agents_quantities, model_path=model_path, pro
                 # print("file", file)
                 # print("file stem", file.resolve().stem)
                 # print("{}_{}.txt".format(str(file.stem).split(".")[0], property_file.split(".")[0]))
-                call_storm("{} {}".format(file, property_file), model_path=model_path, properties_path=properties_path, std_output_path=output_path, std_output_file="{}_{}.txt".format(str(file.stem).split(".")[0], property_file.split(".")[0]))
+                call_storm("{} {}".format(file, property_file), model_path=model_path, properties_path=properties_path, std_output_path=output_path, std_output_file="{}_{}.txt".format(str(file.stem).split(".")[0], str(Path(property_file).stem).split(".")[0]))
             else:
                 call_storm("{} prop_{}.pctl".format(file, N), model_path=model_path, properties_path=properties_path, std_output_path=output_path)
 
