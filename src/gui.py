@@ -207,6 +207,9 @@ class Gui:
         self.functions_text = scrolledtext.ScrolledText(page2, height=100)
         self.functions_text.grid(row=4, column=0, columnspan=16, rowspan=2, sticky=W, pady=4)
 
+        self.functions_parsed_text = scrolledtext.ScrolledText(page2, height=100)
+        self.functions_parsed_text.grid(row=4, column=17, columnspan=16, rowspan=2, sticky=W, pady=4)
+
 
         ## TAB DATA CONVERSION
         page3 = ttk.Frame(nb, width=400, height=200, name="conversion")
@@ -399,6 +402,10 @@ class Gui:
                                                       filetypes=(("pickled files", "*.p"), ("all files", "*.*"))))
         if ".p" in self.data_file.get():
             self.data = pickle.load(open(self.data_file.get(), "rb"))
+
+            self.unfold_data()
+
+
         else:
             print()
             ## TBD
@@ -406,25 +413,70 @@ class Gui:
         # print(self.data)
         self.status_set("Data loaded.")
 
-    def load_functions(self):
+    def unfold_data(self):
+        """" unfolds the data dictionary into a single list"""
+        if isinstance(self.data, dict):
+            self.key = StringVar()
+            self.status_set(
+                "Loaded data are in a form of dictionary, please select which item you would like to choose:")
+            self.newwin = Toplevel(root)
+            label = Label(self.newwin,
+                          text="Loaded data are in a form of dictionary, please select which item you would like to choose:")
+            label.pack()
+            self.key.set(" ")
+
+            for key in self.data.keys():
+                spam = Radiobutton(self.newwin, text=key, variable=self.key, value=key)
+                spam.pack(anchor=W)
+            spam = Button(self.newwin, text="OK", command=self.unfold_data2)
+            spam.pack()
+        else:
+            self.data_text.delete('1.0', END)
+            self.data_text.insert('end', str(self.data))
+
+    def unfold_data2(self):
+        """" dummy method of unfold_data"""
+        try:
+            self.data = self.data[self.key.get()]
+        except KeyError:
+            self.data = self.data[eval(self.key.get())]
+
+        print(self.data)
+        self.newwin.destroy()
+        self.unfold_data()
+
+    def load_functions(self, file=False):
         self.status_set("Please select the prism/storm symbolic results to be loaded.")
 
         print("self.program.get()", self.program.get())
         if self.program.get() == "prism":
-            self.functions_file.set(filedialog.askopenfilename(initialdir=self.prism_results, title="Rational functions loading - Select file", filetypes=(("text files", "*.txt"), ("all files", "*.*"))))
-            self.functions, rewards = load_all_functions(self.functions_file.get(), tool="unknown", factorize=True, agents_quantities=False, rewards_only=False, f_only=False)
+            if not file:
+                self.functions_file.set(filedialog.askopenfilename(initialdir=self.prism_results, title="Rational functions loading - Select file", filetypes=(("text files", "*.txt"), ("all files", "*.*"))))
+            else:
+                self.functions_file.set(file)
+            self.functions, rewards = load_all_functions(self.functions_file.get(), tool="prism", factorize=False, agents_quantities=False, rewards_only=False, f_only=False)
         elif self.program.get() == "storm":
-            self.functions_file.set(filedialog.askopenfilename(initialdir=self.storm_results, title="Rational functions loading - Select file", filetypes=(("text files", "*.txt"), ("all files", "*.*"))))
-            self.functions, rewards = load_all_functions(self.functions_file.get(), tool="unknown", factorize=True, agents_quantities=False, rewards_only=False, f_only=False)
+            if not file:
+                self.functions_file.set(filedialog.askopenfilename(initialdir=self.storm_results, title="Rational functions loading - Select file", filetypes=(("text files", "*.txt"), ("all files", "*.*"))))
+            else:
+                self.functions_file.set(file)
+            self.functions, rewards = load_all_functions(self.functions_file.get(), tool="storm", factorize=True, agents_quantities=False, rewards_only=False, f_only=False)
         else:
-            messagebox.showinfo("Load functions", "Select a program for which you want to load data.")
+            messagebox.showwarning("Load functions", "Select a program for which you want to load data.")
 
         # print("self.functions", self.functions)
         # print("self.rewards", self.rewards)
 
         ## Merge functions and rewards
-        self.functions.update(rewards)
-        print(self.functions)
+        print("self.functions", self.functions)
+        for key in self.functions.keys():
+            if key in rewards.keys():
+                self.functions[key].append(rewards[key])
+        # self.functions.update(rewards)
+        print("self.functions", self.functions)
+
+        self.unfold_functions()
+
         self.status_set(f"{len(self.functions.keys())} rational functions loaded")
 
         ## Show loaded functions
@@ -436,6 +488,38 @@ class Gui:
         #
         # self.testy_text2.delete('1.0', END)
         # self.testy_text2.insert('1.0', open(self.functions_file.get(), 'r').read())
+
+    def unfold_functions(self):
+        """" unfolds the function dictionary into a single list """
+        if isinstance(self.functions, dict):
+            self.key = StringVar()
+            self.status_set(
+                "Loaded functions are in a form of dictionary, please select which item you would like to choose:")
+            self.newwin = Toplevel(root)
+            label = Label(self.newwin,
+                          text="Loaded functions are in a form of dictionary, please select which item you would like to choose:")
+            label.pack()
+            self.key.set(" ")
+
+            for key in self.functions.keys():
+                spam = Radiobutton(self.newwin, text=key, variable=self.key, value=key)
+                spam.pack(anchor=W)
+            spam = Button(self.newwin, text="OK", command=self.unfold_functions2)
+            spam.pack()
+        else:
+            self.functions_parsed_text.delete('1.0', END)
+            self.functions_parsed_text.insert('end', str(self.functions))
+
+    def unfold_functions2(self):
+        """" dummy method of unfold_functions"""
+        try:
+            self.functions = self.functions[self.key.get()]
+        except KeyError:
+            self.functions = self.functions[eval(self.key.get())]
+
+        print(self.functions)
+        self.newwin.destroy()
+        self.unfold_functions()
 
     def load_space(self):
         self.status_set("Please select the space to be loaded.")
@@ -562,8 +646,9 @@ class Gui:
                              output_path=self.prism_results)
             self.functions_file.set(str(os.path.join(Path(self.prism_results), str(Path(self.model_file.get()).stem)+"_"+str(Path(self.property_file.get()).stem)+".txt")))
             self.status_set("Parameter synthesised. Output here: {}", self.functions_file.get())
-            self.functions_text.delete('1.0', END)
-            self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
+            self.load_functions(self.functions_file.get())
+            # self.functions_text.delete('1.0', END)
+            # self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
             return
 
         elif self.program.get().lower() == "storm":
@@ -573,13 +658,16 @@ class Gui:
             # self.status_set("Parameter synthesised. Output here: {}", [os.path.join(self.prism_results, filename)])
             self.functions_file.set(str(os.path.join(Path(self.storm_results), str(Path(self.model_file.get()).stem) + "_" + str(Path(self.property_file.get()).stem) + ".cmd")))
             self.status_set("Command here: {}", self.functions_file.get())
-            self.functions_text.delete('1.0', END)
-            self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
+            self.load_functions(self.functions_file.get())
+            # self.functions_text.delete('1.0', END)
+            # self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
             return
         else:
             ## Show window to inform to select the program
             self.status_set("Program for parameter synthesis not selected")
-            messagebox.showinfo("Synthesise", "Select a program for parameter synthesis first.")
+            messagebox.showwarning("Synthesise", "Select a program for parameter synthesis first.")
+            return
+        self.unfold_functions()
 
     def create_intervals(self):
         self.status_set("Intervals are being created ...")
