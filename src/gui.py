@@ -202,8 +202,6 @@ class Gui:
 
         Label(page2, text=f"Loaded function file:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, pady=4)
 
-        #functions_text_frame = Frame(page2)
-        #functions_text_frame.
         self.functions_text = scrolledtext.ScrolledText(page2, height=100)
         self.functions_text.grid(row=4, column=0, columnspan=16, rowspan=2, sticky=W, pady=4)
 
@@ -235,7 +233,6 @@ class Gui:
         self.data_text = Text(page3, height=10, width=30)
         # self.data_text.config(state="disabled")
         self.data_text.grid(row=5, column=0, sticky=W, pady=4)
-
 
 
         ## TAB DATA REFINEMENT
@@ -644,6 +641,7 @@ class Gui:
             call_prism_files(self.model_file.get(), [], param_intervals=False, seq=False, noprobchecks=False, memory="",
                              model_path="", properties_path=self.properties_dir, property_file=self.property_file.get(),
                              output_path=self.prism_results)
+            ## Deriving output file
             self.functions_file.set(str(os.path.join(Path(self.prism_results), str(Path(self.model_file.get()).stem)+"_"+str(Path(self.property_file.get()).stem)+".txt")))
             self.status_set("Parameter synthesised. Output here: {}", self.functions_file.get())
             self.load_functions(self.functions_file.get())
@@ -655,7 +653,7 @@ class Gui:
             self.status_set("Parameter synthesis running ...")
             call_storm_files(self.model_file.get(), [], model_path="", properties_path=self.properties_dir,
                              property_file=self.property_file.get(), output_path=self.storm_results, time=False)
-            # self.status_set("Parameter synthesised. Output here: {}", [os.path.join(self.prism_results, filename)])
+            ## Deriving output file
             self.functions_file.set(str(os.path.join(Path(self.storm_results), str(Path(self.model_file.get()).stem) + "_" + str(Path(self.property_file.get()).stem) + ".cmd")))
             self.status_set("Command here: {}", self.functions_file.get())
             self.load_functions(self.functions_file.get())
@@ -671,8 +669,18 @@ class Gui:
 
     def create_intervals(self):
         self.status_set("Intervals are being created ...")
+
+        if self.alpha_entry.get() == "":
+            messagebox.showwarning("Creating intervals", "Choose alpha, the confidence measure before creating intervals.")
+            return
+
+        if self.n_samples_entry.get() == "":
+            messagebox.showwarning("Creating intervals", "Choose n_samples, number of experimental samples before creating intervals")
+            return
+
         if self.data_file.get() is "":
             self.load_data()
+
 
         print(self.data_file.get())
         ## TBD DESIGN THIS POPUP WINDOW AFTER CLICK to set alpha, n_samples
@@ -689,25 +697,44 @@ class Gui:
         self.status_set("Space sampling done.")
 
     def refine_space(self):
-        self.status_set("Space refinement running ...")
         print("refine_space")
 
-        ## TBD DESIGN THIS POPUP WINDOW AFTER CLICK to set max_depth, epsilon, coverage, algorithm
+        self.max_depth = self.max_dept_entry.get()
+        self.coverage = self.coverage_entry.get()
+        self.epsilon = self.epsilon_entry.get()
+        self.alg = self.algorithm_entry.get()
+
+        if self.max_depth == "":
+            messagebox.showwarning("Refine space", "Choose max recursion depth before refinement.")
+            return
+
+        if self.coverage == "":
+            messagebox.showwarning("Refine space", "Choose coverage, nonwhite fraction to reach before refinement.")
+            return
+
+        if self.epsilon == "":
+            messagebox.showwarning("Refine space", "Choose epsilon, min rectangle size before refinement.")
+            return
+
+        if self.alg == "":
+            messagebox.showwarning("Refine space", "Pick algorithm for the refinement before running.")
+            return
 
         if self.intervals == "":
-            ## TBD Error window, compute the intervals beforehead
             print("Intervals not computed, properties cannot be computed")
+            messagebox.showwarning("Refine space", "Compute intervals before refinement.")
+            return
 
         if self.props == "":
             self.props = ineq_to_props(self.functions, self.intervals, silent=True)
-            ## TBD
-            print("Properties not computed")
 
         if self.space == "":
             print("space is empty creating new one")
             parameters = globals()["parameters"]
             for polynome in self.props:
                 parameters.update(load.find_param(polynome))
+
+            self.status_set("Space refinement running ...")
             self.space = space.RefinedSpace(region, parameters, types=None,  rectangles_sat=False, rectangles_unsat=False, rectangles_unknown=None, sat_samples=None, unsat_samples=None, true_point=False, title=False, proxy_params=False, decoding=False)
 
         ## TBD LOAD props, n, epsilon, coverage
@@ -761,33 +788,9 @@ class Gui:
 root = Tk()
 spam = Gui(root)
 
-## ON UBUNTU
+## System dependent fullscreen setting
 if "wind" in platform.system().lower():
     root.state('zoomed')
 else:
     root.attributes('-zoomed', True)
 root.mainloop()
-
-
-# root = Tk()
-# # theLabel = Label(root, text="Hello")
-# # theLabel.pack()
-#
-# topFrame = Frame(root)
-# topFrame.pack()
-#
-# bottomFrame = Frame(root)
-# bottomFrame.pack(side=BOTTOM)
-#
-# button1 = Button(topFrame, text="Button 1", fg="red")
-# button2 = Button(topFrame, text="Button 2", fg="blue")
-# button3 = Button(topFrame, text="Button 3", fg="green")
-# button4 = Button(bottomFrame, text="Button 4", fg="purple")
-#
-#
-# button1.pack(side=LEFT)
-# button2.pack(side=LEFT)
-# button3.pack(side=LEFT)
-# button4.pack()
-#
-# root.mainloop()
