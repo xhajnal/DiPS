@@ -11,8 +11,9 @@ Feel free to leave response either via issues or email.
 
 ### 1. INSTALL DEPENDENCIES:
 
+* [Python](https://www.python.org/)
 * [Jupyter Notebook](https://jupyter.org/install)
-* [z3](https://github.com/Z3Prover/z3/releases) 
+* [z3](https://github.com/Z3Prover/z3/releases) - make sure you use same (32/64bit) version as the Python
 * [PRISM](http://www.prismmodelchecker.org)
 * [Storm](http://www.stormchecker.org/) (optional)
 * [Prophesy](https://moves.rwth-aachen.de/research/tools/prophesy/) (optional)
