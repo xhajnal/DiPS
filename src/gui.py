@@ -59,6 +59,7 @@ class Gui:
         self.data = ""
         self.functions = ""  ## Model checking results
         self.intervals = ""  ## Computed intervals
+        self.parameters = ""  ##  Parsed parameters
         self.space = ""  ## Instance of a space Class
         self.props = ""  ## Derived properties
 
@@ -212,50 +213,71 @@ class Gui:
         ## TAB DATA CONVERSION
         page3 = ttk.Frame(nb, width=400, height=200, name="conversion")
         nb.add(page3, text='Conversion data + functions to properties')
+        # page3.columnconfigure(0, weight=1)
+        # page3.rowconfigure(2, weight=1)
+        # page3.rowconfigure(7, weight=1)
 
         Button(page3, text='Load data', command=self.load_data).grid(row=0, column=0, sticky=W, pady=4)
 
+        Label(page3, text=f"Data:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, pady=4)
+
+        self.data_text = Text(page3, height=12)  # , height=10, width=30
+        # self.data_text.config(state="disabled")
+        self.data_text.grid(row=2, column=0, columnspan=2, sticky=W, pady=4)
+
         ## SET THE INTERVAL COMPUTATION SETTINGS
-        Label(page3, text="Set alpha, the confidence:", anchor=W, justify=LEFT).grid(row=1)
-        Label(page3, text="Set n_samples, number of samples: ", anchor=W, justify=LEFT).grid(row=2)
+        Label(page3, text="Set alpha, the confidence:", anchor=W, justify=LEFT).grid(row=3)
+        Label(page3, text="Set n_samples, number of samples: ", anchor=W, justify=LEFT).grid(row=4)
 
         self.alpha_entry = Entry(page3)
         self.n_samples_entry = Entry(page3)
 
-        self.alpha_entry.grid(row=1, column=1)
-        self.n_samples_entry.grid(row=2, column=1)
+        self.alpha_entry.grid(row=3, column=1)
+        self.n_samples_entry.grid(row=4, column=1)
 
         ## TBD ADD setting for creating  intervals - alpha, n_samples
-        Button(page3, text='Create intervals', command=self.create_intervals).grid(row=4, column=0, sticky=W, pady=4)
+        Button(page3, text='Create intervals', command=self.create_intervals).grid(row=5, column=0, sticky=W, pady=4)
 
-        Label(page3, text=f"Intervals:", anchor=W, justify=LEFT).grid(row=5, column=0, sticky=W, pady=4)
+        Label(page3, text=f"Intervals:", anchor=W, justify=LEFT).grid(row=6, column=0, sticky=W, pady=4)
 
-        self.data_text = Text(page3, height=10, width=30)
-        # self.data_text.config(state="disabled")
-        self.data_text.grid(row=5, column=0, sticky=W, pady=4)
-
+        self.interval_text = Text(page3, height=12)  #height=10, width=30
+        # self.interval_text.config(state="disabled")
+        self.interval_text.grid(row=7, column=0, columnspan=2, sticky=W, pady=4)
 
         ## TAB DATA REFINEMENT
         page4 = ttk.Frame(nb, width=400, height=200, name="refine")
-        nb.add(page4, text='Refine')
+        nb.add(page4, text='Sample & Refine')
 
-        Label(page4, text="Set max_dept: ", anchor=W, justify=LEFT).grid(row=0)
-        Label(page4, text="Set coverage: ", anchor=W, justify=LEFT).grid(row=1)
-        Label(page4, text="Set epsilon: ", anchor=W, justify=LEFT).grid(row=2)
-        Label(page4, text="Set algorithm: ", anchor=W, justify=LEFT).grid(row=3)
+        Button(page4, text='Load space', command=self.load_space).grid(row=0, column=0, sticky=W, pady=4)
+
+        Label(page4, text="Set size_q: ", anchor=W, justify=LEFT).grid(row=1)
+
+        self.size_q_entry = Entry(page4)
+        self.size_q_entry.grid(row=1, column=1)
+
+        Button(page4, text='Sample space', command=self.sample_space).grid(row=2, column=0, sticky=W, pady=4)
+
+        Label(page4, text="Set max_dept: ", anchor=W, justify=LEFT).grid(row=3)
+        Label(page4, text="Set coverage: ", anchor=W, justify=LEFT).grid(row=4)
+        Label(page4, text="Set epsilon: ", anchor=W, justify=LEFT).grid(row=5)
+        Label(page4, text="Set algorithm: ", anchor=W, justify=LEFT).grid(row=6)
 
         self.max_dept_entry = Entry(page4)
         self.coverage_entry = Entry(page4)
         self.epsilon_entry = Entry(page4)
         self.algorithm_entry = Entry(page4)
 
-        self.max_dept_entry.grid(row=0, column=1)
-        self.coverage_entry.grid(row=1, column=1)
-        self.epsilon_entry.grid(row=2, column=1)
-        self.algorithm_entry.grid(row=3, column=1)
+        self.max_dept_entry.grid(row=3, column=1)
+        self.coverage_entry.grid(row=4, column=1)
+        self.epsilon_entry.grid(row=5, column=1)
+        self.algorithm_entry.grid(row=6, column=1)
 
-        Button(page4, text='Refine space', command=self.refine_space).grid(row=4, column=0, sticky=W, pady=4)
-        Button(page4, text='Load space', command=self.load_space).grid(row=4, column=1, sticky=W, pady=4)
+        self.save = BooleanVar()
+        c = Checkbutton(page4, text="Save results", variable=self.save)
+        c.grid(row=7, column=0, sticky=W, pady=4)
+
+        Button(page4, text='Refine space', command=self.refine_space).grid(row=8, column=0, sticky=W, pady=4)
+
 
         # page5 = ttk.Frame(nb, name="testy")
         # # page5.pack(expand=True)
@@ -401,8 +423,6 @@ class Gui:
             self.data = pickle.load(open(self.data_file.get(), "rb"))
 
             self.unfold_data()
-
-
         else:
             print()
             ## TBD
@@ -413,6 +433,7 @@ class Gui:
     def unfold_data(self):
         """" unfolds the data dictionary into a single list"""
         if isinstance(self.data, dict):
+            ## TBD Maybe rewrite this as key and pass the argument to unfold_data2
             self.key = StringVar()
             self.status_set(
                 "Loaded data are in a form of dictionary, please select which item you would like to choose:")
@@ -460,15 +481,17 @@ class Gui:
             self.functions, rewards = load_all_functions(self.functions_file.get(), tool="storm", factorize=True, agents_quantities=False, rewards_only=False, f_only=False)
         else:
             messagebox.showwarning("Load functions", "Select a program for which you want to load data.")
+            return
 
         # print("self.functions", self.functions)
         # print("self.rewards", self.rewards)
 
         ## Merge functions and rewards
         print("self.functions", self.functions)
+        print("rewards", rewards)
         for key in self.functions.keys():
             if key in rewards.keys():
-                self.functions[key].append(rewards[key])
+                self.functions[key].extend(rewards[key])
         # self.functions.update(rewards)
         print("self.functions", self.functions)
 
@@ -489,6 +512,7 @@ class Gui:
     def unfold_functions(self):
         """" unfolds the function dictionary into a single list """
         if isinstance(self.functions, dict):
+            ## TBD Maybe rewrite this as key and pass the argument to unfold_functions2
             self.key = StringVar()
             self.status_set(
                 "Loaded functions are in a form of dictionary, please select which item you would like to choose:")
@@ -626,6 +650,8 @@ class Gui:
 
     ## ANALYSIS
     def synth_params(self):
+        print("synth_params")
+        self.status_set("Parameter synthesis - checking inputs")
         ## If model file not selected load model
         if self.model_file.get() is "":
             self.status_set("Load model for parameter synthesis")
@@ -637,13 +663,13 @@ class Gui:
             self.load_property()
 
         if self.program.get().lower() == "prism":
-            self.status_set("Parameter synthesis running ...")
+            self.status_set("Parameter synthesis is running ...")
             call_prism_files(self.model_file.get(), [], param_intervals=False, seq=False, noprobchecks=False, memory="",
                              model_path="", properties_path=self.properties_dir, property_file=self.property_file.get(),
                              output_path=self.prism_results)
             ## Deriving output file
             self.functions_file.set(str(os.path.join(Path(self.prism_results), str(Path(self.model_file.get()).stem)+"_"+str(Path(self.property_file.get()).stem)+".txt")))
-            self.status_set("Parameter synthesised. Output here: {}", self.functions_file.get())
+            self.status_set("Parameter synthesised finished. Output here: {}", self.functions_file.get())
             self.load_functions(self.functions_file.get())
             # self.functions_text.delete('1.0', END)
             # self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
@@ -655,7 +681,7 @@ class Gui:
                              property_file=self.property_file.get(), output_path=self.storm_results, time=False)
             ## Deriving output file
             self.functions_file.set(str(os.path.join(Path(self.storm_results), str(Path(self.model_file.get()).stem) + "_" + str(Path(self.property_file.get()).stem) + ".cmd")))
-            self.status_set("Command here: {}", self.functions_file.get())
+            self.status_set("Command to run the parameter synthesis saved here: {}", self.functions_file.get())
             self.load_functions(self.functions_file.get())
             # self.functions_text.delete('1.0', END)
             # self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
@@ -665,11 +691,10 @@ class Gui:
             self.status_set("Program for parameter synthesis not selected")
             messagebox.showwarning("Synthesise", "Select a program for parameter synthesis first.")
             return
-        self.unfold_functions()
 
     def create_intervals(self):
-        self.status_set("Intervals are being created ...")
-
+        """Creates intervals from data"""
+        self.status_set("Create interval - checking inputs")
         if self.alpha_entry.get() == "":
             messagebox.showwarning("Creating intervals", "Choose alpha, the confidence measure before creating intervals.")
             return
@@ -678,32 +703,88 @@ class Gui:
             messagebox.showwarning("Creating intervals", "Choose n_samples, number of experimental samples before creating intervals")
             return
 
+        ## If data file not selected load data
         if self.data_file.get() is "":
             self.load_data()
 
-
         print(self.data_file.get())
-        ## TBD DESIGN THIS POPUP WINDOW AFTER CLICK to set alpha, n_samples
-        self.intervals = create_intervals(self.alpha_entry.get(), self.n_samples_entry.get(), self.data_file)
-        self.data_text.delete('1.0', END)
-        self.data_text.insert('end', self.intervals)
+        self.status_set("Intervals are being created ...")
+        self.intervals = create_intervals(float(self.alpha_entry.get()), float(self.n_samples_entry.get()), self.data)
+        self.interval_text.delete('1.0', END)
+        self.interval_text.insert('end', self.intervals)
         self.status_set("Intervals created.")
 
+    def check_props(self):
+        """ Checking validity of the created properties"""
+        print("check_props")
+        if self.props == "":
+            print("Checking props")
+            print("self.functions", self.functions)
+            if self.functions == "":
+                print("No functions loaded nor not computed to create properties")
+                messagebox.showwarning("Refine space", "Load functions or properties before refinement.")
+                return False
+            if self.intervals == "":
+                print("Intervals not computed, properties cannot be computed")
+                messagebox.showwarning("Refine space", "Compute intervals or load properties before refinement.")
+                return False
+            print("self.intervals", self.intervals)
+            self.props = ineq_to_props(self.functions, self.intervals, silent=True)
+            print("self.props", self.props)
+        return True
+
+    def check_space(self):
+        """ Checking validity of the space"""
+        print("check_space")
+        ## If the space is not loaded
+        if self.space == "":
+            print("space is empty - creating a new one")
+            globals()["parameters"] = set()
+            for polynome in self.props:
+                globals()["parameters"].update(find_param(polynome))
+            globals()["parameters"] = sorted(list(globals()["parameters"]))
+            self.parameters = globals()["parameters"]
+
+            self.status_set("Space refinement running ...")
+            ## TBD create a pop-up window to set intervals for each parameter - default =[0,1]
+            self.space = space.RefinedSpace(region, self.parameters, types=None, rectangles_sat=False,
+                                            rectangles_unsat=False, rectangles_unknown=None, sat_samples=None,
+                                            unsat_samples=None, true_point=False, title=False, proxy_params=False,
+                                            decoding=False)
+        return True
+
     def sample_space(self):
-        self.status_set("Space sampling running ...")
-        ## TBD DESIGN THIS POPUP WINDOW AFTER CLICK
-        ## TBD LOAD props, size_q
+        print("sample_space")
+        self.status_set("Space sampling - checking inputs")
+        ## Getting values from entry boxes
+        self.size_q = self.size_q_entry.get()
+
+        ## Checking if all entries filled
+        if self.size_q == "":
+            messagebox.showwarning("Refine space", "Choose size_q, number of samples before sampling.")
+            return
+
+        if not self.check_props():
+            return
+
+        if not self.check_space():
+            return
+
+        self.status_set("Space sampling is running ...")
         self.space.grid_sample(self.props, self.size_q, silent=False, save=self.save)
         self.status_set("Space sampling done.")
 
     def refine_space(self):
         print("refine_space")
+        self.status_set("Space refinement - checking inputs")
 
+        ## Getting values from entry boxes
         self.max_depth = self.max_dept_entry.get()
         self.coverage = self.coverage_entry.get()
         self.epsilon = self.epsilon_entry.get()
         self.alg = self.algorithm_entry.get()
 
+        ## Checking if all entries filled
         if self.max_depth == "":
             messagebox.showwarning("Refine space", "Choose max recursion depth before refinement.")
             return
@@ -720,26 +801,15 @@ class Gui:
             messagebox.showwarning("Refine space", "Pick algorithm for the refinement before running.")
             return
 
-        if self.intervals == "":
-            print("Intervals not computed, properties cannot be computed")
-            messagebox.showwarning("Refine space", "Compute intervals before refinement.")
+        if not self.check_props():
             return
 
-        if self.props == "":
-            self.props = ineq_to_props(self.functions, self.intervals, silent=True)
+        if not self.check_space():
+            return
 
-        if self.space == "":
-            print("space is empty creating new one")
-            parameters = globals()["parameters"]
-            for polynome in self.props:
-                parameters.update(load.find_param(polynome))
-
-            self.status_set("Space refinement running ...")
-            self.space = space.RefinedSpace(region, parameters, types=None,  rectangles_sat=False, rectangles_unsat=False, rectangles_unknown=None, sat_samples=None, unsat_samples=None, true_point=False, title=False, proxy_params=False, decoding=False)
-
-        ## TBD LOAD props, n, epsilon, coverage
-        self.space = check_deeper(self.space, self.props, self.max_depth, self.epsilon, self.coverage, silent=True,
-                                  version=self.alg, size_q=False, debug=False, save=False, title="")
+        self.status_set("Space refinement is running ...")
+        self.space = check_deeper(self.space, self.props, self.max_depth, self.epsilon, self.coverage, silent=False,
+                                  version=self.alg, size_q=False, debug=False, save=self.save, title="")
         self.status_set("Space refinement done.")
 
     ## SETTINGS
