@@ -398,6 +398,22 @@ def find_param(my_string):
             else:
                 # print(f"Dunno why this error '{my_error}' happened, sorry ")
                 hippie = False
+        except SyntaxError as my_error:
+            if str(my_error) == "invalid syntax":
+                my_string = my_string.replace("*>", ">")
+                my_string = my_string.replace("*<", "<")
+                my_string = my_string.replace("*=", "=")
+
+                my_string = my_string.replace("+>", ">")
+                my_string = my_string.replace("+<", "<")
+                my_string = my_string.replace("+=", "=")
+
+                my_string = my_string.replace("->", ">")
+                my_string = my_string.replace("-<", "<")
+                my_string = my_string.replace("-=", "=")
+            else:
+                print(f" I was not able to fix this SyntaxError buddy,'{my_error}' happened. Sorry.")
+                hippie = False
 
     parameters.discard("Not")
     parameters.discard("Or")
