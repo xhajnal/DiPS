@@ -183,8 +183,6 @@ class Gui:
         # page1.state(("normal",))
         # page1.s
 
-        ## TBD ADD THE TEXT OF THE MODELS
-        ## TBD ADD THE TEXT OF THE PROPERTY
 
         ## TAB SYNTHESISE
         page2 = ttk.Frame(nb, width=400, height=100, name="synthetise")  # Adds tab 2 of the notebook
@@ -244,6 +242,7 @@ class Gui:
         # self.interval_text.config(state="disabled")
         self.interval_text.grid(row=7, column=0, columnspan=2, sticky=W, pady=4)
 
+
         ## TAB DATA REFINEMENT
         page4 = ttk.Frame(nb, width=400, height=200, name="refine")
         nb.add(page4, text='Sample & Refine')
@@ -255,29 +254,32 @@ class Gui:
         self.size_q_entry = Entry(page4)
         self.size_q_entry.grid(row=1, column=1)
 
-        Button(page4, text='Sample space', command=self.sample_space).grid(row=2, column=0, sticky=W, pady=4)
+        Button(page4, text='Sample space', command=self.sample_space).grid(row=6, column=0, sticky=W, pady=4)
 
-        Label(page4, text="Set max_dept: ", anchor=W, justify=LEFT).grid(row=3)
-        Label(page4, text="Set coverage: ", anchor=W, justify=LEFT).grid(row=4)
-        Label(page4, text="Set epsilon: ", anchor=W, justify=LEFT).grid(row=5)
-        Label(page4, text="Set algorithm: ", anchor=W, justify=LEFT).grid(row=6)
+        Label(page4, text="Set max_dept: ", anchor=W, justify=LEFT).grid(row=1, column=3, padx=10)
+        Label(page4, text="Set coverage: ", anchor=W, justify=LEFT).grid(row=2, column=3, padx=10)
+        Label(page4, text="Set epsilon: ", anchor=W, justify=LEFT).grid(row=3, column=3, padx=10)
+        Label(page4, text="Set algorithm: ", anchor=W, justify=LEFT).grid(row=4, column=3, padx=10)
 
         self.max_dept_entry = Entry(page4)
         self.coverage_entry = Entry(page4)
         self.epsilon_entry = Entry(page4)
         self.algorithm_entry = Entry(page4)
 
-        self.max_dept_entry.grid(row=3, column=1)
-        self.coverage_entry.grid(row=4, column=1)
-        self.epsilon_entry.grid(row=5, column=1)
-        self.algorithm_entry.grid(row=6, column=1)
+        self.max_dept_entry.grid(row=1, column=4)
+        self.coverage_entry.grid(row=2, column=4)
+        self.epsilon_entry.grid(row=3, column=4)
+        self.algorithm_entry.grid(row=4, column=4)
 
-        self.save = BooleanVar()
-        c = Checkbutton(page4, text="Save results", variable=self.save)
-        c.grid(row=7, column=0, sticky=W, pady=4)
+        self.save_sample = BooleanVar()
+        c = Checkbutton(page4, text="Save results", variable=self.save_sample)
+        c.grid(row=5, column=0, sticky=W, pady=4)
 
-        Button(page4, text='Refine space', command=self.refine_space).grid(row=8, column=0, sticky=W, pady=4)
+        self.save_refinement = BooleanVar()
+        c = Checkbutton(page4, text="Save results", variable=self.save_refinement)
+        c.grid(row=5, column=3, sticky=W, pady=4, padx=10)
 
+        Button(page4, text='Refine space', command=self.refine_space).grid(row=6, column=3, sticky=W, pady=4, padx=10)
 
         # page5 = ttk.Frame(nb, name="testy")
         # # page5.pack(expand=True)
@@ -322,7 +324,7 @@ class Gui:
         file_menu.add_cascade(label="Save", menu=save_menu, underline=0)
         save_menu.add_command(label="Save model", command=self.save_model)
         save_menu.add_command(label="Save property", command=self.save_property)
-        # save_menu.add_command(label="Save rational functions", command=self.save_functions())  ## MAYBE IN THE FUTURE
+        # save_menu.add_command(label="Save rational functions", command=self.save_functions())  ## TBD MAYBE IN THE FUTURE
         save_menu.add_command(label="Save data", command=self.save_data)
         save_menu.add_command(label="Save space", command=self.save_space)
         file_menu.add_separator()
@@ -483,9 +485,6 @@ class Gui:
             messagebox.showwarning("Load functions", "Select a program for which you want to load data.")
             return
 
-        # print("self.functions", self.functions)
-        # print("self.rewards", self.rewards)
-
         ## Merge functions and rewards
         print("self.functions", self.functions)
         print("rewards", rewards)
@@ -553,7 +552,7 @@ class Gui:
         self.status_set("Space loaded")
 
     def save_model(self):
-        ## CHECK IF THE MODEL IS NON EMPTY
+        ## TBD CHECK IF THE MODEL IS NON EMPTY
         # if len(self.model_text.get('1.0', END)) <= 1:
         #    self.status_set("There is no model to be saved.")
         #    return
@@ -571,7 +570,7 @@ class Gui:
         self.status_set("Model saved.")
 
     def save_property(self):
-        ## CHECK IF THE PROPERTY IS NON EMPTY
+        ## TBD CHECK IF THE PROPERTY IS NON EMPTY
         # if len(self.property_text.get('1.0', END)) <= 1:
         #    self.status_set("There is no property to be saved.")
         #    return
@@ -588,7 +587,7 @@ class Gui:
 
         self.status_set("Property saved.")
 
-    ## MAYBE IN THE FUTURE
+    ## TBD MAYBE IN THE FUTURE
     def save_functions(self):
         if self.functions is "":
             self.status_set("There are no rational functions to be saved.")
@@ -747,6 +746,7 @@ class Gui:
 
             self.status_set("Space refinement running ...")
             ## TBD create a pop-up window to set intervals for each parameter - default =[0,1]
+
             self.space = space.RefinedSpace(region, self.parameters, types=None, rectangles_sat=False,
                                             rectangles_unsat=False, rectangles_unknown=None, sat_samples=None,
                                             unsat_samples=None, true_point=False, title=False, proxy_params=False,
@@ -771,7 +771,7 @@ class Gui:
             return
 
         self.status_set("Space sampling is running ...")
-        self.space.grid_sample(self.props, self.size_q, silent=False, save=self.save)
+        self.space.grid_sample(self.props, self.size_q, silent=False, save=self.save_sample)
         self.status_set("Space sampling done.")
 
     def refine_space(self):
@@ -809,7 +809,7 @@ class Gui:
 
         self.status_set("Space refinement is running ...")
         self.space = check_deeper(self.space, self.props, self.max_depth, self.epsilon, self.coverage, silent=False,
-                                  version=self.alg, size_q=False, debug=False, save=self.save, title="")
+                                  version=self.alg, size_q=False, debug=False, save=self.save_refinement, title="")
         self.status_set("Space refinement done.")
 
     ## SETTINGS
