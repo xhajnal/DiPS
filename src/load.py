@@ -399,7 +399,7 @@ def find_param(my_string):
                 # print(f"Dunno why this error '{my_error}' happened, sorry ")
                 hippie = False
         except SyntaxError as my_error:
-            if str(my_error) == "invalid syntax":
+            if str(my_error).startswith("invalid syntax"):
                 my_string = my_string.replace("*>", ">")
                 my_string = my_string.replace("*<", "<")
                 my_string = my_string.replace("*=", "=")

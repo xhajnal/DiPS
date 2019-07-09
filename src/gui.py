@@ -210,7 +210,7 @@ class Gui:
 
         ## TAB DATA CONVERSION
         page3 = ttk.Frame(nb, width=400, height=200, name="conversion")
-        nb.add(page3, text='Conversion data + functions to properties')
+        nb.add(page3, text='Data conversion')
         # page3.columnconfigure(0, weight=1)
         # page3.rowconfigure(2, weight=1)
         # page3.rowconfigure(7, weight=1)
@@ -248,6 +248,7 @@ class Gui:
         nb.add(page4, text='Sample & Refine')
 
         Button(page4, text='Load space', command=self.load_space).grid(row=0, column=0, sticky=W, pady=4)
+        Button(page4, text='Delete space', command=self.refresh_space).grid(row=0, column=1, sticky=W, pady=4)
 
         Label(page4, text="Set size_q: ", anchor=W, justify=LEFT).grid(row=1)
 
@@ -502,6 +503,11 @@ class Gui:
         self.functions_text.delete('1.0', END)
         self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
 
+        ## If data loaded update props
+        if not self.data == "":
+            self.props = ineq_to_props(self.functions, self.intervals, silent=True)
+            print("self.props", self.props)
+
         # self.testy_text.delete('1.0', END)
         # self.testy_text.insert('1.0', open(self.functions_file.get(), 'r').read())
         #
@@ -691,6 +697,11 @@ class Gui:
             messagebox.showwarning("Synthesise", "Select a program for parameter synthesis first.")
             return
 
+        ## If data loaded update props
+        if not self.data == "":
+            self.props = ineq_to_props(self.functions, self.intervals, silent=True)
+            print("self.props", self.props)
+
     def create_intervals(self):
         """Creates intervals from data"""
         self.status_set("Create interval - checking inputs")
@@ -713,27 +724,51 @@ class Gui:
         self.interval_text.insert('end', self.intervals)
         self.status_set("Intervals created.")
 
-    def check_props(self):
-        """ Checking validity of the created properties"""
+        ## If functions loaded update props
+        if not self.functions == "":
+            self.props = ineq_to_props(self.functions, self.intervals, silent=True)
+            print("self.props", self.props)
+
+    def check_props(self, position=False):
+        """ Checking validity of the created properties
+
+        Args:
+        position: (String) Name of the place from which is being called e.g. "Refine Space"/"Sample space"
+        """
         print("check_props")
         if self.props == "":
             print("Checking props")
             print("self.functions", self.functions)
+            print("self.intervals", self.intervals)
             if self.functions == "":
                 print("No functions loaded nor not computed to create properties")
-                messagebox.showwarning("Refine space", "Load functions or properties before refinement.")
+                if position:
+                    messagebox.showwarning(position, "Load functions or properties before refinement.")
+                else:
+                    messagebox.showwarning("Validating props", "Load functions or properties before refinement.")
                 return False
             if self.intervals == "":
                 print("Intervals not computed, properties cannot be computed")
-                messagebox.showwarning("Refine space", "Compute intervals or load properties before refinement.")
+                if position:
+                    messagebox.showwarning(position, "Compute intervals or load properties before refinement.")
+                else:
+                    messagebox.showwarning("Validating props", "Compute intervals or load properties before refinement.")
                 return False
-            print("self.intervals", self.intervals)
             self.props = ineq_to_props(self.functions, self.intervals, silent=True)
             print("self.props", self.props)
         return True
 
-    def check_space(self):
-        """ Checking validity of the space"""
+    def refresh_space(self):
+        """Unloads space"""
+        self.space = ""
+        self.status_set("Space deleted.")
+
+    def check_space(self, position=False):
+        """ Checking validity of the space
+
+        Args:
+        position: (String) Name of the place from which is being called e.g. "Refine Space"/"Sample space"
+        """
         print("check_space")
         ## If the space is not loaded
         if self.space == "":
@@ -743,6 +778,7 @@ class Gui:
                 globals()["parameters"].update(find_param(polynome))
             globals()["parameters"] = sorted(list(globals()["parameters"]))
             self.parameters = globals()["parameters"]
+            print("self.parameters", self.parameters)
 
             ## TBD create a pop-up window to set intervals for each parameter - default =[0,1]
 
@@ -755,8 +791,10 @@ class Gui:
             label.grid(row=0)
             self.key.set(" ")
 
+            ## List of all entries
             self.parameter_intervals = []
             i = 1
+            ## For each param create an entry
             for param in self.parameters:
                 Label(self.newwin, text=param, anchor=W, justify=LEFT).grid(row=i, column=0)
                 spam_low = Entry(self.newwin)
@@ -765,30 +803,33 @@ class Gui:
                 spam_high.grid(row=i, column=2)
                 self.parameter_intervals.append([spam_low, spam_high])
                 i = i + 1
-            self.key_pressed = False
 
-            def key_pressed_callback(self,):
-                self.load_param_intervals()
-                self.key_pressed = True
-            spam = Button(self.newwin, text="OK", command=key_pressed_callback)
+            ## To be used to wait until the the button is pressed
+            self.button_pressed = BooleanVar()
+            self.button_pressed.set(False)
+            spam = Button(self.newwin, text="OK", command=self.load_param_intervals)
             spam.grid(row=i)
 
-            spam.wait_variable(self.key_pressed)
+            spam.wait_variable(self.button_pressed)
+            print("key pressed")
 
         return True
 
+    # def key_pressed_callback(self):
+    #     self.load_param_intervals()
+
     def load_param_intervals(self):
         self.region = []
-        for param_index in len(self.parameters):
-            self.region.append(self.parameter_intervals[param_index])
+        for param_index in range(len(self.parameters)):
+            ## Getting the values from each entry, low = [0], high = [1]
+            self.region.append([self.parameter_intervals[param_index][0].get(), self.parameter_intervals[param_index][1].get()])
         print("self.region", self.region)
         del self.key
+        self.newwin.destroy()
         del self.newwin
-        del self.parameter_intervals
-        self.space = space.RefinedSpace(self.region, self.parameters, types=None, rectangles_sat=False,
-                                        rectangles_unsat=False, rectangles_unknown=None, sat_samples=None,
-                                        unsat_samples=None, true_point=False, title=False, proxy_params=False,
-                                        decoding=False)
+        # del self.parameter_intervals
+        self.space = space.RefinedSpace(self.region, self.parameters)
+        self.button_pressed.set(True)
         print("self.space", self.space)
 
     def sample_space(self):
@@ -802,14 +843,20 @@ class Gui:
             messagebox.showwarning("Refine space", "Choose size_q, number of samples before sampling.")
             return
 
-        if not self.check_props():
-            return
+        ## If no space loaded check properties
+        if self.space == "":
+            if not self.check_props("Sample Space"):
+                return
 
-        if not self.check_space():
+        if not self.check_space("Sample Space"):
             return
 
         self.status_set("Space sampling is running ...")
-        self.space.grid_sample(self.props, self.size_q, silent=False, save=self.save_sample)
+        print("self.space.params", self.space.params)
+        print("self.props", self.props)
+        print("self.size_q", self.size_q)
+        print("self.save_sample.get()", self.save_sample.get())
+        self.space.sample(self.props, self.size_q, silent=False, save=self.save_sample.get())
         self.status_set("Space sampling done.")
 
     def refine_space(self):
@@ -839,15 +886,17 @@ class Gui:
             messagebox.showwarning("Refine space", "Pick algorithm for the refinement before running.")
             return
 
-        if not self.check_props():
-            return
+        ## If no space loaded check properties
+        if self.space == "":
+            if not self.check_props("Refine Space"):
+                return
 
-        if not self.check_space():
+        if not self.check_space("Refine Space"):
             return
 
         self.status_set("Space refinement is running ...")
         self.space = check_deeper(self.space, self.props, self.max_depth, self.epsilon, self.coverage, silent=False,
-                                  version=self.alg, size_q=False, debug=False, save=self.save_refinement, title="")
+                                  version=self.alg, size_q=False, debug=False, save=self.save_refinement.get(), title="")
         self.status_set("Space refinement done.")
 
     ## SETTINGS
