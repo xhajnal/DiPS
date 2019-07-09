@@ -486,7 +486,7 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
     ## Save file
     if save is True:
         # save = f"{},{n},{epsilon},{coverage},{version}"
-        save = strftime("%d-%b-%Y-%H:%M:%S", localtime())
+        save = strftime("%d-%b-%Y-%H-%M-%S", localtime())
         # save = os.path.join(refinement_results, str(strftime("%d-%b-%Y-%H:%M:%S", localtime())))
         if debug:
             print(save)
@@ -656,9 +656,9 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
                 unsat_points.append(point[0])
         if debug:
             print("unsatisfying points: ", unsat_points)
-
         if debug and save:
             print("I am showing sampling_unsat_"+str(save))
+
         space.show(red=False, green=False, sat_samples=False, unsat_samples=True, save=save)
 
         ## If there is only the default region to be refined in the whitespace
@@ -1762,6 +1762,8 @@ def sample(space, props, size_q, compress=False, silent=True, save=False):
 
     ## Saving the sampled space as pickled dictionary
     if save:
+        if save is True:
+            save = str(strftime("%d-%b-%Y-%H-%M-%S", localtime()))
         pickle.dump(sampling, open(os.path.join(refinement_results, ("Sampled_space_" + save).split(".")[0] + ".p"), "wb"))
 
     return sampling
