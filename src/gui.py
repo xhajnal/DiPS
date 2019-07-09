@@ -233,6 +233,9 @@ class Gui:
         self.alpha_entry.grid(row=3, column=1)
         self.n_samples_entry.grid(row=4, column=1)
 
+        self.alpha_entry.insert(END, '0.95')
+        self.n_samples_entry.insert(END, '100')
+
         ## TBD ADD setting for creating  intervals - alpha, n_samples
         Button(page3, text='Create intervals', command=self.create_intervals).grid(row=5, column=0, sticky=W, pady=4)
 
@@ -254,6 +257,7 @@ class Gui:
 
         self.size_q_entry = Entry(page4)
         self.size_q_entry.grid(row=1, column=1)
+        self.size_q_entry.insert(END, '5')
 
         Button(page4, text='Sample space', command=self.sample_space).grid(row=6, column=0, sticky=W, pady=4)
 
@@ -271,6 +275,11 @@ class Gui:
         self.coverage_entry.grid(row=2, column=4)
         self.epsilon_entry.grid(row=3, column=4)
         self.algorithm_entry.grid(row=4, column=4)
+
+        self.max_dept_entry.insert(END, '5')
+        self.coverage_entry.insert(END, '0.95')
+        self.epsilon_entry.insert(END, '0')
+        self.algorithm_entry.insert(END, '4')
 
         self.save_sample = BooleanVar()
         c = Checkbutton(page4, text="Save results", variable=self.save_sample)
@@ -801,6 +810,8 @@ class Gui:
                 spam_high = Entry(self.newwin)
                 spam_low.grid(row=i, column=1)
                 spam_high.grid(row=i, column=2)
+                spam_low.insert(END, '0')
+                spam_high.insert(END, '1')
                 self.parameter_intervals.append([spam_low, spam_high])
                 i = i + 1
 
