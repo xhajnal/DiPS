@@ -833,7 +833,7 @@ class Gui:
         self.region = []
         for param_index in range(len(self.parameters)):
             ## Getting the values from each entry, low = [0], high = [1]
-            self.region.append([self.parameter_intervals[param_index][0].get(), self.parameter_intervals[param_index][1].get()])
+            self.region.append([float(self.parameter_intervals[param_index][0].get()), float(self.parameter_intervals[param_index][1].get())])
         print("self.region", self.region)
         del self.key
         self.newwin.destroy()
@@ -847,7 +847,7 @@ class Gui:
         print("sample_space")
         self.status_set("Space sampling - checking inputs")
         ## Getting values from entry boxes
-        self.size_q = self.size_q_entry.get()
+        self.size_q = int(self.size_q_entry.get())
 
         ## Checking if all entries filled
         if self.size_q == "":
