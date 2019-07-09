@@ -135,7 +135,7 @@ class RefinedSpace:
 
         ## UNSAT RECTANGLES
         if rectangles_unsat is False:
-            rectangles_sat = []
+            rectangles_unsat = []
         # print("rectangles_unsat", rectangles_unsat)
         if not isinstance(rectangles_unsat, Iterable):
             raise Exception("Given rectangles_unsat is not iterable")

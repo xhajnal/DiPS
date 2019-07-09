@@ -177,7 +177,7 @@ class Gui:
         # self.property_text.config(state="disabled")
         self.property_text.grid(row=2, column=0, columnspan=16, rowspan=2, sticky=W+E+N+S, pady=4)  # pack(anchor=W, fill=X)
 
-        print(nb.select(0), type(nb.select(0)))
+        # print(nb.select(0), type(nb.select(0)))
         # print(page1, type(page1))
 
         # page1.state(("normal",))
@@ -870,15 +870,17 @@ class Gui:
         self.space.sample(self.props, self.size_q, silent=False, save=self.save_sample.get())
         self.status_set("Space sampling done.")
 
+        self.space.show(sat_samples=True, unsat_samples=True, save=self.save_sample.get())
+
     def refine_space(self):
         print("refine_space")
         self.status_set("Space refinement - checking inputs")
 
         ## Getting values from entry boxes
-        self.max_depth = self.max_dept_entry.get()
-        self.coverage = self.coverage_entry.get()
-        self.epsilon = self.epsilon_entry.get()
-        self.alg = self.algorithm_entry.get()
+        self.max_depth = int(self.max_dept_entry.get())
+        self.coverage = float(self.coverage_entry.get())
+        self.epsilon = float(self.epsilon_entry.get())
+        self.alg = int(self.algorithm_entry.get())
 
         ## Checking if all entries filled
         if self.max_depth == "":
