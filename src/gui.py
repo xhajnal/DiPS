@@ -744,14 +744,52 @@ class Gui:
             globals()["parameters"] = sorted(list(globals()["parameters"]))
             self.parameters = globals()["parameters"]
 
-            self.status_set("Space refinement running ...")
             ## TBD create a pop-up window to set intervals for each parameter - default =[0,1]
 
-            self.space = space.RefinedSpace(region, self.parameters, types=None, rectangles_sat=False,
-                                            rectangles_unsat=False, rectangles_unknown=None, sat_samples=None,
-                                            unsat_samples=None, true_point=False, title=False, proxy_params=False,
-                                            decoding=False)
+            ## TBD Maybe rewrite this as key and pass the argument to load_param_intervals
+            self.key = StringVar()
+            self.status_set("Choosing ranges of parameters:")
+            self.newwin = Toplevel(root)
+            label = Label(self.newwin,
+                          text="Please choose intervals of the parameters to be used:")
+            label.grid(row=0)
+            self.key.set(" ")
+
+            self.parameter_intervals = []
+            i = 1
+            for param in self.parameters:
+                Label(self.newwin, text=param, anchor=W, justify=LEFT).grid(row=i, column=0)
+                spam_low = Entry(self.newwin)
+                spam_high = Entry(self.newwin)
+                spam_low.grid(row=i, column=1)
+                spam_high.grid(row=i, column=2)
+                self.parameter_intervals.append([spam_low, spam_high])
+                i = i + 1
+            self.key_pressed = False
+
+            def key_pressed_callback(self,):
+                self.load_param_intervals()
+                self.key_pressed = True
+            spam = Button(self.newwin, text="OK", command=key_pressed_callback)
+            spam.grid(row=i)
+
+            spam.wait_variable(self.key_pressed)
+
         return True
+
+    def load_param_intervals(self):
+        self.region = []
+        for param_index in len(self.parameters):
+            self.region.append(self.parameter_intervals[param_index])
+        print("self.region", self.region)
+        del self.key
+        del self.newwin
+        del self.parameter_intervals
+        self.space = space.RefinedSpace(self.region, self.parameters, types=None, rectangles_sat=False,
+                                        rectangles_unsat=False, rectangles_unknown=None, sat_samples=None,
+                                        unsat_samples=None, true_point=False, title=False, proxy_params=False,
+                                        decoding=False)
+        print("self.space", self.space)
 
     def sample_space(self):
         print("sample_space")
