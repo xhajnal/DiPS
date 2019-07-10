@@ -38,7 +38,7 @@ class Gui:
         ## Variables
         ## Directories
         self.model_dir = ""
-        self.properties_dir = ""
+        self.property_dir = ""
         self.data_dir = ""
         self.prism_results = ""  ## Path to prism results
         self.storm_results = ""  ## Path to Storm results
@@ -52,6 +52,15 @@ class Gui:
         self.data_file = StringVar()  ## Data file
         self.functions_file = StringVar()  ## Rational functions file
         self.space_file = StringVar()  ## Space file
+
+        ## Checking the change
+        self.model_changed = False
+        self.property_changed = False
+        self.functions_changed = False
+        self.data_changed = False
+        self.intervals_changed = False
+        self.props_changed = False
+        self.space_changed = False
 
         ## True Variables
         self.model = ""
@@ -379,9 +388,9 @@ class Gui:
         if not os.path.exists(self.model_dir):
             os.makedirs(self.model_dir)
 
-        self.properties_dir = Path(config.get("paths", "properties"))
-        if not os.path.exists(self.properties_dir):
-            os.makedirs(self.properties_dir)
+        self.property_dir = Path(config.get("paths", "properties"))
+        if not os.path.exists(self.property_dir):
+            os.makedirs(self.property_dir)
 
         self.data_dir = config.get("paths", "data")
         if not os.path.exists(self.data_dir):
@@ -408,27 +417,38 @@ class Gui:
     ## LOGIC
     ## FILE
     def load_model(self):
+        print("Loading model ...")
         self.status_set("Please select the model to be loaded.")
+        if not self.model_file.get() == "":
+            self.model_changed = True
         self.model_file.set(filedialog.askopenfilename(initialdir=self.model_dir, title="Model loading - Select file",
                                                        filetypes=(("pm files", "*.pm"), ("all files", "*.*"))))
         self.model_text.delete('1.0', END)
         self.model_text.insert('end', open(self.model_file.get(), 'r').read())
 
+
         self.status_set("Model loaded.")
         # print("self.model", self.model.get())
 
     def load_property(self):
+        print("Loading properties ...")
         self.status_set("Please select the property to be loaded.")
+        if not self.property_file.get() == "":
+            self.property_changed = True
         self.property_file.set(
-            filedialog.askopenfilename(initialdir=self.properties_dir, title="Property loading - Select file",
+            filedialog.askopenfilename(initialdir=self.property_dir, title="Property loading - Select file",
                                        filetypes=(("property files", "*.pctl"), ("all files", "*.*"))))
         self.property_text.delete('1.0', END)
         self.property_text.insert('end', open(self.property_file.get(), 'r').read())
+        self.property_changed = True
         self.status_set("Property loaded.")
         # print("self.property", self.property.get())
 
     def load_data(self):
+        print("Loading data ...")
         self.status_set("Please select the data to be loaded.")
+        if not self.data_file.get() == "":
+            self.data_changed = True
         self.data_file.set(filedialog.askopenfilename(initialdir=self.data_dir, title="Data loading - Select file",
                                                       filetypes=(("pickled files", "*.p"), ("all files", "*.*"))))
         if ".p" in self.data_file.get():
@@ -476,20 +496,37 @@ class Gui:
         self.unfold_data()
 
     def load_functions(self, file=False):
+        """ Load functions
+
+        Args
+        -------------
+        file (Path/String): direct path to load the function file
+        """
+        print("Loading functions ...")
         self.status_set("Please select the prism/storm symbolic results to be loaded.")
 
         print("self.program.get()", self.program.get())
         if self.program.get() == "prism":
+            if not self.functions_file.get() == "":
+                self.functions_changed = True
+                self.model_changed = False
+                self.property_changed = False
             if not file:
                 self.functions_file.set(filedialog.askopenfilename(initialdir=self.prism_results, title="Rational functions loading - Select file", filetypes=(("text files", "*.txt"), ("all files", "*.*"))))
             else:
-                self.functions_file.set(file)
+                ## TBD check is this a file
+                self.functions_file.set(str(file))
             self.functions, rewards = load_all_functions(self.functions_file.get(), tool="prism", factorize=False, agents_quantities=False, rewards_only=False, f_only=False)
         elif self.program.get() == "storm":
+            if not self.functions_file.get() == "":
+                self.functions_changed = True
+                self.model_changed = False
+                self.property_changed = False
             if not file:
                 self.functions_file.set(filedialog.askopenfilename(initialdir=self.storm_results, title="Rational functions loading - Select file", filetypes=(("text files", "*.txt"), ("all files", "*.*"))))
             else:
-                self.functions_file.set(file)
+                ## TBD check is this a file
+                self.functions_file.set(str(file))
             self.functions, rewards = load_all_functions(self.functions_file.get(), tool="storm", factorize=True, agents_quantities=False, rewards_only=False, f_only=False)
         else:
             messagebox.showwarning("Load functions", "Select a program for which you want to load data.")
@@ -501,7 +538,6 @@ class Gui:
         for key in self.functions.keys():
             if key in rewards.keys():
                 self.functions[key].extend(rewards[key])
-        # self.functions.update(rewards)
         print("self.functions", self.functions)
 
         self.unfold_functions()
@@ -557,11 +593,14 @@ class Gui:
         self.unfold_functions()
 
     def load_space(self):
+        print("Loading space ...")
         self.status_set("Please select the space to be loaded.")
         self.space_file.set(filedialog.askopenfilename(initialdir=self.data_dir, title="Space loading - Select file", filetypes=(("pickled files", "*.p"), ("all files", "*.*"))))
         # print(self.space)
 
         ## pickle load
+        if not space == "":
+            self.space_changed = True
         self.space = pickle.load(open(self.space_file.get(), "rb"))
         print(self.space)
         self.status_set("Space loaded")
@@ -572,6 +611,7 @@ class Gui:
         #    self.status_set("There is no model to be saved.")
         #    return
 
+        print("Saving the model ...")
         self.status_set("Please select folder to store the model in.")
         save_model = filedialog.asksaveasfilename(initialdir=self.model_dir, title="Model saving - Select file",
                                                   filetypes=(("pm files", "*.pm"), ("all files", "*.*")))
@@ -585,13 +625,14 @@ class Gui:
         self.status_set("Model saved.")
 
     def save_property(self):
+        print("Saving the property ...")
         ## TBD CHECK IF THE PROPERTY IS NON EMPTY
         # if len(self.property_text.get('1.0', END)) <= 1:
         #    self.status_set("There is no property to be saved.")
         #    return
 
         self.status_set("Please select folder to store the property in.")
-        save_property = filedialog.asksaveasfilename(initialdir=self.properties_dir, title="Property saving - Select file",
+        save_property = filedialog.asksaveasfilename(initialdir=self.property_dir, title="Property saving - Select file",
                                                      filetypes=(("pctl files", "*.pctl"), ("all files", "*.*")))
         if "." not in save_property:
             save_property = save_property + ".pctl"
@@ -604,6 +645,7 @@ class Gui:
 
     ## TBD MAYBE IN THE FUTURE
     def save_functions(self):
+        print("Saving the functions ...")
         if self.functions is "":
             self.status_set("There are no rational functions to be saved.")
             return
@@ -632,6 +674,7 @@ class Gui:
         self.status_set("Property saved.")
 
     def save_data(self):
+        print("Saving the data ...")
         if self.data_file is "":
             self.status_set("There is no data to be saved.")
             return
@@ -644,6 +687,7 @@ class Gui:
         self.status_set("Data saved.")
 
     def save_space(self):
+        print("Saving the space ...")
         if self.space is "":
             self.status_set("There is no space to be saved.")
             return
@@ -664,7 +708,7 @@ class Gui:
 
     ## ANALYSIS
     def synth_params(self):
-        print("synth_params")
+        print("Synthesising parameters ...")
         self.status_set("Parameter synthesis - checking inputs")
         ## If model file not selected load model
         if self.model_file.get() is "":
@@ -679,7 +723,7 @@ class Gui:
         if self.program.get().lower() == "prism":
             self.status_set("Parameter synthesis is running ...")
             call_prism_files(self.model_file.get(), [], param_intervals=False, seq=False, noprobchecks=False, memory="",
-                             model_path="", properties_path=self.properties_dir, property_file=self.property_file.get(),
+                             model_path="", properties_path=self.property_dir, property_file=self.property_file.get(),
                              output_path=self.prism_results)
             ## Deriving output file
             self.functions_file.set(str(os.path.join(Path(self.prism_results), str(Path(self.model_file.get()).stem)+"_"+str(Path(self.property_file.get()).stem)+".txt")))
@@ -691,7 +735,7 @@ class Gui:
 
         elif self.program.get().lower() == "storm":
             self.status_set("Parameter synthesis running ...")
-            call_storm_files(self.model_file.get(), [], model_path="", properties_path=self.properties_dir,
+            call_storm_files(self.model_file.get(), [], model_path="", properties_path=self.property_dir,
                              property_file=self.property_file.get(), output_path=self.storm_results, time=False)
             ## Deriving output file
             self.functions_file.set(str(os.path.join(Path(self.storm_results), str(Path(self.model_file.get()).stem) + "_" + str(Path(self.property_file.get()).stem) + ".cmd")))
@@ -713,6 +757,7 @@ class Gui:
 
     def create_intervals(self):
         """Creates intervals from data"""
+        print("Creating intervals ...")
         self.status_set("Create interval - checking inputs")
         if self.alpha_entry.get() == "":
             messagebox.showwarning("Creating intervals", "Choose alpha, the confidence measure before creating intervals.")
@@ -744,25 +789,25 @@ class Gui:
         Args:
         position: (String) Name of the place from which is being called e.g. "Refine Space"/"Sample space"
         """
-        print("check_props")
+        print("Checking properties ...")
+        if position is False:
+            position = "Validating props"
+        ## If props empty create props
         if self.props == "":
             print("Checking props")
             print("self.functions", self.functions)
             print("self.intervals", self.intervals)
+            ## If functions empty raise an error (return False)
             if self.functions == "":
                 print("No functions loaded nor not computed to create properties")
-                if position:
-                    messagebox.showwarning(position, "Load functions or properties before refinement.")
-                else:
-                    messagebox.showwarning("Validating props", "Load functions or properties before refinement.")
+                messagebox.showwarning(position, "Load functions or properties before refinement.")
                 return False
+            ## If intervals empty raise an error (return False)
             if self.intervals == "":
                 print("Intervals not computed, properties cannot be computed")
-                if position:
-                    messagebox.showwarning(position, "Compute intervals or load properties before refinement.")
-                else:
-                    messagebox.showwarning("Validating props", "Compute intervals or load properties before refinement.")
+                messagebox.showwarning(position, "Compute intervals or load properties before refinement.")
                 return False
+            ## Create props
             self.props = ineq_to_props(self.functions, self.intervals, silent=True)
             print("self.props", self.props)
         return True
@@ -778,18 +823,19 @@ class Gui:
         Args:
         position: (String) Name of the place from which is being called e.g. "Refine Space"/"Sample space"
         """
-        print("check_space")
-        ## If the space is not loaded
+        print("Checking space ...")
+        if position is False:
+            position = "Validating space"
+        ## If the space is empty create a new one
         if self.space == "":
             print("space is empty - creating a new one")
+            ## Parse params from props
             globals()["parameters"] = set()
             for polynome in self.props:
                 globals()["parameters"].update(find_param(polynome))
             globals()["parameters"] = sorted(list(globals()["parameters"]))
             self.parameters = globals()["parameters"]
             print("self.parameters", self.parameters)
-
-            ## TBD create a pop-up window to set intervals for each parameter - default =[0,1]
 
             ## TBD Maybe rewrite this as key and pass the argument to load_param_intervals
             self.key = StringVar()
@@ -800,7 +846,7 @@ class Gui:
             label.grid(row=0)
             self.key.set(" ")
 
-            ## List of all entries
+            ## Parse parameters intervals - region
             self.parameter_intervals = []
             i = 1
             ## For each param create an entry
@@ -815,7 +861,7 @@ class Gui:
                 self.parameter_intervals.append([spam_low, spam_high])
                 i = i + 1
 
-            ## To be used to wait until the the button is pressed
+            ## To be used to wait until the button is pressed
             self.button_pressed = BooleanVar()
             self.button_pressed.set(False)
             spam = Button(self.newwin, text="OK", command=self.load_param_intervals)
@@ -823,6 +869,22 @@ class Gui:
 
             spam.wait_variable(self.button_pressed)
             print("key pressed")
+        else:
+            if self.props_changed:
+                ## TBD show warning that you are using old space for computation ## HERE
+                messagebox.showwarning(position, "Using previously created space with new props. Consider using fresh new space.")
+                ## Check if the properties and data are valid
+                globals()["parameters"] = set()
+                for polynome in self.props:
+                    globals()["parameters"].update(find_param(polynome))
+                globals()["parameters"] = sorted(list(globals()["parameters"]))
+                self.parameters = globals()["parameters"]
+
+                if not len(self.space.params)== len(self.parameters):
+                    messagebox.showerror(position)
+            if self.data_changed:
+
+                messagebox.showwarning(position, "Using previously created space with new data. Consider using fresh new space.")
 
         return True
 
@@ -844,7 +906,7 @@ class Gui:
         print("self.space", self.space)
 
     def sample_space(self):
-        print("sample_space")
+        print("Sampling space ...")
         self.status_set("Space sampling - checking inputs")
         ## Getting values from entry boxes
         self.size_q = int(self.size_q_entry.get())
@@ -873,7 +935,7 @@ class Gui:
         self.space.show(sat_samples=True, unsat_samples=True, save=self.save_sample.get())
 
     def refine_space(self):
-        print("refine_space")
+        print("Refining space ...")
         self.status_set("Space refinement - checking inputs")
 
         ## Getting values from entry boxes
@@ -914,6 +976,7 @@ class Gui:
 
     ## SETTINGS
     def edit_config(self):
+        print("Editing config ...")
         if "wind" in platform.system().lower():
             ## TBD TEST THIS ON WINDOWS
             os.startfile(f'{os.path.join(workspace, "../config.ini")}')
@@ -924,14 +987,16 @@ class Gui:
 
     ## HELP
     def show_help(self):
-        print("show_help")
+        print("Showing help ...")
         webbrowser.open_new("https://github.com/xhajnal/mpm#mpm")
 
     def checkupdates(self):
-        print("check updates")
+        print("Checking for updates ...")
+        self.status_set("Checking for updates ...")
         webbrowser.open_new("https://github.com/xhajnal/mpm/releases")
 
     def printabout(self):
+        print("Printing about ...")
         top2 = Toplevel(root)
         top2.title("About")
         top2.resizable(0, 0)
