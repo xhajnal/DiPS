@@ -21,17 +21,6 @@ from mc_prism import call_prism_files, call_storm_files
 cwd = os.getcwd()
 
 
-class MyDialog:
-
-    def __init__(self, parent, text):
-        top = self.top = Toplevel(parent)
-        Label(top, text=text).pack()
-        self.e.pack(padx=5)
-
-        b = Button(top, text="OK", command=quit)
-        b.pack(pady=5)
-
-
 class Gui:
     def __init__(self, root):
 
@@ -73,7 +62,7 @@ class Gui:
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "alpha"  ## version of the gui
+        self.version = "1.0.2"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -262,13 +251,17 @@ class Gui:
         Button(page4, text='Load space', command=self.load_space).grid(row=0, column=0, sticky=W, pady=4)
         Button(page4, text='Delete space', command=self.refresh_space).grid(row=0, column=1, sticky=W, pady=4)
 
-        Label(page4, text="Set size_q: ", anchor=W, justify=LEFT).grid(row=1)
+        ttk.Separator(page4, orient=HORIZONTAL).grid(row=1, column=0, columnspan=7, sticky='nwe', pady=8)
+
+        Label(page4, text="Set size_q: ", anchor=W, justify=LEFT).grid(row=1, pady=16)
 
         self.size_q_entry = Entry(page4)
         self.size_q_entry.grid(row=1, column=1)
         self.size_q_entry.insert(END, '5')
 
-        Button(page4, text='Sample space', command=self.sample_space).grid(row=6, column=0, sticky=W, pady=4)
+        Button(page4, text='Sample space', command=self.sample_space).grid(row=6, column=0, sticky=W, padx=4, pady=4)
+
+        ttk.Separator(page4, orient=VERTICAL).grid(column=2, row=1, rowspan=7, sticky='ns', padx=10, pady=8)
 
         Label(page4, text="Set max_dept: ", anchor=W, justify=LEFT).grid(row=1, column=3, padx=10)
         Label(page4, text="Set coverage: ", anchor=W, justify=LEFT).grid(row=2, column=3, padx=10)
@@ -292,13 +285,15 @@ class Gui:
 
         self.save_sample = BooleanVar()
         c = Checkbutton(page4, text="Save results", variable=self.save_sample)
-        c.grid(row=5, column=0, sticky=W, pady=4)
+        c.grid(row=5, column=0, sticky=W, padx=4, pady=4)
 
         self.save_refinement = BooleanVar()
         c = Checkbutton(page4, text="Save results", variable=self.save_refinement)
         c.grid(row=5, column=3, sticky=W, pady=4, padx=10)
 
         Button(page4, text='Refine space', command=self.refine_space).grid(row=6, column=3, sticky=W, pady=4, padx=10)
+
+        ttk.Separator(page4, orient=HORIZONTAL).grid(row=7, column=0, columnspan=7, sticky='nwe', pady=4)
 
         # page5 = ttk.Frame(nb, name="testy")
         # # page5.pack(expand=True)
@@ -426,7 +421,6 @@ class Gui:
         self.model_text.delete('1.0', END)
         self.model_text.insert('end', open(self.model_file.get(), 'r').read())
 
-
         self.status_set("Model loaded.")
         # print("self.model", self.model.get())
 
@@ -469,16 +463,20 @@ class Gui:
             self.key = StringVar()
             self.status_set(
                 "Loaded data are in a form of dictionary, please select which item you would like to choose:")
-            self.newwin = Toplevel(root)
-            label = Label(self.newwin,
+            self.new_window = Toplevel(root)
+            label = Label(self.new_window,
                           text="Loaded data are in a form of dictionary, please select which item you would like to choose:")
             label.pack()
             self.key.set(" ")
 
+            first = True
             for key in self.data.keys():
-                spam = Radiobutton(self.newwin, text=key, variable=self.key, value=key)
+                spam = Radiobutton(self.new_window, text=key, variable=self.key, value=key)
                 spam.pack(anchor=W)
-            spam = Button(self.newwin, text="OK", command=self.unfold_data2)
+                if first:
+                    spam.select()
+                    first = False
+            spam = Button(self.new_window, text="OK", command=self.unfold_data2)
             spam.pack()
         else:
             self.data_text.delete('1.0', END)
@@ -492,7 +490,7 @@ class Gui:
             self.data = self.data[eval(self.key.get())]
 
         print(self.data)
-        self.newwin.destroy()
+        self.new_window.destroy()
         self.unfold_data()
 
     def load_functions(self, file=False):
@@ -566,16 +564,20 @@ class Gui:
             self.key = StringVar()
             self.status_set(
                 "Loaded functions are in a form of dictionary, please select which item you would like to choose:")
-            self.newwin = Toplevel(root)
-            label = Label(self.newwin,
+            self.new_window = Toplevel(root)
+            label = Label(self.new_window,
                           text="Loaded functions are in a form of dictionary, please select which item you would like to choose:")
             label.pack()
             self.key.set(" ")
 
+            first = True
             for key in self.functions.keys():
-                spam = Radiobutton(self.newwin, text=key, variable=self.key, value=key)
+                spam = Radiobutton(self.new_window, text=key, variable=self.key, value=key)
                 spam.pack(anchor=W)
-            spam = Button(self.newwin, text="OK", command=self.unfold_functions2)
+                if first:
+                    spam.select()
+                    first = False
+            spam = Button(self.new_window, text="OK", command=self.unfold_functions2)
             spam.pack()
         else:
             self.functions_parsed_text.delete('1.0', END)
@@ -589,7 +591,7 @@ class Gui:
             self.functions = self.functions[eval(self.key.get())]
 
         print(self.functions)
-        self.newwin.destroy()
+        self.new_window.destroy()
         self.unfold_functions()
 
     def load_space(self):
@@ -662,11 +664,12 @@ class Gui:
                                                           title="Rational functions saving - Select file",
                                                           filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
         else:
-            save_functions = "save_functions Error"
+            self.status_set("Error - Selected program not recognised.")
+            save_functions = "Error - Selected program not recognised."
         print(save_functions)
         if isfile(self.property_file.get()):
             print(self.property_file)
-            ## os.copy the file
+            ## TBD os.copy the file
         else:
             with open(save_functions, "w") as file:
                 for line in self.property:
@@ -710,6 +713,11 @@ class Gui:
     def synth_params(self):
         print("Synthesising parameters ...")
         self.status_set("Parameter synthesis - checking inputs")
+
+        if self.model_changed:
+            messagebox.showwarning("Parameter synthesis", "The model for parameter synthesis has changed in the mean time, please consider that.")
+        if self.property_changed:
+            messagebox.showwarning("Parameter synthesis", "The properties for parameter synthesis have changed in the mean time, please consider that.")
         ## If model file not selected load model
         if self.model_file.get() is "":
             self.status_set("Load model for parameter synthesis")
@@ -731,7 +739,6 @@ class Gui:
             self.load_functions(self.functions_file.get())
             # self.functions_text.delete('1.0', END)
             # self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
-            return
 
         elif self.program.get().lower() == "storm":
             self.status_set("Parameter synthesis running ...")
@@ -743,7 +750,6 @@ class Gui:
             self.load_functions(self.functions_file.get())
             # self.functions_text.delete('1.0', END)
             # self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
-            return
         else:
             ## Show window to inform to select the program
             self.status_set("Program for parameter synthesis not selected")
@@ -754,6 +760,7 @@ class Gui:
         if not self.data == "":
             self.props = ineq_to_props(self.functions, self.intervals, silent=True)
             print("self.props", self.props)
+            self.props_changed = True
 
     def create_intervals(self):
         """Creates intervals from data"""
@@ -778,23 +785,26 @@ class Gui:
         self.interval_text.insert('end', self.intervals)
         self.status_set("Intervals created.")
 
+        self.data_changed = True
+
         ## If functions loaded update props
         if not self.functions == "":
             self.props = ineq_to_props(self.functions, self.intervals, silent=True)
             print("self.props", self.props)
+            self.props_changed = True
 
-    def check_props(self, position=False):
-        """ Checking validity of the created properties
+    def validate_props(self, position=False):
+        """ Validating created properties
 
         Args:
         position: (String) Name of the place from which is being called e.g. "Refine Space"/"Sample space"
         """
-        print("Checking properties ...")
+        print("Validating properties ...")
         if position is False:
             position = "Validating props"
         ## If props empty create props
         if self.props == "":
-            print("Checking props")
+            print("Validating props")
             print("self.functions", self.functions)
             print("self.intervals", self.intervals)
             ## If functions empty raise an error (return False)
@@ -809,15 +819,17 @@ class Gui:
                 return False
             ## Create props
             self.props = ineq_to_props(self.functions, self.intervals, silent=True)
+            self.props_changed = True
             print("self.props", self.props)
         return True
 
     def refresh_space(self):
         """Unloads space"""
         self.space = ""
+        self.space_changed = False
         self.status_set("Space deleted.")
 
-    def check_space(self, position=False):
+    def validate_space(self, position=False):
         """ Checking validity of the space
 
         Args:
@@ -840,8 +852,8 @@ class Gui:
             ## TBD Maybe rewrite this as key and pass the argument to load_param_intervals
             self.key = StringVar()
             self.status_set("Choosing ranges of parameters:")
-            self.newwin = Toplevel(root)
-            label = Label(self.newwin,
+            self.new_window = Toplevel(root)
+            label = Label(self.new_window,
                           text="Please choose intervals of the parameters to be used:")
             label.grid(row=0)
             self.key.set(" ")
@@ -851,9 +863,9 @@ class Gui:
             i = 1
             ## For each param create an entry
             for param in self.parameters:
-                Label(self.newwin, text=param, anchor=W, justify=LEFT).grid(row=i, column=0)
-                spam_low = Entry(self.newwin)
-                spam_high = Entry(self.newwin)
+                Label(self.new_window, text=param, anchor=W, justify=LEFT).grid(row=i, column=0)
+                spam_low = Entry(self.new_window)
+                spam_high = Entry(self.new_window)
                 spam_low.grid(row=i, column=1)
                 spam_high.grid(row=i, column=2)
                 spam_low.insert(END, '0')
@@ -864,10 +876,10 @@ class Gui:
             ## To be used to wait until the button is pressed
             self.button_pressed = BooleanVar()
             self.button_pressed.set(False)
-            spam = Button(self.newwin, text="OK", command=self.load_param_intervals)
-            spam.grid(row=i)
+            load_param_intervals_button = Button(self.new_window, text="OK", command=self.load_param_intervals)
+            load_param_intervals_button.grid(row=i)
 
-            spam.wait_variable(self.button_pressed)
+            load_param_intervals_button.wait_variable(self.button_pressed)
             print("key pressed")
         else:
             if self.props_changed:
@@ -880,28 +892,28 @@ class Gui:
                 globals()["parameters"] = sorted(list(globals()["parameters"]))
                 self.parameters = globals()["parameters"]
 
-                if not len(self.space.params)== len(self.parameters):
-                    messagebox.showerror(position)
-            if self.data_changed:
-
-                messagebox.showwarning(position, "Using previously created space with new data. Consider using fresh new space.")
-
+                if not len(self.space.params) == len(self.parameters):
+                    messagebox.showerror(position, "Cardinality of the space does not correspond to the props. Consider using fresh space.")
+                    return False
+                elif not sorted(self.space.params) == sorted(self.parameters):
+                    messagebox.showerror(position, f"Parameters of the space - {self.space.params} - does not correspond to the one in props - {self.parameters}. Consider using fresh space.")
+                    return False
         return True
 
     # def key_pressed_callback(self):
     #     self.load_param_intervals()
 
     def load_param_intervals(self):
-        self.region = []
+        region = []
         for param_index in range(len(self.parameters)):
             ## Getting the values from each entry, low = [0], high = [1]
-            self.region.append([float(self.parameter_intervals[param_index][0].get()), float(self.parameter_intervals[param_index][1].get())])
-        print("self.region", self.region)
+            region.append([float(self.parameter_intervals[param_index][0].get()), float(self.parameter_intervals[param_index][1].get())])
+        print("region", region)
         del self.key
-        self.newwin.destroy()
-        del self.newwin
+        self.new_window.destroy()
+        del self.new_window
         # del self.parameter_intervals
-        self.space = space.RefinedSpace(self.region, self.parameters)
+        self.space = space.RefinedSpace(region, self.parameters)
         self.button_pressed.set(True)
         print("self.space", self.space)
 
@@ -918,10 +930,10 @@ class Gui:
 
         ## If no space loaded check properties
         if self.space == "":
-            if not self.check_props("Sample Space"):
+            if not self.validate_props("Sample Space"):
                 return
 
-        if not self.check_space("Sample Space"):
+        if not self.validate_space("Sample Space"):
             return
 
         self.status_set("Space sampling is running ...")
@@ -963,10 +975,10 @@ class Gui:
 
         ## If no space loaded check properties
         if self.space == "":
-            if not self.check_props("Refine Space"):
+            if not self.validate_props("Refine Space"):
                 return
 
-        if not self.check_space("Refine Space"):
+        if not self.validate_space("Refine Space"):
             return
 
         self.status_set("Space refinement is running ...")
