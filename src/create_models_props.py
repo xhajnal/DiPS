@@ -644,12 +644,11 @@ def create_asynchronous_model(file, N):
 
 
 def create_multiparam_synchronous_model(file, N):
-    """ Creates synchronous model of *N* agents to a *file* with probabilities p and q in [0,1].
-    For more information see coefficient.
+    """ Creates synchronous model of *N* agents to a *file* with probabilities p and q in [0,1]..
 
-    Args
+    Args:
     ----------
-    file: (string) - filename with extesion
+    file: (string) - filename with extension
     N: (int) - agent quantity
 
     Model meaning
@@ -1269,6 +1268,159 @@ def create_multiparam_asynchronous_model(file, N):
     file.close()
 
 
+def create_bee_multiparam_synchronous_model(file, N):
+    """ Creates synchronous model of *N* agents to a *file* with probabilities r_i in [0,1]..
+
+    Args:
+    ----------
+    file: (string) - filename with extension
+    N: (int) - agent quantity
+
+    Model meaning
+    ----------
+    Params:
+    N: (int) - number of agents (agents quantity)
+    r_i: (float) - probability of success of an agent when i amount of pheromone is present
+    """
+    filename = model_path / Path(file.split(".")[0] + ".pm")
+    file = open(filename, "w")
+    print(filename)
+
+    first_attempt = []
+    coefficient = ""
+
+    for i in range(N + 1):
+        for j in range(N - i):
+            coefficient = coefficient + "*r_0"
+        for j in range(N - i, N):
+            coefficient = coefficient + "*(1-r_0)"
+        coefficient = str(nCr(N, i)) + coefficient
+        first_attempt.append(coefficient)
+        coefficient = ""
+    # print(first_attempt)
+
+    # start here
+    file.write("dtmc \n \n")
+
+    for i in range(0, N):
+        file.write(f"const double r_{i};\n")
+    file.write("\n")
+
+    # module here
+    file.write(f"module multi_param_bee_agents_{N}\n")
+    file.write("       // ai - state of agent i: 3:init 1:success -j: failure when j amount of pheromone present \n")
+    for i in range(N):
+        file.write(f"       a{i} : [-{N-1}..3] init 3; \n")
+    file.write("       b : [0..1] init 0; \n")
+    file.write("\n")
+
+    # transitions here
+    # initial transition
+    file.write("       //  initial transition\n")
+    file.write("       []   a0 = 3")
+    for i in range(1, N):
+        file.write(f" & a{i} = 3 ")
+    file.write("-> ")
+    for i in range(N + 1):
+        file.write(first_attempt[i] + ": ")
+        for j in range(N):
+            file.write(f"(a{j}'=" + str(1 if N - i > j else -0) + ")")
+            if j < N - 1:
+                file.write(" & ")
+        if i < N:
+            file.write(" + ")
+    file.write(";\n")
+    file.write("\n")
+
+    # non-initial transition
+
+    # some ones, some nonpositive final transitions
+    file.write("       // some ones, some nonpositive final transitions\n")
+    for i in range(N + 1):
+        file.write(f"       []   a0 = " + str(0 if i == 0 else 1))
+        for j in range(1, N):
+            # print(f"N",N,"i",i,"j",j)
+            file.write(f" & a{j} = " + str(1 if i > j else -i))
+        file.write(" -> ")
+
+        for j in range(N - 1):
+            file.write(f"(a{j}'= " + str(1 if i > j else 0) + ") & ")
+        # print(f"N",N,"i",i)
+        file.write(f"(a{(N-1)}'= " + str(1 if i == N else 0) + ")")
+        file.write(f" & (b'=1);\n")
+    file.write("\n")
+
+    # some ones, some nonpositive transitions
+    file.write("       // some ones, some nonpositive transitions\n")
+    for ones in range(1, N):
+        for fails in range(0, ones):
+            file.write("       []   a0 = 1")
+            for j in range(1, N):
+                # print(f"N",N,"i",i,"j",j)
+                file.write(f" & a{j} = " + str(1 if ones > j else (fails)))
+                # print(f" & a"+str(j)+" = "+str( 1 if i>=j else 0 ))
+            file.write(" -> ")
+
+            twos = N - ones
+            # file.write(f"twos: {}".format(twos))
+            for successes in range(0, twos + 1):
+                file.write(str(nCr(twos, successes)))
+                for ok in range(successes):
+                    file.write(f"* (r_{ones} - r_{fails})/(1 - r_{fails})")
+                for nok in range(twos - successes):
+                    file.write(f"*(1-(r_{ones} - r_{fails})/(1 - r_{fails}))")
+                file.write(": ")
+
+                for k in range(1, N + 1):
+                    if k <= ones + successes:
+                        if k == N:
+                            file.write(f"(a{(k-1)}'=1)")
+                        else:
+                            file.write(f"(a{(k-1)}'=1) & ")
+                    elif k == N:
+                        file.write(f"(a{(k-1)}'={-ones})")
+                    else:
+                        file.write(f"(a{(k-1)}'={-ones}) & ")
+                if successes < twos:
+                    file.write(" + ")
+            file.write(";\n")
+
+    # all twos transitions
+    # file.write("       // all twos transition\n")
+    # file.write("       []   a0 = 2")
+    # for i in range(1, N):
+    #     file.write(f" & a{i} = 2 ")
+    # file.write("-> ")
+    # for i in range(N - 1):
+    #     file.write(f"(a{i}'= 0) & ")
+    # file.write(f"(a{(N-1)}'= 0)")
+    # file.write(";\n")
+
+    file.write("endmodule \n")
+    file.write("\n")
+
+    # rewards here
+    file.write('rewards "mean" \n')
+    for i in range(N + 1):
+        file.write(f"       a0 = " + str(0 if i == 0 else 1))
+        for j in range(1, N):
+            # print(f"N",N,"i",i,"j",j)
+            file.write(f" & a{j} = " + str(1 if i > j else -i))
+        file.write(f":{i};\n")
+    file.write("endrewards \n")
+
+    file.write('rewards "mean_squared" \n')
+    for i in range(N + 1):
+        file.write(f"       a0 = " + str(0 if i == 0 else 1))
+        for j in range(1, N):
+            # print(f"N",N,"i",i,"j",j)
+            file.write(f" & a{j} = " + str(1 if i > j else -i))
+        file.write(f":{i*i};\n")
+    file.write("endrewards \n")
+
+    file.close()
+
+
 def create_properties(N):
     """ Creates property file of reaching each BSCC of the model of *N* agents as prop_<N>.pctl file.
     For more information see paper.
@@ -1290,6 +1442,7 @@ def create_properties(N):
 
         for j in range(1, N):
             file.write("&(a" + str(j) + "=" + str(1 if i > j + 1 else 0) + ")")
+        file.write("& (b=1)")
         file.write("]\n")
     # file.write('R{"mean"}=? [ F b=1] \n')
     # file.write('R{"mean_squared"}=? [ F b=1] \n')
@@ -1307,3 +1460,10 @@ def create_rewards_prop():
     file.write('R{"mean"}=? [ F b=1] \n')
     file.write('R{"mean_squared"}=? [ F b=1] \n')
     file.close()
+
+create_properties(2)
+create_properties(3)
+create_properties(4)
+create_bee_multiparam_synchronous_model("bee_multiparam_synchronous_"+str(2), 2)
+create_bee_multiparam_synchronous_model("bee_multiparam_synchronous_"+str(3), 3)
+create_bee_multiparam_synchronous_model("bee_multiparam_synchronous_"+str(4), 4)
