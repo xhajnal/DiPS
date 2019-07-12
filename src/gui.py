@@ -62,7 +62,7 @@ class Gui:
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.0.2"  ## version of the gui
+        self.version = "1.0.3"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -73,6 +73,7 @@ class Gui:
         self.epsilon = ""  ## rectangle size threshold
         self.alg = ""  ## refinement alg. number
 
+        self.factor = BooleanVar()
         self.size_q = ""  ## number of samples
         self.save = ""  ## True if saving on
 
@@ -202,6 +203,10 @@ class Gui:
         self.functions_text = scrolledtext.ScrolledText(page2, height=100)
         self.functions_text.grid(row=4, column=0, columnspan=16, rowspan=2, sticky=W, pady=4)
 
+        Label(page2, text=f"Show function:", anchor=W, justify=LEFT).grid(row=2, column=17, sticky=W, pady=4)
+        Radiobutton(page2, text="Original", variable=self.factor, value=False).grid(row=2, column=18, sticky=W, pady=4)
+        Radiobutton(page2, text="Factorised", variable=self.factor, value=True).grid(row=2, column=19, sticky=W, pady=4)
+        Label(page2, text=f"Parsed functions:", anchor=W, justify=LEFT).grid(row=3, column=17, sticky=W, pady=4)
         self.functions_parsed_text = scrolledtext.ScrolledText(page2, height=100)
         self.functions_parsed_text.grid(row=4, column=17, columnspan=16, rowspan=2, sticky=W, pady=4)
 
@@ -514,7 +519,8 @@ class Gui:
             else:
                 ## TBD check is this a file
                 self.functions_file.set(str(file))
-            self.functions, rewards = load_all_functions(self.functions_file.get(), tool="prism", factorize=False, agents_quantities=False, rewards_only=False, f_only=False)
+            print("self.factor", self.factor.get())
+            self.functions, rewards = load_all_functions(self.functions_file.get(), tool="prism", factorize=self.factor.get(), agents_quantities=False, rewards_only=False, f_only=False)
         elif self.program.get() == "storm":
             if not self.functions_file.get() == "":
                 self.functions_changed = True
@@ -525,7 +531,8 @@ class Gui:
             else:
                 ## TBD check is this a file
                 self.functions_file.set(str(file))
-            self.functions, rewards = load_all_functions(self.functions_file.get(), tool="storm", factorize=True, agents_quantities=False, rewards_only=False, f_only=False)
+            print("self.factor", self.factor.get())
+            self.functions, rewards = load_all_functions(self.functions_file.get(), tool="storm", factorize=self.factor.get(), agents_quantities=False, rewards_only=False, f_only=False)
         else:
             messagebox.showwarning("Load functions", "Select a program for which you want to load data.")
             return
