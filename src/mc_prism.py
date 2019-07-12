@@ -5,7 +5,7 @@ import re
 import socket
 import subprocess
 import sys
-import time
+from time import time, strftime, localtime
 import unittest
 from pathlib import Path
 
@@ -584,19 +584,30 @@ def call_storm_files(model_prefix, agents_quantities, model_path=model_path, pro
     """
     root = str(output_path).split("/")[1]
 
-    output_file = str(os.path.join(Path(output_path), str(Path(model_prefix).stem) + "_" + str(Path(property_file).stem) + ".cmd"))
-    with open(output_file, "w") as output_file:
-        output_file.write(f"cd /{root} \n")
-        print(f"cd /{root}")
+    # print("output_path ", output_path)
+    # print("type(output_path) ", type(output_path))
 
-        output_file.write("sudo docker pull movesrwth/storm:travis \n")
-        print("sudo docker pull movesrwth/storm:travis")
-        output_file.write(f'sudo docker run --mount type=bind,source="$(pwd)",target=/{root} -w /opt/storm/build/bin --rm -it --name storm movesrwth/storm:travis \n')
-        print(f'sudo docker run --mount type=bind,source="$(pwd)",target=/{root} -w /opt/storm/build/bin --rm -it --name storm movesrwth/storm:travis')
+    # print("model_prefix ", model_prefix)
+    # print("type(model_prefix) ", type(model_prefix))
+
+    # print("property_file ", property_file)
+    # print("type(property_file) ", type(property_file))
 
     if not agents_quantities:
         # print("I was here")
         agents_quantities = [""]
+
+    output_file = f"{(os.path.join(Path(output_path)))}{strftime('%d-%b-%Y-%H-%M-%S', localtime())}.cmd"
+
+    # print(output_file)
+    with open(output_file, "w") as output_filee:
+        output_filee.write(f"cd /{root} \n")
+        print(f"cd /{root}")
+
+        output_filee.write("sudo docker pull movesrwth/storm:travis \n")
+        print("sudo docker pull movesrwth/storm:travis")
+        output_filee.write(f'sudo docker run --mount type=bind,source="$(pwd)",target=/{root} -w /opt/storm/build/bin --rm -it --name storm movesrwth/storm:travis \n')
+        print(f'sudo docker run --mount type=bind,source="$(pwd)",target=/{root} -w /opt/storm/build/bin --rm -it --name storm movesrwth/storm:travis')
 
     # print("model_path", model_path)
     # print("model_prefix", model_prefix)
@@ -605,10 +616,10 @@ def call_storm_files(model_prefix, agents_quantities, model_path=model_path, pro
             files = glob.glob(os.path.join(model_path, model_prefix))
         else:
             files = glob.glob(os.path.join(model_path, model_prefix + str(N) + ".pm"))
-        print("files", files)
+        # print("files", files)
         if not files:
-            with open(output_file, "w") as output_file:
-                output_file.write("No model files for N="+str(N)+" found")
+            with open(output_file, "w") as output_filee:
+                output_filee.write("No model files for N="+str(N)+" found")
                 print(colored("No model files for N="+str(N)+" found", "red"))
             continue
         for file in files:
@@ -710,3 +721,4 @@ class TestLoad(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
