@@ -21,9 +21,10 @@ from mc_prism import call_prism_files, call_storm_files
 cwd = os.getcwd()
 
 
-class Gui:
-    def __init__(self, root):
+class Gui(Tk):
+    def __init__(self,  *args, **kwargs):
 
+        super().__init__(*args, **kwargs)
         ## Variables
         ## Directories
         self.model_dir = ""
@@ -78,45 +79,45 @@ class Gui:
         self.save = ""  ## True if saving on
 
         ## GUI INIT
-        root.title('mpm')
-        root.minsize(1000, 300)
+        self.title('mpm')
+        self.minsize(1000, 300)
 
         ## DESIGN
 
         ## STATUS BAR
-        self.status = Label(root, text="", bd=1, relief=SUNKEN, anchor=W)
+        self.status = Label(self, text="", bd=1, relief=SUNKEN, anchor=W)
         self.status.pack(side=BOTTOM, fill=X)
 
         ## DESIGN - STATUS
-        frame = Frame(root)
+        frame = Frame(self)
         frame.pack(fill=X)
         Label(frame, text=f"Loaded model:", anchor=W, justify=LEFT).pack(side=LEFT)
         self.model_label = Label(frame, textvariable=self.model_file, anchor=W, justify=LEFT)
         self.model_label.pack(side=LEFT, fill=X)
         # label1.grid(row=1, column=0, sticky=W)
 
-        frame = Frame(root)
+        frame = Frame(self)
         frame.pack(fill=X)
         Label(frame, text=f"Loaded property:", anchor=W, justify=LEFT).pack(side=LEFT)
         self.property_label = Label(frame, textvariable=self.property_file, anchor=W, justify=LEFT)
         # property_label.grid(row=2, column=0)
         self.property_label.pack(side=TOP, fill=X)
 
-        frame = Frame(root)
+        frame = Frame(self)
         frame.pack(fill=X)
         Label(frame, text=f"Loaded functions:", anchor=W, justify=LEFT).pack(side=LEFT)
         self.functions_label = Label(frame, textvariable=self.functions_file, anchor=W, justify=LEFT)
         # functions_label.grid(row=3, column=0)
         self.functions_label.pack(side=TOP, fill=X)
 
-        frame = Frame(root)
+        frame = Frame(self)
         frame.pack(fill=X)
         Label(frame, text=f"Loaded data:", anchor=W, justify=LEFT).pack(side=LEFT)
         self.data_label = Label(frame, textvariable=self.data_file, anchor=W, justify=LEFT)
         # data_label.grid(row=4, column=0)
         self.data_label.pack(side=TOP, fill=X)
 
-        frame = Frame(root)
+        frame = Frame(self)
         frame.pack(fill=X)
         Label(frame, text=f"Loaded space:", anchor=W, justify=LEFT).pack(side=LEFT)
         self.space_label = Label(frame, textvariable=self.space, anchor=W, justify=LEFT)
@@ -125,7 +126,7 @@ class Gui:
 
         ## DESIGN - TABS
         # Defines and places the notebook widget
-        nb = ttk.Notebook(root)
+        nb = ttk.Notebook(self)
         nb.pack(fill="both", expand=1)
 
         ## TAB EDIT
@@ -321,8 +322,8 @@ class Gui:
         # self.testy_text2.grid()
 
         ## MENU
-        main_menu = Menu(root)
-        root.config(menu=main_menu)
+        main_menu = Menu(self)
+        self.config(menu=main_menu)
 
         ## MENU-FILE
         file_menu = Menu(main_menu, tearoff=0)
@@ -349,7 +350,7 @@ class Gui:
         file_menu.add_separator()
 
         ## MENU-FILE-EXIT
-        file_menu.add_command(label="Exit", command=root.quit)
+        file_menu.add_command(label="Exit", command=self.quit)
 
         ## MENU-EDIT
         edit_menu = Menu(main_menu, tearoff=0)
@@ -379,6 +380,9 @@ class Gui:
         help_menu.add_command(label="Help", command=self.show_help)
         help_menu.add_command(label="Check for updates", command=self.checkupdates)
         help_menu.add_command(label="About", command=self.printabout)
+
+    def report_callback_exception(self, exc, val, tb):
+        messagebox.showerror("Error", message=str(val))
 
     def load_config(self):
         os.chdir(workspace)
@@ -439,7 +443,6 @@ class Gui:
                                        filetypes=(("property files", "*.pctl"), ("all files", "*.*"))))
         self.property_text.delete('1.0', END)
         self.property_text.insert('end', open(self.property_file.get(), 'r').read())
-        self.property_changed = True
         self.status_set("Property loaded.")
         # print("self.property", self.property.get())
 
@@ -468,7 +471,7 @@ class Gui:
             self.key = StringVar()
             self.status_set(
                 "Loaded data are in a form of dictionary, please select which item you would like to choose:")
-            self.new_window = Toplevel(root)
+            self.new_window = Toplevel(self)
             label = Label(self.new_window,
                           text="Loaded data are in a form of dictionary, please select which item you would like to choose:")
             label.pack()
@@ -571,7 +574,7 @@ class Gui:
             self.key = StringVar()
             self.status_set(
                 "Loaded functions are in a form of dictionary, please select which item you would like to choose:")
-            self.new_window = Toplevel(root)
+            self.new_window = Toplevel(self)
             label = Label(self.new_window,
                           text="Loaded functions are in a form of dictionary, please select which item you would like to choose:")
             label.pack()
@@ -859,7 +862,7 @@ class Gui:
             ## TBD Maybe rewrite this as key and pass the argument to load_param_intervals
             self.key = StringVar()
             self.status_set("Choosing ranges of parameters:")
-            self.new_window = Toplevel(root)
+            self.new_window = Toplevel(self)
             label = Label(self.new_window,
                           text="Please choose intervals of the parameters to be used:")
             label.grid(row=0)
@@ -1016,14 +1019,14 @@ class Gui:
 
     def printabout(self):
         print("Printing about ...")
-        top2 = Toplevel(root)
+        top2 = Toplevel(self)
         top2.title("About")
         top2.resizable(0, 0)
         explanation = f" Mpm version: {self.version} \n More info here: https://github.com/xhajnal/mpm \n Powered by University of Constance and Masaryk University"
         Label(top2, justify=LEFT, text=explanation).pack(padx=13, pady=20)
-        top2.transient(root)
+        top2.transient(self)
         top2.grab_set()
-        root.wait_window(top2)
+        self.wait_window(top2)
 
         print("Mpm version alpha")
         print("More info here: https://github.com/xhajnal/mpm")
@@ -1039,12 +1042,11 @@ class Gui:
         self.status.update_idletasks()
 
 
-root = Tk()
-spam = Gui(root)
+spam = Gui()
 
 ## System dependent fullscreen setting
 if "wind" in platform.system().lower():
-    root.state('zoomed')
+    spam.state('zoomed')
 else:
-    root.attributes('-zoomed', True)
-root.mainloop()
+    spam.attributes('-zoomed', True)
+spam.mainloop()
