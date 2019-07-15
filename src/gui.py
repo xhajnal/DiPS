@@ -63,7 +63,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.0.6"  ## version of the gui
+        self.version = "1.0.7"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -382,6 +382,16 @@ class Gui(Tk):
         help_menu.add_command(label="About", command=self.printabout)
 
     def report_callback_exception(self, exc, val, tb):
+        """Report callback exception on sys.stderr.
+
+        Applications may want to override this internal function, and
+        should when sys.stderr is None."""
+        import traceback
+        print("Exception in Tkinter callback", file=sys.stderr)
+        sys.last_type = exc
+        sys.last_value = val
+        sys.last_traceback = tb
+        traceback.print_exception(exc, val, tb)
         messagebox.showerror("Error", message=str(val))
 
     def load_config(self):
@@ -547,7 +557,7 @@ class Gui(Tk):
                                               filetypes=(("text files", "*.txt"), ("all files", "*.*")))
         else:
             if os.path.isfile(file):
-                self.functions_file.set(str(file))
+                spam = str(file)
             else:
                 spam = ""
 
