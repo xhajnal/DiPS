@@ -63,7 +63,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.0.3"  ## version of the gui
+        self.version = "1.0.5"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -74,7 +74,7 @@ class Gui(Tk):
         self.epsilon = ""  ## rectangle size threshold
         self.alg = ""  ## refinement alg. number
 
-        self.factor = BooleanVar()
+        self.factor = BooleanVar()  ## Flag for factorising rational functions
         self.size_q = ""  ## number of samples
         self.save = ""  ## True if saving on
 
@@ -427,6 +427,9 @@ class Gui(Tk):
             self.model_changed = True
         self.model_file.set(filedialog.askopenfilename(initialdir=self.model_dir, title="Model loading - Select file",
                                                        filetypes=(("pm files", "*.pm"), ("all files", "*.*"))))
+        if self.model_file.get() == "":
+            self.status_set("No file selected.")
+            return
         self.model_text.delete('1.0', END)
         self.model_text.insert('end', open(self.model_file.get(), 'r').read())
 
@@ -441,6 +444,9 @@ class Gui(Tk):
         self.property_file.set(
             filedialog.askopenfilename(initialdir=self.property_dir, title="Property loading - Select file",
                                        filetypes=(("property files", "*.pctl"), ("all files", "*.*"))))
+        if self.property_file.get() == "":
+            self.status_set("No file selected.")
+            return
         self.property_text.delete('1.0', END)
         self.property_text.insert('end', open(self.property_file.get(), 'r').read())
         self.status_set("Property loaded.")
@@ -453,6 +459,9 @@ class Gui(Tk):
             self.data_changed = True
         self.data_file.set(filedialog.askopenfilename(initialdir=self.data_dir, title="Data loading - Select file",
                                                       filetypes=(("pickled files", "*.p"), ("all files", "*.*"))))
+        if self.data_file.get() == "":
+            self.status_set("No file selected.")
+            return
         if ".p" in self.data_file.get():
             self.data = pickle.load(open(self.data_file.get(), "rb"))
 
@@ -523,6 +532,9 @@ class Gui(Tk):
                 ## TBD check is this a file
                 self.functions_file.set(str(file))
             print("self.factor", self.factor.get())
+            if self.functions_file.get() == "":
+                self.status_set("No file selected.")
+                return
             self.functions, rewards = load_all_functions(self.functions_file.get(), tool="prism", factorize=self.factor.get(), agents_quantities=False, rewards_only=False, f_only=False)
         elif self.program.get() == "storm":
             if not self.functions_file.get() == "":
@@ -535,6 +547,9 @@ class Gui(Tk):
                 ## TBD check is this a file
                 self.functions_file.set(str(file))
             print("self.factor", self.factor.get())
+            if self.functions_file.get() == "":
+                self.status_set("No file selected.")
+                return
             self.functions, rewards = load_all_functions(self.functions_file.get(), tool="storm", factorize=self.factor.get(), agents_quantities=False, rewards_only=False, f_only=False)
         else:
             messagebox.showwarning("Load functions", "Select a program for which you want to load data.")
@@ -610,6 +625,10 @@ class Gui(Tk):
         self.space_file.set(filedialog.askopenfilename(initialdir=self.data_dir, title="Space loading - Select file", filetypes=(("pickled files", "*.p"), ("all files", "*.*"))))
         # print(self.space)
 
+        if self.space_file.get() == "":
+            self.status_set("No file selected.")
+            return
+
         ## pickle load
         if not space == "":
             self.space_changed = True
@@ -627,6 +646,10 @@ class Gui(Tk):
         self.status_set("Please select folder to store the model in.")
         save_model = filedialog.asksaveasfilename(initialdir=self.model_dir, title="Model saving - Select file",
                                                   filetypes=(("pm files", "*.pm"), ("all files", "*.*")))
+        if save_model == "":
+            self.status_set("No file selected.")
+            return
+
         if "." not in save_model:
             save_model = save_model + ".pm"
         # print("save_model", save_model)
@@ -646,6 +669,10 @@ class Gui(Tk):
         self.status_set("Please select folder to store the property in.")
         save_property = filedialog.asksaveasfilename(initialdir=self.property_dir, title="Property saving - Select file",
                                                      filetypes=(("pctl files", "*.pctl"), ("all files", "*.*")))
+        if save_property == "":
+            self.status_set("No file selected.")
+            return
+
         if "." not in save_property:
             save_property = save_property + ".pctl"
         # print("save_property", save_property)
@@ -677,13 +704,14 @@ class Gui(Tk):
             self.status_set("Error - Selected program not recognised.")
             save_functions = "Error - Selected program not recognised."
         print(save_functions)
-        if isfile(self.property_file.get()):
-            print(self.property_file)
-            ## TBD os.copy the file
-        else:
-            with open(save_functions, "w") as file:
-                for line in self.property:
-                    file.write(line)
+
+        if save_functions == "":
+            self.status_set("No file selected.")
+            return
+
+        with open(save_functions, "w") as file:
+            for line in self.props:
+                file.write(line)
         self.status_set("Property saved.")
 
     def save_data(self):
