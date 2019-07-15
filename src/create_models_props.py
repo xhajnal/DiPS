@@ -1320,6 +1320,7 @@ def create_bee_multiparam_synchronous_model(file, N):
     file.write("       []   a0 = 3")
     for i in range(1, N):
         file.write(f" & a{i} = 3 ")
+    file.write(" & b = 0 ")
     file.write("-> ")
     for i in range(N + 1):
         file.write(first_attempt[i] + ": ")
@@ -1341,6 +1342,7 @@ def create_bee_multiparam_synchronous_model(file, N):
         for j in range(1, N):
             # print(f"N",N,"i",i,"j",j)
             file.write(f" & a{j} = " + str(1 if i > j else -i))
+        file.write(" & b = 0 ")
         file.write(" -> ")
 
         for j in range(N - 1):
@@ -1359,6 +1361,7 @@ def create_bee_multiparam_synchronous_model(file, N):
                 # print(f"N",N,"i",i,"j",j)
                 file.write(f" & a{j} = " + str(1 if ones > j else (fails)))
                 # print(f" & a"+str(j)+" = "+str( 1 if i>=j else 0 ))
+            file.write(" & b = 0 ")
             file.write(" -> ")
 
             twos = N - ones
@@ -1461,3 +1464,10 @@ def create_rewards_prop():
     file.write('R{"mean_squared"}=? [ F b=1] \n')
     file.close()
 
+
+create_properties(2)
+create_properties(3)
+create_properties(4)
+create_bee_multiparam_synchronous_model("bee_multiparam_synchronous_"+str(2), 2)
+create_bee_multiparam_synchronous_model("bee_multiparam_synchronous_"+str(3), 3)
+create_bee_multiparam_synchronous_model("bee_multiparam_synchronous_"+str(4), 4)
