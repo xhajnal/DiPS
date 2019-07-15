@@ -63,7 +63,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.0.5"  ## version of the gui
+        self.version = "1.0.6"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -120,7 +120,7 @@ class Gui(Tk):
         frame = Frame(self)
         frame.pack(fill=X)
         Label(frame, text=f"Loaded space:", anchor=W, justify=LEFT).pack(side=LEFT)
-        self.space_label = Label(frame, textvariable=self.space, anchor=W, justify=LEFT)
+        self.space_label = Label(frame, textvariable=self.space_file, anchor=W, justify=LEFT)
         # space_label.grid(row=5, column=0)
         self.space_label.pack(side=TOP, fill=X)
 
@@ -423,13 +423,17 @@ class Gui(Tk):
     def load_model(self):
         print("Loading model ...")
         self.status_set("Please select the model to be loaded.")
-        if not self.model_file.get() == "":
-            self.model_changed = True
-        self.model_file.set(filedialog.askopenfilename(initialdir=self.model_dir, title="Model loading - Select file",
-                                                       filetypes=(("pm files", "*.pm"), ("all files", "*.*"))))
-        if self.model_file.get() == "":
+
+        spam = filedialog.askopenfilename(initialdir=self.model_dir, title="Model loading - Select file",
+                                          filetypes=(("pm files", "*.pm"), ("all files", "*.*")))
+        ## If no file selected
+        if spam == "":
             self.status_set("No file selected.")
             return
+
+        if not self.model_file.get() == "":
+            self.model_changed = True
+        self.model_file.set(spam)
         self.model_text.delete('1.0', END)
         self.model_text.insert('end', open(self.model_file.get(), 'r').read())
 
@@ -439,14 +443,17 @@ class Gui(Tk):
     def load_property(self):
         print("Loading properties ...")
         self.status_set("Please select the property to be loaded.")
-        if not self.property_file.get() == "":
-            self.property_changed = True
-        self.property_file.set(
-            filedialog.askopenfilename(initialdir=self.property_dir, title="Property loading - Select file",
-                                       filetypes=(("property files", "*.pctl"), ("all files", "*.*"))))
-        if self.property_file.get() == "":
+
+        spam = filedialog.askopenfilename(initialdir=self.property_dir, title="Property loading - Select file",
+                                          filetypes=(("property files", "*.pctl"), ("all files", "*.*")))
+        ## If no file selected
+        if spam == "":
             self.status_set("No file selected.")
             return
+
+        if not self.property_file.get() == "":
+            self.property_changed = True
+        self.property_file.set(spam)
         self.property_text.delete('1.0', END)
         self.property_text.insert('end', open(self.property_file.get(), 'r').read())
         self.status_set("Property loaded.")
@@ -455,13 +462,18 @@ class Gui(Tk):
     def load_data(self):
         print("Loading data ...")
         self.status_set("Please select the data to be loaded.")
-        if not self.data_file.get() == "":
-            self.data_changed = True
-        self.data_file.set(filedialog.askopenfilename(initialdir=self.data_dir, title="Data loading - Select file",
-                                                      filetypes=(("pickled files", "*.p"), ("all files", "*.*"))))
-        if self.data_file.get() == "":
+
+        spam = filedialog.askopenfilename(initialdir=self.data_dir, title="Data loading - Select file",
+                                          filetypes=(("pickled files", "*.p"), ("all files", "*.*")))
+        ## If no file selected
+        if spam == "":
             self.status_set("No file selected.")
             return
+
+        if not self.data_file.get() == "":
+            self.data_changed = True
+        self.data_file.set(spam)
+
         if ".p" in self.data_file.get():
             self.data = pickle.load(open(self.data_file.get(), "rb"))
 
@@ -522,39 +534,36 @@ class Gui(Tk):
 
         print("self.program.get()", self.program.get())
         if self.program.get() == "prism":
-            if not self.functions_file.get() == "":
-                self.functions_changed = True
-                self.model_changed = False
-                self.property_changed = False
-            if not file:
-                self.functions_file.set(filedialog.askopenfilename(initialdir=self.prism_results, title="Rational functions loading - Select file", filetypes=(("text files", "*.txt"), ("all files", "*.*"))))
-            else:
-                ## TBD check is this a file
-                self.functions_file.set(str(file))
-            print("self.factor", self.factor.get())
-            if self.functions_file.get() == "":
-                self.status_set("No file selected.")
-                return
-            self.functions, rewards = load_all_functions(self.functions_file.get(), tool="prism", factorize=self.factor.get(), agents_quantities=False, rewards_only=False, f_only=False)
+            initialdir = self.prism_results
         elif self.program.get() == "storm":
-            if not self.functions_file.get() == "":
-                self.functions_changed = True
-                self.model_changed = False
-                self.property_changed = False
-            if not file:
-                self.functions_file.set(filedialog.askopenfilename(initialdir=self.storm_results, title="Rational functions loading - Select file", filetypes=(("text files", "*.txt"), ("all files", "*.*"))))
-            else:
-                ## TBD check is this a file
-                self.functions_file.set(str(file))
-            print("self.factor", self.factor.get())
-            if self.functions_file.get() == "":
-                self.status_set("No file selected.")
-                return
-            self.functions, rewards = load_all_functions(self.functions_file.get(), tool="storm", factorize=self.factor.get(), agents_quantities=False, rewards_only=False, f_only=False)
+            initialdir = self.storm_results
         else:
             messagebox.showwarning("Load functions", "Select a program for which you want to load data.")
             return
 
+        ## If file to load is NOT preselected
+        if not file:
+            spam = filedialog.askopenfilename(initialdir=initialdir, title="Rational functions loading - Select file",
+                                              filetypes=(("text files", "*.txt"), ("all files", "*.*")))
+        else:
+            if os.path.isfile(file):
+                self.functions_file.set(str(file))
+            else:
+                spam = ""
+
+        ## If no file / not a file selected
+        if spam == "":
+            self.status_set("No file selected.")
+            return
+        if not self.functions_file.get() == "":
+            self.functions_changed = True
+            self.model_changed = False
+            self.property_changed = False
+        self.functions_file.set(spam)
+        print("self.factor", self.factor.get())
+        self.functions, rewards = load_all_functions(self.functions_file.get(), tool=self.program.get(),
+                                                     factorize=self.factor.get(), agents_quantities=False,
+                                                     rewards_only=False, f_only=False)
         ## Merge functions and rewards
         print("self.functions", self.functions)
         print("rewards", rewards)
@@ -622,16 +631,18 @@ class Gui(Tk):
     def load_space(self):
         print("Loading space ...")
         self.status_set("Please select the space to be loaded.")
-        self.space_file.set(filedialog.askopenfilename(initialdir=self.data_dir, title="Space loading - Select file", filetypes=(("pickled files", "*.p"), ("all files", "*.*"))))
+        spam = filedialog.askopenfilename(initialdir=self.data_dir, title="Space loading - Select file", filetypes=(("pickled files", "*.p"), ("all files", "*.*")))
         # print(self.space)
 
-        if self.space_file.get() == "":
+        ## If no file selected
+        if spam == "":
             self.status_set("No file selected.")
             return
 
-        ## pickle load
         if not space == "":
             self.space_changed = True
+        self.space_file.set(spam)
+
         self.space = pickle.load(open(self.space_file.get(), "rb"))
         print(self.space)
         self.status_set("Space loaded")
@@ -1070,11 +1081,11 @@ class Gui(Tk):
         self.status.update_idletasks()
 
 
-spam = Gui()
+gui = Gui()
 
 ## System dependent fullscreen setting
 if "wind" in platform.system().lower():
-    spam.state('zoomed')
+    gui.state('zoomed')
 else:
-    spam.attributes('-zoomed', True)
-spam.mainloop()
+    gui.attributes('-zoomed', True)
+gui.mainloop()
