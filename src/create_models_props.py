@@ -1359,7 +1359,7 @@ def create_bee_multiparam_synchronous_model(file, N):
             file.write("       []   a0 = 1")
             for j in range(1, N):
                 # print(f"N",N,"i",i,"j",j)
-                file.write(f" & a{j} = " + str(1 if ones > j else (fails)))
+                file.write(f" & a{j} = " + str(1 if ones > j else (-fails)))
                 # print(f" & a"+str(j)+" = "+str( 1 if i>=j else 0 ))
             file.write(" & b = 0 ")
             file.write(" -> ")
@@ -1369,7 +1369,7 @@ def create_bee_multiparam_synchronous_model(file, N):
             for successes in range(0, twos + 1):
                 file.write(str(nCr(twos, successes)))
                 for ok in range(successes):
-                    file.write(f"* (r_{ones} - r_{fails})/(1 - r_{fails})")
+                    file.write(f"* ((r_{ones} - r_{fails})/(1 - r_{fails}))")
                 for nok in range(twos - successes):
                     file.write(f"*(1-(r_{ones} - r_{fails})/(1 - r_{fails}))")
                 file.write(": ")
