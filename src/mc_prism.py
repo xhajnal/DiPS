@@ -337,7 +337,7 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
 
         for file in files:
             file = Path(file)
-            start_time = time.time()
+            start_time = time()
             # print("{} seq={}{} >> {}".format(file, seq, noprobchecks, str(prism_results)))
 
             ## Parsing the parameters from the files
@@ -384,7 +384,7 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
                                    std_output_file="{}_{}.txt".format(str(file.stem).split(".")[0], str(Path(property_file).stem).split(".")[0]))
 
             # print(f"  Return code is: {error}")
-            print(f"  It took {socket.gethostname()}, {time.time() - start_time} seconds to run")
+            print(f"  It took {socket.gethostname()}, {time() - start_time} seconds to run")
 
             if error == 404:
                 print(colored("A file not found, skipped", "red"))
