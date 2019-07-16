@@ -14,13 +14,17 @@ os.chdir(workspace)
 
 config.read(os.path.join(workspace, "../config.ini"))
 
+model_path = config.get("paths", "models")
+if not os.path.exists(model_path):
+    os.makedirs(model_path)
+
 prism_results = config.get("paths", "prism_results")
 if not os.path.exists(prism_results):
     os.makedirs(prism_results)
 
 sys.path.append(workspace)
 from mc_prism import call_prism
-from load import find_param
+from load import find_param, parse_params_from_model
 
 os.chdir(cwd)
 
@@ -77,14 +81,13 @@ def generate_all_data_twoparam(agents_quantities, dic_fun, p_v=None, q_v=None):
         file.close()
 
 
-def generate_experiments_and_data(model_types, multiparam, n_samples, populations, dimension_sample_size,
+def generate_experiments_and_data(model_types, n_samples, populations, dimension_sample_size,
                                 modular_param_space=None, silent=False, debug=False):
     """Generate experiment data for given settings
 
     Args
     ------
     model_types: (list of strings) list of model types
-    multiparam: (Bool) yes if multiparam should be used
     n_samples: (list of ints) list of sample sizes
     populations: (list of ints) list of agent populations
     dimension_sample_size: (list of ints) number of samples of in each paramter dimension to be used
@@ -99,8 +102,6 @@ def generate_experiments_and_data(model_types, multiparam, n_samples, population
     Experiments = {}
     Data = {}
     for model_type in model_types:
-        if multiparam:
-            model_type = "multiparam_" + model_type
         if not silent:
             print("model_type: ", model_type)
         if "synchronous" in model_type:
@@ -114,12 +115,12 @@ def generate_experiments_and_data(model_types, multiparam, n_samples, population
                 sim_lenght = 2 * N
             if "asynchronous" in model_type:
                 sim_lenght = 2 * N
-            parameters = ["p"]
-            if multiparam:
-                for agents in range(1, N):
-                    parameters.append("q" + str(agents))
-            else:
-                parameters.append("q")
+
+            model = os.path.join(model_path, (model_type + str(N) + ".pm"))
+            if not silent:
+                print("model: ", model)
+
+            parameters = parse_params_from_model(model)
             if not silent:
                 print("parameters: ", parameters)
 
@@ -132,8 +133,6 @@ def generate_experiments_and_data(model_types, multiparam, n_samples, population
             if not silent:
                 print("parameter space: ")
                 print(param_space)
-
-            model = model_type + str(N) + ".pm"
 
             Experiments[model_type][N] = {}
             Data[model_type][N] = {}
@@ -206,36 +205,34 @@ def generate_experiments_and_data(model_types, multiparam, n_samples, population
     return Experiments, Data
 
 
-def generate_experiments(model_types, multiparam, n_samples, populations, dimension_sample_size,
+def generate_experiments(model_types, n_samples, populations, dimension_sample_size,
                          modular_param_space=None):
     """Generate experiment data for given settings
 
     Args
     ------
     model_types: (list of strings) list of model types
-    multiparam: (Bool) yes if multiparam should be used
     n_samples: (list of ints) list of sample sizes
     populations: (list of ints) list of agent populations
     dimension_sample_size: (list of ints) number of samples of in each paramter dimension to be used
     modular_param_space: (numpy array) parameter space to be used
     """
-    return generate_experiments_and_data(model_types, multiparam, n_samples, populations, dimension_sample_size,
+    return generate_experiments_and_data(model_types, n_samples, populations, dimension_sample_size,
                                        modular_param_space)[0]
 
 
-def generate_data(model_types, multiparam, n_samples, populations, dimension_sample_size, modular_param_space=None):
+def generate_data(model_types, n_samples, populations, dimension_sample_size, modular_param_space=None):
     """Generate experiment data for given settings
 
     Args
     ------
     model_types: (list of strings) list of model types
-    multiparam: (Bool) yes if multiparam should be used
     n_samples: (list of ints) list of sample sizes
     populations: (list of ints) list of agent populations
     dimension_sample_size: (list of ints) number of samples of in each paramter dimension to be used
     modular_param_space: (numpy array) parameter space to be used
     """
-    return generate_experiments_and_data(model_types, multiparam, n_samples, populations, dimension_sample_size,
+    return generate_experiments_and_data(model_types, n_samples, populations, dimension_sample_size,
                                        modular_param_space)[1]
 
 

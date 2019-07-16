@@ -39,10 +39,31 @@ if not os.path.exists(data_path):
 
 os.chdir(cwd)
 
+#######################
+###   PARAMETERS    ###
+#######################
 
-###########################
-### RATIONAL FUNCTIONS  ###
-###########################
+
+def parse_params_from_model(file):
+    """ Parses the parameters from a given file
+
+    file: (Path/String) a model file to be parsed
+    """
+    params = []
+    # print("file", file)
+    with open(file, 'r') as input_file:
+        for line in input_file:
+            if line.startswith('const'):
+                # print(line)
+                line = line.split(" ")[-1].split(";")[0]
+                params.append(line)
+    print("params", params)
+    return params
+
+
+###############################
+###   RATIONAL FUNCTIONS    ###
+###############################
 
 
 def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewards_only=False, f_only=False):
@@ -468,6 +489,11 @@ def find_param_older(polynomial):
 
 
 class TestLoad(unittest.TestCase):
+    def test_parse_params(self):
+        model_path = Path(config.get("paths", "models"))
+        if os.path.isfile(os.path.join(model_path, "asynchronous_2.pm")):
+            self.assertEqual(parse_params_from_model(os.path.join(model_path, "asynchronous_2.pm"), ["p", "q"]))
+
     def test_load_expressions(self):
         ## THIS WILL PASS ONLY AFTER CREATING THE THE STORM RESULTS
         agents_quantities = [2]

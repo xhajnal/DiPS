@@ -53,6 +53,7 @@ if "prism" not in os.environ["PATH"]:
     else:
         os.environ["PATH"] = os.environ["PATH"] + ":" + prism_path
 
+from load import parse_params_from_model
 os.chdir(cwd)
 
 
@@ -341,20 +342,15 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
             # print("{} seq={}{} >> {}".format(file, seq, noprobchecks, str(prism_results)))
 
             ## Parsing the parameters from the files
+            spam = parse_params_from_model(file)
             params = ""
-            # print(file)
-            with open(file, 'r') as input_file:
-                i = 0
-                for line in input_file:
-                    if line.startswith('const'):
-                        # print(line)
-                        line = line.split(" ")[-1].split(";")[0]
-                        if param_intervals:
-                            params = f"{params}{line}={param_intervals[i][0]}:{param_intervals[i][1]},"
-                        else:
-                            params = f"{params}{line}=0:1,"
-                        i = i + 1
-            params = params[:-1]
+            i = 0
+            for param in spam:
+                if param_intervals:
+                    params = f"{params}{param}={param_intervals[i][0]}:{param_intervals[i][1]},"
+                else:
+                    params = f"{params}{param}=0:1,"
+                i = i + 1
 
             ## OLD parameters
             # if multiparam:
