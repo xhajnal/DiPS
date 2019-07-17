@@ -211,7 +211,7 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
 
 
 def generate_experiments(model_types, n_samples, populations, dimension_sample_size,
-                         modular_param_space=None):
+                         sim_length=False, modular_param_space=None, silent=False, debug=False):
     """Generate experiment data for given settings
 
     Args
@@ -220,13 +220,17 @@ def generate_experiments(model_types, n_samples, populations, dimension_sample_s
     n_samples: (list of ints) list of sample sizes
     populations: (list of ints) list of agent populations
     dimension_sample_size: (list of ints) number of samples of in each paramter dimension to be used
+    sim_length: (Int) length of the simulation
     modular_param_space: (numpy array) parameter space to be used
+    silent: (Bool): if silent printed output is set to minimum
+    debug: (Bool): if True extensive print will be used
     """
     return generate_experiments_and_data(model_types, n_samples, populations, dimension_sample_size,
-                                       modular_param_space)[0]
+                                         sim_length=sim_length, modular_param_space=modular_param_space, silent=silent, debug=debug)[0]
 
 
-def generate_data(model_types, n_samples, populations, dimension_sample_size, modular_param_space=None):
+def generate_data(model_types, n_samples, populations, dimension_sample_size,
+                  sim_length=False, modular_param_space=None, silent=False, debug=False):
     """Generate experiment data for given settings
 
     Args
@@ -235,10 +239,13 @@ def generate_data(model_types, n_samples, populations, dimension_sample_size, mo
     n_samples: (list of ints) list of sample sizes
     populations: (list of ints) list of agent populations
     dimension_sample_size: (list of ints) number of samples of in each paramter dimension to be used
+    sim_length: (Int) length of the simulation
     modular_param_space: (numpy array) parameter space to be used
+    silent: (Bool): if silent printed output is set to minimum
+    debug: (Bool): if True extensive print will be used
     """
     return generate_experiments_and_data(model_types, n_samples, populations, dimension_sample_size,
-                                       modular_param_space)[1]
+                                         sim_length=sim_length, modular_param_space=modular_param_space, silent=silent, debug=debug)[1]
 
 
 if __name__ == "__main__":
