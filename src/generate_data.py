@@ -22,6 +22,10 @@ prism_results = config.get("paths", "prism_results")
 if not os.path.exists(prism_results):
     os.makedirs(prism_results)
 
+tmp = config.get("paths", "tmp")
+if not os.path.exists(tmp):
+    os.makedirs(tmp)
+
 sys.path.append(workspace)
 from mc_prism import call_prism
 from load import find_param, parse_params_from_model
@@ -82,7 +86,7 @@ def generate_all_data_twoparam(agents_quantities, dic_fun, p_v=None, q_v=None):
 
 
 def generate_experiments_and_data(model_types, n_samples, populations, dimension_sample_size,
-                                modular_param_space=None, silent=False, debug=False):
+                                  sim_length=False, modular_param_space=None, silent=False, debug=False):
     """Generate experiment data for given settings
 
     Args
@@ -91,6 +95,7 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
     n_samples: (list of ints) list of sample sizes
     populations: (list of ints) list of agent populations
     dimension_sample_size: (list of ints) number of samples of in each paramter dimension to be used
+    sim_length: (Int) length of the simulation
     modular_param_space: (numpy array) parameter space to be used
     silent: (Bool): if silent printed output is set to minimum
     debug: (Bool): if True extensive print will be used
@@ -104,17 +109,17 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
     for model_type in model_types:
         if not silent:
             print("model_type: ", model_type)
-        if "synchronous" in model_type:
-            sim_lenght = 2
+        if "synchronous" in model_type and not sim_length:
+            sim_length = 2
         Data[model_type] = {}
         Experiments[model_type] = {}
         for N in populations:
             if not silent:
                 print("population size: ", N)
-            if "semisynchronous" in model_type:
-                sim_lenght = 2 * N
-            if "asynchronous" in model_type:
-                sim_lenght = 2 * N
+            if "semisynchronous" in model_type and not sim_length:
+                sim_length = 2 * N
+            if "asynchronous" in model_type and not sim_length:
+                sim_length = 2 * N
 
             model = os.path.join(model_path, (model_type + str(N) + ".pm"))
             if not silent:
@@ -168,13 +173,13 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
 
                     ## More profound path name here
                     ## path_file = f"path_{model_type}{N}_{max_sample}_{parameter_values}.txt"
-                    path_file = "dump_file_{}_{}_{}_{}.txt".format(model_type, N, max_sample, str(time.time()).replace(".", ""))
+                    path_file = os.path.join(tmp, "dump_file_{}_{}_{}_{}.txt".format(model_type, N, max_sample, str(time.time()).replace(".", "")))
                     # print(path_file)
 
                     ## Here is the PRISM called
                     if not silent:
-                        print(f"calling: \n {model} -const {prism_parameter_values} -simpath {str(sim_lenght)} {path_file}")
-                    call_prism(f"{model} -const {prism_parameter_values} -simpath {str(sim_lenght)} {path_file}",
+                        print(f"calling: \n {model} -const {prism_parameter_values} -simpath {str(sim_length)} {path_file}")
+                    call_prism(f"{model} -const {prism_parameter_values} -simpath {str(sim_length)} {path_file}",
                                silent=True, prism_output_path=cwd, std_output_path=None)
                    
                     ## Parse the dump file
@@ -237,12 +242,11 @@ def generate_data(model_types, n_samples, populations, dimension_sample_size, mo
 
 
 if __name__ == "__main__":
-    multiparam = True
     model_types = ["synchronous_parallel_"]
     n_samples = [3, 2]
     populations = [10]
     dimension_sample_size = 5
-    Debug, Debug2 = generate_experiments_and_data(model_types, multiparam, n_samples, populations, 4, None, True)
+    Debug, Debug2 = generate_experiments_and_data(model_types, n_samples, populations, 4, None, True)
     print(Debug)
 
     p_values = [0.028502714675268215, 0.45223461506339047, 0.8732745414252937, 0.6855555397734584, 0.13075717833714784]
@@ -252,7 +256,7 @@ if __name__ == "__main__":
     default_2dim_param_space[0] = p_values
     default_2dim_param_space[1] = q_values
 
-    Debug, Debug2 = generate_experiments_and_data(["synchronous_parallel_"], False, [3, 2], [2], 4, default_2dim_param_space, False)
+    Debug, Debug2 = generate_experiments_and_data(["synchronous_parallel_"], [3, 2], [2], 4, default_2dim_param_space, False)
     print(Debug["synchronous_parallel_"][2][3][(0.45223461506339047, 0.29577906622244676)])
     print(Debug2["synchronous_parallel_"][2][3][(0.45223461506339047, 0.29577906622244676)])
 
