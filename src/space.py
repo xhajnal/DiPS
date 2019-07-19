@@ -195,7 +195,7 @@ class RefinedSpace:
         else:
             self.title = ""
 
-    def show(self, title="", green=True, red=True, sat_samples=False, unsat_samples=False, save=False):
+    def show(self, title="", green=True, red=True, sat_samples=False, unsat_samples=False, true_point=True, save=False):
         """
         Visualises the space
 
@@ -612,25 +612,25 @@ class TestLoad(unittest.TestCase):
         self.assertEqual(round(space.get_nonwhite_volume(), 1), 0.5)
 
         ## def __init__(region, params, rectangles_sat=[], rectangles_unsat=[], rectangles_unknown=None):
-        space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"], [[[0, 0.5], [0, 0.5]]], [])
+        space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"], ["Real", "Real"], [[[0, 0.5], [0, 0.5]]], [])
         space.show(f"Left bottom quarter green added,\n achieved_coverage: {space.get_coverage() * 100}%")
         self.assertEqual(round(space.get_green_volume(), 2), 0.25)
         self.assertEqual(round(space.get_red_volume(), 1), 0.0)
         self.assertEqual(round(space.get_nonwhite_volume(), 2), 0.25)
 
-        space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"], [], [[[0, 0.5], [0, 0.5]]])
+        space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"], ["Real", "Real"], [], [[[0, 0.5], [0, 0.5]]])
         space.show(f"Left bottom quarter red added,\n achieved_coverage: {space.get_coverage() * 100}%")
         self.assertEqual(round(space.get_green_volume(), 1), 0.0)
         self.assertEqual(round(space.get_red_volume(), 2), 0.25)
         self.assertEqual(round(space.get_nonwhite_volume(), 2), 0.25)
 
-        space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"], [[[0, 0.2], [0, 0.2]]], [[[0.5, 0.7], [0.1, 0.3]]])
+        space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"], ["Real", "Real"], [[[0, 0.2], [0, 0.2]]], [[[0.5, 0.7], [0.1, 0.3]]])
         space.show(f"One green and one red region added,\n achieved_coverage: {space.get_coverage() * 100}%")
         self.assertEqual(round(space.get_green_volume(), 2), 0.04)
         self.assertEqual(round(space.get_red_volume(), 2), 0.04)
         self.assertEqual(round(space.get_nonwhite_volume(), 2), 0.08)
 
-        space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"], [[[0, 0.2], [0, 0.2]], [[0.4, 0.6], [0.6, 0.8]]],
+        space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"], ["Real", "Real"], [[[0, 0.2], [0, 0.2]], [[0.4, 0.6], [0.6, 0.8]]],
                              [[[0.5, 0.7], [0.1, 0.3]], [[0.6, 0.8], [0.8, 1]]])
         space.show(f"Two green and two red regions added,\n  achieved_coverage: {space.get_coverage() * 100}%")
         self.assertEqual(round(space.get_green_volume(), 2), 0.08)
