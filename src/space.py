@@ -252,7 +252,10 @@ class RefinedSpace:
                 pic.add_collection(self.show_samples(False))
             if self.true_point and true_point:
                 # print(self.true_point)
-                size_correction = min(1 / (len(self.sat_samples) + len(self.unsat_samples)) ** (1 / len(self.region)), 0.01)
+                if (len(self.sat_samples) + len(self.unsat_samples)) == 0 or len(self.region) == 0:
+                    size_correction = 0.01
+                else:
+                    size_correction = min(1 / (len(self.sat_samples) + len(self.unsat_samples)) ** (1 / len(self.region)), 0.01)
                 circle = plt.Circle((self.true_point[0], self.true_point[1]), size_correction*1, color='b', fill=False)
                 plt.gcf().gca().add_artist(circle)
 
