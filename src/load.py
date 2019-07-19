@@ -501,7 +501,7 @@ class TestLoad(unittest.TestCase):
     def test_parse_params(self):
         model_path = Path(config.get("paths", "models"))
         if os.path.isfile(os.path.join(model_path, "asynchronous_2.pm")):
-            self.assertEqual(parse_params_from_model(os.path.join(model_path, "asynchronous_2.pm"), ["p", "q"]))
+            self.assertEqual(parse_params_from_model(os.path.join(model_path, "asynchronous_2.pm")), ["p", "q"])
 
     def test_load_expressions(self):
         ## THIS WILL PASS ONLY AFTER CREATING THE THE STORM RESULTS
@@ -516,6 +516,8 @@ class TestLoad(unittest.TestCase):
     def test_find_param(self):
         self.assertEqual(find_param("56*4+4**6 +   0.1"), set())
         self.assertEqual(find_param("x+0.1"), {'x'})
+        self.assertEqual(find_param("p**2-2*p+1"), {'p'})
+        self.assertEqual(find_param("p ** 2 - 2 * p + 1"), {'p'})
         self.assertEqual(find_param("(-2)*q1*p**2+2*q1*p+2*p"), {'p', 'q1'})
         self.assertEqual(find_param('-p*(2*p*If(Or(low<1,1<=high),qmin,qmax)-p-2*If(Or(low<1,1<=high),qmin,qmax))'), {'qmin', 'p', 'low', 'qmax', 'high'})
         self.assertEqual(find_param('10*p*(p - 1)**9*( If ( Or( low < 1 , 1 <= high), qmin, qmax) - 1)**9'), {'p', 'low', "high", "qmin", "qmax"})
