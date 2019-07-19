@@ -385,16 +385,19 @@ def margin_experimental(alpha, n_samples, data_point):
         data_point * (1 - data_point) / n_samples) + 0.5 / n_samples + 0.005
 
 
-def find_param(my_string):
+def find_param(my_string, debug=False):
     """ Finds parameters of a string (also deals with Z3 expressions)
 
     Args
     ----------
     my_string : input string
+    debug: (Bool) if debug extensive output is provided
 
     Returns set of strings - parameters
     """
     my_string = copy.copy(my_string)
+    if debug:
+        print("my_default_string ", my_string)
     parameters = set()
     hippie = True
     while hippie:
@@ -405,22 +408,28 @@ def find_param(my_string):
             parameter = str(str(my_error).split("'")[1])
             parameters.add(parameter)
             locals()[parameter] = 0
-            # print("my_string ", my_string)
-            # print("parameter ", parameter)
+            if debug:
+                print("my_string ", my_string)
+                print("parameter ", parameter)
             my_string = my_string.replace(parameter, "2")
-            # print("my_string ", my_string)
+            if debug:
+                print("my_string ", my_string)
         except TypeError as my_error:
-            # print(str(my_error))
+            if debug:
+                print(str(my_error))
             if str(my_error) == "'int' object is not callable":
-                # print("I am catching the bloody bastard")
+                if debug:
+                    print("I am catching the bloody bastard")
                 my_string = my_string.replace(",", "-")
                 my_string = my_string.replace("(", "+").replace(")", "")
                 my_string = my_string.replace("<=", "+").replace(">=", "+")
                 my_string = my_string.replace("<", "+").replace(">", "+")
                 my_string = my_string.replace("++", "+")
-                # print("my_string ", my_string)
+                if debug:
+                    print("my_string ", my_string)
             else:
-                # print(f"Dunno why this error '{my_error}' happened, sorry ")
+                if debug:
+                    print(f"Dunno why this error '{my_error}' happened, sorry ")
                 hippie = False
         except SyntaxError as my_error:
             if str(my_error).startswith("invalid syntax"):
