@@ -26,7 +26,7 @@ def cartesian_product(*arrays):
     return arr.reshape(-1, la)
 
 
-def eval_and_show(fun_list, parameter_value, cumulative=False):
+def eval_and_show(fun_list, parameter_value, cumulative=False, debug=False):
     """ Creates bar plot of probabilities of i successes for given parametrisation
 
     Args
@@ -34,43 +34,53 @@ def eval_and_show(fun_list, parameter_value, cumulative=False):
     fun_list: (list of strings) list of rational functions
     parameter_value: (list of floats) array of param values
     cumulative: (Bool) if True cdf instead of pdf is visualised
+    debug: (Bool) if debug extensive output is provided
     """
     for polynome in fun_list:
         parameters = set()
-        parameters.update(find_param(polynome))
+        parameters.update(find_param(polynome, debug))
     parameters = sorted(list(parameters))
-    # print(parameters)
+    if debug:
+        print("parameters", parameters)
 
     title = ""
     a = []
     add = 0
     for param in range(len(parameters)):
-        # print(parameters[param])
-        # print(parameter_value[param])
+        if debug:
+            print("parameters[param]", parameters[param])
+            print("parameter_value[param]", parameter_value[param])
         globals()[parameters[param]] = parameter_value[param]
-        title = "{}{}={} ".format(title, parameters[param], parameter_value[param])
-    # print("eval ", polynome, eval(polynome))
+        title = "{} {}={},".format(title, parameters[param], parameter_value[param])
+    title = title[:-1]
+
+    title = title + "\n values: "
     for polynome in fun_list:
+        if debug:
+            print("eval ", polynome, eval(polynome))
         if cumulative:
             ## Add sum of all values
             value = eval(polynome)
             add = add + value
             a.append(add)
+            title = title + str(add) + ", "
             del value
         else:
             a.append(eval(polynome))
-    # print(a)
+            title = title + str(eval(polynome)) + ", "
+    title = title[:-2]
     fig, ax = plt.subplots()
     width = 0.2
     ax.set_ylabel('Probability')
     ax.set_xlabel('i')
+    print(title)
     ax.set_title('{}'.format(title))
     rects1 = ax.bar(range(len(fun_list)), a, width, color='b')
     plt.show()
     return a
 
 
-def sample(dic_fun, agents_quantities, size_q):
+def sample(dic_fun, agents_quantities, size_q, debug=False):
     """ Returns probabilities of i successes for sampled parametrisations
 
     Args
@@ -78,6 +88,7 @@ def sample(dic_fun, agents_quantities, size_q):
     dic_fun: (dictionary N -> list of polynomes)
     size_q: (int) sample size in each parameter
     agents_quantities: (int) pop sizes to be used
+    debug: (Bool) if debug extensive output is provided
 
     Returns
     ----------
@@ -85,37 +96,48 @@ def sample(dic_fun, agents_quantities, size_q):
 
     """
     arr = []
+    if debug:
+        print("Inside of sample_n_visualise.sample()")
+        print("dic_fun", dic_fun)
     for N in agents_quantities:
         for polynome in dic_fun[N]:
+            if debug:
+                print("polynome", polynome)
             parameters = set()
             if len(parameters) < N:
-                parameters.update(find_param(polynome))
-            # print(parameters)
+                parameters.update(find_param(polynome, debug))
+            if debug:
+                print("parameters", parameters)
             parameters = sorted(list(parameters))
-            # print(parameters)
+            if debug:
+                print("parameters", parameters)
             parameter_values = []
             for param in range(len(parameters)):
                 parameter_values.append(np.linspace(0, 1, size_q, endpoint=True))
             parameter_values = cartesian_product(*parameter_values)
             if (len(parameters) - 1) == 0:
                 parameter_values = np.linspace(0, 1, size_q, endpoint=True)[np.newaxis, :].T
-            # print(parameter_values)
+            if debug:
+                print("parameter_values", parameter_values)
 
             for parameter_value in parameter_values:
-                # print(parameter_value)
+                if debug:
+                    print("parameter_value", parameter_value)
                 a = [N, dic_fun[N].index(polynome)]
                 for param in range(len(parameters)):
                     a.append(parameter_value[param])
-                    # print(parameters[param])
-                    # print(parameter_value[param])
+                    if debug:
+                        print("parameters[param]", parameters[param])
+                        print("parameter_value[param]", parameter_value[param])
                     globals()[parameters[param]] = parameter_value[param]
-                # print("eval ", polynome, eval(polynome))
+                if debug:
+                    print("eval ", polynome, eval(polynome))
                 a.append(eval(polynome))
                 arr.append(a)
     return arr
 
 
-def visualise(dic_fun, agents_quantities, size_q, cumulative=False):
+def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug=False):
     """ Creates bar plot of probabilities of i successes for sampled parametrisation
 
     Args
@@ -124,35 +146,43 @@ def visualise(dic_fun, agents_quantities, size_q, cumulative=False):
     size_q: (int) sample size in each parameter
     agents_quantities: (int) pop sizes to be used
     cumulative: (Bool) if True cdf instead of pdf is visualised
+    debug: (Bool) if debug extensive output is provided
     """
 
     for N in agents_quantities:
         parameters = set()
         for polynome in dic_fun[N]:
             if len(parameters) < N:
-                parameters.update(find_param(polynome))
-        # print(parameters)
+                parameters.update(find_param(polynome, debug))
+        if debug:
+            print("parameters", parameters)
         parameters = sorted(list(parameters))
-        # print(parameters)
+        if debug:
+            print("parameters", parameters)
         parameter_values = []
         for param in range(len(parameters)):
             parameter_values.append(np.linspace(0, 1, size_q, endpoint=True))
         parameter_values = cartesian_product(*parameter_values)
         if (len(parameters) - 1) == 0:
             parameter_values = np.linspace(0, 1, size_q, endpoint=True)[np.newaxis, :].T
-        # print(parameter_values)
+        if debug:
+            print("parameter_values", parameter_values)
         for parameter_value in parameter_values:
-            # print(parameter_value)
+            if debug:
+                print("parameter_value", parameter_value)
             add = 0
             a = [N, dic_fun[N].index(polynome)]
             title = ""
             for param in range(len(parameters)):
                 a.append(parameter_value[param])
-                # print(parameters[param])
-                # print(parameter_value[param])
+                if debug:
+                    print("parameters[param]", parameters[param])
+                    print("parameter_value[param]", parameter_value[param])
                 globals()[parameters[param]] = parameter_value[param]
-                title = "{}{}={} ".format(title, parameters[param], parameter_value[param])
-            # print("eval ", polynome, eval(polynome))
+                title = "{} {}={},".format(title, parameters[param], parameter_value[param])
+            title = title[:-1]
+            if debug:
+                print("eval ", polynome, eval(polynome))
             for polynome in dic_fun[N]:
                 if cumulative:
                     ## Add sum of all values
@@ -169,6 +199,7 @@ def visualise(dic_fun, agents_quantities, size_q, cumulative=False):
             ax.set_ylabel('Probability')
             ax.set_xlabel('i')
             ax.set_title('N={} {}'.format(N, title))
+            print('N={} {}'.format(N, title))
             rects1 = ax.bar(range(N + 1), a[len(parameters) + 2:], width, color='b')
             plt.show()
 
@@ -183,7 +214,7 @@ def visualise_byparam(hyper_rectangles):
     """
     from sympy import Interval
 
-    # https://stackoverflow.com/questions/21352580/matplotlib-plotting-numerous-disconnected-line-segments-with-different-colors
+    ## https://stackoverflow.com/questions/21352580/matplotlib-plotting-numerous-disconnected-line-segments-with-different-colors
     if hyper_rectangles:
         lines = []
         intervals = []
