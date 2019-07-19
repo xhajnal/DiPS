@@ -104,8 +104,11 @@ def sample(dic_fun, agents_quantities, size_q, debug=False):
             if debug:
                 print("polynome", polynome)
             parameters = set()
-            if len(parameters) < N:
-                parameters.update(find_param(polynome, debug))
+            parameters.update(find_param(polynome, debug))
+
+            ## THIS THING IS WORKING ONLY FOR THE CASE STUDY
+            # if len(parameters) < N:
+            #     parameters.update(find_param(polynome, debug))
             if debug:
                 print("parameters", parameters)
             parameters = sorted(list(parameters))
