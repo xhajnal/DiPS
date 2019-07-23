@@ -763,8 +763,9 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
             egg = props_to_ineq(props, debug=False)
             if not egg:
                 return space
-            print("props", props)
-            print("coverted_intervals", egg)
+            if not silent:
+                print("props", props)
+                print("converted_intervals", egg)
 
             private_check_deeper_interval(region, egg[0], egg[1], n, epsilon, coverage, silent)
         else:
@@ -1505,7 +1506,7 @@ def check_interval_out(region, props, intervals, silent=False, called=False):
 
         ## TBD THIS CAN BE OPTIMISED
         try:
-            print(intervals)
+            ## print(intervals)
             interval = mpi(float(intervals[i].start), float(intervals[i].end))
         except AttributeError:
             interval = mpi(float(intervals[i][0]), float(intervals[i][1]))
@@ -1572,9 +1573,9 @@ def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage
 
     ## Resolve the result
     # print("gonna check region: ", region)
-    if check_interval_out(region, props, intervals, silent, called=False) is True:
+    if check_interval_out(region, props, intervals, silent=silent, called=False) is True:
         result = "unsafe"
-    elif check_interval_in(region, props, intervals, silent, called=False) is True:
+    elif check_interval_in(region, props, intervals, silent=silent, called=False) is True:
         result = "safe"
     else:
         result = "unknown"
