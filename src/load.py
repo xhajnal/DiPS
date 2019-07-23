@@ -198,7 +198,7 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
         file.close()
     os.chdir(default_directory)
     if no_files and agents_quantities:
-        print("No files match the pattern " + os.path.join(new_dir, path) + "and restriction " + agents_quantities)
+        print("No files match the pattern " + os.path.join(new_dir, path) + " and restriction " + str(agents_quantities))
     return (f, rewards)
 
 
