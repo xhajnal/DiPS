@@ -63,7 +63,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.0.7"  ## version of the gui
+        self.version = "1.0.8"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -250,7 +250,7 @@ class Gui(Tk):
         self.interval_text.grid(row=7, column=0, columnspan=2, sticky=W, pady=4)
 
 
-        ## TAB DATA REFINEMENT
+        ## TAB SAMPLING AND REFINEMENT
         page4 = ttk.Frame(nb, width=400, height=200, name="refine")
         nb.add(page4, text='Sample & Refine')
 
@@ -300,6 +300,9 @@ class Gui(Tk):
         Button(page4, text='Refine space', command=self.refine_space).grid(row=6, column=3, sticky=W, pady=4, padx=10)
 
         ttk.Separator(page4, orient=HORIZONTAL).grid(row=7, column=0, columnspan=7, sticky='nwe', pady=4)
+
+        self.space_text = scrolledtext.ScrolledText(page4, height=100)
+        self.space_text.grid(row=8, column=0, columnspan=16, rowspan=2, sticky=W+E+N+S, pady=4)  # pack(anchor=W, fill=X)
 
         # page5 = ttk.Frame(nb, name="testy")
         # # page5.pack(expand=True)
@@ -655,6 +658,13 @@ class Gui(Tk):
 
         self.space = pickle.load(open(self.space_file.get(), "rb"))
         print(self.space)
+
+        ## Show the space as niceprint()
+        print("space", self.space)
+        print()
+        print("space nice print \n", self.space.nice_print())
+        self.space_text.delete('1.0', END)
+        self.space_text.insert('end', self.space.nice_print())
         self.status_set("Space loaded")
 
     def save_model(self):
@@ -1001,6 +1011,13 @@ class Gui(Tk):
         print("self.size_q", self.size_q)
         print("self.save_sample.get()", self.save_sample.get())
         self.space.sample(self.props, self.size_q, silent=False, save=self.save_sample.get())
+
+        ## Show the space as niceprint()
+        print("space", self.space)
+        print()
+        print("space nice print \n", self.space.nice_print())
+        self.space_text.delete('1.0', END)
+        self.space_text.insert('end', self.space.nice_print())
         self.status_set("Space sampling done.")
 
         self.space.show(sat_samples=True, unsat_samples=True, save=self.save_sample.get())
@@ -1043,6 +1060,12 @@ class Gui(Tk):
         self.status_set("Space refinement is running ...")
         self.space = check_deeper(self.space, self.props, self.max_depth, self.epsilon, self.coverage, silent=False,
                                   version=self.alg, size_q=False, debug=False, save=self.save_refinement.get(), title="")
+        ## Show the space as niceprint()
+        print("space", self.space)
+        print()
+        print("space nice print \n", self.space.nice_print())
+        self.space_text.delete('1.0', END)
+        self.space_text.insert('end', self.space.nice_print())
         self.status_set("Space refinement done.")
 
     ## SETTINGS

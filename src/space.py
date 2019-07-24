@@ -548,16 +548,18 @@ class RefinedSpace:
                 return PatchCollection(samples, facecolor='r', alpha=0.5)
 
     def nice_print(self):
-        """ Prints the class in a human readable format"""
-        print("region: ", self.region)
-        print("params: ", self.params)
-        print("types: ", self.types)
-        print("rectangles_sat: ", self.sat)
-        print("rectangles_unsat: ", self.unsat)
-        print("rectangles_unknown: ", self.unknown)
-        print("sat_samples: ", self.sat_samples)
-        print("unsat_samples: ", self.unsat_samples)
-        print("true_point: ", self.true_point)
+        """ Returns the class in a human readable format"""
+        spam = ""
+        spam = spam + str(f"region: {self.region}\n")
+        spam = spam + str(f"params: {self.params}\n")
+        spam = spam + str(f"types: {self.types}\n")
+        spam = spam + str(f"rectangles_sat: {self.sat}\n")
+        spam = spam + str(f"rectangles_unsat: {self.unsat}\n")
+        spam = spam + str(f"rectangles_unknown: {self.unknown}\n")
+        spam = spam + str(f"sat_samples: {self.sat_samples}\n")
+        spam = spam + str(f"unsat_samples: {self.unsat_samples}\n")
+        spam = spam + str(f"true_point: {self.true_point}\n")
+        return spam
 
     def __repr__(self):
         return str([self.region, self.sat, self.unsat, self.unknown])
