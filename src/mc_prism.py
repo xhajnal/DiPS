@@ -172,15 +172,15 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
                 model_file_path = os.path.join(model_path, arg)
                 # print(model_file)
                 if not os.path.isfile(model_file_path):
-                    print(f"{colored('file', 'red')} {model_file_path} {colored('not found -- skipped', 'red')}")
-                    return 404
+                    print(f"{colored('model file', 'red')} {model_file_path} {colored('not found -- skipped', 'red')}")
+                    return 404, f"{colored('model file', 'red')} {model_file_path} {colored('not found -- skipped', 'red')}"
                 prism_args.append(model_file_path)
             elif re.compile('\.pctl').search(arg) is not None:
                 property_file_path = os.path.join(properties_path, arg)
                 # print(property_file)
                 if not os.path.isfile(property_file_path):
-                    print(f"{colored('file', 'red')} {property_file_path} {colored('not found -- skipped', 'red')}")
-                    return 404
+                    print(f"{colored('property file', 'red')} {property_file_path} {colored('not found -- skipped', 'red')}")
+                    return 404, f"{colored('property file', 'red')} {property_file_path} {colored('not found -- skipped', 'red')}"
                 prism_args.append(property_file_path)
             elif re.compile('\.txt').search(arg) is not None:
                 print("prism_output_path", prism_output_path)
@@ -243,28 +243,29 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
                                 print(colored(f"A memory error occurred while seq even after increasing the memory, close some programs and try again", "red"))
                                 if sys.platform.startswith("win"):
                                     set_javaheap_win(previous_memory)
-                                return "memory_fail"
+                                return "memory_fail", "A memory error occurred while seq even after increasing the memory, close some programs and try again"
                         else:
                             write_to_file(std_output_path, output_file_path, output, silent, append=True)
                             print(colored(f"A memory error occurred while seq with given amount of memory", "red"))
                             ## Changing the memory setting back
                             if sys.platform.startswith("win"):
                                 set_javaheap_win(previous_memory)
-                            return "memory"
+                            return "memory", "A memory error occurred while seq with given amount of memory"
 
                     write_to_file(std_output_path, output_file_path, output, silent, append=True)
 
                     ## Check for errors
+                    ## 'OutOfMemoryError', "Cannot allocate memory", 'Type error', 'Syntax error', 'NullPointerException', 'use -noprobchecks'
                     output = output.split("\n")
                     for item in output:
                         # print(item)
                         if 'use -noprobchecks' in item:
                             print(colored(f"Outgoing transitions checksum error occurred", "red"))
-                            return "noprobchecks"
-                        if ("error" in item.lower()) or ("Cannot allocate memory" in item) or ('Exception' in item):
+                            return "noprobchecks", item.strip()
+                        if ("error" in item.lower()) or ("Cannot allocate memory" in item) or ('exception' in item.lower()):
                             spam = item.strip()
                             print(colored(spam, "red"))
-                            return ("error", spam)
+                            return "error", spam
 
         else:
             if not silent:
@@ -273,17 +274,18 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
             write_to_file(std_output_path, output_file_path, output, silent, append=False)
 
             ## Check for errors
+            ## 'OutOfMemoryError', "Cannot allocate memory", 'Type error', 'Syntax error', 'NullPointerException', 'use -noprobchecks'
             output = output.split("\n")
             for item in output:
                 # print(item)
                 if 'use -noprobchecks' in item:
                     print(colored(f"Outgoing transitions checksum error occurred", "red"))
-                    return "noprobchecks"
-                if ("error" in item.lower()) or ("Cannot allocate memory" in item) or ('Exception' in item):
+                    return "noprobchecks", item.strip()
+                if ("error" in item.lower()) or ("Cannot allocate memory" in item) or ('exception' in item.lower()):
                     spam = item.strip()
                     print(colored(spam, "red"))
-                    return ("error", spam)
-        return 0
+                    return "error", spam
+        return 0, ""
     finally:
         os.chdir(curr_dir)
 
@@ -351,6 +353,9 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
                 else:
                     params = f"{params}{param}=0:1,"
                 i = i + 1
+            ## Getting rid of the last ,
+            if params:
+                params = params[:-1]
 
             ## OLD parameters
             # if multiparam:
@@ -382,20 +387,13 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
             # print(f"  Return code is: {error}")
             print(f"  It took {socket.gethostname()}, {time() - start_time} seconds to run")
 
-            if error == 404:
-                print(colored("A file not found, skipped", "red"))
+            ## Check for missing files
+            if error[0] == 404:
+                print(colored(error[1], "red"))
                 continue
 
-            ## Check if there was problem with sum of probabilities
-            if error == "noprobchecks":
-                if noprobchecks == "":
-                    print(colored("Outgoing transitions checksum error occurred. Running with noprobchecks option", "red"))
-                    noprobchecks = '-noprobchecks '
-                else:
-                    print(colored("This is embarrassing, but Outgoing transitions checksum error occurred while noprobchecks option", "red"))
-
             ## Check if memory problem has occurred
-            if error == "memory":
+            if error[0] == "memory":
                 if not seq:
                     ## A memory occurred while not seq, trying seq now
                     seq = True
@@ -411,31 +409,47 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
                         previous_memory = set_javaheap_win(f"{memory}g")
                     print(colored(f"A memory error occurred while seq, max memory increased to {memory}GB", "red"))
 
-            if error == "memory_fail":
-                ## A error occured even when seq and max memory, no reason to continue
+            if error[0] == "memory_fail":
+                ## A error occurred even when seq and max memory, no reason to continue
                 break
 
-            ## Check for other errors
-            if isinstance(error, tuple):
-                if error[0]:
-                    ## Check for NullPointerException
-                    if "NullPointerException" in error[1]:
-                        if seq:
-                            # print(colored(error[1], "red"))
-                            print(colored("Sorry, I do not know to to fix this, please try it manually", "red"))
-                            print()
-                            break
-                        else:
-                            print(colored("Trying to fix the null pointer exception by running prop by prop", "red"))
-                            seq = True
-                            ## Remove the file because appending would no overwrite the file
-                            os.remove(os.path.join(output_path, "{}.txt".format(file.stem)))
-                    else:
-                        # print(colored(error[1], "red"))
-                        print()
-                        continue
+            ## Check if there was problem with sum of probabilities
+            if error[0] == "noprobchecks":
+                if noprobchecks == "":
+                    print(colored("Outgoing transitions checksum error occurred. Running with noprobchecks option", "red"))
+                    noprobchecks = '-noprobchecks '
+                else:
+                    print(colored("This is embarrassing, but Outgoing transitions checksum error occurred while noprobchecks option", "red"))
 
-            if error is not 0:
+            ## Check for other errors
+            if error[0] == "error":
+                ## Check for NullPointerException
+                if "NullPointerException" in error[1]:
+                    if seq:
+                        # print(colored(error[1], "red"))
+                        print(colored("Sorry, I do not know to to fix this, please try it manually", "red"))
+                        print()
+                        break
+                    else:
+                        print(colored("Trying to fix the null pointer exception by running prop by prop", "red"))
+                        seq = True
+                        ## Remove the file because appending would no overwrite the file
+                        os.remove(os.path.join(output_path, "{}.txt".format(file.stem)))
+                elif ('OutOfMemoryError' in error[1]) or ("Cannot allocate memory" in error[1]):
+                    if not seq:
+                        seq = True
+                    else:
+                        print(colored(f"A memory error occurred while seq, close some programs and try again with more memory", "red"))
+                elif "Type error" in error[1]:
+                    print(colored("A type error occurred, please check input files or manual", "red"))
+                elif "Syntax error" in error[1]:
+                    print(colored("A syntax error occurred, please check input files or manual", "red"))
+                else:
+                    print("Unrecognised error occurred:")
+                    print(colored(error[1], "red"))
+                    continue
+
+            if error[0] is not 0:
                 ## If an error occurred call this function for this file again
                 print()
                 # print("seq",seq)
@@ -444,11 +458,12 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
                                  properties_path=properties_path, property_file=property_file, output_path=prism_results)
             print()
 
+    ## Setting the previous memory on windows
     if sys.platform.startswith("win"):
         try:
             set_javaheap_win(previous_memory)
         except UnboundLocalError:
-            print()
+            pass
 
 
 def call_storm(args, silent=False, model_path=model_path, properties_path=properties_path,
