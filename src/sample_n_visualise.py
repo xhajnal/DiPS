@@ -36,14 +36,14 @@ def eval_and_show(fun_list, parameter_value, cumulative=False, debug=False):
     cumulative: (Bool) if True cdf instead of pdf is visualised
     debug: (Bool) if debug extensive output is provided
     """
+    parameters = set()
     for polynome in fun_list:
-        parameters = set()
         parameters.update(find_param(polynome, debug))
     parameters = sorted(list(parameters))
     if debug:
         print("parameters", parameters)
 
-    title = ""
+    title = "Rational functions sampling \n parameter values:"
     a = []
     add = 0
     for param in range(len(parameters)):
@@ -54,7 +54,7 @@ def eval_and_show(fun_list, parameter_value, cumulative=False, debug=False):
         title = "{} {}={},".format(title, parameters[param], parameter_value[param])
     title = title[:-1]
 
-    title = title + "\n values: "
+    title = f"{title}\n values: "
     for polynome in fun_list:
         if debug:
             print("eval ", polynome, eval(polynome))
@@ -63,29 +63,30 @@ def eval_and_show(fun_list, parameter_value, cumulative=False, debug=False):
             value = eval(polynome)
             add = add + value
             a.append(add)
-            title = title + str(add) + ", "
+            title = f"{title} {add} , "
             del value
         else:
             a.append(eval(polynome))
-            title = title + str(eval(polynome)) + ", "
+            title = f"{title} {eval(polynome)} ,"
     title = title[:-2]
     fig, ax = plt.subplots()
     width = 0.2
-    ax.set_ylabel('Probability')
-    ax.set_xlabel('i')
+    ax.set_ylabel('Value')
+    ax.set_xlabel('Rational function index')
     print(title)
-    ax.set_title('{}'.format(title))
+    ax.set_title(title)
     rects1 = ax.bar(range(len(fun_list)), a, width, color='b')
     plt.show()
     return a
 
 
+## OLD VERSION NOW USED FOR BACK COMPATIBILITY
 def sample(dic_fun, agents_quantities, size_q, debug=False):
-    """ Returns probabilities of i successes for sampled parametrisations
+    """ Returns probabilities of i successes for sampled parametrisation
 
     Args
     ----------
-    dic_fun: (dictionary N -> list of polynomes)
+    dic_fun: (dictionary N -> list of polynomials)
     size_q: (int) sample size in each parameter
     agents_quantities: (int) pop sizes to be used
     debug: (Bool) if debug extensive output is provided
@@ -140,6 +141,64 @@ def sample(dic_fun, agents_quantities, size_q, debug=False):
     return arr
 
 
+def sample_fun(list_fun, size_q, debug=False):
+    """ Returns probabilities of i successes for sampled parametrisation
+
+    Args
+    ----------
+    list_fun: (list of polynomials)
+    size_q: (int) sample size in each parameter
+    debug: (Bool) if debug extensive output is provided
+
+    Returns
+    ----------
+    Array of [N, i, parameters, value]
+
+    """
+    arr = []
+    if debug:
+        print("Inside of sample_n_visualise.sample()")
+        print("list_fun", list_fun)
+    for polynome in list_fun:
+        if debug:
+            print("polynome", polynome)
+        parameters = set()
+        parameters.update(find_param(polynome, debug))
+
+        ## THIS THING IS WORKING ONLY FOR THE CASE STUDY
+        # if len(parameters) < N:
+        #     parameters.update(find_param(polynome, debug))
+        if debug:
+            print("parameters", parameters)
+        parameters = sorted(list(parameters))
+        if debug:
+            print("parameters", parameters)
+        parameter_values = []
+        for param in range(len(parameters)):
+            parameter_values.append(np.linspace(0, 1, size_q, endpoint=True))
+        parameter_values = cartesian_product(*parameter_values)
+        if (len(parameters) - 1) == 0:
+            parameter_values = np.linspace(0, 1, size_q, endpoint=True)[np.newaxis, :].T
+        if debug:
+            print("parameter_values", parameter_values)
+
+        for parameter_value in parameter_values:
+            if debug:
+                print("parameter_value", parameter_value)
+            a = [list_fun.index(polynome)]
+            for param in range(len(parameters)):
+                a.append(parameter_value[param])
+                if debug:
+                    print("parameters[param]", parameters[param])
+                    print("parameter_value[param]", parameter_value[param])
+                globals()[parameters[param]] = parameter_value[param]
+            if debug:
+                print("eval ", polynome, eval(polynome))
+            a.append(eval(polynome))
+            arr.append(a)
+    return arr
+
+
 def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug=False):
     """ Creates bar plot of probabilities of i successes for sampled parametrisation
 
@@ -155,8 +214,13 @@ def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug=False)
     for N in agents_quantities:
         parameters = set()
         for polynome in dic_fun[N]:
-            if len(parameters) < N:
-                parameters.update(find_param(polynome, debug))
+            if debug:
+                print("polynome", polynome)
+            parameters.update(find_param(polynome, debug))
+
+            ## THIS THING IS WORKING ONLY FOR THE CASE STUDY
+            # if len(parameters) < N:
+            #    parameters.update(find_param(polynome, debug))
         if debug:
             print("parameters", parameters)
         parameters = sorted(list(parameters))
@@ -175,7 +239,10 @@ def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug=False)
                 print("parameter_value", parameter_value)
             add = 0
             a = [N, dic_fun[N].index(polynome)]
-            title = ""
+            if N == 0:
+                title = f"Rational functions sampling \n parameters:"
+            else:
+                title = f"Rational functions sampling \n N={N}, parameters:"
             for param in range(len(parameters)):
                 a.append(parameter_value[param])
                 if debug:
@@ -199,11 +266,11 @@ def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug=False)
             print(a)
             fig, ax = plt.subplots()
             width = 0.2
-            ax.set_ylabel('Probability')
-            ax.set_xlabel('i')
-            ax.set_title('N={} {}'.format(N, title))
-            print('N={} {}'.format(N, title))
-            rects1 = ax.bar(range(N + 1), a[len(parameters) + 2:], width, color='b')
+            ax.set_ylabel('Value')
+            ax.set_xlabel('Rational function index')
+            ax.set_title(title)
+            print(title)
+            rects1 = ax.bar(range(len(dic_fun[N])), a[len(parameters) + 2:], width, color='b')
             plt.show()
 
 
@@ -236,9 +303,9 @@ def visualise_byparam(hyper_rectangles):
 
         fig, ax = pl.subplots()
 
-        ax.set_xlabel('params')
-        ax.set_ylabel('parameter value')
-        ax.set_title("domain in which respective parameter belongs to in the given space")
+        ax.set_xlabel('Parameter indices')
+        ax.set_ylabel('Parameter values')
+        ax.set_title("Domain in which respective parameter belongs to in the given space")
 
         ax.add_collection(lc)
         ax.autoscale()
@@ -290,6 +357,7 @@ def heatmap(fun, region, sampling_sizes):
     # d = d.pivot("p", "q", "E")
     d = d.pivot(parameters[0], parameters[1], "E")
     ax = sns.heatmap(d)
+    ax.set_title("Heatmap of the parameter space")
     plt.show()
 
 
@@ -322,8 +390,8 @@ def visualise_sampled_byparam(hyper_rectangles, sample_size):
                                              hyper_rectangles[rectangle][dimension][1]))
             ax.scatter(x_axis, values)
             ax.plot(x_axis, values)
-        ax.set_xlabel("param indices")
-        ax.set_ylabel("parameter value")
+        ax.set_xlabel("Parameter indices")
+        ax.set_ylabel("Parameter values")
         ax.set_title("Sample points of the given hyperspace")
         ax.autoscale()
         ax.margins(0.1)
