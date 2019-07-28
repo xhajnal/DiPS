@@ -195,7 +195,7 @@ class RefinedSpace:
         else:
             self.title = ""
 
-    def show(self, title="", green=True, red=True, sat_samples=False, unsat_samples=False, true_point=True, save=False):
+    def show(self, title="", green=True, red=True, sat_samples=False, unsat_samples=False, true_point=True, save=False, where=False):
         """
         Visualises the space
 
@@ -208,6 +208,7 @@ class RefinedSpace:
         unsat_samples: (Bool) if True showing unsat samples
         true_point: (Bool) if True showing true point
         save: (Bool) if True, the output is saved
+        where: (Tuple/List) : output matplotlib sources to output created figure
         """
 
         # print("self.true_point", self.true_point)
@@ -219,8 +220,14 @@ class RefinedSpace:
 
             # from matplotlib import rcParams
             # rc('font', **{'family':'serif', 'serif':['Computer Modern Roman']})
-            fig = plt.figure()
-            pic = fig.add_subplot(111, aspect='equal')
+            if where:
+                fig = where[0]
+                pic = where[1]
+                plt.autoscale()
+                pic.autoscale()
+            else:
+                fig = plt.figure()
+                pic = fig.add_subplot(111, aspect='equal')
             pic.set_xlabel(self.params[0])
 
             ## Set axis ranges
@@ -260,6 +267,7 @@ class RefinedSpace:
                 plt.gcf().gca().add_artist(circle)
 
             whole_title = f"{pretitle} red = unsafe region, green = safe region, white = in between \n{self.title} \n {title}"
+            print("whole_title: \n", whole_title)
             pic.set_title(whole_title)
             with open(os.path.join(refinement_results, "figure_to_title.txt"), "a+") as file:
                 file.write(f"{save} : {whole_title}\n")
@@ -270,8 +278,13 @@ class RefinedSpace:
                 print("Figure stored here: ", os.path.join(refinement_results, f"Refinement_{save}"))
                 with open(os.path.join(refinement_results, "figure_to_title.txt"), "a+") as file:
                     file.write(f"Refinement{save} : {whole_title}\n")
-
-            plt.show()
+            if where:
+                ## TBD probably yield
+                print("returning tuple")
+                del region
+                return fig, pic
+            else:
+                plt.show()
             del region
 
         else:
@@ -279,7 +292,13 @@ class RefinedSpace:
             ## Show only if sat_samples selected and either there are some unsat samples or the sampling was not grid
             if sat_samples and (not self.gridsampled or self.unsat_samples):
                 if self.sat_samples:
-                    fig, ax = plt.subplots()
+                    if where:
+                        fig = where[0]
+                        ax = where[1]
+                        plt.autoscale()
+                        ax.autoscale()
+                    else:
+                        fig, ax = plt.subplots()
                     ## Creates values of the horizontal axis
                     x_axis = []
                     i = 0
@@ -310,7 +329,12 @@ class RefinedSpace:
                         with open(os.path.join(refinement_results, "figure_to_title.txt"), "a+") as file:
                             file.write(f"Samples_sat{save} : {whole_title}\n")
 
-                    plt.show()
+                    if where:
+                        ## TBD probably yield
+                        print("returning tuple")
+                        return fig, ax
+                    else:
+                        plt.show()
                 else:
                     print("No sat samples so far, nothing to show")
 
@@ -346,7 +370,12 @@ class RefinedSpace:
                         print("Figure stored here: ", os.path.join(refinement_results, f"Samples_unsat_{save}"))
                         with open(os.path.join(refinement_results, "figure_to_title.txt"), "a+") as file:
                             file.write(f"Samples_unsat{save} : {whole_title}\n")
-                    plt.show()
+                    if where:
+                        ## TBD probably yield
+                        print("returning tuple")
+                        return fig, ax
+                    else:
+                        plt.show()
                 else:
                     print("No unsat samples so far, nothing to show")
 

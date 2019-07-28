@@ -1,5 +1,6 @@
 import platform
 from os.path import isfile
+from time import sleep
 from tkinter import *
 from tkinter import scrolledtext, messagebox
 import webbrowser
@@ -8,15 +9,23 @@ import os
 from pathlib import Path
 from tkinter import filedialog, ttk
 
+import matplotlib.pyplot as pyplt
+import matplotlib
+matplotlib.use("TKAgg")
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib.figure import Figure
+
 import configparser
 
 config = configparser.ConfigParser()
 workspace = os.path.dirname(__file__)
 sys.path.append(workspace)
+
 from load import create_intervals, load_all_functions, find_param
 import space
 from synthetise import ineq_to_props, check_deeper
 from mc_prism import call_prism_files, call_storm_files
+from sample_n_visualise import sample_fun, visualise, eval_and_show, get_param_values
 
 cwd = os.getcwd()
 
@@ -63,7 +72,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.0.8"  ## version of the gui
+        self.version = "1.1.0"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -77,6 +86,9 @@ class Gui(Tk):
         self.factor = BooleanVar()  ## Flag for factorising rational functions
         self.size_q = ""  ## number of samples
         self.save = ""  ## True if saving on
+
+        ## OTHER SETTINGS
+        self.button_pressed = BooleanVar()
 
         ## GUI INIT
         self.title('mpm')
@@ -212,27 +224,65 @@ class Gui(Tk):
         self.functions_parsed_text.grid(row=4, column=17, columnspan=16, rowspan=2, sticky=W, pady=4)
 
 
+        ## TAB SAMPLE AND VISUALISE
+        page3 = ttk.Frame(nb, width=400, height=200, name="sampling")
+        nb.add(page3, text='Sampling functions')
+
+        page3.rowconfigure(5, weight=1)
+        page3.columnconfigure(6, weight=1)
+
+        Label(page3, text="Set size_q, number of samples per dimension:", anchor=W, justify=LEFT).grid(row=1, column=0, padx=4, pady=4)
+        self.fun_size_q_entry = Entry(page3)
+        self.fun_size_q_entry.grid(row=1, column=1)
+
+        Button(page3, text='Sample functions', command=self.sample_fun).grid(row=2, column=0, sticky=W, pady=4, padx=4)
+
+        Label(page3, text=f"Sampled functions:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, pady=4)
+
+        self.sampled_functions_text = scrolledtext.ScrolledText(page3, height=100)
+        self.sampled_functions_text.grid(row=4, column=0, columnspan=16, rowspan=2, sticky=W, pady=4)
+
+        Button(page3, text='Show functions in a single point', command=self.show_funs).grid(row=2, column=17, sticky=W, pady=4, padx=4)
+        Button(page3, text='Show all sampled points', command=self.show_funs_in_all_points).grid(row=3, column=17, sticky=W, pady=4, padx=4)
+        self.Next_sample = Button(page3, text="Next", state="disabled", command=lambda: self.button_pressed.set(True))
+        self.Next_sample.grid(row=3, column=18, sticky=W, pady=4, padx=4)
+
+        self.page3_plotframe = Frame(page3)
+        self.page3_plotframe.grid(row=4, column=17, columnspan=2, sticky=W, pady=4, padx=4)
+        self.page3_figure = pyplt.figure()
+        self.page3_a = self.page3_figure.add_subplot(111)
+        # print("type a", type(self.a))
+
+        self.page3_canvas = FigureCanvasTkAgg(self.page3_figure, master=self.page3_plotframe)  # A tk.DrawingArea.
+        self.page3_canvas.draw()
+        self.page3_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+
+        self.page3_toolbar = NavigationToolbar2Tk(self.page3_canvas, self.page3_plotframe)
+        self.page3_toolbar.update()
+        self.page3_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+
+
         ## TAB DATA CONVERSION
-        page3 = ttk.Frame(nb, width=400, height=200, name="conversion")
-        nb.add(page3, text='Data conversion')
-        # page3.columnconfigure(0, weight=1)
-        # page3.rowconfigure(2, weight=1)
-        # page3.rowconfigure(7, weight=1)
+        page4 = ttk.Frame(nb, width=400, height=200, name="conversion")
+        nb.add(page4, text='Data conversion')
+        # page4.columnconfigure(0, weight=1)
+        # page4.rowconfigure(2, weight=1)
+        # page4.rowconfigure(7, weight=1)
 
-        Button(page3, text='Load data', command=self.load_data).grid(row=0, column=0, sticky=W, pady=4)
+        Button(page4, text='Load data', command=self.load_data).grid(row=0, column=0, sticky=W, pady=4)
 
-        Label(page3, text=f"Data:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, pady=4)
+        Label(page4, text=f"Data:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, pady=4)
 
-        self.data_text = Text(page3, height=12)  # , height=10, width=30
+        self.data_text = Text(page4, height=12)  # , height=10, width=30
         # self.data_text.config(state="disabled")
         self.data_text.grid(row=2, column=0, columnspan=2, sticky=W, pady=4)
 
         ## SET THE INTERVAL COMPUTATION SETTINGS
-        Label(page3, text="Set alpha, the confidence:", anchor=W, justify=LEFT).grid(row=3)
-        Label(page3, text="Set n_samples, number of samples: ", anchor=W, justify=LEFT).grid(row=4)
+        Label(page4, text="Set alpha, the confidence:", anchor=W, justify=LEFT).grid(row=3)
+        Label(page4, text="Set n_samples, number of samples: ", anchor=W, justify=LEFT).grid(row=4)
 
-        self.alpha_entry = Entry(page3)
-        self.n_samples_entry = Entry(page3)
+        self.alpha_entry = Entry(page4)
+        self.n_samples_entry = Entry(page4)
 
         self.alpha_entry.grid(row=3, column=1)
         self.n_samples_entry.grid(row=4, column=1)
@@ -241,43 +291,46 @@ class Gui(Tk):
         self.n_samples_entry.insert(END, '100')
 
         ## TBD ADD setting for creating  intervals - alpha, n_samples
-        Button(page3, text='Create intervals', command=self.create_intervals).grid(row=5, column=0, sticky=W, pady=4)
+        Button(page4, text='Create intervals', command=self.create_intervals).grid(row=5, column=0, sticky=W, pady=4)
 
-        Label(page3, text=f"Intervals:", anchor=W, justify=LEFT).grid(row=6, column=0, sticky=W, pady=4)
+        Label(page4, text=f"Intervals:", anchor=W, justify=LEFT).grid(row=6, column=0, sticky=W, pady=4)
 
-        self.interval_text = Text(page3, height=12)  #height=10, width=30
+        self.interval_text = Text(page4, height=12)  #height=10, width=30
         # self.interval_text.config(state="disabled")
         self.interval_text.grid(row=7, column=0, columnspan=2, sticky=W, pady=4)
 
 
-        ## TAB SAMPLING AND REFINEMENT
-        page4 = ttk.Frame(nb, width=400, height=200, name="refine")
-        nb.add(page4, text='Sample & Refine')
+        ## TAB SAMPLE AND REFINEMENT
+        page5 = ttk.Frame(nb, width=400, height=200, name="refine")
+        nb.add(page5, text='Sample & Refine')
 
-        Button(page4, text='Load space', command=self.load_space).grid(row=0, column=0, sticky=W, pady=4)
-        Button(page4, text='Delete space', command=self.refresh_space).grid(row=0, column=1, sticky=W, pady=4)
+        frame_left = Frame(page5, width=200, height=200)
+        frame_left.pack(side=LEFT, fill=X)
 
-        ttk.Separator(page4, orient=HORIZONTAL).grid(row=1, column=0, columnspan=7, sticky='nwe', pady=8)
+        Button(frame_left, text='Load space', command=self.load_space).grid(row=0, column=0, sticky=W, pady=4)
+        Button(frame_left, text='Delete space', command=self.refresh_space).grid(row=0, column=1, sticky=W, pady=4)
 
-        Label(page4, text="Set size_q: ", anchor=W, justify=LEFT).grid(row=1, pady=16)
+        ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=1, column=0, columnspan=7, sticky='nwe', pady=8)
 
-        self.size_q_entry = Entry(page4)
+        Label(frame_left, text="Set size_q: ", anchor=W, justify=LEFT).grid(row=1, pady=16)
+
+        self.size_q_entry = Entry(frame_left)
         self.size_q_entry.grid(row=1, column=1)
         self.size_q_entry.insert(END, '5')
 
-        Button(page4, text='Sample space', command=self.sample_space).grid(row=6, column=0, sticky=W, padx=4, pady=4)
+        Button(frame_left, text='Sample space', command=self.sample_space).grid(row=6, column=0, sticky=W, padx=4, pady=4)
 
-        ttk.Separator(page4, orient=VERTICAL).grid(column=2, row=1, rowspan=7, sticky='ns', padx=10, pady=8)
+        ttk.Separator(frame_left, orient=VERTICAL).grid(column=2, row=1, rowspan=6, sticky='ns', padx=10, pady=8)
 
-        Label(page4, text="Set max_dept: ", anchor=W, justify=LEFT).grid(row=1, column=3, padx=10)
-        Label(page4, text="Set coverage: ", anchor=W, justify=LEFT).grid(row=2, column=3, padx=10)
-        Label(page4, text="Set epsilon: ", anchor=W, justify=LEFT).grid(row=3, column=3, padx=10)
-        Label(page4, text="Set algorithm: ", anchor=W, justify=LEFT).grid(row=4, column=3, padx=10)
+        Label(frame_left, text="Set max_dept: ", anchor=W, justify=LEFT).grid(row=1, column=3, padx=10)
+        Label(frame_left, text="Set coverage: ", anchor=W, justify=LEFT).grid(row=2, column=3, padx=10)
+        Label(frame_left, text="Set epsilon: ", anchor=W, justify=LEFT).grid(row=3, column=3, padx=10)
+        Label(frame_left, text="Set algorithm: ", anchor=W, justify=LEFT).grid(row=4, column=3, padx=10)
 
-        self.max_dept_entry = Entry(page4)
-        self.coverage_entry = Entry(page4)
-        self.epsilon_entry = Entry(page4)
-        self.algorithm_entry = Entry(page4)
+        self.max_dept_entry = Entry(frame_left)
+        self.coverage_entry = Entry(frame_left)
+        self.epsilon_entry = Entry(frame_left)
+        self.algorithm_entry = Entry(frame_left)
 
         self.max_dept_entry.grid(row=1, column=4)
         self.coverage_entry.grid(row=2, column=4)
@@ -290,32 +343,50 @@ class Gui(Tk):
         self.algorithm_entry.insert(END, '4')
 
         self.save_sample = BooleanVar()
-        c = Checkbutton(page4, text="Save results", variable=self.save_sample)
+        c = Checkbutton(frame_left, text="Save results", variable=self.save_sample)
         c.grid(row=5, column=0, sticky=W, padx=4, pady=4)
 
         self.save_refinement = BooleanVar()
-        c = Checkbutton(page4, text="Save results", variable=self.save_refinement)
+        c = Checkbutton(frame_left, text="Save results", variable=self.save_refinement)
         c.grid(row=5, column=3, sticky=W, pady=4, padx=10)
 
-        Button(page4, text='Refine space', command=self.refine_space).grid(row=6, column=3, sticky=W, pady=4, padx=10)
+        Button(frame_left, text='Refine space', command=self.refine_space).grid(row=6, column=3, sticky=W, pady=4, padx=10)
 
-        ttk.Separator(page4, orient=HORIZONTAL).grid(row=7, column=0, columnspan=7, sticky='nwe', pady=4)
+        ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=7, column=0, columnspan=7, sticky='nwe', pady=4)
 
-        self.space_text = scrolledtext.ScrolledText(page4, height=100)
-        self.space_text.grid(row=8, column=0, columnspan=16, rowspan=2, sticky=W+E+N+S, pady=4)  # pack(anchor=W, fill=X)
+        self.space_text = scrolledtext.ScrolledText(frame_left, height=100)
+        self.space_text.grid(row=12, column=0, columnspan=16, rowspan=2, sticky=W+E+N+S, pady=4)  # pack(anchor=W, fill=X)
 
-        # page5 = ttk.Frame(nb, name="testy")
-        # # page5.pack(expand=True)
-        # nb.add(page5, text='testy')
+        frame_right = Frame(page5, width=200, height=200)
+        frame_right.pack(side=TOP, fill=X)
+
+        self.page5_plotframe = Frame(frame_right)
+        self.page5_plotframe.pack(fill=X)
+        self.page5_figure = pyplt.figure()
+        self.page5_a = self.page5_figure.add_subplot(111)
+        # print("type a", type(self.a))
+
+        self.page5_canvas = FigureCanvasTkAgg(self.page5_figure, master=self.page5_plotframe)  # A tk.DrawingArea.
+        self.page5_canvas.draw()
+        self.page5_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+
+        self.page5_toolbar = NavigationToolbar2Tk(self.page5_canvas, self.page5_plotframe)
+        self.page5_toolbar.update()
+        self.page5_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+
+
+        # page6 = ttk.Frame(nb, name="testy")
+        # # page6.pack(expand=True)
+        # nb.add(page6, text='testy')
         #
-        # self.testy_text = scrolledtext.ScrolledText(page5, height=100)
+        # self.testy_text = scrolledtext.ScrolledText(page6, height=100)
         # # self.testy_text.config(state="disabled")
         # # self.testy_text.grid(row=0, column=0, sticky=W + E + N + S, pady=4)
-        # Button(page5, text='Load results', command=self.load_functions).pack()
+        # Button(page6, text='Load results', command=self.load_functions).pack()
         # self.testy_text.pack()
         #
         # page6 = ttk.Frame(nb, name="testyy")
-        # # page5.pack(expand=True)
+        # # page6.pack(expand=True)
         # nb.add(page6, text='testy')
         #
         # self.testy_text2 = scrolledtext.ScrolledText(page6, height=100)
@@ -333,44 +404,44 @@ class Gui(Tk):
         main_menu.add_cascade(label="File", menu=file_menu)
 
         ## MENU-FILE-LOAD
-        load_menu = Menu(file_menu, tearoff=0)
-        file_menu.add_cascade(label="Load", menu=load_menu, underline=0)
-        load_menu.add_command(label="Load model", command=self.load_model)
-        load_menu.add_command(label="Load property", command=self.load_property)
-        load_menu.add_command(label="Load rational functions", command=self.load_functions)
-        load_menu.add_command(label="Load data", command=self.load_data)
-        load_menu.add_command(label="Load space", command=self.load_space)
-        file_menu.add_separator()
+        # load_menu = Menu(file_menu, tearoff=0)
+        # file_menu.add_cascade(label="Load", menu=load_menu, underline=0)
+        # load_menu.add_command(label="Load model", command=self.load_model)
+        # load_menu.add_command(label="Load property", command=self.load_property)
+        # load_menu.add_command(label="Load rational functions", command=self.load_functions)
+        # load_menu.add_command(label="Load data", command=self.load_data)
+        # load_menu.add_command(label="Load space", command=self.load_space)
+        # file_menu.add_separator()
 
         ## MENU-FILE-SAVE
-        save_menu = Menu(file_menu, tearoff=0)
-        file_menu.add_cascade(label="Save", menu=save_menu, underline=0)
-        save_menu.add_command(label="Save model", command=self.save_model)
-        save_menu.add_command(label="Save property", command=self.save_property)
-        # save_menu.add_command(label="Save rational functions", command=self.save_functions())  ## TBD MAYBE IN THE FUTURE
-        save_menu.add_command(label="Save data", command=self.save_data)
-        save_menu.add_command(label="Save space", command=self.save_space)
-        file_menu.add_separator()
+        # save_menu = Menu(file_menu, tearoff=0)
+        # file_menu.add_cascade(label="Save", menu=save_menu, underline=0)
+        # save_menu.add_command(label="Save model", command=self.save_model)
+        # save_menu.add_command(label="Save property", command=self.save_property)
+        # # save_menu.add_command(label="Save rational functions", command=self.save_functions())  ## TBD MAYBE IN THE FUTURE
+        # save_menu.add_command(label="Save data", command=self.save_data)
+        # save_menu.add_command(label="Save space", command=self.save_space)
+        # file_menu.add_separator()
 
         ## MENU-FILE-EXIT
         file_menu.add_command(label="Exit", command=self.quit)
 
         ## MENU-EDIT
-        edit_menu = Menu(main_menu, tearoff=0)
-        main_menu.add_cascade(label="Edit", menu=edit_menu)
+        # edit_menu = Menu(main_menu, tearoff=0)
+        # main_menu.add_cascade(label="Edit", menu=edit_menu)
 
         ## MENU-SHOW
-        show_menu = Menu(main_menu, tearoff=0)
-        main_menu.add_cascade(label="Show", menu=show_menu)
-        show_menu.add_command(label="Space", command=self.show_space)
+        # show_menu = Menu(main_menu, tearoff=0)
+        # main_menu.add_cascade(label="Show", menu=show_menu)
+        # show_menu.add_command(label="Space", command=self.show_space)
 
         ## MENU-ANALYSIS
-        analysis_menu = Menu(main_menu, tearoff=0)
-        main_menu.add_cascade(label="Analysis", menu=analysis_menu)
-        analysis_menu.add_command(label="Synthesise parameters", command=self.synth_params)
-        analysis_menu.add_command(label="Create intervals", command=self.create_intervals)
-        analysis_menu.add_command(label="Sample space", command=self.sample_space)
-        analysis_menu.add_command(label="Refine space", command=self.refine_space)
+        # analysis_menu = Menu(main_menu, tearoff=0)
+        # main_menu.add_cascade(label="Analysis", menu=analysis_menu)
+        # analysis_menu.add_command(label="Synthesise parameters", command=self.synth_params)
+        # analysis_menu.add_command(label="Create intervals", command=self.create_intervals)
+        # analysis_menu.add_command(label="Sample space", command=self.sample_space)
+        # analysis_menu.add_command(label="Refine space", command=self.refine_space)
 
         ## MENU-SETTINGS
         settings_menu = Menu(main_menu, tearoff=0)
@@ -543,7 +614,7 @@ class Gui(Tk):
         file (Path/String): direct path to load the function file
         """
         print("Loading functions ...")
-        self.status_set("Please select the prism/storm symbolic results to be loaded.")
+        self.status_set("Loading functions - checking inputs")
 
         print("self.program.get()", self.program.get())
         if self.program.get() == "prism":
@@ -555,7 +626,9 @@ class Gui(Tk):
             return
 
         ## If file to load is NOT preselected
+        print(file)
         if not file:
+            self.status_set("Please select the prism/storm symbolic results to be loaded.")
             spam = filedialog.askopenfilename(initialdir=initialdir, title="Rational functions loading - Select file",
                                               filetypes=(("text files", "*.txt"), ("all files", "*.*")))
         else:
@@ -831,6 +904,137 @@ class Gui(Tk):
             print("self.props", self.props)
             self.props_changed = True
 
+    def sample_fun(self):
+        """Sampling rational functions"""
+        print("Sampling rational functions ...")
+        self.status_set("Sampling rational functions. - checking inputs")
+        if self.fun_size_q_entry.get() == "":
+            messagebox.showwarning("Sampling rational functions", "Choose size_q, number of samples per dimension.")
+            return
+        if self.functions == "":
+            messagebox.showwarning("Sampling rational functions", "Load the functions first, please")
+            return
+
+        self.status_set("Sampling rational functions.")
+
+        ## TBD If self.functions got more than one entry
+        self.sampled_functions = sample_fun(self.functions, int(self.fun_size_q_entry.get()), debug=True)
+        self.sampled_functions_text.delete('1.0', END)
+        self.sampled_functions_text.insert('1.0', "rational function index, [parameter values], function value: \n")
+        spam = ""
+        for item in self.sampled_functions:
+            spam = spam + str(item) + ",\n"
+        self.sampled_functions_text.insert('2.0', spam[:-2])
+
+    def show_funs(self):
+        """Showing sampled rational functions in a single point"""
+        print("Showing sampled rational functions ...")
+        self.status_set("Showing sampled rational functions.")
+
+        if self.functions == "":
+            messagebox.showwarning("Sampling rational functions", "Load the functions first, please")
+            return
+
+        ## TBD Maybe rewrite this as key and pass the argument to load_param_intervals
+        self.key = StringVar()
+        self.status_set("Choosing parameters value:")
+        self.new_window = Toplevel(self)
+        label = Label(self.new_window,
+                      text="Please choose value of respective parameter:")
+        label.grid(row=0)
+        self.key.set(" ")
+
+        globals()["parameters"] = set()
+        for polynome in self.functions:
+            globals()["parameters"].update(find_param(polynome))
+        globals()["parameters"] = sorted(list(globals()["parameters"]))
+        self.parameters = globals()["parameters"]
+        print("self.parameters", self.parameters)
+
+        ## Parse parameters values
+        self.parameter_values = []
+        i = 1
+        ## For each param create an entry
+        for param in self.parameters:
+            Label(self.new_window, text=param, anchor=W, justify=LEFT).grid(row=i, column=0)
+            spam = Entry(self.new_window)
+            spam.grid(row=i, column=1)
+            spam.insert(END, '0')
+            self.parameter_values.append(spam)
+            i = i + 1
+
+        ## To be used to wait until the button is pressed
+        self.button_pressed.set(False)
+        load_param_values_button = Button(self.new_window, text="OK", command=self.load_param_values)
+        load_param_values_button.grid(row=i)
+
+        ## Waiting for the pop-up window closing
+        load_param_values_button.wait_variable(self.button_pressed)
+        print("key pressed")
+
+        ## TBD If self.functions got more than one entry
+        ## Getting the plot values instead of the plot itself
+        ax = eval_and_show(self.functions, self.parameter_values, give_back=True)
+
+        self.page3_figure.clf()
+        self.page3_a = self.page3_figure.add_subplot(111)
+        # print("setting values", ax)
+        self.page3_a.set_ylabel(ax[3])
+        self.page3_a.set_xlabel(ax[4])
+        self.page3_a.set_title(ax[5])
+        self.page3_a.bar(ax[0], ax[1], ax[2], color='b')
+
+        self.page3_figure.canvas.draw()
+        self.page3_figure.canvas.flush_events()
+
+    def show_funs_in_all_points(self):
+        """Showing sampled rational functions in all sampled points"""
+        def onclick(event):
+            self.button_pressed.set(True)
+
+        print("Showing sampled rational functions ...")
+        self.status_set("Showing sampled rational functions.")
+        if self.fun_size_q_entry.get() == "":
+            messagebox.showwarning("Sampling rational functions", "Choose size_q, number of samples per dimension.")
+            return
+
+        if self.functions == "":
+            messagebox.showwarning("Sampling rational functions", "Load the functions first, please")
+            return
+
+        ## TBD Maybe rewrite this as key and pass the argument to load_param_intervals
+
+        ## TBD If self.functions got more than one entry
+        self.button_pressed.set(False)
+        self.page3_figure.canvas.mpl_connect('button_press_event', onclick)
+
+        if not self.parameters:
+            globals()["parameters"] = set()
+            for polynome in self.functions:
+                globals()["parameters"].update(find_param(polynome))
+            globals()["parameters"] = sorted(list(globals()["parameters"]))
+            self.parameters = globals()["parameters"]
+            print("self.parameters", self.parameters)
+
+        self.Next_sample.config(state="normal")
+        for parameter_point in get_param_values(self.parameters, self.fun_size_q_entry.get(), False):
+            ax = eval_and_show(self.functions, parameter_point, give_back=True)
+
+            self.page3_figure.clf()
+
+            self.page3_a = self.page3_figure.add_subplot(111)
+            # print("setting values", ax)
+            self.page3_a.set_ylabel(ax[3])
+            self.page3_a.set_xlabel(ax[4])
+            self.page3_a.set_title(ax[5])
+            self.page3_a.bar(ax[0], ax[1], ax[2], color='b')
+
+            self.page3_figure.canvas.draw()
+            self.page3_figure.canvas.flush_events()
+
+            self.Next_sample.wait_variable(self.button_pressed)
+        self.Next_sample.config(state="disabled")
+
     def create_intervals(self):
         """Creates intervals from data"""
         print("Creating intervals ...")
@@ -943,7 +1147,6 @@ class Gui(Tk):
                 i = i + 1
 
             ## To be used to wait until the button is pressed
-            self.button_pressed = BooleanVar()
             self.button_pressed.set(False)
             load_param_intervals_button = Button(self.new_window, text="OK", command=self.load_param_intervals)
             load_param_intervals_button.grid(row=i)
@@ -986,6 +1189,16 @@ class Gui(Tk):
         self.button_pressed.set(True)
         print("self.space", self.space)
 
+    def load_param_values(self):
+        for param_index in range(len(self.parameter_values)):
+            ## Getting the values from each entry, low = [0], high = [1]
+            self.parameter_values[param_index] = float(self.parameter_values[param_index].get())
+        del self.key
+        self.new_window.destroy()
+        del self.new_window
+        self.button_pressed.set(True)
+        print("self.parameter_values", self.parameter_values)
+
     def sample_space(self):
         print("Sampling space ...")
         self.status_set("Space sampling - checking inputs")
@@ -1020,7 +1233,11 @@ class Gui(Tk):
         self.space_text.insert('end', self.space.nice_print())
         self.status_set("Space sampling done.")
 
-        self.space.show(sat_samples=True, unsat_samples=True, save=self.save_sample.get())
+        self.page5_figure, self.page5_a = self.space.show(sat_samples=True, unsat_samples=True, red=False, green=False,
+                                                          save=self.save_sample.get(),
+                                                          where=[self.page5_figure, self.page5_a])
+        self.page5_figure.canvas.draw()
+        self.page5_figure.canvas.flush_events()
 
     def refine_space(self):
         print("Refining space ...")
@@ -1059,7 +1276,9 @@ class Gui(Tk):
 
         self.status_set("Space refinement is running ...")
         self.space = check_deeper(self.space, self.props, self.max_depth, self.epsilon, self.coverage, silent=False,
-                                  version=self.alg, size_q=False, debug=False, save=self.save_refinement.get(), title="")
+                                  version=self.alg, size_q=False, debug=False, save=self.save_refinement.get(), title="", where=[self.page5_figure, self.page5_a])
+        self.page5_figure.canvas.draw()
+        self.page5_figure.canvas.flush_events()
         ## Show the space as niceprint()
         print("space", self.space)
         print()
@@ -1115,7 +1334,6 @@ class Gui(Tk):
 
 
 gui = Gui()
-
 ## System dependent fullscreen setting
 if "wind" in platform.system().lower():
     gui.state('zoomed')

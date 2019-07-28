@@ -26,7 +26,19 @@ def cartesian_product(*arrays):
     return arr.reshape(-1, la)
 
 
-def eval_and_show(fun_list, parameter_value, cumulative=False, debug=False):
+def get_param_values(parameters, size_q, debug):
+    parameter_values = []
+    for param in range(len(parameters)):
+        parameter_values.append(np.linspace(0, 1, size_q, endpoint=True))
+    parameter_values = cartesian_product(*parameter_values)
+    if (len(parameters) - 1) == 0:
+        parameter_values = np.linspace(0, 1, size_q, endpoint=True)[np.newaxis, :].T
+    if debug:
+        print("parameter_values", parameter_values)
+    return parameter_values
+
+
+def eval_and_show(fun_list, parameter_value, cumulative=False, debug=False, give_back=False):
     """ Creates bar plot of probabilities of i successes for given parametrisation
 
     Args
@@ -35,6 +47,7 @@ def eval_and_show(fun_list, parameter_value, cumulative=False, debug=False):
     parameter_value: (list of floats) array of param values
     cumulative: (Bool) if True cdf instead of pdf is visualised
     debug: (Bool) if debug extensive output is provided
+    give_back: (Bool) if True the plot is not shown but returned
     """
     parameters = set()
     for polynome in fun_list:
@@ -76,6 +89,8 @@ def eval_and_show(fun_list, parameter_value, cumulative=False, debug=False):
     print(title)
     ax.set_title(title)
     rects1 = ax.bar(range(len(fun_list)), a, width, color='b')
+    if give_back:
+        return [range(len(fun_list)), a, width, "Value", 'Rational function index', title]
     plt.show()
     return a
 
@@ -115,14 +130,8 @@ def sample(dic_fun, agents_quantities, size_q, debug=False):
             parameters = sorted(list(parameters))
             if debug:
                 print("parameters", parameters)
-            parameter_values = []
-            for param in range(len(parameters)):
-                parameter_values.append(np.linspace(0, 1, size_q, endpoint=True))
-            parameter_values = cartesian_product(*parameter_values)
-            if (len(parameters) - 1) == 0:
-                parameter_values = np.linspace(0, 1, size_q, endpoint=True)[np.newaxis, :].T
-            if debug:
-                print("parameter_values", parameter_values)
+
+            parameter_values = get_param_values(parameters, size_q, debug)
 
             for parameter_value in parameter_values:
                 if debug:
@@ -173,14 +182,8 @@ def sample_fun(list_fun, size_q, debug=False):
         parameters = sorted(list(parameters))
         if debug:
             print("parameters", parameters)
-        parameter_values = []
-        for param in range(len(parameters)):
-            parameter_values.append(np.linspace(0, 1, size_q, endpoint=True))
-        parameter_values = cartesian_product(*parameter_values)
-        if (len(parameters) - 1) == 0:
-            parameter_values = np.linspace(0, 1, size_q, endpoint=True)[np.newaxis, :].T
-        if debug:
-            print("parameter_values", parameter_values)
+
+        parameter_values = get_param_values(parameters, size_q, debug)
 
         for parameter_value in parameter_values:
             if debug:
@@ -209,6 +212,7 @@ def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug=False)
     agents_quantities: (int) pop sizes to be used
     cumulative: (Bool) if True cdf instead of pdf is visualised
     debug: (Bool) if debug extensive output is provided
+    where: (Tuple/List) : output matplotlib sources to output created figure
     """
 
     for N in agents_quantities:
@@ -226,14 +230,9 @@ def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug=False)
         parameters = sorted(list(parameters))
         if debug:
             print("parameters", parameters)
-        parameter_values = []
-        for param in range(len(parameters)):
-            parameter_values.append(np.linspace(0, 1, size_q, endpoint=True))
-        parameter_values = cartesian_product(*parameter_values)
-        if (len(parameters) - 1) == 0:
-            parameter_values = np.linspace(0, 1, size_q, endpoint=True)[np.newaxis, :].T
-        if debug:
-            print("parameter_values", parameter_values)
+
+        parameter_values = get_param_values(parameters, size_q, debug)
+
         for parameter_value in parameter_values:
             if debug:
                 print("parameter_value", parameter_value)

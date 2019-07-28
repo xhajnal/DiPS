@@ -216,7 +216,7 @@ def props_to_ineq(props, silent=True, debug=False):
                 ## The righthandside is number
                 float(spam[1])
                 if debug:
-                    print("righthandside ",float(spam[1]))
+                    print("righthandside ", float(spam[1]))
             except ValueError:
                 spam = [f"{spam[0]} -( {spam[1]})", 0]
 
@@ -464,7 +464,7 @@ def check_safe(region, props, silent=False, called=False):
         return s.model()
 
 
-def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=False, debug=False, save=False, title=""):
+def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=False, debug=False, save=False, title="", where=False):
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
 
     Args
@@ -480,6 +480,7 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
     debug: (Bool): if True extensive print will be used
     save: (Bool): if True output is stored
     title: (string): text to be added in Figure titles
+    where: (Tuple/List) : output matplotlib sources to output created figure
     """
 
     ## INITIALISATION
@@ -523,7 +524,7 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
     ## If the region is just list of intervals - a space is to be created
     else:
         ### Regions
-        ### Taking care of unchangable tuples
+        ### Taking care of unchangeable tuples
         for interval_index in range(len(region)):
             region[interval_index] = [region[interval_index][0], region[interval_index][1]]
 
@@ -818,7 +819,7 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
                 return space
 
             ## Showing the step refinements of respective rectangles from the white space
-            space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time() - start_time)} second(s)", save=save)
+            space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time() - start_time)} second(s)", save=save, where=where)
             print()
             if space.get_coverage() >= coverage:
                 break
@@ -840,7 +841,7 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
 
     ## VISUALISATION
     if not size_q:
-        space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time() - start_time)} second(s)", save=save)
+        space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time() - start_time)} second(s)", save=save, where=where)
     print("result coverage is: ", space.get_coverage())
     return space
 
@@ -1050,7 +1051,7 @@ def private_check_deeper_queue_checking(region, props, n, epsilon, coverage, sil
     model: (example,counterexample) of the satisfaction in the given region
     """
 
-    ## TBD check consitency
+    ## TBD check consistency
     # print(region,prop,n,epsilon,coverage,silent)
     # print("check equal", globals()["non_white_area"],non_white_area)
     # print("check equal", globals()["whole_area"],whole_area)
@@ -1166,7 +1167,7 @@ def private_check_deeper_queue_checking_both(region, props, n, epsilon, coverage
     model: (example, counterexample) of the satisfaction in the given region
     """
 
-    ## TBD check consitency
+    ## TBD check consistency
     # print(region,prop,n,epsilon,coverage,silent)
     # print("check equal", globals()["non_white_area"],non_white_area)
     # print("check equal", globals()["whole_area"],whole_area)
@@ -2171,7 +2172,7 @@ class TestLoad(unittest.TestCase):
 
         # result6 = check_deeper([(0.0869140625000000, 0.112304687500000), (0, 1)], ineq_to_props([replaced_f6], [intervals[6]], 16, 0.01**3*0.5, 0.999, False, 5)
 
-        ## TO RUN THIS TEST UNCOMENT FOLLOWING LINE
+        ## TO RUN THIS TEST UNCOMMENT FOLLOWING LINE
         # result6 = check_deeper([(0.0869140625000000, 0.112304687500000), (0, 1)], ineq_to_props([replaced_f6], [intervals[6]], 16, 0.01 ** 3 , 0.999, False, 4)
 
         print("  It took", socket.gethostname(), time() - start_time, "seconds to run")
