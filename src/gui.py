@@ -73,7 +73,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.1.2"  ## version of the gui
+        self.version = "1.1.3"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -144,8 +144,8 @@ class Gui(Tk):
 
 
         ## TAB EDIT
-        page1 = ttk.Frame(nb, width=600, height=200, name="edit")  # Adds tab 1 of the notebook
-        nb.add(page1, text='Edit', state="normal", sticky="nsew")
+        page1 = ttk.Frame(nb, width=600, height=200, name="model_properties")  # Adds tab 1 of the notebook
+        nb.add(page1, text='Model & Properties', state="normal", sticky="nsew")
 
         # page1.rowconfigure(5, weight=1)
         # page1.columnconfigure(6, weight=1)
@@ -641,18 +641,22 @@ class Gui(Tk):
         if spam == "":
             self.status_set("No file selected.")
             return
-        if not self.functions_file.get() == "":
+        # print("self.functions_file.get() ", self.functions_file.get())
+        self.functions_file.set(spam)
+        # print("self.functions_file.get() ", self.functions_file.get())
+        if not self.functions_file.get() is "":
             self.functions_changed = True
             self.model_changed = False
             self.property_changed = False
-        self.functions_file.set(spam)
-        print("self.factor", self.factor.get())
+        # print("self.functions_changed", self.functions_changed)
+
+        # print("self.factor", self.factor.get())
         self.functions, rewards = load_all_functions(self.functions_file.get(), tool=self.program.get(),
                                                      factorize=self.factor.get(), agents_quantities=False,
                                                      rewards_only=False, f_only=False)
         ## Merge functions and rewards
-        print("self.functions", self.functions)
-        print("rewards", rewards)
+        # print("self.functions", self.functions)
+        # print("rewards", rewards)
         for key in self.functions.keys():
             if key in rewards.keys():
                 self.functions[key].extend(rewards[key])
@@ -855,55 +859,60 @@ class Gui(Tk):
     ## ANALYSIS
     def synth_params(self):
         print("Synthesising parameters ...")
-        self.status_set("Parameter synthesis - checking inputs")
+        proceed = True
+        if self.functions_changed:
+            proceed = askyesno("Parameter synthesis", "Synthesising the parameters will overwrite current functions. Do you want to proceed?")
 
-        if self.model_changed:
-            messagebox.showwarning("Parameter synthesis", "The model for parameter synthesis has changed in the mean time, please consider that.")
-        if self.property_changed:
-            messagebox.showwarning("Parameter synthesis", "The properties for parameter synthesis have changed in the mean time, please consider that.")
-        ## If model file not selected load model
-        if self.model_file.get() is "":
-            self.status_set("Load model for parameter synthesis")
-            self.load_model()
+        if proceed:
+            self.status_set("Parameter synthesis - checking inputs")
 
-        ## If property file not selected load property
-        if self.property_file.get() is "":
-            self.status_set("Load property for parameter synthesis")
-            self.load_property()
+            if self.model_changed:
+                messagebox.showwarning("Parameter synthesis", "The model for parameter synthesis has changed in the mean time, please consider that.")
+            if self.property_changed:
+                messagebox.showwarning("Parameter synthesis", "The properties for parameter synthesis have changed in the mean time, please consider that.")
+            ## If model file not selected load model
+            if self.model_file.get() is "":
+                self.status_set("Load model for parameter synthesis")
+                self.load_model()
 
-        if self.program.get().lower() == "prism":
-            self.status_set("Parameter synthesis is running ...")
-            call_prism_files(self.model_file.get(), [], param_intervals=False, seq=False, noprobchecks=False, memory="",
-                             model_path="", properties_path=self.property_dir, property_file=self.property_file.get(),
-                             output_path=self.prism_results)
-            ## Deriving output file
-            self.functions_file.set(str(os.path.join(Path(self.prism_results), str(Path(self.model_file.get()).stem)+"_"+str(Path(self.property_file.get()).stem)+".txt")))
-            self.status_set("Parameter synthesised finished. Output here: {}", self.functions_file.get())
-            self.load_functions(self.functions_file.get())
-            # self.functions_text.delete('1.0', END)
-            # self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
+            ## If property file not selected load property
+            if self.property_file.get() is "":
+                self.status_set("Load property for parameter synthesis")
+                self.load_property()
 
-        elif self.program.get().lower() == "storm":
-            self.status_set("Parameter synthesis running ...")
-            call_storm_files(self.model_file.get(), [], model_path="", properties_path=self.property_dir,
-                             property_file=self.property_file.get(), output_path=self.storm_results, time=False)
-            ## Deriving output file
-            self.functions_file.set(str(os.path.join(Path(self.storm_results), str(Path(self.model_file.get()).stem) + "_" + str(Path(self.property_file.get()).stem) + ".cmd")))
-            self.status_set("Command to run the parameter synthesis saved here: {}", self.functions_file.get())
-            self.load_functions(self.functions_file.get())
-            # self.functions_text.delete('1.0', END)
-            # self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
-        else:
-            ## Show window to inform to select the program
-            self.status_set("Program for parameter synthesis not selected")
-            messagebox.showwarning("Synthesise", "Select a program for parameter synthesis first.")
-            return
+            if self.program.get().lower() == "prism":
+                self.status_set("Parameter synthesis is running ...")
+                call_prism_files(self.model_file.get(), [], param_intervals=False, seq=False, noprobchecks=False, memory="",
+                                 model_path="", properties_path=self.property_dir, property_file=self.property_file.get(),
+                                 output_path=self.prism_results)
+                ## Deriving output file
+                self.functions_file.set(str(os.path.join(Path(self.prism_results), str(Path(self.model_file.get()).stem)+"_"+str(Path(self.property_file.get()).stem)+".txt")))
+                self.status_set("Parameter synthesised finished. Output here: {}", self.functions_file.get())
+                self.load_functions(self.functions_file.get())
+                # self.functions_text.delete('1.0', END)
+                # self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
 
-        ## If data loaded update props
-        if not self.data == "":
-            self.props = ineq_to_props(self.functions, self.intervals, silent=True)
-            print("self.props", self.props)
-            self.props_changed = True
+            elif self.program.get().lower() == "storm":
+                self.status_set("Parameter synthesis running ...")
+                call_storm_files(self.model_file.get(), [], model_path="", properties_path=self.property_dir,
+                                 property_file=self.property_file.get(), output_path=self.storm_results, time=False)
+                ## Deriving output file
+                self.functions_file.set(str(os.path.join(Path(self.storm_results), str(Path(self.model_file.get()).stem) + "_" + str(Path(self.property_file.get()).stem) + ".cmd")))
+                self.status_set("Command to run the parameter synthesis saved here: {}", self.functions_file.get())
+                self.load_functions(self.functions_file.get())
+                # self.functions_text.delete('1.0', END)
+                # self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
+            else:
+                ## Show window to inform to select the program
+                self.status_set("Program for parameter synthesis not selected")
+                messagebox.showwarning("Synthesise", "Select a program for parameter synthesis first.")
+                return
+
+            ## If data loaded update props
+            if not self.data == "":
+                self.props = ineq_to_props(self.functions, self.intervals, silent=True)
+                print("self.props", self.props)
+                self.props_changed = True
 
     def sample_fun(self):
         """Sampling rational functions"""
