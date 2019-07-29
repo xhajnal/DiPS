@@ -236,11 +236,13 @@ class RefinedSpace:
                 region[0] = (region[0][0] - 0.2, region[0][1] + 0.2)
             pic.axis([region[0][0], region[0][1], 0, 1])
 
+            max_region_size = region[0][1] - region[0][0]
             if len(self.region) == 2:
                 pic.set_ylabel(self.params[1])
                 if region[1][1] - region[1][0] < 0.1:
                     region[1] = (region[1][0] - 0.2, region[1][1] + 0.2)
                 pic.axis([region[0][0], region[0][1], region[1][0], region[1][1]])
+                max_region_size = max(max_region_size, region[1][1] - region[1][0])
 
             pretitle = ""
             if green or red:
@@ -260,14 +262,13 @@ class RefinedSpace:
             if self.true_point and true_point:
                 # print(self.true_point)
                 if (len(self.sat_samples) + len(self.unsat_samples)) == 0 or len(self.region) == 0:
-                    size_correction = 0.01
+                    size_correction = 0.01 * max_region_size
                 else:
                     size_correction = min(1 / (len(self.sat_samples) + len(self.unsat_samples)) ** (1 / len(self.region)), 0.01)
                 circle = plt.Circle((self.true_point[0], self.true_point[1]), size_correction*1, color='b', fill=False)
                 plt.gcf().gca().add_artist(circle)
 
             whole_title = f"{pretitle} red = unsafe region, green = safe region, white = in between \n{self.title} \n {title}"
-            print("whole_title: \n", whole_title)
             pic.set_title(whole_title)
             with open(os.path.join(refinement_results, "figure_to_title.txt"), "a+") as file:
                 file.write(f"{save} : {whole_title}\n")
