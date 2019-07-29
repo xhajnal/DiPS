@@ -73,7 +73,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.1.4"  ## version of the gui
+        self.version = "1.1.5"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -244,6 +244,9 @@ class Gui(Tk):
         self.page3_toolbar = NavigationToolbar2Tk(self.page3_canvas, self.page3_plotframe)
         self.page3_toolbar.update()
         self.page3_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+
+        self.page3_figure_locked = BooleanVar()
+        self.page3_figure_locked.set(False)
 
 
         ## TAB DATA CONVERSION
@@ -930,6 +933,12 @@ class Gui(Tk):
         print("Showing sampled rational functions ...")
         self.status_set("Showing sampled rational functions.")
 
+        ## Disable overwriting the plot by show_funs_in_all_points
+        if self.page3_figure_locked.get():
+            if not askyesno("Show functions in a single point", "The result plot is currently in use. Do you want override?"):
+                return
+        self.page3_figure_locked.set(True)
+
         if self.functions == "":
             messagebox.showwarning("Sampling rational functions", "Load the functions first, please")
             return
@@ -993,6 +1002,12 @@ class Gui(Tk):
 
         print("Showing sampled rational functions ...")
         self.status_set("Showing sampled rational functions.")
+
+        if self.page3_figure_locked.get():
+            if not askyesno("Show all sampled points", "The result plot is currently in use. Do you want override?"):
+                return
+        self.page3_figure_locked.set(False)
+
         if self.fun_size_q_entry.get() == "":
             messagebox.showwarning("Sampling rational functions", "Choose size_q, number of samples per dimension.")
             return
@@ -1017,6 +1032,9 @@ class Gui(Tk):
 
         self.Next_sample.config(state="normal")
         for parameter_point in get_param_values(self.parameters, self.fun_size_q_entry.get(), False):
+            ## If
+            if self.page3_figure_locked.get():
+                return
             ax = eval_and_show(self.functions, parameter_point, give_back=True)
 
             self.page3_figure.clf()
@@ -1033,6 +1051,7 @@ class Gui(Tk):
 
             self.Next_sample.wait_variable(self.button_pressed)
         self.Next_sample.config(state="disabled")
+        self.page3_figure_locked.set(False)
 
     def create_intervals(self):
         """Creates intervals from data"""
