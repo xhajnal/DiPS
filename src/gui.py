@@ -8,6 +8,7 @@ import pickle
 import os
 from pathlib import Path
 from tkinter import filedialog, ttk
+from tkinter.messagebox import askyesno
 
 import matplotlib.pyplot as pyplt
 import matplotlib
@@ -72,7 +73,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.1.1"  ## version of the gui
+        self.version = "1.1.2"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -141,24 +142,10 @@ class Gui(Tk):
         nb = ttk.Notebook(self)
         nb.pack(fill="both", expand=1)
 
+
         ## TAB EDIT
         page1 = ttk.Frame(nb, width=600, height=200, name="edit")  # Adds tab 1 of the notebook
-        ## TBD CHANGE THE STATE OF THE TAB WHILE RUNNING
-        # style = ttk.Style()
-        # style.configure("BW.TLabel", foreground="black", background="white")
-        # print("self.model.get()", self.model_file.get())
-        # print("self.property.get()", self.property_file.get())
-        # print(self.model_file.get() is "")
-        # state = ("disabled", "normal")[(self.model_file.get() is not "") or (self.property_file.get() is not "")]
-        # print("state", state)
-        # lambdaaa = lambda: "disabled" if (self.model_file.get() is "") else "normal"
-        # print("lambdaaa", lambdaaa())
         nb.add(page1, text='Edit', state="normal", sticky="nsew")
-
-        # self.model_file.set("dsada")
-        # nb.update()
-        # page1.update()
-        # print("lambdaaa", lambdaaa())
 
         # page1.rowconfigure(5, weight=1)
         # page1.columnconfigure(6, weight=1)
@@ -191,9 +178,6 @@ class Gui(Tk):
 
         # print(nb.select(0), type(nb.select(0)))
         # print(page1, type(page1))
-
-        # page1.state(("normal",))
-        # page1.s
 
 
         ## TAB SYNTHESISE
@@ -503,7 +487,7 @@ class Gui(Tk):
         os.chdir(cwd)
 
     ## LOGIC
-    ## FILE
+    ## FILE - LOAD AND SAVE
     def load_model(self):
         print("Loading model ...")
         self.status_set("Please select the model to be loaded.")
@@ -697,23 +681,24 @@ class Gui(Tk):
         """" unfolds the function dictionary into a single list """
         if isinstance(self.functions, dict):
             ## TBD Maybe rewrite this as key and pass the argument to unfold_functions2
+            ## NO because dunno how to send it to the function as a argument
             self.key = StringVar()
             self.status_set(
                 "Loaded functions are in a form of dictionary, please select which item you would like to choose:")
-            self.new_window = Toplevel(self)
-            label = Label(self.new_window,
+            self.functions_window = Toplevel(self)
+            label = Label(self.functions_window,
                           text="Loaded functions are in a form of dictionary, please select which item you would like to choose:")
             label.pack()
             self.key.set(" ")
 
             first = True
             for key in self.functions.keys():
-                spam = Radiobutton(self.new_window, text=key, variable=self.key, value=key)
+                spam = Radiobutton(self.functions_window, text=key, variable=self.key, value=key)
                 spam.pack(anchor=W)
                 if first:
                     spam.select()
                     first = False
-            spam = Button(self.new_window, text="OK", command=self.unfold_functions2)
+            spam = Button(self.functions_window, text="OK", command=self.unfold_functions2)
             spam.pack()
         else:
             self.functions_parsed_text.delete('1.0', END)
@@ -727,7 +712,7 @@ class Gui(Tk):
             self.functions = self.functions[eval(self.key.get())]
 
         print(self.functions)
-        self.new_window.destroy()
+        self.functions_window.destroy()
         self.unfold_functions()
 
     def load_space(self):
@@ -1114,9 +1099,15 @@ class Gui(Tk):
 
     def refresh_space(self):
         """Unloads space"""
-        self.space = ""
-        self.space_changed = False
-        self.status_set("Space deleted.")
+        if askyesno("Sample & Refine", "Data of the space, its text representation, and the plot will be lost. Do you want to proceed?"):
+            self.space = ""
+            self.space_changed = False
+            self.space_text.delete('1.0', END)
+            self.page5_figure.clf()
+            self.page5_a = self.page5_figure.add_subplot(111)
+            self.page5_figure.canvas.draw()
+            self.page5_figure.canvas.flush_events()
+            self.status_set("Space deleted.")
 
     def validate_space(self, position=False):
         """ Checking validity of the space
