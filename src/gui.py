@@ -73,7 +73,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.1.3"  ## version of the gui
+        self.version = "1.1.4"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -670,11 +670,6 @@ class Gui(Tk):
         self.functions_text.delete('1.0', END)
         self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
 
-        ## If data loaded update props
-        if not self.data == "":
-            self.props = ineq_to_props(self.functions, self.intervals, silent=True)
-            print("self.props", self.props)
-
         # self.testy_text.delete('1.0', END)
         # self.testy_text.insert('1.0', open(self.functions_file.get(), 'r').read())
         #
@@ -908,12 +903,6 @@ class Gui(Tk):
                 messagebox.showwarning("Synthesise", "Select a program for parameter synthesis first.")
                 return
 
-            ## If data loaded update props
-            if not self.data == "":
-                self.props = ineq_to_props(self.functions, self.intervals, silent=True)
-                print("self.props", self.props)
-                self.props_changed = True
-
     def sample_fun(self):
         """Sampling rational functions"""
         print("Sampling rational functions ...")
@@ -1069,12 +1058,6 @@ class Gui(Tk):
         self.status_set("Intervals created.")
 
         self.data_changed = True
-
-        ## If functions loaded update props
-        if not self.functions == "":
-            self.props = ineq_to_props(self.functions, self.intervals, silent=True)
-            print("self.props", self.props)
-            self.props_changed = True
 
     def validate_props(self, position=False):
         """ Validating created properties
