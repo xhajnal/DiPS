@@ -72,7 +72,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.1.0"  ## version of the gui
+        self.version = "1.1.1"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -577,19 +577,35 @@ class Gui(Tk):
             self.status_set(
                 "Loaded data are in a form of dictionary, please select which item you would like to choose:")
             self.new_window = Toplevel(self)
-            label = Label(self.new_window,
-                          text="Loaded data are in a form of dictionary, please select which item you would like to choose:")
+            ## SCROLABLE WINDOW
+            canvas = Canvas(self.new_window)
+            canvas.pack(side=LEFT)
+            self.new_window.maxsize(800, 800)
+
+            scrollbar = Scrollbar(self.new_window, command=canvas.yview)
+            scrollbar.pack(side=LEFT, fill='y')
+
+            canvas.configure(yscrollcommand=scrollbar.set)
+
+            def on_configure(event):
+                canvas.configure(scrollregion=canvas.bbox('all'))
+
+            canvas.bind('<Configure>', on_configure)
+            frame = Frame(canvas)
+            canvas.create_window((0, 0), window=frame, anchor='nw')
+
+            label = Label(frame, text="Loaded data are in a form of dictionary, please select which item you would like to choose:")
             label.pack()
             self.key.set(" ")
 
             first = True
             for key in self.data.keys():
-                spam = Radiobutton(self.new_window, text=key, variable=self.key, value=key)
+                spam = Radiobutton(frame, text=key, variable=self.key, value=key)
                 spam.pack(anchor=W)
                 if first:
                     spam.select()
                     first = False
-            spam = Button(self.new_window, text="OK", command=self.unfold_data2)
+            spam = Button(frame, text="OK", command=self.unfold_data2)
             spam.pack()
         else:
             self.data_text.delete('1.0', END)
