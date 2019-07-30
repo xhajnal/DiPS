@@ -341,6 +341,8 @@ class RefinedSpace:
 
             if sat_samples and self.gridsampled and not self.unsat_samples:
                 print("Since no unsat samples, the whole grid of points are sat, not visualising this trivial case.")
+                if where:
+                    return None, "Since no unsat samples, the whole grid of points are sat, not visualising this trivial case."
 
             ## Show only if unsat_samples selected and either there are some sat samples or the sampling was not grid
             if unsat_samples and (not self.gridsampled or self.sat_samples):
@@ -382,6 +384,12 @@ class RefinedSpace:
 
             if unsat_samples and self.gridsampled and not self.sat_samples:
                 print("Since no sat samples, the whole grid of points are unsat, not visualising this trivial case.")
+                if where:
+                    return None, "Since no sat samples, the whole grid of points are unsat, not visualising this trivial case."
+
+            if red or green:
+                if where:
+                    return None, "Visualisation of multidimensional space not implemented yet."
 
     def get_volume(self):
         """Returns the volume of the space"""

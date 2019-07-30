@@ -202,7 +202,7 @@ def sample_fun(list_fun, size_q, debug=False):
     return arr
 
 
-def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug=False):
+def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug=False, show_all_in_one=False, where=False):
     """ Creates bar plot of probabilities of i successes for sampled parametrisation
 
     Args
@@ -212,6 +212,7 @@ def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug=False)
     agents_quantities: (int) pop sizes to be used
     cumulative: (Bool) if True cdf instead of pdf is visualised
     debug: (Bool) if debug extensive output is provided
+    show_all_in_one: (Bool) if True all plots are put into one window
     where: (Tuple/List) : output matplotlib sources to output created figure
     """
 

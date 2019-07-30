@@ -51,6 +51,7 @@ class Gui(Tk):
         self.property_file = StringVar()  ## Property file
         self.data_file = StringVar()  ## Data file
         self.functions_file = StringVar()  ## Rational functions file
+        self.props_file = StringVar()  ## Props file
         self.space_file = StringVar()  ## Space file
 
         ## Checking the change
@@ -73,7 +74,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.1.5"  ## version of the gui
+        self.version = "1.2.1"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -287,11 +288,23 @@ class Gui(Tk):
         self.interval_text.grid(row=7, column=0, columnspan=2, sticky=W, pady=4)
 
 
-        ## TAB SAMPLE AND REFINEMENT
-        page5 = ttk.Frame(nb, width=400, height=200, name="refine")
-        nb.add(page5, text='Sample & Refine')
+        ## TAB PROPS
+        page5 = ttk.Frame(nb, width=400, height=200, name="props")
+        nb.add(page5, text='Props')
 
-        frame_left = Frame(page5, width=200, height=200)
+        Button(page5, text='Show props', command=self.show_props).grid(row=0, column=0, sticky=W, pady=4)
+        Button(page5, text='Load props', command=self.load_props).grid(row=0, column=1, sticky=W, pady=4)
+        Button(page5, text='Append props', command=self.append_props).grid(row=0, column=2, sticky=W, pady=4)
+
+        self.props_text = scrolledtext.ScrolledText(page5, height=100)
+        self.props_text.grid(row=1, column=0, columnspan=16, rowspan=2, sticky=W+E+N+S, pady=4)  # pack(anchor=W, fill=X)
+
+
+        ## TAB SAMPLE AND REFINEMENT
+        page6 = ttk.Frame(nb, width=400, height=200, name="refine")
+        nb.add(page6, text='Sample & Refine')
+
+        frame_left = Frame(page6, width=200, height=200)
         frame_left.pack(side=LEFT, fill=X)
 
         Button(frame_left, text='Load space', command=self.load_space).grid(row=0, column=0, sticky=W, pady=4)
@@ -344,42 +357,42 @@ class Gui(Tk):
         self.space_text = scrolledtext.ScrolledText(frame_left, height=100)
         self.space_text.grid(row=12, column=0, columnspan=16, rowspan=2, sticky=W+E+N+S, pady=4)  # pack(anchor=W, fill=X)
 
-        frame_right = Frame(page5, width=200, height=200)
+        frame_right = Frame(page6, width=200, height=200)
         frame_right.pack(side=TOP, fill=X)
 
-        self.page5_plotframe = Frame(frame_right)
-        self.page5_plotframe.pack(fill=X)
-        self.page5_figure = pyplt.figure()
-        self.page5_a = self.page5_figure.add_subplot(111)
+        self.page6_plotframe = Frame(frame_right)
+        self.page6_plotframe.pack(fill=X)
+        self.page6_figure = pyplt.figure()
+
         # print("type a", type(self.a))
 
-        self.page5_canvas = FigureCanvasTkAgg(self.page5_figure, master=self.page5_plotframe)  # A tk.DrawingArea.
-        self.page5_canvas.draw()
-        self.page5_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+        self.page6_canvas = FigureCanvasTkAgg(self.page6_figure, master=self.page6_plotframe)  # A tk.DrawingArea.
+        self.page6_canvas.draw()
+        self.page6_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
 
-        self.page5_toolbar = NavigationToolbar2Tk(self.page5_canvas, self.page5_plotframe)
-        self.page5_toolbar.update()
-        self.page5_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+        self.page6_toolbar = NavigationToolbar2Tk(self.page6_canvas, self.page6_plotframe)
+        self.page6_toolbar.update()
+        self.page6_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+        self.page6_a = self.page6_figure.add_subplot(111)
 
-
-        # page6 = ttk.Frame(nb, name="testy")
-        # # page6.pack(expand=True)
-        # nb.add(page6, text='testy')
+        # page7 = ttk.Frame(nb, name="testy")
+        # # page7.pack(expand=True)
+        # nb.add(page7, text='testy')
         #
-        # self.testy_text = scrolledtext.ScrolledText(page6, height=100)
+        # self.testy_text = scrolledtext.ScrolledText(page7, height=100)
         # # self.testy_text.config(state="disabled")
         # # self.testy_text.grid(row=0, column=0, sticky=W + E + N + S, pady=4)
-        # Button(page6, text='Load results', command=self.load_functions).pack()
+        # Button(page7, text='Load results', command=self.load_functions).pack()
         # self.testy_text.pack()
         #
-        # page6 = ttk.Frame(nb, name="testyy")
-        # # page6.pack(expand=True)
-        # nb.add(page6, text='testy')
+        # page7 = ttk.Frame(nb, name="testyy")
+        # # page7.pack(expand=True)
+        # nb.add(page7, text='testy')
         #
-        # self.testy_text2 = scrolledtext.ScrolledText(page6, height=100)
+        # self.testy_text2 = scrolledtext.ScrolledText(page7, height=100)
         # # self.testy_text.config(state="disabled")
         # # self.testy_text.grid(row=0, column=0, sticky=W + E + N + S, pady=4)
-        # Button(page6, text='Load results', command=self.load_functions).grid()
+        # Button(page7, text='Load results', command=self.load_functions).grid()
         # self.testy_text2.grid()
 
         ## MENU
@@ -493,6 +506,9 @@ class Gui(Tk):
     ## FILE - LOAD AND SAVE
     def load_model(self):
         print("Loading model ...")
+        if self.model_changed:
+            if not askyesno("Loading model", "Previously obtained model will be lost. Do you want to proceed?"):
+                return
         self.status_set("Please select the model to be loaded.")
 
         spam = filedialog.askopenfilename(initialdir=self.model_dir, title="Model loading - Select file",
@@ -501,18 +517,20 @@ class Gui(Tk):
         if spam == "":
             self.status_set("No file selected.")
             return
-
-        if not self.model_file.get() == "":
+        else:
             self.model_changed = True
-        self.model_file.set(spam)
-        self.model_text.delete('1.0', END)
-        self.model_text.insert('end', open(self.model_file.get(), 'r').read())
+            self.model_file.set(spam)
+            self.model_text.delete('1.0', END)
+            self.model_text.insert('end', open(self.model_file.get(), 'r').read())
 
-        self.status_set("Model loaded.")
-        # print("self.model", self.model.get())
+            self.status_set("Model loaded.")
+            # print("self.model", self.model.get())
 
     def load_property(self):
         print("Loading properties ...")
+        if self.property_changed:
+            if not askyesno("Loading properties", "Previously obtained properties will be lost. Do you want to proceed?"):
+                return
         self.status_set("Please select the property to be loaded.")
 
         spam = filedialog.askopenfilename(initialdir=self.property_dir, title="Property loading - Select file",
@@ -521,17 +539,20 @@ class Gui(Tk):
         if spam == "":
             self.status_set("No file selected.")
             return
-
-        if not self.property_file.get() == "":
+        else:
             self.property_changed = True
-        self.property_file.set(spam)
-        self.property_text.delete('1.0', END)
-        self.property_text.insert('end', open(self.property_file.get(), 'r').read())
-        self.status_set("Property loaded.")
-        # print("self.property", self.property.get())
+            self.property_file.set(spam)
+            self.property_text.delete('1.0', END)
+            self.property_text.insert('end', open(self.property_file.get(), 'r').read())
+            self.status_set("Property loaded.")
+            # print("self.property", self.property.get())
 
     def load_data(self):
         print("Loading data ...")
+        if self.data_changed:
+            if not askyesno("Loading data", "Previously obtained data will be lost. Do you want to proceed?"):
+                return
+
         self.status_set("Please select the data to be loaded.")
 
         spam = filedialog.askopenfilename(initialdir=self.data_dir, title="Data loading - Select file",
@@ -540,21 +561,19 @@ class Gui(Tk):
         if spam == "":
             self.status_set("No file selected.")
             return
-
-        if not self.data_file.get() == "":
-            self.data_changed = True
-        self.data_file.set(spam)
-
-        if ".p" in self.data_file.get():
-            self.data = pickle.load(open(self.data_file.get(), "rb"))
-
-            self.unfold_data()
         else:
-            print()
-            ## TBD
-            # self.data = PARSE THE DATA
-        # print(self.data)
-        self.status_set("Data loaded.")
+            self.data_changed = True
+            self.data_file.set(spam)
+
+            if ".p" in self.data_file.get():
+                self.data = pickle.load(open(self.data_file.get(), "rb"))
+                self.unfold_data()
+            else:
+                print()
+                ## TBD
+                # self.data = PARSE THE DATA
+            # print(self.data)
+            self.status_set("Data loaded.")
 
     def unfold_data(self):
         """" unfolds the data dictionary into a single list"""
@@ -617,6 +636,10 @@ class Gui(Tk):
         file (Path/String): direct path to load the function file
         """
         print("Loading functions ...")
+        if self.functions_changed:
+            if not askyesno("Loading functions", "Previously obtained functions will be lost. Do you want to proceed?"):
+                return
+
         self.status_set("Loading functions - checking inputs")
 
         print("self.program.get()", self.program.get())
@@ -649,8 +672,8 @@ class Gui(Tk):
         # print("self.functions_file.get() ", self.functions_file.get())
         if not self.functions_file.get() is "":
             self.functions_changed = True
-            self.model_changed = False
-            self.property_changed = False
+            # self.model_changed = False
+            # self.property_changed = False
         # print("self.functions_changed", self.functions_changed)
 
         # print("self.factor", self.factor.get())
@@ -717,8 +740,59 @@ class Gui(Tk):
         self.functions_window.destroy()
         self.unfold_functions()
 
+    def show_props(self):
+        self.validate_props(position="Props")
+
+    def load_props(self, append=False):
+        print("Loading props ...")
+        if self.props_changed and not append:
+            if not askyesno("Loading props", "Previously obtained props will be lost. Do you want to proceed?"):
+                return
+        self.status_set("Please select the props to be loaded.")
+        spam = filedialog.askopenfilename(initialdir=self.data_dir, title="Props loading - Select file", filetypes=(("text files", "*.txt"), ("all files", "*.*")))
+
+        print("old props", self.props)
+        print("old props type", type(self.props))
+        print("loaded props file", spam)
+
+        ## If no file selected
+        if spam == "":
+            self.status_set("No file selected.")
+            return
+        else:
+            self.props_changed = True
+            self.props_file.set(spam)
+
+            if append:
+                if self.props == "":
+                    print("was here")
+                    self.props = []
+                    print("old props", self.props)
+                    print("old props type", type(self.props))
+                with open(self.props_file.get(), 'r') as file:
+                    for line in file:
+                        print(line)
+                        self.props.append(line)
+            else:
+                self.props = []
+                with open(self.props_file.get(), 'r') as file:
+                    for line in file:
+                        print(line[:-1])
+                        self.props.append(line[:-1])
+            print("self.props", self.props)
+
+            self.props_text.delete('1.0', END)
+            self.props_text.insert('end', str(self.props))
+            self.status_set("Props loaded")
+
+    def append_props(self):
+        self.load_props(append=True)
+
     def load_space(self):
         print("Loading space ...")
+        if self.space_changed:
+            if not askyesno("Loading space", "Previously obtained space will be lost. Do you want to proceed?"):
+                return
         self.status_set("Please select the space to be loaded.")
         spam = filedialog.askopenfilename(initialdir=self.data_dir, title="Space loading - Select file", filetypes=(("pickled files", "*.p"), ("all files", "*.*")))
         # print(self.space)
@@ -727,21 +801,19 @@ class Gui(Tk):
         if spam == "":
             self.status_set("No file selected.")
             return
-
-        if not space == "":
+        else:
             self.space_changed = True
-        self.space_file.set(spam)
+            self.space_file.set(spam)
 
-        self.space = pickle.load(open(self.space_file.get(), "rb"))
-        print(self.space)
+            self.space = pickle.load(open(self.space_file.get(), "rb"))
 
-        ## Show the space as niceprint()
-        print("space", self.space)
-        print()
-        print("space nice print \n", self.space.nice_print())
-        self.space_text.delete('1.0', END)
-        self.space_text.insert('end', self.space.nice_print())
-        self.status_set("Space loaded")
+            ## Show the space as niceprint()
+            print("space", self.space)
+            print()
+            print("space nice print \n", self.space.nice_print())
+            self.space_text.delete('1.0', END)
+            self.space_text.insert('end', self.space.nice_print())
+            self.status_set("Space loaded")
 
     def save_model(self):
         ## TBD CHECK IF THE MODEL IS NON EMPTY
@@ -1076,7 +1148,7 @@ class Gui(Tk):
         self.interval_text.insert('end', self.intervals)
         self.status_set("Intervals created.")
 
-        self.data_changed = True
+        self.intervals_changed = True
 
     def validate_props(self, position=False):
         """ Validating created properties
@@ -1088,23 +1160,33 @@ class Gui(Tk):
         if position is False:
             position = "Validating props"
         ## If props empty create props
-        if self.props == "":
+        if self.props == "" or self.functions_changed or self.intervals_changed:
             print("Validating props")
             print("self.functions", self.functions)
             print("self.intervals", self.intervals)
             ## If functions empty raise an error (return False)
             if self.functions == "":
                 print("No functions loaded nor not computed to create properties")
-                messagebox.showwarning(position, "Load functions or properties before refinement.")
+                messagebox.showwarning(position, "Load or synthesise functions first.")
                 return False
             ## If intervals empty raise an error (return False)
             if self.intervals == "":
                 print("Intervals not computed, properties cannot be computed")
-                messagebox.showwarning(position, "Compute intervals or load properties before refinement.")
+                messagebox.showwarning(position, "Compute intervals first.")
                 return False
+
+            if self.functions_changed:
+                self.functions_changed = False
+
+            if self.intervals_changed:
+                self.intervals_changed = False
+
             ## Create props
             self.props = ineq_to_props(self.functions, self.intervals, silent=True)
             self.props_changed = True
+
+            self.props_text.delete('1.0', END)
+            self.props_text.insert('end', str(self.props))
             print("self.props", self.props)
         return True
 
@@ -1114,10 +1196,10 @@ class Gui(Tk):
             self.space = ""
             self.space_changed = False
             self.space_text.delete('1.0', END)
-            self.page5_figure.clf()
-            self.page5_a = self.page5_figure.add_subplot(111)
-            self.page5_figure.canvas.draw()
-            self.page5_figure.canvas.flush_events()
+            self.page6_figure.clf()
+            self.page6_a = self.page6_figure.add_subplot(111)
+            self.page6_figure.canvas.draw()
+            self.page6_figure.canvas.flush_events()
             self.status_set("Space deleted.")
 
     def validate_space(self, position=False):
@@ -1251,11 +1333,16 @@ class Gui(Tk):
         self.space_text.insert('end', self.space.nice_print())
         self.status_set("Space sampling done.")
 
-        self.page5_figure, self.page5_a = self.space.show(sat_samples=True, unsat_samples=True, red=False, green=False,
-                                                          save=self.save_sample.get(),
-                                                          where=[self.page5_figure, self.page5_a])
-        self.page5_figure.canvas.draw()
-        self.page5_figure.canvas.flush_events()
+        spam, egg = self.space.show(sat_samples=True, unsat_samples=True, red=False, green=False,
+                                    save=self.save_sample.get(), where=[self.page6_figure, self.page6_a])
+        ## if no plot provided
+        if spam is None:
+            messagebox.showinfo("Sample Space", egg)
+        else:
+            self.page6_figure = spam
+            self.page6_a = egg
+            self.page6_figure.canvas.draw()
+            self.page6_figure.canvas.flush_events()
 
     def refine_space(self):
         print("Refining space ...")
@@ -1293,10 +1380,17 @@ class Gui(Tk):
             return
 
         self.status_set("Space refinement is running ...")
-        self.space = check_deeper(self.space, self.props, self.max_depth, self.epsilon, self.coverage, silent=False,
-                                  version=self.alg, size_q=False, debug=False, save=self.save_refinement.get(), title="", where=[self.page5_figure, self.page5_a])
-        self.page5_figure.canvas.draw()
-        self.page5_figure.canvas.flush_events()
+        spam = check_deeper(self.space, self.props, self.max_depth, self.epsilon, self.coverage, silent=False,
+                            version=self.alg, size_q=False, debug=False, save=self.save_refinement.get(),
+                            title="", where=[self.page6_figure, self.page6_a])
+        ## If the visualisation of the space did not succeed
+        if isinstance(spam, tuple):
+            self.space = spam[0]
+            messagebox.showinfo("Space refinement", spam[1])
+        else:
+            self.space = spam
+        self.page6_figure.canvas.draw()
+        self.page6_figure.canvas.flush_events()
         ## Show the space as niceprint()
         print("space", self.space)
         print()

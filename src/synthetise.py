@@ -598,7 +598,7 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
 
         if debug and save:
             print("I am showing sampling_sat_"+str(save))
-        space.show(red=False, green=False, sat_samples=True, unsat_samples=False, save=save)
+        space.show(red=False, green=False, sat_samples=True, unsat_samples=False, save=save, where=where)
 
         ## COMPUTING THE ORTHOGONAL HULL OF SAT POINTS
         ## Initializing the min point and max point as the first point
@@ -660,7 +660,7 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
         if debug and save:
             print("I am showing sampling_unsat_"+str(save))
 
-        space.show(red=False, green=False, sat_samples=False, unsat_samples=True, save=save)
+        space.show(red=False, green=False, sat_samples=False, unsat_samples=True, save=save, where=where)
 
         ## If there is only the default region to be refined in the whitespace
         if len(space.get_white()) == 1:
@@ -819,7 +819,8 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
                 return space
 
             ## Showing the step refinements of respective rectangles from the white space
-            space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time() - start_time)} second(s)", save=save, where=where)
+            ## If the visualisation of the space did not succeed space_shown = (None, error message)
+            space_shown = space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time() - start_time)} second(s)", save=save, where=where)
             print()
             if space.get_coverage() >= coverage:
                 break
@@ -841,9 +842,14 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
 
     ## VISUALISATION
     if not size_q:
-        space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time() - start_time)} second(s)", save=save, where=where)
+        ## If the visualisation of the space did not succeed space_shown = (None, error message)
+        space_shown = space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time() - start_time)} second(s)", save=save, where=where)
     print("result coverage is: ", space.get_coverage())
-    return space
+    if where:
+        if space_shown[0] is None:
+            return space, space_shown[1]
+    else:
+        return space
 
 
 def private_check_deeper(region, props, n, epsilon, coverage, silent):
