@@ -354,8 +354,11 @@ class Gui(Tk):
 
         ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=7, column=0, columnspan=7, sticky='nwe', pady=4)
 
+        frame_left.rowconfigure(13, weight=1)
+        frame_left.columnconfigure(16, weight=1)
+
         self.space_text = scrolledtext.ScrolledText(frame_left, height=100)
-        self.space_text.grid(row=12, column=0, columnspan=16, rowspan=2, sticky=W+E+N+S, pady=4)  # pack(anchor=W, fill=X)
+        self.space_text.grid(row=12, column=0, columnspan=16, rowspan=2, sticky=W, pady=4)  # pack(anchor=W, fill=X)
 
         frame_right = Frame(page6, width=200, height=200)
         frame_right.pack(side=TOP, fill=X)
