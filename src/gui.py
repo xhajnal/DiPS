@@ -74,7 +74,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.2.1"  ## version of the gui
+        self.version = "1.2.3"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -330,17 +330,17 @@ class Gui(Tk):
         self.max_dept_entry = Entry(frame_left)
         self.coverage_entry = Entry(frame_left)
         self.epsilon_entry = Entry(frame_left)
-        self.algorithm_entry = Entry(frame_left)
+        self.alg = ttk.Combobox(frame_left, values=('1', '2', '3', '4', '5'))
 
         self.max_dept_entry.grid(row=1, column=4)
         self.coverage_entry.grid(row=2, column=4)
         self.epsilon_entry.grid(row=3, column=4)
-        self.algorithm_entry.grid(row=4, column=4)
+        self.alg.grid(row=4, column=4)
 
         self.max_dept_entry.insert(END, '5')
         self.coverage_entry.insert(END, '0.95')
         self.epsilon_entry.insert(END, '0')
-        self.algorithm_entry.insert(END, '4')
+        self.alg.current(0)
 
         self.save_sample = BooleanVar()
         c = Checkbutton(frame_left, text="Save results", variable=self.save_sample)
@@ -1355,7 +1355,6 @@ class Gui(Tk):
         self.max_depth = int(self.max_dept_entry.get())
         self.coverage = float(self.coverage_entry.get())
         self.epsilon = float(self.epsilon_entry.get())
-        self.alg = int(self.algorithm_entry.get())
 
         ## Checking if all entries filled
         if self.max_depth == "":
@@ -1370,7 +1369,7 @@ class Gui(Tk):
             messagebox.showwarning("Refine space", "Choose epsilon, min rectangle size before refinement.")
             return
 
-        if self.alg == "":
+        if self.alg.get() == "":
             messagebox.showwarning("Refine space", "Pick algorithm for the refinement before running.")
             return
 
@@ -1384,7 +1383,7 @@ class Gui(Tk):
 
         self.status_set("Space refinement is running ...")
         spam = check_deeper(self.space, self.props, self.max_depth, self.epsilon, self.coverage, silent=False,
-                            version=self.alg, size_q=False, debug=False, save=self.save_refinement.get(),
+                            version=int(self.alg.get()), size_q=False, debug=False, save=self.save_refinement.get(),
                             title="", where=[self.page6_figure, self.page6_a])
         ## If the visualisation of the space did not succeed
         if isinstance(spam, tuple):

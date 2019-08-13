@@ -848,8 +848,8 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
     if where:
         if space_shown[0] is None:
             return space, space_shown[1]
-    else:
-        return space
+        else:
+            return space
 
 
 def private_check_deeper(region, props, n, epsilon, coverage, silent):
