@@ -31,6 +31,50 @@ from sample_n_visualise import sample_fun, visualise, eval_and_show, get_param_v
 cwd = os.getcwd()
 
 
+## class copied from https://stackoverflow.com/questions/20399243/display-message-when-hovering-over-something-with-mouse-cursor-in-python/20399283
+class ToolTip(object):
+    def __init__(self, widget):
+        self.widget = widget
+        self.tipwindow = None
+        self.id = None
+        self.x = self.y = 0
+
+    def showtip(self, text):
+        "Display text in tooltip window"
+        self.text = text
+        if self.tipwindow or not self.text:
+            return
+        x, y, cx, cy = self.widget.bbox("insert")
+        x = x + self.widget.winfo_rootx() + 57
+        y = y + cy + self.widget.winfo_rooty() +27
+        self.tipwindow = tw = Toplevel(self.widget)
+        tw.wm_overrideredirect(1)
+        tw.wm_geometry("+%d+%d" % (x, y))
+        label = Label(tw, text=self.text, justify=LEFT,
+                      background="#ffffe0", relief=SOLID, borderwidth=1,
+                      font=("tahoma", "8", "normal"))
+        label.pack(ipadx=1)
+
+    def hidetip(self):
+        tw = self.tipwindow
+        self.tipwindow = None
+        if tw:
+            tw.destroy()
+
+
+## copied from https://stackoverflow.com/questions/20399243/display-message-when-hovering-over-something-with-mouse-cursor-in-python/20399283
+def createToolTip(widget, text):
+    tool_tip = ToolTip(widget)
+
+    def enter(event):
+        tool_tip.showtip(text)
+
+    def leave(event):
+        tool_tip.hidetip()
+    widget.bind('<Enter>', enter)
+    widget.bind('<Leave>', leave)
+
+
 class Gui(Tk):
     def __init__(self,  *args, **kwargs):
 
@@ -74,7 +118,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.2.3"  ## version of the gui
+        self.version = "1.2.4"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -266,8 +310,12 @@ class Gui(Tk):
         self.data_text.grid(row=2, column=0, columnspan=2, sticky=W, pady=4)
 
         ## SET THE INTERVAL COMPUTATION SETTINGS
-        Label(page4, text="Set alpha, the confidence:", anchor=W, justify=LEFT).grid(row=3)
-        Label(page4, text="Set n_samples, number of samples: ", anchor=W, justify=LEFT).grid(row=4)
+        label42 = Label(page4, text="Set alpha, the confidence:", anchor=W, justify=LEFT)
+        label42.grid(row=3)
+        createToolTip(label42, text='confidence')
+        label43 = Label(page4, text="Set n_samples, number of samples: ", anchor=W, justify=LEFT)
+        label43.grid(row=4)
+        createToolTip(label43, text='number of samples')
 
         self.alpha_entry = Entry(page4)
         self.n_samples_entry = Entry(page4)
@@ -312,7 +360,9 @@ class Gui(Tk):
 
         ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=1, column=0, columnspan=7, sticky='nwe', pady=8)
 
-        Label(frame_left, text="Set size_q: ", anchor=W, justify=LEFT).grid(row=1, pady=16)
+        label61 = Label(frame_left, text="Set size_q: ", anchor=W, justify=LEFT)
+        label61.grid(row=1, pady=16)
+        createToolTip(label61, text='number of samples per dimension')
 
         self.size_q_entry = Entry(frame_left)
         self.size_q_entry.grid(row=1, column=1)
@@ -322,10 +372,18 @@ class Gui(Tk):
 
         ttk.Separator(frame_left, orient=VERTICAL).grid(column=2, row=1, rowspan=6, sticky='ns', padx=10, pady=8)
 
-        Label(frame_left, text="Set max_dept: ", anchor=W, justify=LEFT).grid(row=1, column=3, padx=10)
-        Label(frame_left, text="Set coverage: ", anchor=W, justify=LEFT).grid(row=2, column=3, padx=10)
-        Label(frame_left, text="Set epsilon: ", anchor=W, justify=LEFT).grid(row=3, column=3, padx=10)
-        Label(frame_left, text="Set algorithm: ", anchor=W, justify=LEFT).grid(row=4, column=3, padx=10)
+        label62 = Label(frame_left, text="Set max_dept: ", anchor=W, justify=LEFT)
+        label62.grid(row=1, column=3, padx=10)
+        createToolTip(label62, text='maximal number of splits')
+        label63 = Label(frame_left, text="Set coverage: ", anchor=W, justify=LEFT)
+        label63.grid(row=2, column=3, padx=10)
+        createToolTip(label63, text='proportion of the nonwhite area to be reached')
+        label64 = Label(frame_left, text="Set epsilon: ", anchor=W, justify=LEFT)
+        label64.grid(row=3, column=3, padx=10)
+        createToolTip(label64, text='minimal size of the rectangle to be checked (if 0 all rectangles are being checked)')
+        label65 = Label(frame_left, text="Set algorithm: ", anchor=W, justify=LEFT)
+        label65.grid(row=4, column=3, padx=10)
+        createToolTip(label65, text='Choose from algorithms:\n 1-4 - using SMT solvers \n 1 - DFS search \n 2 - BFS search \n 3 - BFS search with example propagation \n 4 - BFS with example and counterexample propagation \n 5 - interval algorithmic')
 
         self.max_dept_entry = Entry(frame_left)
         self.coverage_entry = Entry(frame_left)
