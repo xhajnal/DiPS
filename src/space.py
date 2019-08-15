@@ -86,7 +86,7 @@ class RefinedSpace:
         if isinstance(region, tuple):
             self.region = [region]
         else:
-            ### Taking care of unchangable tuples
+            ### Taking care of unchangeable tuples
             for interval_index in range(len(region)):
                 region[interval_index] = [region[interval_index][0], region[interval_index][1]]
             self.region = region

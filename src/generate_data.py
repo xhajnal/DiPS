@@ -33,7 +33,7 @@ from load import find_param, parse_params_from_model
 os.chdir(cwd)
 
 
-def generate_all_data_twoparam(agents_quantities, dic_fun, p_v=None, q_v=None):
+def generate_all_data_two_param(agents_quantities, dic_fun, p_v=None, q_v=None):
     """ Generates data for all agents_quantities in the current as .csv files
 
     Args
@@ -64,7 +64,7 @@ def generate_all_data_twoparam(agents_quantities, dic_fun, p_v=None, q_v=None):
     for N in agents_quantities:
         file = open('data_n=' + str(N) + ".csv", "w")
         file.write('n=' + str(N) + ', p_v=' + str(p_v) + ', q_v=' + str(q_v) + "\n")
-        secondline = ""
+        second_line = ""
 
         for polynome in dic_fun[N]:
             parameters = set()
@@ -79,9 +79,9 @@ def generate_all_data_twoparam(agents_quantities, dic_fun, p_v=None, q_v=None):
 
             x = eval(polynome)
             x = round(x, 2)
-            secondline = secondline + str(x) + ","
+            second_line = second_line + str(x) + ","
 
-        file.write(secondline[:-1])
+        file.write(second_line[:-1])
         file.close()
 
 
@@ -94,7 +94,7 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
     model_types: (list of strings) list of model types
     n_samples: (list of ints) list of sample sizes
     populations: (list of ints) list of agent populations
-    dimension_sample_size: (list of ints) number of samples of in each paramter dimension to be used
+    dimension_sample_size: (list of ints) number of samples of in each parameter dimension to be used
     sim_length: (Int) length of the simulation
     modular_param_space: (numpy array) parameter space to be used
     silent: (Bool): if silent printed output is set to minimum
@@ -104,15 +104,15 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
     start_time = time.time()
 
     i = 1
-    Experiments = {}
-    Data = {}
+    experiments = {}
+    data = {}
     for model_type in model_types:
         if not silent:
             print("model_type: ", model_type)
         if "synchronous" in model_type and not sim_length:
             sim_length = 2
-        Data[model_type] = {}
-        Experiments[model_type] = {}
+        data[model_type] = {}
+        experiments[model_type] = {}
         for N in populations:
             if not silent:
                 print("population size: ", N)
@@ -139,11 +139,11 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
                 print("parameter space: ")
                 print(param_space)
 
-            Experiments[model_type][N] = {}
-            Data[model_type][N] = {}
+            experiments[model_type][N] = {}
+            data[model_type][N] = {}
             for n_sample in n_samples:
-                Experiments[model_type][N][n_sample] = {}
-                Data[model_type][N][n_sample] = {}
+                experiments[model_type][N][n_sample] = {}
+                data[model_type][N][n_sample] = {}
 
             # print(len(param_space[0]))
             for column in range(len(param_space[0])):
@@ -154,8 +154,8 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
                 if not silent:
                     print("parametrisation: ", column_values)
                 for n_sample in n_samples:
-                    Experiments[model_type][N][n_sample][column_values] = []
-                    Data[model_type][N][n_sample][column_values] = []
+                    experiments[model_type][N][n_sample][column_values] = []
+                    data[model_type][N][n_sample][column_values] = []
                 # file = open("path_{}_{}_{}_{}_{}.txt".format(model_type,N,max_sample,v_p,v_q),"w+")
                 # file.close()
                 for sample in range(1, max_sample + 1):
@@ -199,15 +199,15 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
                         os.remove(path_file)
                     for n_sample in n_samples:
                         if sample <= n_sample:
-                            Experiments[model_type][N][n_sample][column_values].append(state)
+                            experiments[model_type][N][n_sample][column_values].append(state)
                 for n_sample in n_samples:
                     for i in range(N + 1):
-                        Data[model_type][N][n_sample][column_values].append(len(list(
-                            filter(lambda x: x == i, Experiments[model_type][N][n_sample][column_values]))) / n_sample)
-                print("states: ", Experiments[model_type][N][max_sample][column_values])
+                        data[model_type][N][n_sample][column_values].append(len(list(
+                            filter(lambda x: x == i, experiments[model_type][N][n_sample][column_values]))) / n_sample)
+                print("states: ", experiments[model_type][N][max_sample][column_values])
 
     print(f"  It took {socket.gethostname()} {time.time() - start_time} seconds to run")
-    return Experiments, Data
+    return experiments, data
 
 
 def generate_experiments(model_types, n_samples, populations, dimension_sample_size,
@@ -219,7 +219,7 @@ def generate_experiments(model_types, n_samples, populations, dimension_sample_s
     model_types: (list of strings) list of model types
     n_samples: (list of ints) list of sample sizes
     populations: (list of ints) list of agent populations
-    dimension_sample_size: (list of ints) number of samples of in each paramter dimension to be used
+    dimension_sample_size: (list of ints) number of samples of in each parameter dimension to be used
     sim_length: (Int) length of the simulation
     modular_param_space: (numpy array) parameter space to be used
     silent: (Bool): if silent printed output is set to minimum
@@ -238,7 +238,7 @@ def generate_data(model_types, n_samples, populations, dimension_sample_size,
     model_types: (list of strings) list of model types
     n_samples: (list of ints) list of sample sizes
     populations: (list of ints) list of agent populations
-    dimension_sample_size: (list of ints) number of samples of in each paramter dimension to be used
+    dimension_sample_size: (list of ints) number of samples of in each parameter dimension to be used
     sim_length: (Int) length of the simulation
     modular_param_space: (numpy array) parameter space to be used
     silent: (Bool): if silent printed output is set to minimum

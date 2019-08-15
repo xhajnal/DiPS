@@ -249,7 +249,7 @@ def to_variance(dic):
 
 
 def load_all_data(path):
-    """ loads all experimental data for respective property, returns as dictionary D
+    """ loads all experimental data for respective property, returns as dictionary "data"
     
     Args
     ----------
@@ -263,38 +263,38 @@ def load_all_data(path):
     if not Path(path).is_absolute():
         os.chdir(data_path)
 
-    D = {}
+    data = {}
     if not glob.glob(str(path)):
         raise OSError("No valid files in the given directory " + os.path.join(os.getcwd(), path))
 
     for file in glob.glob(str(path)):
         print(os.path.join(os.getcwd(), file))
         file = open(file, "r")
-        N = 0
+        population = 0
         for line in file:
             # print("line: ",line)
-            if re.search("n", line) is not None:
-                N = int(line.split(",")[0].split("=")[1])
-                # print("N, ",N)
-                D[N] = []
+            if re.search("population", line) is not None:
+                population = int(line.split(",")[0].split("=")[1])
+                # print("population, ",population)
+                data[population] = []
                 continue
-            D[N] = line[:-1].split(",")
+            data[population] = line[:-1].split(",")
             # print(D[N])
-            for value in range(len(D[N])):
+            for value in range(len(data[population])):
                 # print(D[N][value])
                 try:
-                    D[N][value] = float(D[N][value])
+                    data[population][value] = float(data[population][value])
                 except:
-                    print("error while parsing N=", N, " i=", value, " of value=", D[N][value])
-                    D[N][value] = 0
-                # print(type(D[N][value]))
-            # D[N].append(1-sum(D[N]))
+                    print("error while parsing population=", population, " i=", value, " of value=", data[population][value])
+                    data[population][value] = 0
+                # print(type(D[population][value]))
+            # D[population].append(1-sum(D[population]))
             break
-            # print(D[N])
+            # print(D[population])
         file.close()
     os.chdir(cwd)
-    if D:
-        return D
+    if data:
+        return data
     else:
         print("Error, No data loaded, please check path")
 
@@ -490,7 +490,7 @@ def find_param_older(polynomial):
     """
     parameters = polynomial.replace('(', '').replace(')', '').replace('**', '*').replace(' ', '')
     parameters = re.split('\+|\*|\-|/', parameters)
-    parameters = [i for i in parameters if not i.replace('.','',1).isdigit()]
+    parameters = [i for i in parameters if not i.replace('.', '', 1).isdigit()]
     parameters = set(parameters)
     parameters.discard("")
     # print("hello",set(parameters))

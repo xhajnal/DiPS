@@ -144,7 +144,7 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
         # print("output_file_path", output_file_path)
         if not std_output_file:
             # print("if")
-            output_file_path = os.path.join(std_output_path, Path((output_file_path) + ".txt"))
+            output_file_path = os.path.join(std_output_path, Path(output_file_path + ".txt"))
         else:
             # print("else")
             output_file_path = os.path.join(prism_results, Path(str(std_output_file)))
@@ -649,7 +649,7 @@ def call_storm_files(model_prefix, agents_quantities, model_path=model_path, pro
 
 
 class TestLoad(unittest.TestCase):
-    def test_changing_javahep(self):
+    def test_changing_javaheap(self):
         print(colored('Test_changing_javaheap on Windows', 'blue'))
         if sys.platform.startswith("win"):
             a = (set_javaheap_win("9g"))
@@ -667,7 +667,7 @@ class TestLoad(unittest.TestCase):
         for population in agents_quantities:
             call_storm("semisynchronous_{}.pm prop_{}.pctl".format(population, population), std_output_path=os.path.join(cwd, "test"), time=True)
 
-    def test_astorm_multiple_files(self):
+    def test_storm_multiple_files(self):
         print(colored('Test storm call multiple files', 'blue'))
         agents_quantities = [2, 3]
         call_storm_files("syn*_", agents_quantities, output_path=os.path.join(cwd, "test"))

@@ -141,7 +141,7 @@ class Queue:
         return len(self.queue)
 
     ## Printing the elements of the queue
-    def printQueue(self):
+    def print_queue(self):
         return self.queue
 
 
@@ -194,6 +194,7 @@ def props_to_ineq(props, silent=True, debug=False):
     index = 0
 
     for prop in props:
+        spam = "None"
         if debug:
             print(f"property {index + 1} before splitting", prop)
         try:

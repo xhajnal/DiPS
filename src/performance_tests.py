@@ -15,8 +15,8 @@ print(f"  It took {socket.gethostname()} {time.time() - start_time} seconds to l
 
 ## LOAD POLYNOMIALS
 start_time = time.time()
-f = get_f("./sem*[0-9].txt",True)
-print(f"  It took {socket.gethostname()} {time.time() - start_time} seconds to load polynials")
+f = get_f("./sem*[0-9].txt", True)
+print(f"  It took {socket.gethostname()} {time.time() - start_time} seconds to load polynomials")
 
 ## GET TO THE RIGHT DIRECTORY
 os.chdir("..")
@@ -41,10 +41,6 @@ methods = [1, 2, 3]
 sample_size = 2
 
 ## INITIALISATION OF THE RESULTS
-results = {}
-coverages = {}
-averages_and_deviations = {}
-
 results = pickle.load(open("results.p", "rb"))
 coverages = pickle.load(open("coverages.p", "rb"))
 averages_and_deviations = pickle.load(open("averages_and_deviations.p", "rb"))
