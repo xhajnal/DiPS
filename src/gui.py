@@ -119,7 +119,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.2.4"  ## version of the gui
+        self.version = "1.2.5"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -295,9 +295,9 @@ class Gui(Tk):
         self.page3_figure_locked.set(False)
 
 
-        ## TAB DATA CONVERSION
-        page4 = ttk.Frame(nb, width=400, height=200, name="conversion")
-        nb.add(page4, text='Data conversion')
+        ## TAB DATA
+        page4 = ttk.Frame(nb, width=400, height=200, name="data")
+        nb.add(page4, text='Data')
         # page4.columnconfigure(0, weight=1)
         # page4.rowconfigure(2, weight=1)
         # page4.rowconfigure(7, weight=1)
@@ -344,6 +344,7 @@ class Gui(Tk):
         Button(page5, text='Show props', command=self.show_props).grid(row=0, column=0, sticky=W, pady=4)
         Button(page5, text='Load props', command=self.load_props).grid(row=0, column=1, sticky=W, pady=4)
         Button(page5, text='Append props', command=self.append_props).grid(row=0, column=2, sticky=W, pady=4)
+        Button(page5, text='Save props', command=self.save_props).grid(row=0, column=3, sticky=W, pady=4)
 
         self.props_text = scrolledtext.ScrolledText(page5, height=100)
         self.props_text.grid(row=1, column=0, columnspan=16, rowspan=2, sticky=W+E+N+S, pady=4)  # pack(anchor=W, fill=X)
@@ -357,7 +358,8 @@ class Gui(Tk):
         frame_left.pack(side=LEFT, fill=X)
 
         Button(frame_left, text='Load space', command=self.load_space).grid(row=0, column=0, sticky=W, pady=4)
-        Button(frame_left, text='Delete space', command=self.refresh_space).grid(row=0, column=1, sticky=W, pady=4)
+        Button(frame_left, text='Save space', command=self.save_space).grid(row=0, column=1, sticky=W, pady=4)
+        Button(frame_left, text='Delete space', command=self.refresh_space).grid(row=0, column=2, sticky=W, pady=4)
 
         ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=1, column=0, columnspan=7, sticky='nwe', pady=8)
 
@@ -811,7 +813,7 @@ class Gui(Tk):
             if not askyesno("Loading props", "Previously obtained props will be lost. Do you want to proceed?"):
                 return
         self.status_set("Please select the props to be loaded.")
-        spam = filedialog.askopenfilename(initialdir=self.data_dir, title="Props loading - Select file", filetypes=(("text files", "*.txt"), ("all files", "*.*")))
+        spam = filedialog.askopenfilename(initialdir=self.data_dir, title="Props loading - Select file", filetypes=(("text files", "*.p"), ("all files", "*.*")))
 
         print("old props", self.props)
         print("old props type", type(self.props))
@@ -827,20 +829,18 @@ class Gui(Tk):
 
             if append:
                 if self.props == "":
-                    print("was here")
                     self.props = []
-                    print("old props", self.props)
-                    print("old props type", type(self.props))
-                with open(self.props_file.get(), 'r') as file:
-                    for line in file:
-                        print(line)
-                        self.props.append(line)
+                spam = pickle.load(open(self.props_file.get(), "rb"))
+                self.props.extend(spam)
             else:
-                self.props = []
-                with open(self.props_file.get(), 'r') as file:
-                    for line in file:
-                        print(line[:-1])
-                        self.props.append(line[:-1])
+                self.props = pickle.load(open(self.props_file.get(), "rb"))
+
+                # self.props = []
+                #
+                # with open(self.props_file.get(), 'r') as file:
+                #     for line in file:
+                #         print(line[:-1])
+                #         self.props.append(line[:-1])
             print("self.props", self.props)
 
             self.props_text.delete('1.0', END)
@@ -875,6 +875,8 @@ class Gui(Tk):
             print("space nice print \n", self.space.nice_print())
             self.space_text.delete('1.0', END)
             self.space_text.insert('end', self.space.nice_print())
+
+            ## TBD ask if you want to visualise the space
             self.status_set("Space loaded")
 
     def save_model(self):
@@ -885,17 +887,17 @@ class Gui(Tk):
 
         print("Saving the model ...")
         self.status_set("Please select folder to store the model in.")
-        save_model = filedialog.asksaveasfilename(initialdir=self.model_dir, title="Model saving - Select file",
-                                                  filetypes=(("pm files", "*.pm"), ("all files", "*.*")))
-        if save_model == "":
+        save_model_file = filedialog.asksaveasfilename(initialdir=self.model_dir, title="Model saving - Select file",
+                                                       filetypes=(("pm files", "*.pm"), ("all files", "*.*")))
+        if save_model_file == "":
             self.status_set("No file selected.")
             return
 
-        if "." not in save_model:
-            save_model = save_model + ".pm"
-        # print("save_model", save_model)
+        if "." not in save_model_file:
+            save_model_file = save_model_file + ".pm"
+        # print("save_model_file", save_model_file)
 
-        with open(save_model, "w") as file:
+        with open(save_model_file, "w") as file:
             file.write(self.model_text.get(1.0, END))
 
         self.status_set("Model saved.")
@@ -908,17 +910,17 @@ class Gui(Tk):
         #    return
 
         self.status_set("Please select folder to store the property in.")
-        save_property = filedialog.asksaveasfilename(initialdir=self.property_dir, title="Property saving - Select file",
-                                                     filetypes=(("pctl files", "*.pctl"), ("all files", "*.*")))
-        if save_property == "":
+        save_property_file = filedialog.asksaveasfilename(initialdir=self.property_dir, title="Property saving - Select file",
+                                                          filetypes=(("pctl files", "*.pctl"), ("all files", "*.*")))
+        if save_property_file == "":
             self.status_set("No file selected.")
             return
 
-        if "." not in save_property:
-            save_property = save_property + ".pctl"
-        # print("save_property", save_property)
+        if "." not in save_property_file:
+            save_property_file = save_property_file + ".pctl"
+        # print("save_property_file", save_property_file)
 
-        with open(save_property, "w") as file:
+        with open(save_property_file, "w") as file:
             file.write(self.property_text.get(1.0, END))
 
         self.status_set("Property saved.")
@@ -934,39 +936,58 @@ class Gui(Tk):
 
         self.status_set("Please select folder to store the rational functions in.")
         if self.program is "prism":
-            save_functions = filedialog.asksaveasfilename(initialdir=self.prism_results,
-                                                          title="Rational functions saving - Select file",
-                                                          filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+            save_functions_file = filedialog.asksaveasfilename(initialdir=self.prism_results,
+                                                               title="Rational functions saving - Select file",
+                                                               filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
         elif self.program is "storm":
-            save_functions = filedialog.asksaveasfilename(initialdir=self.storm_results,
-                                                          title="Rational functions saving - Select file",
-                                                          filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+            save_functions_file = filedialog.asksaveasfilename(initialdir=self.storm_results,
+                                                               title="Rational functions saving - Select file",
+                                                               filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
         else:
             self.status_set("Error - Selected program not recognised.")
-            save_functions = "Error - Selected program not recognised."
-        print(save_functions)
+            save_functions_file = "Error - Selected program not recognised."
+        print(save_functions_file)
 
-        if save_functions == "":
+        if save_functions_file == "":
             self.status_set("No file selected.")
             return
 
-        with open(save_functions, "w") as file:
+        with open(save_functions_file, "w") as file:
             for line in self.props:
                 file.write(line)
-        self.status_set("Property saved.")
+        self.status_set("Functions saved.")
 
     def save_data(self):
         print("Saving the data ...")
-        if self.data_file is "":
+        if self.data is "":
             self.status_set("There is no data to be saved.")
             return
 
         self.status_set("Please select folder to store the data in.")
-        save_data = filedialog.asksaveasfilename(initialdir=self.data_dir, title="Data saving - Select file",
-                                                 filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
-        print(save_data)
-        pickle.dump(self.data_file, open(save_data, 'wb'))
+        save_data_file = filedialog.asksaveasfilename(initialdir=self.data_dir, title="Data saving - Select file",
+                                                      filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+        if "." not in save_data_file:
+            save_data_file = save_data_file + ".p"
+        # print("save_data_file", save_data_file)
+
+        pickle.dump(self.data, open(save_data_file, 'wb'))
         self.status_set("Data saved.")
+
+    def save_props(self):
+        print("Saving the props ...")
+        if self.props is "":
+            self.status_set("There is no props to be saved.")
+            return
+
+        self.status_set("Please select folder to store the props in.")
+        save_props_file = filedialog.asksaveasfilename(initialdir=self.data_dir, title="Props saving - Select file",
+                                                       filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+        if "." not in save_props_file:
+            save_props_file = save_props_file + ".p"
+        # print("save_props_file", save_props_file)
+
+        pickle.dump(self.props, open(save_props_file, 'wb'))
+        self.status_set("Props saved.")
 
     def save_space(self):
         print("Saving the space ...")
@@ -974,10 +995,13 @@ class Gui(Tk):
             self.status_set("There is no space to be saved.")
             return
         self.status_set("Please select folder to store the space in.")
-        save_space = filedialog.asksaveasfilename(initialdir=self.data_dir, title="Space saving - Select file",
-                                                  filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
-        print(save_space)
-        pickle.dump(self.data_file, open(save_space, 'wb'))
+        save_space_file = filedialog.asksaveasfilename(initialdir=self.data_dir, title="Space saving - Select file",
+                                                       filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+        if "." not in save_space_file:
+            save_space_file = save_space_file + ".p"
+        # print("save_space_file", save_space_file)
+
+        pickle.dump(self.space, open(save_space_file, 'wb'))
         self.status_set("Space saved.")
 
     ## EDIT
@@ -1219,10 +1243,13 @@ class Gui(Tk):
         position: (String) Name of the place from which is being called e.g. "Refine Space"/"Sample space"
         """
         print("Validating properties ...")
+        ## MAYBE an error here
+        if not self.props == "":
+            return True
         if position is False:
             position = "Validating props"
         ## If props empty create props
-        if self.props == "" or self.functions_changed or self.intervals_changed:
+        if self.functions_changed or self.intervals_changed:
             print("Validating props")
             print("self.functions", self.functions)
             print("self.intervals", self.intervals)
