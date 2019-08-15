@@ -1,6 +1,6 @@
 import platform
-from os.path import isfile
-from time import sleep
+# from os.path import isfile
+# from time import sleep
 from tkinter import *
 from tkinter import scrolledtext, messagebox
 import webbrowser
@@ -14,7 +14,7 @@ import matplotlib.pyplot as pyplt
 import matplotlib
 matplotlib.use("TKAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-from matplotlib.figure import Figure
+# from matplotlib.figure import Figure
 
 import configparser
 
@@ -26,7 +26,7 @@ from load import create_intervals, load_all_functions, find_param
 import space
 from synthetise import ineq_to_props, check_deeper
 from mc_prism import call_prism_files, call_storm_files
-from sample_n_visualise import sample_fun, visualise, eval_and_show, get_param_values
+from sample_n_visualise import sample_fun, eval_and_show, get_param_values
 
 cwd = os.getcwd()
 
@@ -40,13 +40,14 @@ class ToolTip(object):
         self.x = self.y = 0
 
     def showtip(self, text):
-        "Display text in tooltip window"
+        """ Display text in tooltip window """
+
         self.text = text
         if self.tipwindow or not self.text:
             return
         x, y, cx, cy = self.widget.bbox("insert")
         x = x + self.widget.winfo_rootx() + 57
-        y = y + cy + self.widget.winfo_rooty() +27
+        y = y + cy + self.widget.winfo_rooty() + 27
         self.tipwindow = tw = Toplevel(self.widget)
         tw.wm_overrideredirect(1)
         tw.wm_geometry("+%d+%d" % (x, y))
@@ -226,7 +227,7 @@ class Gui(Tk):
 
 
         ## TAB SYNTHESISE
-        page2 = ttk.Frame(nb, width=400, height=100, name="synthetise")  # Adds tab 2 of the notebook
+        page2 = ttk.Frame(nb, width=400, height=100, name="synthesise")  # Adds tab 2 of the notebook
         nb.add(page2, text='Synthesise')
 
         page2.rowconfigure(5, weight=1)
@@ -513,8 +514,8 @@ class Gui(Tk):
         help_menu = Menu(main_menu, tearoff=0)
         main_menu.add_cascade(label="Help", menu=help_menu)
         help_menu.add_command(label="Help", command=self.show_help)
-        help_menu.add_command(label="Check for updates", command=self.checkupdates)
-        help_menu.add_command(label="About", command=self.printabout)
+        help_menu.add_command(label="Check for updates", command=self.check_updates)
+        help_menu.add_command(label="About", command=self.print_about)
 
     def report_callback_exception(self, exc, val, tb):
         """Report callback exception on sys.stderr.
@@ -705,9 +706,9 @@ class Gui(Tk):
 
         print("self.program.get()", self.program.get())
         if self.program.get() == "prism":
-            initialdir = self.prism_results
+            initial_dir = self.prism_results
         elif self.program.get() == "storm":
-            initialdir = self.storm_results
+            initial_dir = self.storm_results
         else:
             messagebox.showwarning("Load functions", "Select a program for which you want to load data.")
             return
@@ -716,7 +717,7 @@ class Gui(Tk):
         print(file)
         if not file:
             self.status_set("Please select the prism/storm symbolic results to be loaded.")
-            spam = filedialog.askopenfilename(initialdir=initialdir, title="Rational functions loading - Select file",
+            spam = filedialog.askopenfilename(initialdir=initial_dir, title="Rational functions loading - Select file",
                                               filetypes=(("text files", "*.txt"), ("all files", "*.*")))
         else:
             if os.path.isfile(file):
@@ -1475,12 +1476,12 @@ class Gui(Tk):
         print("Showing help ...")
         webbrowser.open_new("https://github.com/xhajnal/mpm#mpm")
 
-    def checkupdates(self):
+    def check_updates(self):
         print("Checking for updates ...")
         self.status_set("Checking for updates ...")
         webbrowser.open_new("https://github.com/xhajnal/mpm/releases")
 
-    def printabout(self):
+    def print_about(self):
         print("Printing about ...")
         top2 = Toplevel(self)
         top2.title("About")
