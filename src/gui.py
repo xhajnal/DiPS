@@ -121,7 +121,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.2.7"  ## version of the gui
+        self.version = "1.2.8"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -177,6 +177,13 @@ class Gui(Tk):
         self.data_label = Label(frame, textvariable=self.data_file, anchor=W, justify=LEFT)
         # data_label.grid(row=4, column=0)
         self.data_label.pack(side=TOP, fill=X)
+
+        frame = Frame(self)
+        frame.pack(fill=X)
+        Label(frame, text=f"Loaded props:", anchor=W, justify=LEFT).pack(side=LEFT)
+        self.props_label = Label(frame, textvariable=self.props_file, anchor=W, justify=LEFT)
+        # props_label.grid(row=4, column=0)
+        self.props_label.pack(side=TOP, fill=X)
 
         frame = Frame(self)
         frame.pack(fill=X)
@@ -343,7 +350,7 @@ class Gui(Tk):
         page5 = ttk.Frame(nb, width=400, height=200, name="props")
         nb.add(page5, text='Props')
 
-        Button(page5, text='Show props', command=self.show_props).grid(row=0, column=0, sticky=W, pady=4)
+        Button(page5, text='Recalculate props', command=self.recalculate_props).grid(row=0, column=0, sticky=W, pady=4)
         Button(page5, text='Load props', command=self.load_props).grid(row=0, column=1, sticky=W, pady=4)
         Button(page5, text='Append props', command=self.append_props).grid(row=0, column=2, sticky=W, pady=4)
         Button(page5, text='Save props', command=self.save_props).grid(row=0, column=3, sticky=W, pady=4)
@@ -811,8 +818,15 @@ class Gui(Tk):
         self.functions_window.destroy()
         self.unfold_functions()
 
-    def show_props(self):
-        self.validate_props(position="Props")
+    def recalculate_props(self):
+        ## If there is some props
+        if len(self.props_text.get('1.0', END)) > 1:
+            proceed = messagebox.askyesno("Recalculate props", "Previously obtained props will be lost. Do you want to proceed?")
+        else:
+            proceed = True
+        if proceed:
+            self.props = ""
+            self.validate_props(position="Props")
 
     def load_props(self, append=False):
         print("Loading props ...")
@@ -1264,15 +1278,15 @@ class Gui(Tk):
         Args:
         position: (String) Name of the place from which is being called e.g. "Refine Space"/"Sample space"
         """
-        print("Validating properties ...")
+        print("Validating props ...")
         ## MAYBE an error here
         if not self.props == "":
+            print("props not empty, not checking them")
             return True
         if position is False:
             position = "Validating props"
         ## If props empty create props
         if self.functions_changed or self.intervals_changed:
-            print("Validating props")
             print("self.functions", self.functions)
             print("self.intervals", self.intervals)
             ## If functions empty raise an error (return False)
