@@ -121,7 +121,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.2.8"  ## version of the gui
+        self.version = "1.2.9"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -1263,7 +1263,7 @@ class Gui(Tk):
         if self.data_file.get() is "":
             self.load_data()
 
-        print(self.data_file.get())
+        print("self.data_file.get()", self.data_file.get())
         self.status_set("Intervals are being created ...")
         self.intervals = create_intervals(float(self.alpha_entry.get()), float(self.n_samples_entry.get()), self.data)
         self.interval_text.delete('1.0', END)
@@ -1309,6 +1309,7 @@ class Gui(Tk):
             ## Create props
             self.props = ineq_to_props(self.functions, self.intervals, silent=True)
             self.props_changed = True
+            self.props_file.set("")
 
             self.props_text.delete('1.0', END)
             self.props_text.insert('end', str(self.props))
@@ -1325,6 +1326,7 @@ class Gui(Tk):
             self.page6_a = self.page6_figure.add_subplot(111)
             self.page6_figure.canvas.draw()
             self.page6_figure.canvas.flush_events()
+            self.space_file.set("")
             self.status_set("Space deleted.")
 
     def validate_space(self, position=False):
