@@ -12,6 +12,8 @@ from tkinter.messagebox import askyesno
 
 import matplotlib.pyplot as pyplt
 import matplotlib
+# from termcolor import colored
+
 matplotlib.use("TKAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 # from matplotlib.figure import Figure
@@ -119,7 +121,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.2.5"  ## version of the gui
+        self.version = "1.2.6"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -401,7 +403,7 @@ class Gui(Tk):
         self.max_dept_entry.insert(END, '5')
         self.coverage_entry.insert(END, '0.95')
         self.epsilon_entry.insert(END, '0')
-        self.alg.current(0)
+        self.alg.current(3)
 
         self.save_sample = BooleanVar()
         c = Checkbutton(frame_left, text="Save results", variable=self.save_sample)
@@ -852,12 +854,15 @@ class Gui(Tk):
 
     def load_space(self):
         print("Loading space ...")
+
         if self.space_changed:
             if not askyesno("Loading space", "Previously obtained space will be lost. Do you want to proceed?"):
                 return
+        ## Delete previous space
+        self.refresh_space()
+
         self.status_set("Please select the space to be loaded.")
         spam = filedialog.askopenfilename(initialdir=self.data_dir, title="Space loading - Select file", filetypes=(("pickled files", "*.p"), ("all files", "*.*")))
-        # print(self.space)
 
         ## If no file selected
         if spam == "":
@@ -876,7 +881,24 @@ class Gui(Tk):
             self.space_text.delete('1.0', END)
             self.space_text.insert('end', self.space.nice_print())
 
-            ## TBD ask if you want to visualise the space
+            ## Ask if you want to visualise the space
+            show_samples = messagebox.askyesno("Loaded space", "Do you want to visualise samples?")
+            show_refinement = messagebox.askyesno("Loaded space", "Do you want to visualise refinement (safe & unsafe regions)?")
+            show_true_point = messagebox.askyesno("Loaded space",
+                                                  "Do you want to show the true point?")
+
+            spam, egg = self.space.show(green=show_refinement, red=show_refinement, sat_samples=show_samples, unsat_samples=show_samples, true_point=show_true_point, save=self.save_sample.get(), where=[self.page6_figure, self.page6_a])
+
+            ## If no plot provided
+            if spam is None:
+                messagebox.showinfo("Load Space", egg)
+            else:
+                self.page6_figure = spam
+                self.page6_a = egg
+                self.page6_figure.canvas.draw()
+                self.page6_figure.canvas.flush_events()
+
+            self.space_changed = True
             self.status_set("Space loaded")
 
     def save_model(self):
@@ -1003,14 +1025,6 @@ class Gui(Tk):
 
         pickle.dump(self.space, open(save_space_file, 'wb'))
         self.status_set("Space saved.")
-
-    ## EDIT
-
-    ## SHOW
-    def show_space(self):
-        self.status_set("Please select which parts to be shown.")
-        ## TBD choose what to show
-        self.space.show(self, title="", green=True, red=True, sat_samples=False, unsat_samples=False, save=False)
 
     ## ANALYSIS
     def synth_params(self):
@@ -1404,6 +1418,7 @@ class Gui(Tk):
             if not self.validate_props("Sample Space"):
                 return
 
+        ## Check space
         if not self.validate_space("Sample Space"):
             return
 
@@ -1420,11 +1435,11 @@ class Gui(Tk):
         print("space nice print \n", self.space.nice_print())
         self.space_text.delete('1.0', END)
         self.space_text.insert('end', self.space.nice_print())
-        self.status_set("Space sampling done.")
 
+        ## Visualise the sampled space
         spam, egg = self.space.show(sat_samples=True, unsat_samples=True, red=False, green=False,
                                     save=self.save_sample.get(), where=[self.page6_figure, self.page6_a])
-        ## if no plot provided
+        ## If no plot provided
         if spam is None:
             messagebox.showinfo("Sample Space", egg)
         else:
@@ -1432,6 +1447,10 @@ class Gui(Tk):
             self.page6_a = egg
             self.page6_figure.canvas.draw()
             self.page6_figure.canvas.flush_events()
+
+        self.space_changed = False
+        self.props_changed = False
+        self.status_set("Space sampling done.")
 
     def refine_space(self):
         print("Refining space ...")
@@ -1468,6 +1487,7 @@ class Gui(Tk):
             return
 
         self.status_set("Space refinement is running ...")
+        # print(colored(f"self.space, {self.space.nice_print()}]", "blue"))
         spam = check_deeper(self.space, self.props, self.max_depth, self.epsilon, self.coverage, silent=False,
                             version=int(self.alg.get()), size_q=False, debug=False, save=self.save_refinement.get(),
                             title="", where=[self.page6_figure, self.page6_a])
@@ -1485,6 +1505,9 @@ class Gui(Tk):
         print("space nice print \n", self.space.nice_print())
         self.space_text.delete('1.0', END)
         self.space_text.insert('end', self.space.nice_print())
+
+        self.props_changed = False
+        self.space_changed = False
         self.status_set("Space refinement done.")
 
     ## SETTINGS

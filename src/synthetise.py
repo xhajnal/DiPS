@@ -727,13 +727,13 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
     if version <= 4:
         index = 0
         for param in space.params:
-            if space.types[index] is "Real":
+            if space.types[index] == "Real":
                 globals()[param] = Real(param)
-            elif space.types[index] is "Int":
+            elif space.types[index] == "Int":
                 globals()[param] = Int(param)
-            elif space.types[index] is "Bool":
+            elif space.types[index] == "Bool":
                 globals()[param] = Bool(param)
-            elif space.types[index][0] is "BitVec":
+            elif space.types[index][0] == "BitVec":
                 globals()[param] = BitVec(param, space.types[index][1])
             else:
                 print(colored(f"Type of parameter {param} which was set as {space.types[index]} does not correspond with any known type", "red"))
