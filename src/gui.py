@@ -121,7 +121,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.2.6"  ## version of the gui
+        self.version = "1.2.7"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -379,13 +379,13 @@ class Gui(Tk):
 
         label62 = Label(frame_left, text="Set max_dept: ", anchor=W, justify=LEFT)
         label62.grid(row=1, column=3, padx=10)
-        createToolTip(label62, text='maximal number of splits')
+        createToolTip(label62, text='Maximal number of splits')
         label63 = Label(frame_left, text="Set coverage: ", anchor=W, justify=LEFT)
         label63.grid(row=2, column=3, padx=10)
-        createToolTip(label63, text='proportion of the nonwhite area to be reached')
+        createToolTip(label63, text='Proportion of the nonwhite area to be reached')
         label64 = Label(frame_left, text="Set epsilon: ", anchor=W, justify=LEFT)
         label64.grid(row=3, column=3, padx=10)
-        createToolTip(label64, text='minimal size of the rectangle to be checked (if 0 all rectangles are being checked)')
+        createToolTip(label64, text='Minimal size of the rectangle to be checked (if 0 all rectangles are being checked)')
         label65 = Label(frame_left, text="Set algorithm: ", anchor=W, justify=LEFT)
         label65.grid(row=4, column=3, padx=10)
         createToolTip(label65, text='Choose from algorithms:\n 1-4 - using SMT solvers \n 1 - DFS search \n 2 - BFS search \n 3 - BFS search with example propagation \n 4 - BFS with example and counterexample propagation \n 5 - interval algorithmic')
@@ -572,7 +572,8 @@ class Gui(Tk):
     ## FILE - LOAD AND SAVE
     def load_model(self):
         print("Loading model ...")
-        if self.model_changed:
+        ## If some model previously loaded
+        if len(self.model_text.get('1.0', END)) > 1:
             if not askyesno("Loading model", "Previously obtained model will be lost. Do you want to proceed?"):
                 return
         self.status_set("Please select the model to be loaded.")
@@ -584,17 +585,19 @@ class Gui(Tk):
             self.status_set("No file selected.")
             return
         else:
-            self.model_changed = True
+            ## If some model previously loaded
+            if len(self.model_text.get('1.0', END)) > 1:
+                self.model_changed = True
             self.model_file.set(spam)
             self.model_text.delete('1.0', END)
             self.model_text.insert('end', open(self.model_file.get(), 'r').read())
-
             self.status_set("Model loaded.")
             # print("self.model", self.model.get())
 
     def load_property(self):
         print("Loading properties ...")
-        if self.property_changed:
+        ## If some property previously loaded
+        if len(self.property_text.get('1.0', END)) > 1:
             if not askyesno("Loading properties", "Previously obtained properties will be lost. Do you want to proceed?"):
                 return
         self.status_set("Please select the property to be loaded.")
@@ -606,7 +609,9 @@ class Gui(Tk):
             self.status_set("No file selected.")
             return
         else:
-            self.property_changed = True
+            ## If some property previously loaded
+            if len(self.property_text.get('1.0', END)) > 1:
+                self.property_changed = True
             self.property_file.set(spam)
             self.property_text.delete('1.0', END)
             self.property_text.insert('end', open(self.property_file.get(), 'r').read())
@@ -649,7 +654,7 @@ class Gui(Tk):
             self.status_set(
                 "Loaded data are in a form of dictionary, please select which item you would like to choose:")
             self.new_window = Toplevel(self)
-            ## SCROLABLE WINDOW
+            ## SCROLLABLE WINDOW
             canvas = Canvas(self.new_window)
             canvas.pack(side=LEFT)
             self.new_window.maxsize(800, 800)
@@ -1077,6 +1082,9 @@ class Gui(Tk):
                 self.status_set("Program for parameter synthesis not selected")
                 messagebox.showwarning("Synthesise", "Select a program for parameter synthesis first.")
                 return
+
+            self.model_changed = False
+            self.property_changed = False
 
     def sample_fun(self):
         """Sampling rational functions"""
