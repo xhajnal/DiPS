@@ -82,6 +82,12 @@ class Gui(Tk):
     def __init__(self,  *args, **kwargs):
 
         super().__init__(*args, **kwargs)
+
+        ## Trying to configure pyplot
+        # pyplt.autoscale()
+        pyplt.autoscale(tight=True)
+
+
         ## Variables
         ## Directories
         self.model_dir = ""
@@ -431,11 +437,12 @@ class Gui(Tk):
         self.space_text.grid(row=12, column=0, columnspan=16, rowspan=2, sticky=W, pady=4)  # pack(anchor=W, fill=X)
 
         frame_right = Frame(page6, width=200, height=200)
-        frame_right.pack(side=TOP, fill=X)
+        frame_right.pack(side=TOP, fill=BOTH)
 
         self.page6_plotframe = Frame(frame_right)
-        self.page6_plotframe.pack(fill=X)
+        self.page6_plotframe.pack(fill=BOTH)
         self.page6_figure = pyplt.figure()
+        self.page6_figure.tight_layout()  ## By huypn
 
         # print("type a", type(self.a))
 
@@ -1185,7 +1192,7 @@ class Gui(Tk):
         self.page3_a.set_xlabel(ax[4])
         self.page3_a.set_title(ax[5])
         self.page3_a.bar(ax[0], ax[1], ax[2], color='b')
-
+        self.page3_figure.tight_layout()  ## By huypn
         self.page3_figure.canvas.draw()
         self.page3_figure.canvas.flush_events()
 
@@ -1324,6 +1331,7 @@ class Gui(Tk):
             self.space_text.delete('1.0', END)
             self.page6_figure.clf()
             self.page6_a = self.page6_figure.add_subplot(111)
+            self.page6_figure.tight_layout()  ## By huypn
             self.page6_figure.canvas.draw()
             self.page6_figure.canvas.flush_events()
             self.space_file.set("")
@@ -1469,6 +1477,8 @@ class Gui(Tk):
         else:
             self.page6_figure = spam
             self.page6_a = egg
+            self.page6_a.autoscale(enable=False)
+            self.page6_figure.tight_layout()  ## By huypn
             self.page6_figure.canvas.draw()
             self.page6_figure.canvas.flush_events()
 
@@ -1521,6 +1531,7 @@ class Gui(Tk):
             messagebox.showinfo("Space refinement", spam[1])
         else:
             self.space = spam
+        self.page6_figure.tight_layout()  ## By huypn
         self.page6_figure.canvas.draw()
         self.page6_figure.canvas.flush_events()
         ## Show the space as niceprint()
