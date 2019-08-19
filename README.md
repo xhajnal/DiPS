@@ -66,7 +66,7 @@ to run thought the workflow of the paper just run the notebooks in this order. T
 
 
 *****
-## ACKNOWDLEGMENT
+## ACKNOWLEDGMENT
 
 I would like to thank the following people who helped me with code issues:
 * [Michal Ovčiarik](https://github.com/bargulg)
