@@ -22,7 +22,7 @@ Feel free to leave response either via issues or email.
 ****
 ### 2. SETUP CONFIG
 
-in the main folder there is `config.ini` file. Please fill in required paths.
+In the main folder there is `config.ini` file. Please fill in required paths.
 
 * `prism_path`: path to PRISM `PRISM\bin\`
 * `z3_path`: path to z3 `MYZ3\bin\python`. 
@@ -47,9 +47,9 @@ in the main folder there is `config.ini` file. Please fill in required paths.
 
 `>> jupyter notebook`
 
-Several notebooks appears:
+Several notebooks appear:
  
-* `create_data_and_synth_params` can be used to automatically create models, properties, and synthetise rational function using PRISM for population models used in [[1]](#one).
+* `create_data_and_synth_params` can be used to automatically create models, properties, and synthesise rational function using PRISM for population models used in [[1]](#one).
 * `sample_n_visualise` samples and visualises result rational functions
 * `generate_data` generate synthetic data by simulating the model
 * `direct_param_synth` creates commands to be used for "direct" constrain solving using PRISM and Storm without deriving rational functions.
@@ -68,7 +68,13 @@ to run thought the workflow of the paper just run the notebooks in this order. T
 *****
 ## ACKNOWLEDGMENT
 
-I would like to thank the following people who helped me with code issues:
+I want to thank the following people who helped me with code issues:
 * [Michal Ovčiarik](https://github.com/bargulg)
 * [Nhat-Huy Phung](https://github.com/huypn12)
 * [Denis Repin](https://github.com/dennerepin)
+
+and I want to thank the following people for user testing and feedback:
+* [Denis Repin](https://github.com/dennerepin)
+* [Samuel Pastva](https://github.com/daemontus)
+* [Stefano Tognazzi](https://github.com/stefanotognazzi)
+* Morgane Nouvian
