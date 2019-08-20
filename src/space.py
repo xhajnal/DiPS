@@ -258,7 +258,8 @@ class RefinedSpace:
             if sat_samples:
                 pic.add_collection(self.show_samples(True))
             if unsat_samples:
-                pic.add_collection(self.show_samples(False))
+                unsat_samples_set = self.show_samples(False)
+                pic.add_collection(unsat_samples_set)
             if self.true_point and true_point:
                 # print(self.true_point)
                 if (len(self.sat_samples) + len(self.unsat_samples)) == 0 or len(self.region) == 0:
@@ -565,7 +566,10 @@ class RefinedSpace:
         elif len(self.region) == 2:
             # print("samples", self.samples)
             try:
-                size_correction = min(1/(len(self.sat_samples) + len(self.unsat_samples))**(1/len(self.region)), 0.01)
+                x_size = self.region[0][1]-self.region[0][0]
+                y_size = self.region[1][1]-self.region[1][0]
+                x_size_correction = min(1 / (len(self.sat_samples) + len(self.unsat_samples)) ** (1 / len(self.region)), 0.01*x_size)
+                y_size_correction = min(1/(len(self.sat_samples) + len(self.unsat_samples))**(1/len(self.region)), 0.01*y_size)
             except:
                 print("len(self.sat_samples)", len(self.sat_samples))
                 print("len(self.unsat_samples)", len(self.unsat_samples))
@@ -576,13 +580,13 @@ class RefinedSpace:
                 for rectangle in self.sat_samples:
                     ## (Rectangle((low_x,low_y), width, height, fc= color)
                     # print("rectangle", rectangle)
-                    samples.append(Rectangle((rectangle[0]-0.005, rectangle[1]-0.005), size_correction, size_correction, fc='r'))
+                    samples.append(Rectangle((rectangle[0]-0.005*x_size, rectangle[1]-0.005*y_size), x_size_correction, y_size_correction, fc='r'))
                 return PatchCollection(samples, facecolor='g', alpha=0.5)
             else:
                 for rectangle in self.unsat_samples:
                     ## (Rectangle((low_x,low_y), width, height, fc= color)
                     # print("rectangle", rectangle)
-                    samples.append(Rectangle((rectangle[0]-0.005, rectangle[1]-0.005), size_correction, size_correction, fc='r'))
+                    samples.append(Rectangle((rectangle[0]-0.005*x_size, rectangle[1]-0.005*y_size), x_size_correction, y_size_correction, fc='r'))
                 return PatchCollection(samples, facecolor='r', alpha=0.5)
 
     def nice_print(self):
