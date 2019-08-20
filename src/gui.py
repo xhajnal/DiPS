@@ -370,7 +370,7 @@ class Gui(Tk):
         nb.add(page6, text='Sample & Refine')
 
         frame_left = Frame(page6, width=200, height=200)
-        frame_left.pack(side=LEFT, fill=X)
+        frame_left.pack(side=LEFT)
 
         Button(frame_left, text='Load space', command=self.load_space).grid(row=0, column=0, sticky=W, pady=4)
         Button(frame_left, text='Save space', command=self.save_space).grid(row=0, column=1, sticky=W, pady=4)
@@ -437,7 +437,7 @@ class Gui(Tk):
         self.space_text.grid(row=12, column=0, columnspan=16, rowspan=2, sticky=W, pady=4)  # pack(anchor=W, fill=X)
 
         frame_right = Frame(page6, width=200, height=200)
-        frame_right.pack(side=TOP, fill=BOTH)
+        frame_right.pack(side=TOP)
 
         self.page6_plotframe = Frame(frame_right)
         self.page6_plotframe.pack(fill=BOTH)
@@ -921,6 +921,7 @@ class Gui(Tk):
             else:
                 self.page6_figure = spam
                 self.page6_a = egg
+                self.page6_figure.tight_layout()  ## By huypn
                 self.page6_figure.canvas.draw()
                 self.page6_figure.canvas.flush_events()
 

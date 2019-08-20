@@ -63,3 +63,12 @@ to run thought the workflow of the paper just run the notebooks in this order. T
 
 <a name="one"> </a>
 [1] M. Hajnal, M. Nouvian, D. Safranek, and T. Petrov, Data-informed parameter synthesis for population Markov chains In: International Workshop on Hybrid Systems Biology. Springer, 2019. To appear.
+
+
+*****
+## ACKNOWLEDGMENT
+
+I would like to thank the following people who helped me with code issues:
+* [Michal Ovčiarik](https://github.com/bargulg)
+* [Nhat-Huy Phung](https://github.com/huypn12)
+* [Denis Repin](https://github.com/dennerepin)
