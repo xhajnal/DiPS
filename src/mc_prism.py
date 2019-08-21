@@ -173,14 +173,14 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
                 # print(model_file)
                 if not os.path.isfile(model_file_path):
                     print(f"{colored('model file', 'red')} {model_file_path} {colored('not found -- skipped', 'red')}")
-                    return 404, f"{colored('model file', 'red')} {model_file_path} {colored('not found -- skipped', 'red')}"
+                    return 404, f"model file  {model_file_path} not found -- skipped"
                 prism_args.append(model_file_path)
             elif re.compile('\.pctl').search(arg) is not None:
                 property_file_path = os.path.join(properties_path, arg)
                 # print(property_file)
                 if not os.path.isfile(property_file_path):
                     print(f"{colored('property file', 'red')} {property_file_path} {colored('not found -- skipped', 'red')}")
-                    return 404, f"{colored('property file', 'red')} {property_file_path} {colored('not found -- skipped', 'red')}"
+                    return 404, f"property file {property_file_path} not found -- skipped"
                 prism_args.append(property_file_path)
             elif re.compile('\.txt').search(arg) is not None:
                 print("prism_output_path", prism_output_path)
@@ -291,7 +291,7 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
 
 
 def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq=False, noprobchecks=False, memory="",
-                     model_path=model_path, properties_path=properties_path, property_file=False, output_path=prism_results):
+                     model_path=model_path, properties_path=properties_path, property_file=False, output_path=prism_results, gui=False):
     """  Calls prism for each file matching the prefix
 
     Args
@@ -337,7 +337,8 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
         print(files)
         if not files:
             print(colored("No model files for N="+str(N)+" found", "red"))
-
+            if gui:
+                gui(1, "Parameter synthesis", "No model files found.")
         for file in files:
             file = Path(file)
             start_time = time()
@@ -390,6 +391,8 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
             ## Check for missing files
             if error[0] == 404:
                 print(colored(error[1], "red"))
+                if gui:
+                    gui(2, "Parameter synthesis", error[1])
                 continue
 
             ## Check if memory problem has occurred
@@ -400,6 +403,8 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
                     ## Remove the file because appending would no overwrite the file
                     os.remove(os.path.join(output_path, "{}.txt".format(file.stem)))
                     print(colored("A memory error occurred. Running prop by prob now", "red"))
+                    if gui:
+                        gui(3, "Parameter synthesis", "A memory error occurred. Running prop by prob now")
                 else:
                     ## A memory occurred while seq
                     ## Remove the file because appending would not overwrite the file
@@ -408,9 +413,13 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
                     if sys.platform.startswith("win"):
                         previous_memory = set_javaheap_win(f"{memory}g")
                     print(colored(f"A memory error occurred while seq, max memory increased to {memory}GB", "red"))
+                    if gui:
+                        gui(3, "Parameter synthesis", f"A memory error occurred while seq, max memory increased to {memory}GB")
 
             if error[0] == "memory_fail":
-                ## A error occurred even when seq and max memory, no reason to continue
+                ## An error occurred even when seq and max memory, no reason to continue
+                if gui:
+                    gui(1, "Parameter synthesis", f"An error occurred even when seq and max memory")
                 break
 
             ## Check if there was problem with sum of probabilities
@@ -418,8 +427,12 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
                 if noprobchecks == "":
                     print(colored("Outgoing transitions checksum error occurred. Running with noprobchecks option", "red"))
                     noprobchecks = '-noprobchecks '
+                    if gui:
+                        gui(3, "Parameter synthesis", "Outgoing transitions checksum error occurred. Running with noprobchecks option")
                 else:
                     print(colored("This is embarrassing, but Outgoing transitions checksum error occurred while noprobchecks option", "red"))
+                    if gui:
+                        gui(2, "Parameter synthesis", "This is embarrassing, but Outgoing transitions checksum error occurred while noprobchecks option")
 
             ## Check for other errors
             if error[0] == "error":
@@ -429,9 +442,13 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
                         # print(colored(error[1], "red"))
                         print(colored("Sorry, I do not know to to fix this, please try it manually", "red"))
                         print()
+                        if gui:
+                            gui(1, "Parameter synthesis", "Sorry, I do not know to to fix this, please try it manually")
                         break
                     else:
                         print(colored("Trying to fix the null pointer exception by running prop by prop", "red"))
+                        if gui:
+                            gui(3, "Parameter synthesis", "Trying to fix the null pointer exception by running prop by prop")
                         seq = True
                         ## Remove the file because appending would no overwrite the file
                         os.remove(os.path.join(output_path, "{}.txt".format(file.stem)))
@@ -440,13 +457,21 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
                         seq = True
                     else:
                         print(colored(f"A memory error occurred while seq, close some programs and try again with more memory", "red"))
+                        if gui:
+                            gui(2, "Parameter synthesis", f"A memory error occurred while seq, close some programs and try again with more memory")
                 elif "Type error" in error[1]:
                     print(colored("A type error occurred, please check input files or manual", "red"))
+                    if gui:
+                        gui(2, "Parameter synthesis", "A type error occurred, please check input files or manual")
                 elif "Syntax error" in error[1]:
                     print(colored("A syntax error occurred, please check input files or manual", "red"))
+                    if gui:
+                        gui(2, "Parameter synthesis", "A syntax error occurred, please check input files or manual")
                 else:
                     print("Unrecognised error occurred:")
                     print(colored(error[1], "red"))
+                    if gui:
+                        gui(1, "Parameter synthesis", f"Unrecognised error occurred: \n {error[1]}")
                     continue
 
             if error[0] is not 0:

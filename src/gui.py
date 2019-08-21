@@ -78,6 +78,16 @@ def createToolTip(widget, text):
     widget.bind('<Leave>', leave)
 
 
+## Callback function (but can be used also inside the GUI class)
+def show_message(typee, where, message):
+    if typee == 1 or str(typee).lower() == "error":
+        messagebox.showerror(where, message)
+    if typee == 2 or str(typee).lower() == "warning":
+        messagebox.showwarning(where, message)
+    if typee == 3 or str(typee).lower() == "info":
+        messagebox.showinfo(where, message)
+
+
 class Gui(Tk):
     def __init__(self,  *args, **kwargs):
 
@@ -127,7 +137,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.2.9"  ## version of the gui
+        self.version = "1.2.10"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -1081,7 +1091,7 @@ class Gui(Tk):
                 self.status_set("Parameter synthesis is running ...")
                 call_prism_files(self.model_file.get(), [], param_intervals=False, seq=False, noprobchecks=False, memory="",
                                  model_path="", properties_path=self.property_dir, property_file=self.property_file.get(),
-                                 output_path=self.prism_results)
+                                 output_path=self.prism_results, gui=show_message)
                 ## Deriving output file
                 self.functions_file.set(str(os.path.join(Path(self.prism_results), str(Path(self.model_file.get()).stem)+"_"+str(Path(self.property_file.get()).stem)+".txt")))
                 self.status_set("Parameter synthesised finished. Output here: {}", self.functions_file.get())
