@@ -12,9 +12,9 @@ Feel free to leave response either via issues or email.
 ### 1. INSTALL DEPENDENCIES:
 
 * [Python](https://www.python.org/)
-* [Jupyter Notebook](https://jupyter.org/install)
+* [Jupyter Notebook](https://jupyter.org/install) (optional)
 * [z3](https://github.com/Z3Prover/z3/releases) - make sure you use same (32/64bit) version as the Python
-* [PRISM](http://www.prismmodelchecker.org)
+* [PRISM](http://www.prismmodelchecker.org) 
 * [Storm](http://www.stormchecker.org/) (optional)
 * [Prophesy](https://moves.rwth-aachen.de/research/tools/prophesy/) (optional)
 * missing python packages 
@@ -33,14 +33,16 @@ In the main folder there is `config.ini` file. Please fill in required paths.
 * `prism_results`: path to prism results
 * `storm_results`: path to storm results
 * `refinement_results`: path to refinement results 
-* `refine_timeout`: timeout for a refinement (in seconds)
 * `figures`: path to save plot results
 * `tmp`: path to save temporal/intermidiate files
+* `refine_timeout`: timeout for a refinement (in seconds)
 
 *****
 ## HOW TO RUN
 
 *****
+
+### Jupyter notebook
 \- open command line in the main mpm directory (on Win - please open it with admin privileges to ensure changing the PRISM setting does not fail on permission denied)
 
 `>> cd ipython`
@@ -57,6 +59,22 @@ Several notebooks appear:
 
 to run thought the workflow of the paper just run the notebooks in this order. The documentation and the source code of the used functions is in `mpm\src`. When you are familiar with the notebooks, try your input files or even adapt the notebooks.  
 
+### Tool
+\- open command line in the main mpm directory (on Win - please open it with admin privileges to ensure changing the PRISM setting does not fail on permission denied)
+
+`>> cd src`
+
+`>> python gui.py`
+
+Graphical User Interface should appear now. We are currently working on the manual, by that time you have to manage on your own.
+
+*****
+## HOW TO USE
+
+*****
+Manual in progress ...
+
+The main worflow described in the paper (below) (if not reachable, please write us an email.)
 
 *****
 ## HOW TO CITE US
