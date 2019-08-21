@@ -137,7 +137,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.2.10"  ## version of the gui
+        self.version = "1.2.11"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -366,13 +366,16 @@ class Gui(Tk):
         page5 = ttk.Frame(nb, width=400, height=200, name="props")
         nb.add(page5, text='Props')
 
+        page5.rowconfigure(2, weight=1)
+        page5.columnconfigure(16, weight=1)
+
         Button(page5, text='Recalculate props', command=self.recalculate_props).grid(row=0, column=0, sticky=W, pady=4)
         Button(page5, text='Load props', command=self.load_props).grid(row=0, column=1, sticky=W, pady=4)
         Button(page5, text='Append props', command=self.append_props).grid(row=0, column=2, sticky=W, pady=4)
         Button(page5, text='Save props', command=self.save_props).grid(row=0, column=3, sticky=W, pady=4)
 
         self.props_text = scrolledtext.ScrolledText(page5, height=100)
-        self.props_text.grid(row=1, column=0, columnspan=16, rowspan=2, sticky=W+E+N+S, pady=4)  # pack(anchor=W, fill=X)
+        self.props_text.grid(row=1, column=0, columnspan=16, rowspan=2, sticky=W, pady=4)  # pack(anchor=W, fill=X)
 
 
         ## TAB SAMPLE AND REFINEMENT
