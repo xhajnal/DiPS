@@ -137,7 +137,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.2.11"  ## version of the gui
+        self.version = "1.3.0"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -226,7 +226,7 @@ class Gui(Tk):
         frame_left.columnconfigure(6, weight=1)
         frame_left.pack(side=LEFT, fill=X)
 
-        Button(frame_left, text='Load model', command=self.load_model).grid(row=0, column=0, sticky=W, pady=4, padx=4)  # pack(anchor=W)
+        Button(frame_left, text='Open model', command=self.load_model).grid(row=0, column=0, sticky=W, pady=4, padx=4)  # pack(anchor=W)
         Button(frame_left, text='Save model', command=self.save_model).grid(row=0, column=1, sticky=W, pady=4)  # pack(anchor=W)
         Label(frame_left, text=f"Loaded model:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, pady=4)  # pack(anchor=W)
 
@@ -239,7 +239,7 @@ class Gui(Tk):
         frame_right.columnconfigure(6, weight=1)
         frame_right.pack(side=RIGHT, fill=X)
 
-        Button(frame_right, text='Load property', command=self.load_property).grid(row=0, column=0, sticky=W, pady=4, padx=4)  # pack(anchor=W)
+        Button(frame_right, text='Open property', command=self.load_property).grid(row=0, column=0, sticky=W, pady=4, padx=4)  # pack(anchor=W)
         Button(frame_right, text='Save property', command=self.save_property).grid(row=0, column=1, sticky=W, pady=4)  # pack(anchor=W)
         Label(frame_right, text=f"Loaded property:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, pady=4)  # pack(anchor=W)
 
@@ -253,53 +253,58 @@ class Gui(Tk):
 
         ## TAB SYNTHESISE
         page2 = ttk.Frame(nb, width=400, height=100, name="synthesise")  # Adds tab 2 of the notebook
-        nb.add(page2, text='Synthesise')
+        nb.add(page2, text='Synthesise functions')
 
         page2.rowconfigure(5, weight=1)
         page2.columnconfigure(6, weight=1)
 
         ## SELECTING THE PROGRAM
-        self.program.set(1)
+        self.program.set("prism")
         Label(page2, text="Select the program: ", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, pady=4)
         Radiobutton(page2, text="Prism", variable=self.program, value="prism").grid(row=1, column=1, sticky=W, pady=4)
         Radiobutton(page2, text="Storm", variable=self.program, value="storm").grid(row=1, column=2, sticky=W, pady=4)
-        Button(page2, text='Run parameter synthesis', command=self.synth_params).grid(row=2, column=0, sticky=W, pady=4, padx=4)
-        Button(page2, text='Load results', command=self.load_functions).grid(row=2, column=1, sticky=W, pady=4)
 
-        Label(page2, text=f"Loaded function file:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, pady=4)
+        Label(page2, text=f"Show function(s):", anchor=W, justify=LEFT).grid(row=2, column=0, sticky=W, pady=4)
+        Radiobutton(page2, text="Original", variable=self.factor, value=False).grid(row=2, column=1, sticky=W, pady=4)
+        Radiobutton(page2, text="Factorised", variable=self.factor, value=True).grid(row=2, column=2, sticky=W, pady=4)
+
+        Button(page2, text='Run parameter synthesis', command=self.synth_params).grid(row=3, column=0, sticky=W, pady=4, padx=4)
+        Button(page2, text='Open Prism/Storm output file', command=self.load_functions).grid(row=3, column=1, sticky=W, pady=4)
+
+        Label(page2, text=f"Loaded Prism/Storm output file:", anchor=W, justify=LEFT).grid(row=4, column=0, sticky=W, pady=4)
 
         self.functions_text = scrolledtext.ScrolledText(page2, height=100)
-        self.functions_text.grid(row=4, column=0, columnspan=16, rowspan=2, sticky=W, pady=4)
+        self.functions_text.grid(row=5, column=0, columnspan=16, rowspan=2, sticky=W, pady=4)
 
-        Label(page2, text=f"Show function:", anchor=W, justify=LEFT).grid(row=2, column=17, sticky=W, pady=4)
-        Radiobutton(page2, text="Original", variable=self.factor, value=False).grid(row=2, column=18, sticky=W, pady=4)
-        Radiobutton(page2, text="Factorised", variable=self.factor, value=True).grid(row=2, column=19, sticky=W, pady=4)
-        Label(page2, text=f"Parsed functions:", anchor=W, justify=LEFT).grid(row=3, column=17, sticky=W, pady=4)
+        Button(page2, text='Open functions', command=self.load_parsed_functions).grid(row=3, column=17, sticky=W, pady=4, padx=4)
+        Button(page2, text='Save functions', command=self.save_parsed_functions).grid(row=3, column=18, sticky=W, pady=4)
+
+        Label(page2, text=f"Parsed function(s):", anchor=W, justify=LEFT).grid(row=4, column=17, sticky=W, pady=4)
         self.functions_parsed_text = scrolledtext.ScrolledText(page2, height=100)
-        self.functions_parsed_text.grid(row=4, column=17, columnspan=16, rowspan=2, sticky=W, pady=4)
+        self.functions_parsed_text.grid(row=5, column=17, columnspan=16, rowspan=2, sticky=W, pady=4)
 
 
         ## TAB SAMPLE AND VISUALISE
         page3 = ttk.Frame(nb, width=400, height=200, name="sampling")
-        nb.add(page3, text='Sampling functions')
+        nb.add(page3, text='Sample functions')
 
         page3.rowconfigure(5, weight=1)
         page3.columnconfigure(6, weight=1)
 
-        Label(page3, text="Set size_q, number of samples per dimension:", anchor=W, justify=LEFT).grid(row=1, column=0, padx=4, pady=4)
+        Label(page3, text="Set number of samples per variable (grid size):", anchor=W, justify=LEFT).grid(row=1, column=0, padx=4, pady=4)
         self.fun_size_q_entry = Entry(page3)
         self.fun_size_q_entry.grid(row=1, column=1)
 
         Button(page3, text='Sample functions', command=self.sample_fun).grid(row=2, column=0, sticky=W, pady=4, padx=4)
 
-        Label(page3, text=f"Sampled functions:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, pady=4)
+        Label(page3, text=f"Values of sampled points:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, pady=4)
 
         self.sampled_functions_text = scrolledtext.ScrolledText(page3, height=100)
         self.sampled_functions_text.grid(row=4, column=0, columnspan=16, rowspan=2, sticky=W, pady=4)
 
-        Button(page3, text='Show functions in a single point', command=self.show_funs).grid(row=2, column=17, sticky=W, pady=4, padx=4)
-        Button(page3, text='Show all sampled points', command=self.show_funs_in_all_points).grid(row=3, column=17, sticky=W, pady=4, padx=4)
-        self.Next_sample = Button(page3, text="Next", state="disabled", command=lambda: self.button_pressed.set(True))
+        Button(page3, text='Plot functions in a given point', command=self.show_funs).grid(row=2, column=17, sticky=W, pady=4, padx=4)
+        Button(page3, text='Plot all sampled points', command=self.show_funs_in_all_points).grid(row=3, column=17, sticky=W, pady=4, padx=4)
+        self.Next_sample = Button(page3, text="Next plot", state="disabled", command=lambda: self.button_pressed.set(True))
         self.Next_sample.grid(row=3, column=18, sticky=W, pady=4, padx=4)
 
         self.page3_plotframe = Frame(page3)
@@ -322,14 +327,16 @@ class Gui(Tk):
 
         ## TAB DATA
         page4 = ttk.Frame(nb, width=400, height=200, name="data")
-        nb.add(page4, text='Data')
+        nb.add(page4, text='Data & Intervals')
         # page4.columnconfigure(0, weight=1)
         # page4.rowconfigure(2, weight=1)
         # page4.rowconfigure(7, weight=1)
 
-        Button(page4, text='Load data', command=self.load_data).grid(row=0, column=0, sticky=W, pady=4)
+        Button(page4, text='Open data file', command=self.load_data).grid(row=0, column=0, sticky=W, pady=4)
 
-        Label(page4, text=f"Data:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, pady=4)
+        label10 = Label(page4, text=f"Data:", anchor=W, justify=LEFT)
+        label10.grid(row=1, column=0, sticky=W, pady=4)
+        createToolTip(label10, text='For each rational function exactly one data point should be assigned.')
 
         self.data_text = Text(page4, height=12)  # , height=10, width=30
         # self.data_text.config(state="disabled")
@@ -370,24 +377,23 @@ class Gui(Tk):
         page5.columnconfigure(16, weight=1)
 
         Button(page5, text='Recalculate props', command=self.recalculate_props).grid(row=0, column=0, sticky=W, pady=4)
-        Button(page5, text='Load props', command=self.load_props).grid(row=0, column=1, sticky=W, pady=4)
-        Button(page5, text='Append props', command=self.append_props).grid(row=0, column=2, sticky=W, pady=4)
-        Button(page5, text='Save props', command=self.save_props).grid(row=0, column=3, sticky=W, pady=4)
 
         self.props_text = scrolledtext.ScrolledText(page5, height=100)
         self.props_text.grid(row=1, column=0, columnspan=16, rowspan=2, sticky=W, pady=4)  # pack(anchor=W, fill=X)
 
+        Label(page5, text=f"Import/Export:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, pady=4)
+        Button(page5, text='Open props', command=self.load_props).grid(row=3, column=1, sticky=W, pady=4)
+        Button(page5, text='Append props', command=self.append_props).grid(row=3, column=2, sticky=W, pady=4)
+        Button(page5, text='Save props', command=self.save_props).grid(row=3, column=3, sticky=W, pady=4)
 
         ## TAB SAMPLE AND REFINEMENT
         page6 = ttk.Frame(nb, width=400, height=200, name="refine")
-        nb.add(page6, text='Sample & Refine')
+        nb.add(page6, text='Sample & Refine space')
 
         frame_left = Frame(page6, width=200, height=200)
         frame_left.pack(side=LEFT)
 
-        Button(frame_left, text='Load space', command=self.load_space).grid(row=0, column=0, sticky=W, pady=4)
-        Button(frame_left, text='Save space', command=self.save_space).grid(row=0, column=1, sticky=W, pady=4)
-        Button(frame_left, text='Delete space', command=self.refresh_space).grid(row=0, column=2, sticky=W, pady=4)
+        # Button(frame_left, text='Create space', command=self.validate_space).grid(row=0, column=0, sticky=W, padx=4, pady=4)
 
         ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=1, column=0, columnspan=7, sticky='nwe', pady=8)
 
@@ -396,24 +402,24 @@ class Gui(Tk):
         createToolTip(label61, text='number of samples per dimension')
 
         self.size_q_entry = Entry(frame_left)
-        self.size_q_entry.grid(row=1, column=1)
+        self.size_q_entry.grid(row=1, column=1, columnspan=2)
         self.size_q_entry.insert(END, '5')
 
         Button(frame_left, text='Sample space', command=self.sample_space).grid(row=6, column=0, sticky=W, padx=4, pady=4)
 
-        ttk.Separator(frame_left, orient=VERTICAL).grid(column=2, row=1, rowspan=6, sticky='ns', padx=10, pady=8)
+        ttk.Separator(frame_left, orient=VERTICAL).grid(column=3, row=1, rowspan=6, sticky='ns', padx=10, pady=8)
 
         label62 = Label(frame_left, text="Set max_dept: ", anchor=W, justify=LEFT)
-        label62.grid(row=1, column=3, padx=10)
+        label62.grid(row=1, column=4, padx=10)
         createToolTip(label62, text='Maximal number of splits')
         label63 = Label(frame_left, text="Set coverage: ", anchor=W, justify=LEFT)
-        label63.grid(row=2, column=3, padx=10)
+        label63.grid(row=2, column=4, padx=10)
         createToolTip(label63, text='Proportion of the nonwhite area to be reached')
         label64 = Label(frame_left, text="Set epsilon: ", anchor=W, justify=LEFT)
-        label64.grid(row=3, column=3, padx=10)
+        label64.grid(row=3, column=4, padx=10)
         createToolTip(label64, text='Minimal size of the rectangle to be checked (if 0 all rectangles are being checked)')
         label65 = Label(frame_left, text="Set algorithm: ", anchor=W, justify=LEFT)
-        label65.grid(row=4, column=3, padx=10)
+        label65.grid(row=4, column=4, padx=10)
         createToolTip(label65, text='Choose from algorithms:\n 1-4 - using SMT solvers \n 1 - DFS search \n 2 - BFS search \n 3 - BFS search with example propagation \n 4 - BFS with example and counterexample propagation \n 5 - interval algorithmic')
 
         self.max_dept_entry = Entry(frame_left)
@@ -421,25 +427,17 @@ class Gui(Tk):
         self.epsilon_entry = Entry(frame_left)
         self.alg = ttk.Combobox(frame_left, values=('1', '2', '3', '4', '5'))
 
-        self.max_dept_entry.grid(row=1, column=4)
-        self.coverage_entry.grid(row=2, column=4)
-        self.epsilon_entry.grid(row=3, column=4)
-        self.alg.grid(row=4, column=4)
+        self.max_dept_entry.grid(row=1, column=5)
+        self.coverage_entry.grid(row=2, column=5)
+        self.epsilon_entry.grid(row=3, column=5)
+        self.alg.grid(row=4, column=5)
 
         self.max_dept_entry.insert(END, '5')
         self.coverage_entry.insert(END, '0.95')
         self.epsilon_entry.insert(END, '0')
         self.alg.current(3)
 
-        self.save_sample = BooleanVar()
-        c = Checkbutton(frame_left, text="Save results", variable=self.save_sample)
-        c.grid(row=5, column=0, sticky=W, padx=4, pady=4)
-
-        self.save_refinement = BooleanVar()
-        c = Checkbutton(frame_left, text="Save results", variable=self.save_refinement)
-        c.grid(row=5, column=3, sticky=W, pady=4, padx=10)
-
-        Button(frame_left, text='Refine space', command=self.refine_space).grid(row=6, column=3, sticky=W, pady=4, padx=10)
+        Button(frame_left, text='Refine space', command=self.refine_space).grid(row=6, column=4, sticky=W, pady=4, padx=10)
 
         ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=7, column=0, columnspan=7, sticky='nwe', pady=4)
 
@@ -467,6 +465,10 @@ class Gui(Tk):
         self.page6_toolbar.update()
         self.page6_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
         self.page6_a = self.page6_figure.add_subplot(111)
+
+        Button(frame_left, text='Open space', command=self.load_space).grid(row=14, column=2, sticky=S, padx=4, pady=4)
+        Button(frame_left, text='Save space', command=self.save_space).grid(row=14, column=3, sticky=S, padx=4, pady=4)
+        Button(frame_left, text='Delete space', command=self.refresh_space).grid(row=14, column=4, sticky=S, padx=4, pady=4)
 
         # page7 = ttk.Frame(nb, name="testy")
         # # page7.pack(expand=True)
@@ -645,6 +647,168 @@ class Gui(Tk):
             self.status_set("Property loaded.")
             # print("self.property", self.property.get())
 
+    def load_functions(self, file=False):
+        """ Load functions
+
+        Args
+        -------------
+        file (Path/String): direct path to load the function file
+        """
+        print("Loading functions ...")
+        if self.functions_changed:
+            if not askyesno("Loading functions", "Previously obtained functions will be lost. Do you want to proceed?"):
+                return
+
+        self.status_set("Loading functions - checking inputs")
+
+        print("self.program.get()", self.program.get())
+        if self.program.get() == "prism":
+            initial_dir = self.prism_results
+        elif self.program.get() == "storm":
+            initial_dir = self.storm_results
+        else:
+            messagebox.showwarning("Load functions", "Select a program for which you want to load data.")
+            return
+
+        ## If file to load is NOT preselected
+        print(file)
+        if not file:
+            self.status_set("Please select the prism/storm symbolic results to be loaded.")
+            spam = filedialog.askopenfilename(initialdir=initial_dir, title="Rational functions loading - Select file",
+                                              filetypes=(("text files", "*.txt"), ("all files", "*.*")))
+        else:
+            if os.path.isfile(file):
+                spam = str(file)
+            else:
+                spam = ""
+
+        ## If no file / not a file selected
+        if spam == "":
+            self.status_set("No file selected.")
+            return
+        # print("self.functions_file.get() ", self.functions_file.get())
+        self.functions_file.set(spam)
+        # print("self.functions_file.get() ", self.functions_file.get())
+        if not self.functions_file.get() is "":
+            self.functions_changed = True
+            # self.model_changed = False
+            # self.property_changed = False
+        # print("self.functions_changed", self.functions_changed)
+
+        # print("self.factor", self.factor.get())
+        self.functions, rewards = load_all_functions(self.functions_file.get(), tool=self.program.get(),
+                                                     factorize=self.factor.get(), agents_quantities=False,
+                                                     rewards_only=False, f_only=False)
+        ## Merge functions and rewards
+        # print("self.functions", self.functions)
+        # print("rewards", rewards)
+        for key in self.functions.keys():
+            if key in rewards.keys():
+                self.functions[key].extend(rewards[key])
+        print("self.functions", self.functions)
+
+        self.unfold_functions()
+
+        if isinstance(self.functions, dict):
+            self.status_set(f"{len(self.functions.keys())} rational functions loaded")
+        elif isinstance(self.functions, list):
+            self.status_set(f"{len(self.functions)} rational functions loaded")
+        else:
+            raise Exception("Loading parameter synthesis results",
+                            f"Expected type of the functions is dict or list, got {type(self.functions)}")
+
+        ## Show loaded functions
+        self.functions_text.delete('1.0', END)
+        self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
+
+        # self.testy_text.delete('1.0', END)
+        # self.testy_text.insert('1.0', open(self.functions_file.get(), 'r').read())
+        #
+        # self.testy_text2.delete('1.0', END)
+        # self.testy_text2.insert('1.0', open(self.functions_file.get(), 'r').read())
+
+    def unfold_functions(self):
+        """" unfolds the function dictionary into a single list """
+        if isinstance(self.functions, dict):
+            ## TBD Maybe rewrite this as key and pass the argument to unfold_functions2
+            ## NO because dunno how to send it to the function as a argument
+            if len(self.functions.keys()) == 1:
+                for key in self.functions.keys():
+                    self.functions = self.functions[key]
+                    break
+                self.unfold_functions()
+                return
+
+            self.key = StringVar()
+            self.status_set(
+                "Loaded functions are in a form of dictionary, please select which item you would like to choose:")
+            self.functions_window = Toplevel(self)
+            label = Label(self.functions_window,
+                          text="Loaded functions are in a form of dictionary, please select which item you would like to choose:")
+            label.pack()
+            self.key.set(" ")
+
+            first = True
+            for key in self.functions.keys():
+                spam = Radiobutton(self.functions_window, text=key, variable=self.key, value=key)
+                spam.pack(anchor=W)
+                if first:
+                    spam.select()
+                    first = False
+            spam = Button(self.functions_window, text="OK", command=self.unfold_functions2)
+            spam.pack()
+        else:
+            self.functions_parsed_text.delete('1.0', END)
+            self.functions_parsed_text.insert('end', str(self.functions))
+
+    def unfold_functions2(self):
+        """" dummy method of unfold_functions"""
+        try:
+            self.functions = self.functions[self.key.get()]
+        except KeyError:
+            self.functions = self.functions[eval(self.key.get())]
+
+        print(self.functions)
+        self.functions_window.destroy()
+        self.unfold_functions()
+
+    def load_parsed_functions(self):
+        print("Loading parsed rational functions ...")
+        if self.data_changed:
+            if not askyesno("Loading parsed rational functions", "Previously obtained functions will be lost. Do you want to proceed?"):
+                return
+
+        self.status_set("Please select the parsed rational functions to be loaded.")
+
+        print("self.program.get()", self.program.get())
+        if self.program.get() == "prism":
+            initial_dir = self.prism_results
+        elif self.program.get() == "storm":
+            initial_dir = self.storm_results
+        else:
+            messagebox.showwarning("Load functions", "Select a program for which you want to load data.")
+            return
+
+        spam = filedialog.askopenfilename(initialdir=initial_dir,
+                                          title="Rational functions saving - Select file",
+                                          filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+
+        ## If no file selected
+        if spam == "":
+            self.status_set("No file selected.")
+            return
+        else:
+            self.functions = True
+            self.functions_file.set(spam)
+
+            if ".p" in self.functions_file.get():
+                self.functions = pickle.load(open(self.functions_file.get(), "rb"))
+
+            self.functions_parsed_text.delete('1.0', END)
+            self.functions_parsed_text.insert('end', str(self.functions))
+
+            self.status_set("Parsed rational functions loaded.")
+
     def load_data(self):
         print("Loading data ...")
         if self.data_changed:
@@ -726,118 +890,6 @@ class Gui(Tk):
         self.new_window.destroy()
         self.unfold_data()
 
-    def load_functions(self, file=False):
-        """ Load functions
-
-        Args
-        -------------
-        file (Path/String): direct path to load the function file
-        """
-        print("Loading functions ...")
-        if self.functions_changed:
-            if not askyesno("Loading functions", "Previously obtained functions will be lost. Do you want to proceed?"):
-                return
-
-        self.status_set("Loading functions - checking inputs")
-
-        print("self.program.get()", self.program.get())
-        if self.program.get() == "prism":
-            initial_dir = self.prism_results
-        elif self.program.get() == "storm":
-            initial_dir = self.storm_results
-        else:
-            messagebox.showwarning("Load functions", "Select a program for which you want to load data.")
-            return
-
-        ## If file to load is NOT preselected
-        print(file)
-        if not file:
-            self.status_set("Please select the prism/storm symbolic results to be loaded.")
-            spam = filedialog.askopenfilename(initialdir=initial_dir, title="Rational functions loading - Select file",
-                                              filetypes=(("text files", "*.txt"), ("all files", "*.*")))
-        else:
-            if os.path.isfile(file):
-                spam = str(file)
-            else:
-                spam = ""
-
-        ## If no file / not a file selected
-        if spam == "":
-            self.status_set("No file selected.")
-            return
-        # print("self.functions_file.get() ", self.functions_file.get())
-        self.functions_file.set(spam)
-        # print("self.functions_file.get() ", self.functions_file.get())
-        if not self.functions_file.get() is "":
-            self.functions_changed = True
-            # self.model_changed = False
-            # self.property_changed = False
-        # print("self.functions_changed", self.functions_changed)
-
-        # print("self.factor", self.factor.get())
-        self.functions, rewards = load_all_functions(self.functions_file.get(), tool=self.program.get(),
-                                                     factorize=self.factor.get(), agents_quantities=False,
-                                                     rewards_only=False, f_only=False)
-        ## Merge functions and rewards
-        # print("self.functions", self.functions)
-        # print("rewards", rewards)
-        for key in self.functions.keys():
-            if key in rewards.keys():
-                self.functions[key].extend(rewards[key])
-        print("self.functions", self.functions)
-
-        self.unfold_functions()
-
-        self.status_set(f"{len(self.functions.keys())} rational functions loaded")
-
-        ## Show loaded functions
-        self.functions_text.delete('1.0', END)
-        self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
-
-        # self.testy_text.delete('1.0', END)
-        # self.testy_text.insert('1.0', open(self.functions_file.get(), 'r').read())
-        #
-        # self.testy_text2.delete('1.0', END)
-        # self.testy_text2.insert('1.0', open(self.functions_file.get(), 'r').read())
-
-    def unfold_functions(self):
-        """" unfolds the function dictionary into a single list """
-        if isinstance(self.functions, dict):
-            ## TBD Maybe rewrite this as key and pass the argument to unfold_functions2
-            ## NO because dunno how to send it to the function as a argument
-            self.key = StringVar()
-            self.status_set(
-                "Loaded functions are in a form of dictionary, please select which item you would like to choose:")
-            self.functions_window = Toplevel(self)
-            label = Label(self.functions_window,
-                          text="Loaded functions are in a form of dictionary, please select which item you would like to choose:")
-            label.pack()
-            self.key.set(" ")
-
-            first = True
-            for key in self.functions.keys():
-                spam = Radiobutton(self.functions_window, text=key, variable=self.key, value=key)
-                spam.pack(anchor=W)
-                if first:
-                    spam.select()
-                    first = False
-            spam = Button(self.functions_window, text="OK", command=self.unfold_functions2)
-            spam.pack()
-        else:
-            self.functions_parsed_text.delete('1.0', END)
-            self.functions_parsed_text.insert('end', str(self.functions))
-
-    def unfold_functions2(self):
-        """" dummy method of unfold_functions"""
-        try:
-            self.functions = self.functions[self.key.get()]
-        except KeyError:
-            self.functions = self.functions[eval(self.key.get())]
-
-        print(self.functions)
-        self.functions_window.destroy()
-        self.unfold_functions()
-
     def recalculate_props(self):
         ## If there is some props
         if len(self.props_text.get('1.0', END)) > 1:
@@ -884,8 +936,12 @@ class Gui(Tk):
                 #         self.props.append(line[:-1])
             print("self.props", self.props)
 
+            props = ""
+            for prop in self.props:
+                props = f"{prop},\n{props}"
+            props = props[:-2]
             self.props_text.delete('1.0', END)
-            self.props_text.insert('end', str(self.props))
+            self.props_text.insert('end', props)
             self.status_set("Props loaded")
 
     def append_props(self):
@@ -1018,6 +1074,32 @@ class Gui(Tk):
             for line in self.props:
                 file.write(line)
         self.status_set("Functions saved.")
+
+    def save_parsed_functions(self):
+        print("Saving the parsed functions ...")
+        if self.functions is "":
+            self.status_set("There is no functions to be saved.")
+            return
+
+        print("self.program.get()", self.program.get())
+        if self.program.get() == "prism":
+            initial_dir = self.prism_results
+        elif self.program.get() == "storm":
+            initial_dir = self.storm_results
+        else:
+            messagebox.showwarning("Save parsed rational functions", "Select a program for which you want to save functions.")
+            return
+
+        save_functions_file = filedialog.asksaveasfilename(initialdir=initial_dir,
+                                                           title="Rational functions saving - Select file",
+                                                           filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+
+        if "." not in save_functions_file:
+            save_functions_file = save_functions_file + ".p"
+        # print("save_data_file", save_data_file)
+
+        pickle.dump(self.functions, open(save_functions_file, 'wb'))
+        self.status_set("Parsed functions saved.")
 
     def save_data(self):
         print("Saving the data ...")
@@ -1163,7 +1245,7 @@ class Gui(Tk):
         self.status_set("Choosing parameters value:")
         self.new_window = Toplevel(self)
         label = Label(self.new_window,
-                      text="Please choose value of respective parameter:")
+                      text="Please choose value of respective parameter of the synthesised function(s):")
         label.grid(row=0)
         self.key.set(" ")
 
@@ -1287,8 +1369,13 @@ class Gui(Tk):
         print("self.data_file.get()", self.data_file.get())
         self.status_set("Intervals are being created ...")
         self.intervals = create_intervals(float(self.alpha_entry.get()), float(self.n_samples_entry.get()), self.data)
+
+        intervals = ""
+        for interval in self.intervals:
+            intervals = f"({interval.inf}, {interval.sup}),\n{intervals}"
+        intervals = intervals[:-2]
         self.interval_text.delete('1.0', END)
-        self.interval_text.insert('end', self.intervals)
+        self.interval_text.insert('end', intervals)
         self.status_set("Intervals created.")
 
         self.intervals_changed = True
@@ -1332,8 +1419,12 @@ class Gui(Tk):
             self.props_changed = True
             self.props_file.set("")
 
+            props = ""
+            for prop in self.props:
+                props = f"{prop},\n{props}"
+            props = props[:-2]
             self.props_text.delete('1.0', END)
-            self.props_text.insert('end', str(self.props))
+            self.props_text.insert('end', props)
             print("self.props", self.props)
         return True
 
