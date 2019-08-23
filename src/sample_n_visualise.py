@@ -26,10 +26,15 @@ def cartesian_product(*arrays):
     return arr.reshape(-1, la)
 
 
-def get_param_values(parameters, size_q, debug):
+def get_param_values(parameters, size_q, intervals=False, debug=False):
     parameter_values = []
     for param in range(len(parameters)):
-        parameter_values.append(np.linspace(0, 1, size_q, endpoint=True))
+        if intervals:
+            if debug:
+                print(f"parameter index:{param} with intervals: [{intervals[param][0]},{intervals[param][1]}]")
+            parameter_values.append(np.linspace(intervals[param][0], intervals[param][1], size_q, endpoint=True))
+        else:
+            parameter_values.append(np.linspace(0, 1, size_q, endpoint=True))
     parameter_values = cartesian_product(*parameter_values)
     if (len(parameters) - 1) == 0:
         parameter_values = np.linspace(0, 1, size_q, endpoint=True)[np.newaxis, :].T
@@ -150,13 +155,14 @@ def sample(dic_fun, agents_quantities, size_q, debug=False):
     return arr
 
 
-def sample_fun(list_fun, size_q, debug=False):
+def sample_fun(list_fun, size_q, intervals=False, debug=False):
     """ Returns probabilities of i successes for sampled parametrisation
 
     Args
     ----------
     list_fun: (list of polynomials)
     size_q: (int) sample size in each parameter
+    intervals: (list of pairs of numbers) intervals of parameters
     debug: (Bool) if debug extensive output is provided
 
     Returns
@@ -168,6 +174,7 @@ def sample_fun(list_fun, size_q, debug=False):
     if debug:
         print("Inside of sample_n_visualise.sample()")
         print("list_fun", list_fun)
+        print("intervals", intervals)
     for polynome in list_fun:
         if debug:
             print("polynome", polynome)
@@ -183,7 +190,7 @@ def sample_fun(list_fun, size_q, debug=False):
         if debug:
             print("parameters", parameters)
 
-        parameter_values = get_param_values(parameters, size_q, debug)
+        parameter_values = get_param_values(parameters, size_q, intervals=intervals, debug=debug)
 
         for parameter_value in parameter_values:
             if debug:

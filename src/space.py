@@ -592,8 +592,8 @@ class RefinedSpace:
     def nice_print(self):
         """ Returns the class in a human readable format"""
         spam = ""
-        spam = spam + str(f"region: {self.region}\n")
         spam = spam + str(f"params: {self.params}\n")
+        spam = spam + str(f"region: {self.region}\n")
         spam = spam + str(f"types: {self.types}\n")
         spam = spam + str(f"rectangles_sat: {self.sat}\n")
         spam = spam + str(f"rectangles_unsat: {self.unsat}\n")
