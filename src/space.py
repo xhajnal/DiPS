@@ -131,7 +131,7 @@ class RefinedSpace:
         if isinstance(rectangles_sat, tuple):
             self.rectangles_sat = [rectangles_sat]
         else:
-            self.sat = rectangles_sat
+            self.rectangles_sat = rectangles_sat
 
         ## UNSAT RECTANGLES
         if rectangles_unsat is False:
@@ -140,9 +140,9 @@ class RefinedSpace:
         if not isinstance(rectangles_unsat, Iterable):
             raise Exception("Given rectangles_unsat is not iterable")
         if isinstance(rectangles_unsat, tuple):
-            self.rectangles_sat = [rectangles_sat]
+            self.rectangles_unsat = [rectangles_unsat]
         else:
-            self.unsat = rectangles_unsat
+            self.rectangles_unsat = rectangles_unsat
 
         ## UNKNOWN RECTANGLES
         # print("rectangles_unknown", rectangles_unknown)
@@ -401,11 +401,11 @@ class RefinedSpace:
 
     def add_green(self, green):
         """Adds green (hyper)rectangle"""
-        self.sat.append(green)
+        self.rectangles_sat.append(green)
 
     def add_red(self, red):
         """Adds red (hyper)rectangle"""
-        self.unsat.append(red)
+        self.rectangles_unsat.append(red)
 
     def add_white(self, white):
         """Adds white (hyper)rectangle"""
@@ -433,11 +433,11 @@ class RefinedSpace:
 
     def remove_green(self, green):
         """Removes green (hyper)rectangle"""
-        self.sat.remove(green)
+        self.rectangles_sat.remove(green)
 
     def remove_red(self, red):
         """Removes red (hyper)rectangle"""
-        self.unsat.remove(red)
+        self.rectangles_unsat.remove(red)
 
     def remove_white(self, white):
         """Removes white (hyper)rectangle"""
@@ -450,11 +450,11 @@ class RefinedSpace:
 
     def get_green(self):
         """Returns green (hyper)rectangles"""
-        return self.sat
+        return self.rectangles_sat
 
     def get_red(self):
         """Returns red (hyper)rectangles"""
-        return self.unsat
+        return self.rectangles_unsat
 
     def get_white(self):
         """Returns white (hyper)rectangles"""
@@ -465,10 +465,10 @@ class RefinedSpace:
         cumulative_volume = 0
 
         ## If there is no hyperrectangle in the sat space
-        if not self.sat:
+        if not self.rectangles_sat:
             return 0.0
 
-        for rectangle in self.sat:
+        for rectangle in self.rectangles_sat:
             cumulative_volume = cumulative_volume + get_rectangle_volume(rectangle)
         return cumulative_volume
 
@@ -477,10 +477,10 @@ class RefinedSpace:
         cumulative_volume = 0
 
         ## If there is no hyperrectangle in the unsat space
-        if not self.unsat:
+        if not self.rectangles_unsat:
             return 0.0
 
-        for rectangle in self.unsat:
+        for rectangle in self.rectangles_unsat:
             cumulative_volume = cumulative_volume + get_rectangle_volume(rectangle)
         return cumulative_volume
 
@@ -500,12 +500,12 @@ class RefinedSpace:
             print("Error while visualising", len(self.region), "dimensional space")
             return
         elif len(self.region) == 2:
-            for rectangle in self.sat:
+            for rectangle in self.rectangles_sat:
                 ## (Rectangle((low_x,low_y), width, height, fc= color)
                 rectangles_sat.append(Rectangle((rectangle[0][0], rectangle[1][0]), rectangle[0][1] - rectangle[0][0],
                                                 rectangle[1][1] - rectangle[1][0], fc='g'))
         elif len(self.region) == 1:
-            for rectangle in self.sat:
+            for rectangle in self.rectangles_sat:
                 ## (Rectangle((low_x,low_y), width, height, fc= color)
                 rectangles_sat.append(
                     Rectangle((rectangle[0][0], 0.33), rectangle[0][1] - rectangle[0][0], 0.33, fc='g'))
@@ -518,12 +518,12 @@ class RefinedSpace:
             print("Error while visualising", len(self.region), "dimensional space")
             return
         elif len(self.region) == 2:
-            for rectangle in self.unsat:
+            for rectangle in self.rectangles_unsat:
                 ## (Rectangle((low_x,low_y), width, height, fc= color)
                 rectangles_unsat.append(Rectangle((rectangle[0][0], rectangle[1][0]), rectangle[0][1] - rectangle[0][0],
                                                   rectangle[1][1] - rectangle[1][0], fc='r'))
         elif len(self.region) == 1:
-            for rectangle in self.unsat:
+            for rectangle in self.rectangles_unsat:
                 ## (Rectangle((low_x,low_y), width, height, fc= color)
                 rectangles_unsat.append(
                     Rectangle((rectangle[0][0], 0.33), rectangle[0][1] - rectangle[0][0], 0.33, fc='r'))
@@ -595,8 +595,8 @@ class RefinedSpace:
         spam = spam + str(f"params: {self.params}\n")
         spam = spam + str(f"region: {self.region}\n")
         spam = spam + str(f"types: {self.types}\n")
-        spam = spam + str(f"rectangles_sat: {self.sat}\n")
-        spam = spam + str(f"rectangles_unsat: {self.unsat}\n")
+        spam = spam + str(f"rectangles_sat: {self.rectangles_sat}\n")
+        spam = spam + str(f"rectangles_unsat: {self.rectangles_unsat}\n")
         spam = spam + str(f"rectangles_unknown: {self.unknown}\n")
         spam = spam + str(f"sat_samples: {self.sat_samples}\n")
         spam = spam + str(f"unsat_samples: {self.unsat_samples}\n")
@@ -604,10 +604,10 @@ class RefinedSpace:
         return spam
 
     def __repr__(self):
-        return str([self.region, self.sat, self.unsat, self.unknown])
+        return str([self.region, self.rectangles_sat, self.rectangles_unsat, self.unknown])
 
     def __str__(self):
-        return str([self.region, self.sat, self.unsat, self.unknown])
+        return str([self.region, self.rectangles_sat, self.rectangles_unsat, self.unknown])
 
 
 class TestLoad(unittest.TestCase):

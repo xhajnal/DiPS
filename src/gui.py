@@ -137,7 +137,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.3.0"  ## version of the gui
+        self.version = "1.3.1"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
