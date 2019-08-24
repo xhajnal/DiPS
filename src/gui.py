@@ -1411,13 +1411,12 @@ class Gui(Tk):
 
         ## Checking if all entries filled
         if self.size_q == "":
-            messagebox.showwarning("Refine space", "Choose size_q, number of samples before sampling.")
+            messagebox.showwarning("Sample space", "Choose size_q, number of samples before sampling.")
             return
 
-        ## If no space loaded check properties
-        if self.space == "":
-            if not self.validate_props("Sample Space"):
-                return
+        if self.props == "":
+            messagebox.showwarning("Sample space", "Load or calculate props before refinement.")
+            return
 
         ## Check space
         if not self.validate_space("Sample Space"):
@@ -1484,10 +1483,9 @@ class Gui(Tk):
             messagebox.showwarning("Refine space", "Pick algorithm for the refinement before running.")
             return
 
-        ## If no space loaded check properties
-        if self.space == "":
-            if not self.validate_props("Refine Space"):
-                return
+        if self.props == "":
+            messagebox.showwarning("Refine space", "Load or calculate props before refinement.")
+            return
 
         if not self.validate_space("Refine Space"):
             return
