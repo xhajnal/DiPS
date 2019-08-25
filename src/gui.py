@@ -137,7 +137,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.3.1"  ## version of the gui
+        self.version = "1.3.2"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -1735,10 +1735,16 @@ class Gui(Tk):
         self.status.update_idletasks()
 
 
+def quit_gui():
+    gui.quit()
+
+
 gui = Gui()
 ## System dependent fullscreen setting
 if "wind" in platform.system().lower():
     gui.state('zoomed')
 else:
     gui.attributes('-zoomed', True)
+
+gui.protocol('WM_DELETE_WINDOW', quit_gui)  # root is your root window
 gui.mainloop()

@@ -836,8 +836,8 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
 
             # for rectangle in to_be_searched:
             #     print(rectangle)
-            #     # print("safe", space.sat)
-            #     print("unsafe", space.unsat)
+            #     # print("safe", space.get_green())
+            #     print("unsafe", space.get_red())
             #     space.add_white(rectangle)
             #     private_check_deeper_interval(rectangle, props, 0, epsilon, coverage, silent)
 

@@ -132,6 +132,7 @@ class RefinedSpace:
             self.rectangles_sat = [rectangles_sat]
         else:
             self.rectangles_sat = rectangles_sat
+        self.rectangles_sat_to_show = copy.copy(self.rectangles_sat)
 
         ## UNSAT RECTANGLES
         if rectangles_unsat is False:
@@ -143,6 +144,7 @@ class RefinedSpace:
             self.rectangles_unsat = [rectangles_unsat]
         else:
             self.rectangles_unsat = rectangles_unsat
+        self.rectangles_unsat_to_show = copy.copy(self.rectangles_unsat)
 
         ## UNKNOWN RECTANGLES
         # print("rectangles_unknown", rectangles_unknown)
@@ -402,10 +404,12 @@ class RefinedSpace:
     def add_green(self, green):
         """Adds green (hyper)rectangle"""
         self.rectangles_sat.append(green)
+        self.rectangles_sat_to_show.append(green)
 
     def add_red(self, red):
         """Adds red (hyper)rectangle"""
         self.rectangles_unsat.append(red)
+        self.rectangles_unsat_to_show.append(red)
 
     def add_white(self, white):
         """Adds white (hyper)rectangle"""
@@ -434,10 +438,18 @@ class RefinedSpace:
     def remove_green(self, green):
         """Removes green (hyper)rectangle"""
         self.rectangles_sat.remove(green)
+        try:
+            self.rectangles_sat_to_show.remove(green)
+        except:
+            pass
 
     def remove_red(self, red):
         """Removes red (hyper)rectangle"""
         self.rectangles_unsat.remove(red)
+        try:
+            self.rectangles_unsat_to_show.remove(red)
+        except:
+            pass
 
     def remove_white(self, white):
         """Removes white (hyper)rectangle"""
@@ -459,6 +471,10 @@ class RefinedSpace:
     def get_white(self):
         """Returns white (hyper)rectangles"""
         return self.unknown
+
+    def get_params(self):
+        """Returns parameters"""
+        return self.params
 
     def get_green_volume(self):
         """Returns volume of green subspace"""
@@ -500,15 +516,16 @@ class RefinedSpace:
             print("Error while visualising", len(self.region), "dimensional space")
             return
         elif len(self.region) == 2:
-            for rectangle in self.rectangles_sat:
+            for rectangle in self.rectangles_sat_to_show:
                 ## (Rectangle((low_x,low_y), width, height, fc= color)
                 rectangles_sat.append(Rectangle((rectangle[0][0], rectangle[1][0]), rectangle[0][1] - rectangle[0][0],
                                                 rectangle[1][1] - rectangle[1][0], fc='g'))
         elif len(self.region) == 1:
-            for rectangle in self.rectangles_sat:
+            for rectangle in self.rectangles_sat_to_show:
                 ## (Rectangle((low_x,low_y), width, height, fc= color)
                 rectangles_sat.append(
                     Rectangle((rectangle[0][0], 0.33), rectangle[0][1] - rectangle[0][0], 0.33, fc='g'))
+        self.rectangles_sat_to_show = []
         return PatchCollection(rectangles_sat, facecolor='g', alpha=0.5)
 
     def show_red(self):
@@ -518,15 +535,16 @@ class RefinedSpace:
             print("Error while visualising", len(self.region), "dimensional space")
             return
         elif len(self.region) == 2:
-            for rectangle in self.rectangles_unsat:
+            for rectangle in self.rectangles_unsat_to_show:
                 ## (Rectangle((low_x,low_y), width, height, fc= color)
                 rectangles_unsat.append(Rectangle((rectangle[0][0], rectangle[1][0]), rectangle[0][1] - rectangle[0][0],
                                                   rectangle[1][1] - rectangle[1][0], fc='r'))
         elif len(self.region) == 1:
-            for rectangle in self.rectangles_unsat:
+            for rectangle in self.rectangles_unsat_to_show:
                 ## (Rectangle((low_x,low_y), width, height, fc= color)
                 rectangles_unsat.append(
                     Rectangle((rectangle[0][0], 0.33), rectangle[0][1] - rectangle[0][0], 0.33, fc='r'))
+        self.rectangles_unsat_to_show = []
         return PatchCollection(rectangles_unsat, facecolor='r', alpha=0.5)
 
     ## TBD DELETED AS IT IS GRID SAMPLING
@@ -568,8 +586,9 @@ class RefinedSpace:
             try:
                 x_size = self.region[0][1]-self.region[0][0]
                 y_size = self.region[1][1]-self.region[1][0]
-                x_size_correction = min(1 / (len(self.sat_samples) + len(self.unsat_samples)) ** (1 / len(self.region)), 0.01*x_size)
-                y_size_correction = min(1/(len(self.sat_samples) + len(self.unsat_samples))**(1/len(self.region)), 0.01*y_size)
+                x_size_correction = min(1 / (len(self.sat_samples) + len(self.unsat_samples)) ** (1 / len(self.region)), 0.01 * x_size)
+                y_size_correction = min(1 / (len(self.sat_samples) + len(self.unsat_samples)) ** (1 / len(self.region)), 0.01 * y_size)
+
             except:
                 print("len(self.sat_samples)", len(self.sat_samples))
                 print("len(self.unsat_samples)", len(self.unsat_samples))
@@ -613,7 +632,7 @@ class RefinedSpace:
 class TestLoad(unittest.TestCase):
     def test_space(self):
         print("Test Refined space here")
-        ## def __init__(region, params, rectangles_sat=[], rectangles_unsat=[], rectangles_unknown=None):
+        ## (region, params, types=None, rectangles_sat=False, rectangles_unsat=False, rectangles_unknown=None, sat_samples=None, unsat_samples=None, true_point=False, title=False):
         with self.assertRaises(Exception):
             RefinedSpace(5, )
         with self.assertRaises(Exception):
@@ -628,6 +647,7 @@ class TestLoad(unittest.TestCase):
         self.assertEqual(space.get_red_volume(), 0)
         self.assertEqual(space.get_nonwhite_volume(), 0)
         self.assertEqual(space.get_coverage(), 0)
+        space.show(f"No green, \n achieved_coverage: {space.get_coverage() * 100}%")
 
         space = RefinedSpace([(0, 1)], ["x"])
         self.assertEqual(space.get_volume(), 1)
