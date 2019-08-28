@@ -1,6 +1,10 @@
 import configparser
 import os
 import sys
+from os.path import isfile
+from pathlib import Path
+
+from sympy import Interval
 
 workspace = os.path.dirname(__file__)
 cwd = os.getcwd()
@@ -33,6 +37,62 @@ if not os.path.exists(model_folder):
     raise OSError("Directory does not exist: " + str(model_folder))
 
 os.chdir(cwd)
+
+
+def general_create_data_informed_properties(prop_file, intervals, output_file=False):
+    """ Creates data informed property file from regular "profile" and intervals
+    Args
+    ----------
+    prop_file: (File/string) regular prop file which contains lines in the form P=? (...)
+    intervals: (list of pairs of numbers) list of intervals to assign for the properties
+    output_file: (File/string/False) output prop file, if False or not given data_informed_properties as a list of strings is returned
+    """
+    if isinstance(prop_file, str):
+        prop_file = Path(prop_file)
+        if not isfile(prop_file):
+            raise Exception(f"{prop_file} is not a file.")
+    data_informed_properties = []
+    i = 0
+    with open(prop_file, "r") as file:
+        for line in file:
+            if line.startswith("P=?"):
+                prefix = "P"
+                line = line.split("P=?")[1]
+            elif line.startswith("R") and "=?" in line:
+                prefix = line.split("=?")[0]
+                line = line.split("=?")[1]
+            else:
+                continue
+            try:
+                if isinstance(intervals[i], Interval):
+                    data_informed_properties.append(f"{prefix}>{str(intervals[i].inf)} {line}")
+                    data_informed_properties.append(f"{prefix}<{str(intervals[i].sup)} {line}")
+                else:
+                    data_informed_properties.append(f"{prefix}>{str(intervals[i][0])} {line}")
+                    data_informed_properties.append(f"{prefix}<{str(intervals[i][1])} {line}")
+                i = i + 1
+            ## Checking sizes of properties and intervals
+            except IndexError:
+                print("data_informed_properties", data_informed_properties)
+                raise Exception(f"Number of properties is larger than number of intervals {len(intervals)}")
+
+    print("data_informed_properties", data_informed_properties)
+    ## Checking sizes of properties and intervals
+    if len(intervals) is not i:
+        raise Exception(f"Number of properties {i} is not corresponding to number of intervals {len(intervals)}")
+
+    if not output_file:
+        ## Getting rid of EOL
+        data_informed_properties = list(map(lambda x: x[:-1], data_informed_properties))
+        return data_informed_properties
+    else:
+        if isinstance(prop_file, str):
+            output_file = Path(output_file)
+            if not isfile(output_file):
+                raise Exception(f"{output_file} is not a file.")
+        with open(output_file, "w") as file:
+            for line in data_informed_properties:
+                file.write(line)
 
 
 def create_data_informed_properties(population, data, alpha, n_samples, multiparam, seq):
