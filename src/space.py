@@ -608,17 +608,17 @@ class RefinedSpace:
                     samples.append(Rectangle((rectangle[0]-0.005*x_size, rectangle[1]-0.005*y_size), x_size_correction, y_size_correction, fc='r'))
                 return PatchCollection(samples, facecolor='r', alpha=0.5)
 
-    def nice_print(self):
+    def nice_print(self, full_print=False):
         """ Returns the class in a human readable format"""
         spam = ""
         spam = spam + str(f"params: {self.params}\n")
         spam = spam + str(f"region: {self.region}\n")
         spam = spam + str(f"types: {self.types}\n")
-        spam = spam + str(f"rectangles_sat: {self.rectangles_sat}\n")
-        spam = spam + str(f"rectangles_unsat: {self.rectangles_unsat}\n")
-        spam = spam + str(f"rectangles_unknown: {self.unknown}\n")
-        spam = spam + str(f"sat_samples: {self.sat_samples}\n")
-        spam = spam + str(f"unsat_samples: {self.unsat_samples}\n")
+        spam = spam + str(f"rectangles_sat: {(f'{self.rectangles_sat[:5]} ... more', self.rectangles_sat)[len(self.rectangles_sat) <= 30 or full_print]} \n")
+        spam = spam + str(f"rectangles_unsat: {(f'{self.rectangles_unsat[:5]} ... more', self.rectangles_unsat)[len(self.rectangles_unsat) <= 30 or full_print]} \n")
+        spam = spam + str(f"rectangles_unknown: {(f'{self.unknown[:5]} ... more', self.unknown)[len(self.unknown) <= 30 or full_print]} \n")
+        spam = spam + str(f"sat_samples: {(f'{self.sat_samples[:5]} ... more', self.sat_samples)[len(self.sat_samples) <= 30 or full_print]} \n")
+        spam = spam + str(f"unsat_samples: {(f'{self.unsat_samples[:5]} ... more', self.unsat_samples)[len(self.unsat_samples) <= 30 or full_print]} \n")
         spam = spam + str(f"true_point: {self.true_point}\n")
         return spam
 
