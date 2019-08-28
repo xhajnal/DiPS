@@ -4,6 +4,7 @@ from time import localtime, strftime
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 from numpy import prod
 import copy
 import unittest
@@ -310,7 +311,8 @@ class RefinedSpace:
                         i = i + 1
                         x_axis.append(i)
                     if self.true_point and true_point:
-                        spam = ax.scatter(x_axis, self.true_point, marker='x', label="true_point")
+                        ax.scatter(x_axis, self.true_point, marker='x', label="true_point")
+                        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
                         ax.plot(x_axis, self.true_point)
                         plt.legend(loc='upper right', numpoints=1, ncol=3, fontsize=8)
 
@@ -318,6 +320,7 @@ class RefinedSpace:
                     for sample in self.sat_samples:
                         # print("samples", sample)
                         ax.scatter(x_axis, sample)
+                        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
                         ax.plot(x_axis, sample)
                     ax.set_xlabel("param indices")
                     ax.set_ylabel("parameter value")
@@ -362,6 +365,7 @@ class RefinedSpace:
                     for sample in self.unsat_samples:
                         # print("samples", sample)
                         ax.scatter(x_axis, sample)
+                        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
                         ax.plot(x_axis, sample)
                     ax.set_xlabel("param indices")
                     ax.set_ylabel("parameter value")
