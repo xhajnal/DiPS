@@ -1340,6 +1340,9 @@ class Gui(Tk):
         if self.page3_figure_locked.get():
             if not askyesno("Ploting rational functions in a given point", "The result plot is currently in use. Do you want override?"):
                 return
+            else:
+                self.page3_a.cla()
+
         self.page3_figure_locked.set(True)
 
         if self.functions == "":
@@ -1385,18 +1388,18 @@ class Gui(Tk):
 
         ## TBD If self.functions got more than one entry
         ## Getting the plot values instead of the plot itself
-        ax = eval_and_show(self.functions, self.parameter_values, give_back=True)
+        spam, egg = eval_and_show(self.functions, self.parameter_values, give_back=True, where=[self.page3_figure, self.page3_a])
 
-        self.page3_figure.clf()
-        self.page3_a = self.page3_figure.add_subplot(111)
-        # print("setting values", ax)
-        self.page3_a.set_ylabel(ax[3])
-        self.page3_a.set_xlabel(ax[4])
-        self.page3_a.set_title(ax[5])
-        self.page3_a.bar(ax[0], ax[1], ax[2], color='b')
-        self.page3_figure.tight_layout()  ## By huypn
-        self.page3_figure.canvas.draw()
-        self.page3_figure.canvas.flush_events()
+        if spam is None:
+            messagebox.showinfo("Plots rational functions in a given point.", egg)
+        else:
+            self.page3_figure = spam
+            self.page3_a = egg
+            self.page3_a.autoscale(enable=False)
+            self.page3_figure.tight_layout()  ## By huypn
+            self.page3_figure.canvas.draw()
+            self.page3_figure.canvas.flush_events()
+
         self.status_set("Sampling rational functions done.")
 
     def show_funs_in_all_points(self):
@@ -1439,19 +1442,17 @@ class Gui(Tk):
             ## If
             if self.page3_figure_locked.get():
                 return
-            ax = eval_and_show(self.functions, parameter_point, give_back=True)
+            spam, egg = eval_and_show(self.functions, parameter_point, give_back=True, where=[self.page3_figure, self.page3_a])
 
-            self.page3_figure.clf()
-
-            self.page3_a = self.page3_figure.add_subplot(111)
-            # print("setting values", ax)
-            self.page3_a.set_ylabel(ax[3])
-            self.page3_a.set_xlabel(ax[4])
-            self.page3_a.set_title(ax[5])
-            self.page3_a.bar(ax[0], ax[1], ax[2], color='b')
-
-            self.page3_figure.canvas.draw()
-            self.page3_figure.canvas.flush_events()
+            if spam is None:
+                messagebox.showinfo("Plots rational functions in a given point.", egg)
+            else:
+                self.page3_figure = spam
+                self.page3_a = egg
+                self.page3_a.autoscale(enable=False)
+                self.page3_figure.tight_layout()  ## By huypn
+                self.page3_figure.canvas.draw()
+                self.page3_figure.canvas.flush_events()
 
             self.Next_sample.wait_variable(self.button_pressed)
         self.Next_sample.config(state="disabled")
@@ -1840,7 +1841,10 @@ class Gui(Tk):
     def cursor_toggle_busy(self, busy=True):
         """Inner function to update cursor"""
         if busy:
-            self.config(cursor='wait')
+            if "wind" in platform.system().lower():
+                self.config(cursor='wait')
+            else:
+                self.config(cursor='clock')
         else:
             self.config(cursor='')
         self.update()

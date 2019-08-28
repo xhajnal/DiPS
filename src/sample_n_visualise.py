@@ -7,6 +7,7 @@ import pandas as pd
 import pylab as pl
 import seaborn as sns
 from matplotlib import collections as mc
+from matplotlib.ticker import MaxNLocator
 
 workspace = os.path.dirname(__file__)
 sys.path.append(os.path.join(workspace, '../src/'))
@@ -43,7 +44,7 @@ def get_param_values(parameters, size_q, intervals=False, debug=False):
     return parameter_values
 
 
-def eval_and_show(fun_list, parameter_value, cumulative=False, debug=False, give_back=False):
+def eval_and_show(fun_list, parameter_value, cumulative=False, debug=False, give_back=False, where=False):
     """ Creates bar plot of probabilities of i successes for given parametrisation
 
     Args
@@ -53,6 +54,7 @@ def eval_and_show(fun_list, parameter_value, cumulative=False, debug=False, give
     cumulative: (Bool) if True cdf instead of pdf is visualised
     debug: (Bool) if debug extensive output is provided
     give_back: (Bool) if True the plot is not shown but returned
+    where: (Tuple/List) : output matplotlib sources to output created figure
     """
     parameters = set()
     for polynome in fun_list:
@@ -87,15 +89,23 @@ def eval_and_show(fun_list, parameter_value, cumulative=False, debug=False, give
             a.append(eval(polynome))
             title = f"{title} {eval(polynome)} ,"
     title = title[:-2]
-    fig, ax = plt.subplots()
+    if where:
+        fig = where[0]
+        ax = where[1]
+        plt.autoscale()
+        ax.autoscale()
+    else:
+        fig, ax = plt.subplots()
     width = 0.2
     ax.set_ylabel('Value')
-    ax.set_xlabel('Rational function index')
+    ax.set_xlabel('Rational function indices')
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     print(title)
     ax.set_title(title)
-    rects1 = ax.bar(range(len(fun_list)), a, width, color='b')
+    print("len(fun_list)", len(fun_list))
+    ax.bar(range(1, len(fun_list)+1), a, width, color='b')
     if give_back:
-        return [range(len(fun_list)), a, width, "Value", 'Rational function index', title]
+        return fig, ax
     plt.show()
     return a
 
@@ -274,7 +284,7 @@ def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug=False,
             fig, ax = plt.subplots()
             width = 0.2
             ax.set_ylabel('Value')
-            ax.set_xlabel('Rational function index')
+            ax.set_xlabel('Rational function indices')
             ax.set_title(title)
             print(title)
             rects1 = ax.bar(range(len(dic_fun[N])), a[len(parameters) + 2:], width, color='b')
