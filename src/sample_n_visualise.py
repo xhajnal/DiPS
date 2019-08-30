@@ -332,7 +332,7 @@ def visualise_byparam(hyper_rectangles):
         print("Given space is empty, no intervals to be visualised")
 
 
-def heatmap(fun, region, sampling_sizes):
+def heatmap(fun, region, sampling_sizes, posttitle="", where=False):
     """ Creates 2D heatmap plot of sampled points of given function
 
     Args
@@ -340,6 +340,8 @@ def heatmap(fun, region, sampling_sizes):
     fun: dictionary N -> list of polynomials
     region: (list of intervals) boundaries of parameter space to be sampled
     sampling_sizes: (int) tuple of sample size of respective parameter
+    posttitle: (string) A string to be put after the title
+    where: (Tuple/List) : output matplotlib sources to output created figure
 
     Example
     ----------
@@ -373,9 +375,16 @@ def heatmap(fun, region, sampling_sizes):
     d = pd.DataFrame(arr, columns=[parameters[0], parameters[1], "E"])
     # d = d.pivot("p", "q", "E")
     d = d.pivot(parameters[0], parameters[1], "E")
-    ax = sns.heatmap(d)
-    ax.set_title("Heatmap of the parameter space")
-    plt.show()
+
+    if where:
+        f, ax = plt.subplots()
+        ax = sns.heatmap(d)
+        ax.set_title(f"Heatmap \n{posttitle}")
+        return f
+    else:
+        ax = sns.heatmap(d)
+        ax.set_title("Heatmap of the parameter space")
+        plt.show()
 
 
 def visualise_sampled_byparam(hyper_rectangles, sample_size):

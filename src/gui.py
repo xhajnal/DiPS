@@ -13,6 +13,7 @@ from tkinter.messagebox import askyesno
 import matplotlib.pyplot as pyplt
 import matplotlib
 # from termcolor import colored
+
 from mc_informed import general_create_data_informed_properties
 
 matplotlib.use("TKAgg")
@@ -29,7 +30,7 @@ from load import create_intervals, load_all_functions, find_param
 import space
 from synthetise import ineq_to_props, check_deeper
 from mc_prism import call_prism_files, call_storm_files
-from sample_n_visualise import sample_fun, eval_and_show, get_param_values
+from sample_n_visualise import sample_fun, eval_and_show, get_param_values, heatmap
 
 cwd = os.getcwd()
 
@@ -140,7 +141,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.4.0"  ## version of the gui
+        self.version = "1.4.2"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -291,45 +292,37 @@ class Gui(Tk):
 
 
         ## TAB SAMPLE AND VISUALISE
-        page3 = ttk.Frame(nb, width=400, height=200, name="sampling")
-        nb.add(page3, text='Sample functions')
+        self.page3 = ttk.Frame(nb, width=400, height=200, name="sampling")
+        nb.add(self.page3, text='Sample functions')
 
-        page3.rowconfigure(5, weight=1)
-        page3.columnconfigure(6, weight=1)
+        self.page3.rowconfigure(5, weight=1)
+        self.page3.columnconfigure(6, weight=1)
 
-        Label(page3, text="Set number of samples per variable (grid size):", anchor=W, justify=LEFT).grid(row=1, column=0, padx=4, pady=4)
-        self.fun_size_q_entry = Entry(page3)
+        Label(self.page3, text="Set number of samples per variable (grid size):", anchor=W, justify=LEFT).grid(row=1, column=0, padx=4, pady=4)
+        self.fun_size_q_entry = Entry(self.page3)
         self.fun_size_q_entry.grid(row=1, column=1)
 
-        Button(page3, text='Sample functions', command=self.sample_fun).grid(row=2, column=0, sticky=W, padx=4, pady=4)
+        Button(self.page3, text='Sample functions', command=self.sample_fun).grid(row=2, column=0, sticky=W, padx=4, pady=4)
 
-        Label(page3, text=f"Values of sampled points:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, padx=4, pady=4)
+        Label(self.page3, text=f"Values of sampled points:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, padx=4, pady=4)
 
-        self.sampled_functions_text = scrolledtext.ScrolledText(page3, height=100, state=DISABLED)
+        self.sampled_functions_text = scrolledtext.ScrolledText(self.page3, height=100, state=DISABLED)
         self.sampled_functions_text.grid(row=4, column=0, columnspan=16, rowspan=2, sticky=W, padx=4, pady=4)
 
-        Label(page3, text=f"Rational functions visualisation", anchor=W, justify=CENTER).grid(row=1, column=17, columnspan=2, padx=4, pady=4)
-        Button(page3, text='Plot functions in a given point', command=self.show_funs).grid(row=2, column=17, sticky=W, padx=4, pady=4)
-        Button(page3, text='Plot all sampled points', command=self.show_funs_in_all_points).grid(row=3, column=17, sticky=W, padx=4, pady=4)
-        self.Next_sample = Button(page3, text="Next plot", state="disabled", command=lambda: self.button_pressed.set(True))
-        self.Next_sample.grid(row=3, column=18, sticky=W, padx=4, pady=4)
+        Label(self.page3, text=f"Rational functions visualisation", anchor=W, justify=CENTER).grid(row=1, column=17, columnspan=3, pady=4)
+        Button(self.page3, text='Plot functions in a given point', command=self.show_funs).grid(row=2, column=17, sticky=W, padx=4, pady=4)
+        Button(self.page3, text='Plot all sampled points', command=self.show_funs_in_all_points).grid(row=2, column=18, sticky=W, padx=4, pady=4)
+        Button(self.page3, text='Heatmap', command=self.show_heatmap).grid(row=2, column=19, sticky=W, padx=4, pady=4)
+        self.Next_sample_button = Button(self.page3, text="Next plot", state="disabled", command=lambda: self.button_pressed.set(True))
+        self.Next_sample_button.grid(row=3, column=18, sticky=W, padx=4, pady=4)
 
-        self.page3_plotframe = Frame(page3)
-        self.page3_plotframe.grid(row=4, column=17, columnspan=2, sticky=W, padx=4, pady=4)
-        self.page3_figure = pyplt.figure()
-        self.page3_a = self.page3_figure.add_subplot(111)
+        self.page3_figure = None
+        # self.page3_figure = pyplt.figure()
+        # self.page3_a = self.page3_figure.add_subplot(111)
         # print("type a", type(self.a))
 
-        self.page3_canvas = FigureCanvasTkAgg(self.page3_figure, master=self.page3_plotframe)  # A tk.DrawingArea.
-        self.page3_canvas.draw()
-        self.page3_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-
-        self.page3_toolbar = NavigationToolbar2Tk(self.page3_canvas, self.page3_plotframe)
-        self.page3_toolbar.update()
-        self.page3_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-
-        self.page3_figure_locked = BooleanVar()
-        self.page3_figure_locked.set(False)
+        self.page3_figure_in_use = BooleanVar()
+        self.page3_figure_in_use.set(False)
 
 
         ## TAB DATA
@@ -1336,18 +1329,15 @@ class Gui(Tk):
         print("Ploting rational functions in a given point...")
         self.status_set("Ploting rational functions in a given point.")
 
-        ## Disable overwriting the plot by show_funs_in_all_points
-        if self.page3_figure_locked.get():
-            if not askyesno("Ploting rational functions in a given point", "The result plot is currently in use. Do you want override?"):
-                return
-            else:
-                self.page3_a.cla()
-
-        self.page3_figure_locked.set(True)
-
         if self.functions == "":
             messagebox.showwarning("Ploting rational functions in a given point.", "Load the functions first, please.")
             return
+
+        ## Disable overwriting the plot by show_funs_in_all_points
+        if self.page3_figure_in_use.get():
+            if not askyesno("Ploting rational functions in a given point", "The result plot is currently in use. Do you want override?"):
+                return
+        self.page3_figure_in_use.set(True)
 
         ## TBD Maybe rewrite this as key and pass the argument to load_param_intervals
         self.key = StringVar()
@@ -1386,8 +1376,16 @@ class Gui(Tk):
         load_param_values_button.wait_variable(self.button_pressed)
         print("key pressed")
 
+        self.reinitialise_plot()
+
         ## TBD If self.functions got more than one entry
         ## Getting the plot values instead of the plot itself
+
+        #     self.initialise_plot(what=self.page3_figure, where=self.page3_plotframe)
+        # else:
+        #     pyplt.close()
+        #     self.page3_figure = pyplt.figure()
+        #     self.page3_a = self.page3_figure.add_subplot(111)
         spam, egg = eval_and_show(self.functions, self.parameter_values, give_back=True, where=[self.page3_figure, self.page3_a])
 
         if spam is None:
@@ -1395,53 +1393,59 @@ class Gui(Tk):
         else:
             self.page3_figure = spam
             self.page3_a = egg
+            self.initialise_plot(what=self.page3_figure)
             self.page3_a.autoscale(enable=False)
             self.page3_figure.tight_layout()  ## By huypn
-            self.page3_figure.canvas.draw()
-            self.page3_figure.canvas.flush_events()
+            #self.page3_figure.canvas.draw()
+            #self.page3_figure.canvas.flush_events()
 
+        # if spam is None:
+        #     messagebox.showinfo("Plots rational functions in a given point.", egg)
+        # else:
+        #     self.page3_figure = spam
+        #     self.page3_a = egg
+        #     self.page3_a.autoscale(enable=False)
+        #     self.page3_figure.tight_layout()  ## By huypn
+        #     self.page3_figure.canvas.draw()
+        #     self.page3_figure.canvas.flush_events()
+
+        # self.page3_figure_locked.set(False)
         self.status_set("Sampling rational functions done.")
 
     def show_funs_in_all_points(self):
         """Shows sampled rational functions in all sampled points"""
-        def onclick(event):
-            self.button_pressed.set(True)
-
         print("Ploting sampled rational functions ...")
         self.status_set("Ploting sampled rational functions.")
 
-        if self.page3_figure_locked.get():
+        if self.page3_figure_in_use.get():
             if not askyesno("Show all sampled points", "The result plot is currently in use. Do you want override?"):
                 return
-        self.page3_figure_locked.set(False)
-
-        if self.fun_size_q_entry.get() == "":
-            messagebox.showwarning("Sampling rational functions", "Choose size_q, number of samples per dimension.")
-            return
+        self.page3_figure_in_use.set(True)
 
         if self.functions == "":
             messagebox.showwarning("Sampling rational functions", "Load the functions first, please")
             return
 
-        ## TBD Maybe rewrite this as key and pass the argument to load_param_intervals
+        if self.fun_size_q_entry.get() == "":
+            messagebox.showwarning("Sampling rational functions", "Choose size_q, number of samples per dimension.")
+            return
 
-        ## TBD If self.functions got more than one entry
+        self.validate_parameters(where=self.functions)
+        ## The following should have been done in the previous line
+        # if not self.parameters:
+        #     globals()["parameters"] = set()
+        #     for polynome in self.functions:
+        #         globals()["parameters"].update(find_param(polynome))
+        #     globals()["parameters"] = sorted(list(globals()["parameters"]))
+        #     self.parameters = globals()["parameters"]
+        #     print("self.parameters", self.parameters)
+
+        ## To be used to wait until the button is pressed
         self.button_pressed.set(False)
-        self.page3_figure.canvas.mpl_connect('button_press_event', onclick)
+        self.Next_sample_button.config(state="normal")
+        self.reinitialise_plot(set_onclick=True)
 
-        if not self.parameters:
-            globals()["parameters"] = set()
-            for polynome in self.functions:
-                globals()["parameters"].update(find_param(polynome))
-            globals()["parameters"] = sorted(list(globals()["parameters"]))
-            self.parameters = globals()["parameters"]
-            print("self.parameters", self.parameters)
-
-        self.Next_sample.config(state="normal")
         for parameter_point in get_param_values(self.parameters, self.fun_size_q_entry.get(), False):
-            ## If
-            if self.page3_figure_locked.get():
-                return
             spam, egg = eval_and_show(self.functions, parameter_point, give_back=True, where=[self.page3_figure, self.page3_a])
 
             if spam is None:
@@ -1449,14 +1453,72 @@ class Gui(Tk):
             else:
                 self.page3_figure = spam
                 self.page3_a = egg
-                self.page3_a.autoscale(enable=False)
-                self.page3_figure.tight_layout()  ## By huypn
-                self.page3_figure.canvas.draw()
-                self.page3_figure.canvas.flush_events()
+                self.initialise_plot(what=self.page3_figure)
+                # self.page3_a.autoscale(enable=False)
+                # self.page3_figure.tight_layout()  ## By huypn
+                # self.page3_figure.canvas.draw()
+                # self.page3_figure.canvas.flush_events()
 
-            self.Next_sample.wait_variable(self.button_pressed)
-        self.Next_sample.config(state="disabled")
-        self.page3_figure_locked.set(False)
+            self.Next_sample_button.wait_variable(self.button_pressed)
+        self.Next_sample_button.config(state="disabled")
+        # self.page3_figure_locked.set(False)
+        self.status_set("Ploting sampled rational functions finished.")
+
+    def show_heatmap(self):
+        """Shows heatmap - sampling of a rational function in all sampled points"""
+        print("Ploting heatmap of rational functions ...")
+        self.status_set("Ploting heatmap of rational functions.")
+
+        if not self.page3_figure_in_use.get():
+            if not askyesno("Plot heatmap", "The result plot is currently in use. Do you want override?"):
+                return
+        self.page3_figure_in_use.set(True)
+
+        if self.functions == "":
+            messagebox.showwarning("Plot heatmap", "Load the functions first, please")
+            return
+
+        if self.fun_size_q_entry.get() == "":
+            messagebox.showwarning("Plot heatmap", "Choose size_q, number of samples per dimension.")
+            return
+
+        self.validate_parameters(where=self.functions)
+        ## The following should have been done in the previous line
+        # if not self.parameters:
+        #     globals()["parameters"] = set()
+        #     for polynome in self.functions:
+        #         globals()["parameters"].update(find_param(polynome))
+        #     globals()["parameters"] = sorted(list(globals()["parameters"]))
+        #     self.parameters = globals()["parameters"]
+        #     print("self.parameters", self.parameters)
+
+        if len(self.parameters) is not 2:
+            messagebox.showerror("Plot heatmap", f"Could not show this 2D heatmap. Parsed function(s) contain {len(self.parameters)} parameter(s), expected 2.")
+            return
+
+        ## To be used to wait until the button is pressed
+        self.button_pressed.set(False)
+        self.Next_sample_button.config(state="normal")
+
+        self.reinitialise_plot(set_onclick=True)
+
+        i = 0
+        for function in self.functions:
+            i = i + 1
+            # heatmap(fun, region, sampling_sizes)
+            # print("int(self.fun_size_q_entry.get())", int(self.fun_size_q_entry.get()))
+            # print("self.fun_size_q_entry.get()", self.fun_size_q_entry.get())
+            # print("self.parameter_intervals", self.parameter_intervals)
+            # print("function", function)
+            self.page3_figure = heatmap(function, self.parameter_intervals, [int(self.fun_size_q_entry.get()), int(self.fun_size_q_entry.get())], posttitle=f"Function number {i}: {function}", where=True)
+            ## TBD delete following line, just a test
+            # size_q = size_q + 1
+            self.initialise_plot(what=self.page3_figure)
+
+            self.Next_sample_button.wait_variable(self.button_pressed)
+        self.Next_sample_button.config(state="disabled")
+        # self.page3_figure_locked.set(False)
+        # self.update()
         self.status_set("Ploting sampled rational functions finished.")
 
     def create_intervals(self):
@@ -1858,6 +1920,55 @@ class Gui(Tk):
         sys.last_traceback = tb
         traceback.print_exception(exc, val, tb)
         messagebox.showerror("Error", message=str(val))
+
+    def reinitialise_plot(self, set_onclick=False):
+        ## REINITIALISING THE PLOT
+        try:
+            self.page3_plotframe.get_tk_widget().destroy()
+        except AttributeError:
+            pass
+        try:
+            self.page3_canvas.get_tk_widget().destroy()
+        except AttributeError:
+            pass
+        try:
+            self.page3_toolbar.get_tk_widget().destroy()
+        except AttributeError:
+            pass
+        try:
+            self.page3_figure.get_tk_widget().destroy()
+        except AttributeError:
+            pass
+        try:
+            self.page3_a.get_tk_widget().destroy()
+        except AttributeError:
+            pass
+        self.page3_figure = pyplt.figure()
+        self.page3_a = self.page3_figure.add_subplot(111)
+        if set_onclick:
+            def onclick(event):
+                self.button_pressed.set(True)
+            self.page3_figure.canvas.mpl_connect('button_press_event', onclick)
+        self.update()
+
+    def initialise_plot(self, what=False):
+        """ Plots the what (figure) into where (Tkinter object - Window/Frame/....)"""
+        # try:
+        #     self.page3_canvas.get_tk_widget().destroy()
+        #     self.page3_toolbar.get_tk_widget().destroy()
+        #     self.update()
+        # except AttributeError:
+        #     pass
+        self.page3_plotframe = Frame(self.page3)
+        self.page3_plotframe.grid(row=5, column=17, columnspan=3, sticky=W, padx=4, pady=4)
+
+        self.page3_canvas = FigureCanvasTkAgg(what, master=self.page3_plotframe)
+        self.page3_canvas.draw()
+        self.page3_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+
+        self.page3_toolbar = NavigationToolbar2Tk(self.page3_canvas, self.page3_plotframe)
+        self.page3_toolbar.update()
+        self.page3_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
 
 
 def quit_gui():
