@@ -1418,7 +1418,6 @@ class Gui(Tk):
         if self.page3_figure_in_use.get():
             if not askyesno("Show all sampled points", "The result plot is currently in use. Do you want override?"):
                 return
-        self.page3_figure_in_use.set("2")
 
         if self.functions == "":
             messagebox.showwarning("Sampling rational functions", "Load the functions first, please")
@@ -1427,6 +1426,7 @@ class Gui(Tk):
         if self.fun_size_q_entry.get() == "":
             messagebox.showwarning("Sampling rational functions", "Choose size_q, number of samples per dimension.")
             return
+        self.page3_figure_in_use.set("2")
 
         self.validate_parameters(where=self.functions)
         ## The following should have been done in the previous line
@@ -1469,10 +1469,9 @@ class Gui(Tk):
         print("Ploting heatmap of rational functions ...")
         self.status_set("Ploting heatmap of rational functions.")
 
-        if not self.page3_figure_in_use.get():
+        if self.page3_figure_in_use.get():
             if not askyesno("Plot heatmap", "The result plot is currently in use. Do you want override?"):
                 return
-        self.page3_figure_in_use.set("")
 
         if self.functions == "":
             messagebox.showwarning("Plot heatmap", "Load the functions first, please")
@@ -1505,6 +1504,8 @@ class Gui(Tk):
 
         i = 0
         for function in self.functions:
+            if self.page3_figure_in_use.get() is not "3":
+                return
             i = i + 1
             # heatmap(fun, region, sampling_sizes)
             # print("int(self.fun_size_q_entry.get())", int(self.fun_size_q_entry.get()))
@@ -1512,8 +1513,6 @@ class Gui(Tk):
             # print("self.parameter_intervals", self.parameter_intervals)
             # print("function", function)
             self.page3_figure = heatmap(function, self.parameter_intervals, [int(self.fun_size_q_entry.get()), int(self.fun_size_q_entry.get())], posttitle=f"Function number {i}: {function}", where=True, parameters=self.parameters)
-            ## TBD delete following line, just a test
-            # size_q = size_q + 1
             self.initialise_plot(what=self.page3_figure)
 
             self.Next_sample_button.wait_variable(self.button_pressed)
