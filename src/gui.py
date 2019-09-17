@@ -747,6 +747,8 @@ class Gui(Tk):
                     first = False
             spam = Button(self.functions_window, text="OK", command=self.unfold_functions2)
             spam.pack()
+            spam.focus()
+            spam.bind('<Return>', self.unfold_functions2)
         else:
             functions = ""
             print("self.functions", self.functions)
@@ -760,7 +762,7 @@ class Gui(Tk):
             self.functions_parsed_text.insert('end', functions)
             self.functions_parsed_text.configure(state='disabled')
 
-    def unfold_functions2(self):
+    def unfold_functions2(self, fake_param):
         """" dummy method of unfold_functions"""
         try:
             self.functions = self.functions[self.key.get()]
@@ -885,6 +887,8 @@ class Gui(Tk):
                     first = False
             spam = Button(frame, text="OK", command=self.unfold_data2)
             spam.pack()
+            spam.focus()
+            spam.bind('<Return>', self.unfold_data2)
         else:
             self.data_text.configure(state='normal')
             self.data_text.delete('1.0', END)
@@ -895,7 +899,7 @@ class Gui(Tk):
             self.data_text.insert('end', spam)
             self.data_text.configure(state='disabled')
 
-    def unfold_data2(self):
+    def unfold_data2(self, fake_param):
         """" dummy method of unfold_data"""
         try:
             self.data = self.data[self.key.get()]
@@ -1368,6 +1372,8 @@ class Gui(Tk):
         ## To be used to wait until the button is pressed
         self.button_pressed.set(False)
         load_param_values_button = Button(self.new_window, text="OK", command=self.load_param_values_from_window)
+        load_param_values_button.focus()
+        load_param_values_button.bind('<Return>', self.load_param_values_from_window)
         load_param_values_button.grid(row=i)
 
         ## Waiting for the pop-up window closing
@@ -1719,6 +1725,8 @@ class Gui(Tk):
             self.button_pressed.set(False)
             load_param_intervals_button = Button(self.new_window, text="OK", command=self.load_param_intervals_from_window)
             load_param_intervals_button.grid(row=i)
+            load_param_intervals_button.focus()
+            load_param_intervals_button.bind('<Return>', self.load_param_intervals_from_window)
 
             load_param_intervals_button.wait_variable(self.button_pressed)
             print("key pressed")
@@ -1829,7 +1837,7 @@ class Gui(Tk):
     # def key_pressed_callback(self):
     #     self.load_param_intervals()
 
-    def load_param_intervals_from_window(self):
+    def load_param_intervals_from_window(self, fake_param):
         """ Inner function to parse the param intervals from created window"""
         region = []
         for param_index in range(len(self.parameters)):
@@ -1844,7 +1852,7 @@ class Gui(Tk):
         self.button_pressed.set(True)
         print("self.space", self.space)
 
-    def load_param_values_from_window(self):
+    def load_param_values_from_window(self, fake_param):
         """ Inner function to parse the param values from created window"""
         for param_index in range(len(self.parameter_values)):
             ## Getting the values from each entry, low = [0], high = [1]
