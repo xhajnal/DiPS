@@ -172,42 +172,42 @@ class Gui(Tk):
         ## DESIGN - STATUS
         frame = Frame(self)
         frame.pack(fill=X)
-        Label(frame, text=f"Loaded model:", anchor=W, justify=LEFT).pack(side=LEFT)
+        Label(frame, text=f"Model file:", anchor=W, justify=LEFT).pack(side=LEFT)
         self.model_label = Label(frame, textvariable=self.model_file, anchor=W, justify=LEFT)
         self.model_label.pack(side=LEFT, fill=X)
         # label1.grid(row=1, column=0, sticky=W)
 
         frame = Frame(self)
         frame.pack(fill=X)
-        Label(frame, text=f"Loaded property:", anchor=W, justify=LEFT).pack(side=LEFT)
+        Label(frame, text=f"Property file:", anchor=W, justify=LEFT).pack(side=LEFT)
         self.property_label = Label(frame, textvariable=self.property_file, anchor=W, justify=LEFT)
         # property_label.grid(row=2, column=0)
         self.property_label.pack(side=TOP, fill=X)
 
         frame = Frame(self)
         frame.pack(fill=X)
-        Label(frame, text=f"Loaded functions:", anchor=W, justify=LEFT).pack(side=LEFT)
+        Label(frame, text=f"Functions file:", anchor=W, justify=LEFT).pack(side=LEFT)
         self.functions_label = Label(frame, textvariable=self.functions_file, anchor=W, justify=LEFT)
         # functions_label.grid(row=3, column=0)
         self.functions_label.pack(side=TOP, fill=X)
 
         frame = Frame(self)
         frame.pack(fill=X)
-        Label(frame, text=f"Loaded data:", anchor=W, justify=LEFT).pack(side=LEFT)
+        Label(frame, text=f"Data file:", anchor=W, justify=LEFT).pack(side=LEFT)
         self.data_label = Label(frame, textvariable=self.data_file, anchor=W, justify=LEFT)
         # data_label.grid(row=4, column=0)
         self.data_label.pack(side=TOP, fill=X)
 
         frame = Frame(self)
         frame.pack(fill=X)
-        Label(frame, text=f"Loaded props:", anchor=W, justify=LEFT).pack(side=LEFT)
+        Label(frame, text=f"Props file:", anchor=W, justify=LEFT).pack(side=LEFT)
         self.props_label = Label(frame, textvariable=self.props_file, anchor=W, justify=LEFT)
         # props_label.grid(row=4, column=0)
         self.props_label.pack(side=TOP, fill=X)
 
         frame = Frame(self)
         frame.pack(fill=X)
-        Label(frame, text=f"Loaded space:", anchor=W, justify=LEFT).pack(side=LEFT)
+        Label(frame, text=f"Space file:", anchor=W, justify=LEFT).pack(side=LEFT)
         self.space_label = Label(frame, textvariable=self.space_file, anchor=W, justify=LEFT)
         # space_label.grid(row=5, column=0)
         self.space_label.pack(side=TOP, fill=X)
@@ -232,7 +232,7 @@ class Gui(Tk):
 
         Button(frame_left, text='Open model', command=self.load_model).grid(row=0, column=0, sticky=W, padx=4, pady=4)  # pack(anchor=W)
         Button(frame_left, text='Save model', command=self.save_model).grid(row=0, column=1, sticky=W, padx=4, pady=4)  # pack(anchor=W)
-        Label(frame_left, text=f"Loaded model:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, padx=4, pady=4)  # pack(anchor=W)
+        Label(frame_left, text=f"Loaded model file:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, padx=4, pady=4)  # pack(anchor=W)
 
         self.model_text = scrolledtext.ScrolledText(frame_left, height=100, state=DISABLED)
         # self.model_text.config(state="disabled")
@@ -245,7 +245,7 @@ class Gui(Tk):
 
         Button(frame_right, text='Open property', command=self.load_property).grid(row=0, column=0, sticky=W, pady=4, padx=4)  # pack(anchor=W)
         Button(frame_right, text='Save property', command=self.save_property).grid(row=0, column=1, sticky=W, pady=4)  # pack(anchor=W)
-        Label(frame_right, text=f"Loaded property:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, pady=4)  # pack(anchor=W)
+        Label(frame_right, text=f"Loaded property file:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, pady=4)  # pack(anchor=W)
 
         self.property_text = scrolledtext.ScrolledText(frame_right, height=100, state=DISABLED)
         # self.property_text.config(state="disabled")
@@ -310,7 +310,7 @@ class Gui(Tk):
         self.sampled_functions_text.grid(row=4, column=0, columnspan=16, rowspan=2, sticky=W, padx=4, pady=4)
 
         Label(self.page3, text=f"Rational functions visualisation", anchor=W, justify=CENTER).grid(row=1, column=17, columnspan=3, pady=4)
-        Button(self.page3, text='Plot functions in a given point', command=self.show_funs).grid(row=2, column=17, sticky=W, padx=4, pady=4)
+        Button(self.page3, text='Plot functions in a given point', command=self.show_funs_in_single_point).grid(row=2, column=17, sticky=W, padx=4, pady=4)
         Button(self.page3, text='Plot all sampled points', command=self.show_funs_in_all_points).grid(row=2, column=18, sticky=W, padx=4, pady=4)
         Button(self.page3, text='Heatmap', command=self.show_heatmap).grid(row=2, column=19, sticky=W, padx=4, pady=4)
         self.Next_sample_button = Button(self.page3, text="Next plot", state="disabled", command=lambda: self.button_pressed.set(True))
@@ -321,8 +321,8 @@ class Gui(Tk):
         # self.page3_a = self.page3_figure.add_subplot(111)
         # print("type a", type(self.a))
 
-        self.page3_figure_in_use = BooleanVar()
-        self.page3_figure_in_use.set(False)
+        self.page3_figure_in_use = StringVar()
+        self.page3_figure_in_use.set("")
 
 
         ## TAB DATA
@@ -370,7 +370,7 @@ class Gui(Tk):
 
         ttk.Separator(page4, orient=VERTICAL).grid(row=0, column=11, rowspan=10, sticky='ns', padx=50, pady=10)
         Label(page4, text=f"Data informed property section.", anchor=W, justify=LEFT).grid(row=0, column=12, sticky=W, padx=5, pady=4)
-        Label(page4, text=f"Loaded property:", anchor=W, justify=LEFT).grid(row=1, column=12, sticky=W, padx=5, pady=4)
+        Label(page4, text=f"Loaded property file:", anchor=W, justify=LEFT).grid(row=1, column=12, sticky=W, padx=5, pady=4)
 
         self.property_text2 = scrolledtext.ScrolledText(page4, height=4, state=DISABLED)
         # self.property_text2.config(state="disabled")
@@ -1321,12 +1321,13 @@ class Gui(Tk):
         self.sampled_functions_text.insert('1.0', "rational function index, [parameter values], function value: \n")
         spam = ""
         for item in self.sampled_functions:
+            item[0] = item[0] + 1
             spam = spam + str(item) + ",\n"
         self.sampled_functions_text.insert('2.0', spam[:-2])
         self.sampled_functions_text.configure(state='disabled')
         self.status_set("Sampling rational functions finished.")
 
-    def show_funs(self):
+    def show_funs_in_single_point(self):
         """Plots rational functions in a given point."""
         print("Ploting rational functions in a given point...")
         self.status_set("Ploting rational functions in a given point.")
@@ -1339,7 +1340,9 @@ class Gui(Tk):
         if self.page3_figure_in_use.get():
             if not askyesno("Ploting rational functions in a given point", "The result plot is currently in use. Do you want override?"):
                 return
-        self.page3_figure_in_use.set(True)
+        self.page3_figure_in_use.set("1")
+
+        self.validate_parameters(where=self.functions, intervals=False)
 
         ## TBD Maybe rewrite this as key and pass the argument to load_param_intervals
         self.key = StringVar()
@@ -1349,13 +1352,6 @@ class Gui(Tk):
                       text="Please choose value of respective parameter of the synthesised function(s):")
         label.grid(row=0)
         self.key.set(" ")
-
-        globals()["parameters"] = set()
-        for polynome in self.functions:
-            globals()["parameters"].update(find_param(polynome))
-        globals()["parameters"] = sorted(list(globals()["parameters"]))
-        self.parameters = globals()["parameters"]
-        print("self.parameters", self.parameters)
 
         ## Parse parameters values
         self.parameter_values = []
@@ -1422,7 +1418,7 @@ class Gui(Tk):
         if self.page3_figure_in_use.get():
             if not askyesno("Show all sampled points", "The result plot is currently in use. Do you want override?"):
                 return
-        self.page3_figure_in_use.set(True)
+        self.page3_figure_in_use.set("2")
 
         if self.functions == "":
             messagebox.showwarning("Sampling rational functions", "Load the functions first, please")
@@ -1448,6 +1444,8 @@ class Gui(Tk):
         self.reinitialise_plot(set_onclick=True)
 
         for parameter_point in get_param_values(self.parameters, self.fun_size_q_entry.get(), False):
+            if self.page3_figure_in_use.get() is not "2":
+                return
             spam, egg = eval_and_show(self.functions, parameter_point, give_back=True, where=[self.page3_figure, self.page3_a])
 
             if spam is None:
@@ -1474,7 +1472,7 @@ class Gui(Tk):
         if not self.page3_figure_in_use.get():
             if not askyesno("Plot heatmap", "The result plot is currently in use. Do you want override?"):
                 return
-        self.page3_figure_in_use.set(True)
+        self.page3_figure_in_use.set("")
 
         if self.functions == "":
             messagebox.showwarning("Plot heatmap", "Load the functions first, please")
@@ -1498,6 +1496,7 @@ class Gui(Tk):
             messagebox.showerror("Plot heatmap", f"Could not show this 2D heatmap. Parsed function(s) contain {len(self.parameters)} parameter(s), expected 2.")
             return
 
+        self.page3_figure_in_use.set("3")
         ## To be used to wait until the button is pressed
         self.button_pressed.set(False)
         self.Next_sample_button.config(state="normal")
@@ -1512,7 +1511,7 @@ class Gui(Tk):
             # print("self.fun_size_q_entry.get()", self.fun_size_q_entry.get())
             # print("self.parameter_intervals", self.parameter_intervals)
             # print("function", function)
-            self.page3_figure = heatmap(function, self.parameter_intervals, [int(self.fun_size_q_entry.get()), int(self.fun_size_q_entry.get())], posttitle=f"Function number {i}: {function}", where=True)
+            self.page3_figure = heatmap(function, self.parameter_intervals, [int(self.fun_size_q_entry.get()), int(self.fun_size_q_entry.get())], posttitle=f"Function number {i}: {function}", where=True, parameters=self.parameters)
             ## TBD delete following line, just a test
             # size_q = size_q + 1
             self.initialise_plot(what=self.page3_figure)
@@ -1678,9 +1677,15 @@ class Gui(Tk):
         self.status_set("Space refinement finished.")
 
     ## VALIDATE ATTRIBUTES
-    def validate_parameters(self, where):
-        """Validates (functions, props, and space) parameters """
-        if not self.parameter_intervals:
+    def validate_parameters(self, where, intervals=True):
+        """Validates (functions, props, and space) parameters
+
+        Args
+        ------
+        where (struct): a structure pars parameters from (e.g. self.functions)
+        intervals (Bool): whether to check also parameter intervals
+        """
+        if not self.parameters:
             globals()["parameters"] = set()
             for polynome in where:
                 globals()["parameters"].update(find_param(polynome))
@@ -1688,6 +1693,7 @@ class Gui(Tk):
             self.parameters = globals()["parameters"]
             print("self.parameters", self.parameters)
 
+        if (not self.parameter_intervals) and intervals:
             ## TBD Maybe rewrite this as key and pass the argument to load_param_intervals
             self.key = StringVar()
             self.status_set("Choosing ranges of parameters:")
@@ -1717,7 +1723,7 @@ class Gui(Tk):
 
             load_param_intervals_button.wait_variable(self.button_pressed)
             print("key pressed")
-        elif len(self.parameter_intervals) is not len(self.parameters):
+        elif (len(self.parameter_intervals) is not len(self.parameters)) and intervals:
             self.parameter_intervals = []
             self.validate_parameters(where=where)
 

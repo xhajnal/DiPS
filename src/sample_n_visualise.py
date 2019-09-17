@@ -332,7 +332,7 @@ def visualise_byparam(hyper_rectangles):
         print("Given space is empty, no intervals to be visualised")
 
 
-def heatmap(fun, region, sampling_sizes, posttitle="", where=False):
+def heatmap(fun, region, sampling_sizes, posttitle="", where=False, parameters=False):
     """ Creates 2D heatmap plot of sampled points of given function
 
     Args
@@ -342,16 +342,17 @@ def heatmap(fun, region, sampling_sizes, posttitle="", where=False):
     sampling_sizes: (int) tuple of sample size of respective parameter
     posttitle: (string) A string to be put after the title
     where: (Tuple/List) : output matplotlib sources to output created figure
+    parameters (list): list of parameters
 
     Example
     ----------
     heatmap("p+q",[[0,1],[3,4]],[5,5])
     """
-
-    parameters = sorted(list(find_param(fun)))
+    if not parameters:
+        parameters = sorted(list(find_param(fun)))
     # print(parameters)
     if len(parameters) != 2:
-        raise InvalidFunction("Number of parameters of given function is not equal to 2 but", len(parameters))
+        raise Exception(f"Number of parameters of given function is not equal to 2 but {len(parameters)}")
 
     arr = np.zeros((sampling_sizes[0] * sampling_sizes[1], 3))
 
