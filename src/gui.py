@@ -160,7 +160,7 @@ class Gui(Tk):
         self.button_pressed = BooleanVar()
 
         ## GUI INIT
-        self.title('mpm')
+        self.title('Mpm')
         self.minsize(1000, 300)
 
         ## DESIGN
@@ -749,9 +749,11 @@ class Gui(Tk):
             spam.pack()
         else:
             functions = ""
+            print("self.functions", self.functions)
             for function in self.functions:
-                functions = f"({function},\n{functions}"
-            functions = functions[:-2]
+                functions = f"{functions},\n{function}"
+            functions = functions[2:]
+            print("functions", functions)
 
             self.functions_parsed_text.configure(state='normal')
             self.functions_parsed_text.delete('1.0', END)
