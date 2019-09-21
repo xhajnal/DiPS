@@ -226,8 +226,10 @@ class Gui(Tk):
         # page1.columnconfigure(6, weight=1)
 
         frame_left = Frame(page1, width=600, height=200)
-        frame_left.rowconfigure(3, weight=1)
-        frame_left.columnconfigure(6, weight=1)
+        #for i in range(4):
+        #    frame_left.rowconfigure(i, weight=1)
+        for i in range(7):
+            frame_left.columnconfigure(i, weight=1)
         frame_left.pack(side=LEFT, fill=X)
 
         Button(frame_left, text='Open model', command=self.load_model).grid(row=0, column=0, sticky=W, padx=4, pady=4)  # pack(anchor=W)
@@ -239,8 +241,10 @@ class Gui(Tk):
         self.model_text.grid(row=2, column=0, columnspan=16, rowspan=2, sticky=W+E+N+S, padx=4, pady=4)  # pack(anchor=W, fill=X, expand=True)
 
         frame_right = Frame(page1)
+        for i in range(7):
+            frame_left.columnconfigure(i, weight=1)
         frame_right.rowconfigure(3, weight=1)
-        frame_right.columnconfigure(6, weight=1)
+        #frame_right.columnconfigure(6, weight=1)
         frame_right.pack(side=RIGHT, fill=X)
 
         Button(frame_right, text='Open property', command=self.load_property).grid(row=0, column=0, sticky=W, pady=4, padx=4)  # pack(anchor=W)
@@ -364,9 +368,9 @@ class Gui(Tk):
 
         Label(page4, text=f"Intervals:", anchor=W, justify=LEFT).grid(row=6, column=0, sticky=W, padx=4, pady=4)
 
-        self.interval_text = Text(page4, height=12, state=DISABLED)  #height=10, width=30
+        self.intervals_text = Text(page4, height=12, state=DISABLED)  #height=10, width=30
         # self.interval_text.config(state="disabled")
-        self.interval_text.grid(row=7, column=0, columnspan=2, sticky=W, padx=4, pady=4)
+        self.intervals_text.grid(row=7, column=0, columnspan=2, sticky=W, padx=4, pady=4)
 
         ttk.Separator(page4, orient=VERTICAL).grid(row=0, column=11, rowspan=10, sticky='ns', padx=50, pady=10)
         Label(page4, text=f"Data informed property section.", anchor=W, justify=LEFT).grid(row=0, column=12, sticky=W, padx=5, pady=4)
@@ -808,8 +812,8 @@ class Gui(Tk):
 
             functions = ""
             for function in self.functions:
-                functions = f"({function},\n{functions}"
-            functions = functions[:-2]
+                functions = f"({functions},\n{function}"
+            functions = functions[2:]
 
             self.functions_parsed_text.configure(state='normal')
             self.functions_parsed_text.delete('1.0', END)
@@ -894,8 +898,8 @@ class Gui(Tk):
             self.data_text.delete('1.0', END)
             spam = ""
             for item in self.data:
-                spam = spam + str(item) + ",\n"
-            spam = spam[:-2]
+                spam = f"{spam},\n{item}"
+            spam = spam[2:]
             self.data_text.insert('end', spam)
             self.data_text.configure(state='disabled')
 
@@ -1514,8 +1518,8 @@ class Gui(Tk):
                 return
             i = i + 1
             # heatmap(fun, region, sampling_sizes)
-            # print("int(self.fun_size_q_entry.get())", int(self.fun_size_q_entry.get()))
             # print("self.fun_size_q_entry.get()", self.fun_size_q_entry.get())
+            # print("int(self.fun_size_q_entry.get())", int(self.fun_size_q_entry.get()))
             # print("self.parameter_intervals", self.parameter_intervals)
             # print("function", function)
             self.page3_figure = heatmap(function, self.parameter_intervals, [int(self.fun_size_q_entry.get()), int(self.fun_size_q_entry.get())], posttitle=f"Function number {i}: {function}", where=True, parameters=self.parameters)
@@ -1548,13 +1552,15 @@ class Gui(Tk):
         self.intervals = create_intervals(float(self.alpha_entry.get()), float(self.n_samples_entry.get()), self.data)
 
         intervals = ""
+        print("self.intervals", self.intervals)
         for interval in self.intervals:
-            intervals = f"({interval.inf}, {interval.sup}),\n{intervals}"
-        intervals = intervals[:-2]
-        self.interval_text.configure(state='normal')
-        self.interval_text.delete('1.0', END)
-        self.interval_text.insert('end', intervals)
-        self.interval_text.configure(state='disabled')
+            intervals = f"{intervals},\n({interval.inf}, {interval.sup})"
+        # print("intervals", intervals)
+        intervals = intervals[2:]
+        self.intervals_text.configure(state='normal')
+        self.intervals_text.delete('1.0', END)
+        self.intervals_text.insert('end', intervals)
+        self.intervals_text.configure(state='disabled')
         self.status_set("Intervals created.")
 
         self.intervals_changed = True
@@ -1775,8 +1781,8 @@ class Gui(Tk):
 
             props = ""
             for prop in self.props:
-                props = f"{prop},\n{props}"
-            props = props[:-2]
+                props = f"{props},\n{prop}"
+            props = props[2:]
             self.props_text.configure(state='normal')
             self.props_text.delete('1.0', END)
             self.props_text.insert('end', props)
