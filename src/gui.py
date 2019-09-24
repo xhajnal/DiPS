@@ -141,7 +141,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.4.2"  ## version of the gui
+        self.version = "1.4.4"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -1843,7 +1843,7 @@ class Gui(Tk):
     # def key_pressed_callback(self):
     #     self.load_param_intervals()
 
-    def load_param_intervals_from_window(self, fake_param):
+    def load_param_intervals_from_window(self):
         """ Inner function to parse the param intervals from created window"""
         region = []
         for param_index in range(len(self.parameters)):
@@ -1858,7 +1858,7 @@ class Gui(Tk):
         self.button_pressed.set(True)
         print("self.space", self.space)
 
-    def load_param_values_from_window(self, fake_param):
+    def load_param_values_from_window(self):
         """ Inner function to parse the param values from created window"""
         for param_index in range(len(self.parameter_values)):
             ## Getting the values from each entry, low = [0], high = [1]

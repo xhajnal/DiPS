@@ -80,13 +80,13 @@ The main worflow described in the paper (below) (if not reachable, please write 
 ## HOW TO CITE US
 
 <a name="one"> </a>
-[1] M. Hajnal, M. Nouvian, D. Safranek, and T. Petrov, Data-informed parameter synthesis for population Markov chains In: International Workshop on Hybrid Systems Biology. Springer, 2019. To appear.
+[1] M. Hajnal, M. Nouvian, D. Šafránek, and T. Petrov, Data-informed parameter synthesis for population Markov chains In: International Workshop on Hybrid Systems Biology. Springer, 2019. To appear.
 
 
 *****
 ## ACKNOWLEDGMENT
 
-I want to thank the following people who helped me with code issues:
+I want to thank the following people who helped me with the code issues:
 * [Michal Ovčiarik](https://github.com/bargulg)
 * [Nhat-Huy Phung](https://github.com/huypn12)
 * [Denis Repin](https://github.com/dennerepin)
@@ -96,3 +96,4 @@ and I want to thank the following people for user testing and feedback:
 * [Samuel Pastva](https://github.com/daemontus)
 * [Stefano Tognazzi](https://github.com/stefanotognazzi)
 * Morgane Nouvian
+* [Matej Troják](https://github.com/xtrojak)

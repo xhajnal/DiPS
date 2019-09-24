@@ -1099,12 +1099,12 @@ def private_check_deeper_queue_checking(region, props, n, epsilon, coverage, sil
     if example is True:
         space.remove_white(region)
         if not silent:
-            print(n, region, colored(space.get_coverage()+"unsafe", "red"))
+            print(n, region, colored(f"{space.get_coverage()} unsafe", "red"))
         return
     elif check_safe(region, props, silent) is True:
         space.remove_white(region)
         if not silent:
-            print(n, region, colored(space.get_coverage()+"safe", "red"))
+            print(n, region, colored(f"{space.get_coverage()} safe", "red"))
         return
     else:  ## unknown
         if not silent:
