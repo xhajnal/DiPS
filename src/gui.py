@@ -236,7 +236,7 @@ class Gui(Tk):
         Button(frame_left, text='Save model', command=self.save_model).grid(row=0, column=1, sticky=W, padx=4, pady=4)  # pack(anchor=W)
         Label(frame_left, text=f"Loaded model file:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, padx=4, pady=4)  # pack(anchor=W)
 
-        self.model_text = scrolledtext.ScrolledText(frame_left, height=100, state=DISABLED)
+        self.model_text = scrolledtext.ScrolledText(frame_left, height=100)
         # self.model_text.config(state="disabled")
         self.model_text.grid(row=2, column=0, columnspan=16, rowspan=2, sticky=W+E+N+S, padx=4, pady=4)  # pack(anchor=W, fill=X, expand=True)
 
@@ -251,7 +251,7 @@ class Gui(Tk):
         Button(frame_right, text='Save property', command=self.save_property).grid(row=0, column=1, sticky=W, pady=4)  # pack(anchor=W)
         Label(frame_right, text=f"Loaded property file:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, pady=4)  # pack(anchor=W)
 
-        self.property_text = scrolledtext.ScrolledText(frame_right, height=100, state=DISABLED)
+        self.property_text = scrolledtext.ScrolledText(frame_right, height=100)
         # self.property_text.config(state="disabled")
         self.property_text.grid(row=2, column=0, columnspan=16, rowspan=2, sticky=W+E+N+S, pady=4)  # pack(anchor=W, fill=X)
 
@@ -342,7 +342,9 @@ class Gui(Tk):
         label10.grid(row=1, column=0, sticky=W, padx=4, pady=4)
         createToolTip(label10, text='For each rational function exactly one data point should be assigned.')
 
-        self.data_text = Text(page4, height=12, state=DISABLED)  # , height=10, width=30
+        self.data_text = Text(page4, height=12)  # , height=10, width=30
+        ## self.data_text.bind("<FocusOut>", self.parse_data)
+        # self.data_text = Text(page4, height=12, state=DISABLED)  # , height=10, width=30
         # self.data_text.config(state="disabled")
         self.data_text.grid(row=2, column=0, columnspan=2, sticky=W, padx=4, pady=4)
 
@@ -604,10 +606,10 @@ class Gui(Tk):
             if len(self.model_text.get('1.0', END)) > 1:
                 self.model_changed = True
             self.model_file.set(spam)
-            self.model_text.configure(state='normal')
+            # self.model_text.configure(state='normal')
             self.model_text.delete('1.0', END)
             self.model_text.insert('end', open(self.model_file.get(), 'r').read())
-            self.model_text.configure(state='disabled')
+            # self.model_text.configure(state='disabled')
             self.status_set("Model loaded.")
             # print("self.model", self.model.get())
 
@@ -634,12 +636,12 @@ class Gui(Tk):
             self.property_text.configure(state='normal')
             self.property_text.delete('1.0', END)
             self.property_text.insert('end', open(self.property_file.get(), 'r').read())
-            self.property_text.configure(state='disabled')
+            # self.property_text.configure(state='disabled')
 
             self.property_text2.configure(state='normal')
             self.property_text2.delete('1.0', END)
             self.property_text2.insert('end', open(self.property_file.get(), 'r').read())
-            self.property_text2.configure(state='disabled')
+            # self.property_text2.configure(state='disabled')
             self.status_set("Property loaded.")
             # print("self.property", self.property.get())
 
@@ -852,6 +854,7 @@ class Gui(Tk):
                 # self.data = PARSE THE DATA
             # print(self.data)
             self.status_set("Data loaded.")
+        # self.parse_data_from_window()
 
     def unfold_data(self):
         """" unfolds the data dictionary into a single list"""
@@ -894,14 +897,14 @@ class Gui(Tk):
             spam.focus()
             spam.bind('<Return>', self.unfold_data2)
         else:
-            self.data_text.configure(state='normal')
+            # self.data_text.configure(state='normal')
             self.data_text.delete('1.0', END)
             spam = ""
             for item in self.data:
                 spam = f"{spam},\n{item}"
             spam = spam[2:]
             self.data_text.insert('end', spam)
-            self.data_text.configure(state='disabled')
+            # self.data_text.configure(state='disabled')
 
     def unfold_data2(self, fake_param):
         """" dummy method of unfold_data"""
@@ -1035,6 +1038,22 @@ class Gui(Tk):
 
             self.space_changed = True
             self.status_set("Space loaded.")
+
+    ## PARSE THE TEXT WINDOWS
+    def parse_data_from_window(self):
+        """parses data from the windows"""
+        print("Parsing data ...")
+
+        data = self.data_text.get('1.0', END)
+        print("parsed data as a string", data)
+        data = data.split()
+        for i in range(len(data)):
+            if "," in data[i]:
+                data[i] = float(data[i][:-1])
+            else:
+                data[i] = float(data[i])
+        print("parsed data as a list", data)
+        self.data = data
 
     def save_model(self):
         """Saves obtained model as a file."""
@@ -1546,8 +1565,11 @@ class Gui(Tk):
         ## If data file not selected load data
         if self.data_file.get() is "":
             self.load_data()
-
         print("self.data_file.get()", self.data_file.get())
+
+        ## Refresh the data from the window
+        self.parse_data_from_window()
+
         self.status_set("Intervals are being created ...")
         self.intervals = create_intervals(float(self.alpha_entry.get()), float(self.n_samples_entry.get()), self.data)
 

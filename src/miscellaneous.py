@@ -1,5 +1,7 @@
 import textwrap
 
+
+## source:  https://stackoverflow.com/questions/1166317/python-textwrap-library-how-to-preserve-line-breaks
 class DocumentWrapper(textwrap.TextWrapper):
 
     def wrap(self, text):
