@@ -141,7 +141,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.4.4"  ## version of the gui
+        self.version = "1.4.5"  ## version of the gui
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -1456,6 +1456,7 @@ class Gui(Tk):
         for parameter_point in get_param_values(self.parameters, self.fun_size_q_entry.get(), False):
             if self.page3_figure_in_use.get() is not "2":
                 return
+
             spam, egg = eval_and_show(self.functions, parameter_point, give_back=True, where=[self.page3_figure, self.page3_a])
 
             if spam is None:
@@ -1465,7 +1466,6 @@ class Gui(Tk):
                 self.page3_a = egg
                 self.initialise_plot(what=self.page3_figure)
                 # self.page3_a.autoscale(enable=False)
-                # self.page3_figure.tight_layout()  ## By huypn
                 # self.page3_figure.canvas.draw()
                 # self.page3_figure.canvas.flush_events()
 
@@ -1774,6 +1774,11 @@ class Gui(Tk):
             if self.intervals_changed:
                 self.intervals_changed = False
 
+            ## Check if the number of functions and intervals is equal
+            if len(self.functions) != len(self.intervals):
+                messagebox.showerror(position, "The number of rational functions and data points (or intervals) is not equal")
+                return
+
             ## Create props
             self.props = ineq_to_props(self.functions, self.intervals, silent=True)
             self.props_changed = True
@@ -1905,9 +1910,7 @@ class Gui(Tk):
         top2.grab_set()
         self.wait_window(top2)
 
-        print("Mpm version alpha")
-        print("More info here: https://github.com/xhajnal/mpm")
-        print("Powered by University of Constance and Masaryk University")
+        print(explanation)
 
     ## STATUS BAR
     def status_set(self, text, *args):

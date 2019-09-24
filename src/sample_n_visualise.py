@@ -13,6 +13,10 @@ workspace = os.path.dirname(__file__)
 sys.path.append(os.path.join(workspace, '../src/'))
 # sys.path.append(os.path.dirname(__file__))
 from load import find_param
+from miscellaneous import DocumentWrapper
+
+
+wraper = DocumentWrapper(width=60)
 
 
 def cartesian_product(*arrays):
@@ -101,7 +105,7 @@ def eval_and_show(fun_list, parameter_value, cumulative=False, debug=False, give
     ax.set_xlabel('Rational function indices')
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     print(title)
-    ax.set_title(title)
+    ax.set_title(wraper.fill(title))
     print("len(fun_list)", len(fun_list))
     ax.bar(range(1, len(fun_list)+1), a, width, color='b')
     if give_back:
@@ -285,7 +289,7 @@ def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug=False,
             width = 0.2
             ax.set_ylabel('Value')
             ax.set_xlabel('Rational function indices')
-            ax.set_title(title)
+            ax.set_title(wraper.fill(title))
             print(title)
             rects1 = ax.bar(range(len(dic_fun[N])), a[len(parameters) + 2:], width, color='b')
             plt.show()
@@ -380,11 +384,13 @@ def heatmap(fun, region, sampling_sizes, posttitle="", where=False, parameters=F
     if where:
         f, ax = plt.subplots()
         ax = sns.heatmap(d)
-        ax.set_title(f"Heatmap \n{posttitle}")
+        title = f"Heatmap \n{posttitle}"
+        ax.set_title(wraper.fill(title))
         return f
     else:
         ax = sns.heatmap(d)
-        ax.set_title("Heatmap of the parameter space")
+        title = "Heatmap of the parameter space"
+        ax.set_title(wraper.fill(title))
         plt.show()
 
 
