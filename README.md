@@ -4,7 +4,13 @@ Multiple properties Probabilistic systems Model checker
 Mpm builds upon already created model checkers for probabilistic systems -- [PARAM](https://depend.cs.uni-saarland.de/tools/param/publications/bibitem.php?key=HahnHWZ10), [PRISM](http://www.prismmodelchecker.org), [Prophesy](https://moves.rwth-aachen.de/research/tools/prophesy/), and [Storm](http://www.stormchecker.org/) .
 It extends those to solve multiple property cases with higher efficiency.
 
-For more information please read [[1]](#one).
+In advance it provides data-informed analysis to constrain rational functions which are result of symbolic model checking. 
+
+The constraints are solved using CEGAR like method - Space refinement. 
+
+Besides that we provide sampling and other techniques to have overview of the rational functions or the parameter space.
+
+For a brief overview please you can see our poster (CMSB 19) and for more information please read [[1]](#one).
 Feel free to leave response either via issues or email.
 *****
 ## HOW TO INSTALL
