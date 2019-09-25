@@ -291,7 +291,7 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
 
 
 def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq=False, noprobchecks=False, memory="",
-                     model_path=model_path, properties_path=properties_path, property_file=False, output_path=prism_results, gui=False):
+                     model_path=model_path, properties_path=properties_path, property_file=False, output_path=prism_results, gui=False, silent=False):
     """  Calls prism for each file matching the prefix
 
     Args
@@ -307,6 +307,8 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
     property_file: (string) file name of single property files to be used for all models
     output_path: (string) path for the output
     memory: (int) sets maximum memory in GB, see https://www.prismmodelchecker.org/manual/ConfiguringPRISM/OtherOptions
+    gui: (Bool) callback function to be used
+    silent: (Bool) if True the output is put to minimum
 
     """
     # print("model_path ", model_path)
@@ -334,7 +336,8 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
             files = glob.glob(os.path.join(model_path, model_prefix))
         else:
             files = glob.glob(os.path.join(model_path, model_prefix + str(N) + ".pm"))
-        print(files)
+        if not silent:
+            print("input files: ", files)
         if not files:
             print(colored("No model files for N="+str(N)+" found", "red"))
             if gui:
@@ -345,7 +348,7 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
             # print("{} seq={}{} >> {}".format(file, seq, noprobchecks, str(prism_results)))
 
             ## Parsing the parameters from the files
-            spam = parse_params_from_model(file)
+            spam = parse_params_from_model(file, silent)
             params = ""
             i = 0
             for param in spam:
@@ -383,10 +386,12 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
                 # print("file", file.stem)
                 error = call_prism("{} {} {}{}-param {}".format(file, property_file, memory, noprobchecks, params),
                                    seq=seq, model_path=model_path, properties_path=properties_path, std_output_path=output_path,
-                                   std_output_file="{}_{}.txt".format(str(file.stem).split(".")[0], str(Path(property_file).stem).split(".")[0]))
+                                   std_output_file="{}_{}.txt".format(str(file.stem).split(".")[0], str(Path(property_file).stem).split(".")[0]),
+                                   silent=silent)
 
             # print(f"  Return code is: {error}")
-            print(f"  It took {socket.gethostname()}, {time() - start_time} seconds to run")
+            if not silent:
+                print(f"  It took {socket.gethostname()}, {time() - start_time} seconds to run")
 
             ## Check for missing files
             if error[0] == 404:

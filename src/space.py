@@ -285,7 +285,7 @@ class RefinedSpace:
                     file.write(f"Refinement{save} : {whole_title}\n")
             if where:
                 ## TBD probably yield
-                print("returning tuple")
+                # print("returning tuple")
                 del region
                 return fig, pic
             else:

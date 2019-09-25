@@ -104,9 +104,11 @@ def eval_and_show(fun_list, parameter_value, cumulative=False, debug=False, give
     ax.set_ylabel('Value')
     ax.set_xlabel('Rational function indices')
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-    print(title)
+    if debug:
+        print(title)
     ax.set_title(wraper.fill(title))
-    print("len(fun_list)", len(fun_list))
+    if debug:
+        print("len(fun_list)", len(fun_list))
     ax.bar(range(1, len(fun_list)+1), a, width, color='b')
     if give_back:
         return fig, ax
@@ -169,7 +171,7 @@ def sample(dic_fun, agents_quantities, size_q, debug=False):
     return arr
 
 
-def sample_fun(list_fun, size_q, intervals=False, debug=False):
+def sample_fun(list_fun, size_q, intervals=False, debug=False, silent=False):
     """ Returns probabilities of i successes for sampled parametrisation
 
     Args
@@ -178,6 +180,7 @@ def sample_fun(list_fun, size_q, intervals=False, debug=False):
     size_q: (int) sample size in each parameter
     intervals: (list of pairs of numbers) intervals of parameters
     debug: (Bool) if debug extensive output is provided
+    silent: (Bool) if silent command line output is set to minimum
 
     Returns
     ----------

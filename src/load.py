@@ -44,10 +44,11 @@ os.chdir(cwd)
 #######################
 
 
-def parse_params_from_model(file):
+def parse_params_from_model(file, silent=False):
     """ Parses the parameters from a given file
 
     file: (Path/String) a model file to be parsed
+    silent: (Bool) if silent command line output is set to minimum
     """
     params = []
     # print("file", file)
@@ -57,7 +58,8 @@ def parse_params_from_model(file):
                 # print(line)
                 line = line.split(" ")[-1].split(";")[0]
                 params.append(line)
-    print("params", params)
+    if not silent:
+        print("params", params)
     return params
 
 

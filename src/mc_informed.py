@@ -39,13 +39,14 @@ if not os.path.exists(model_folder):
 os.chdir(cwd)
 
 
-def general_create_data_informed_properties(prop_file, intervals, output_file=False):
+def general_create_data_informed_properties(prop_file, intervals, output_file=False, silent=False):
     """ Creates data informed property file from regular "profile" and intervals
     Args
     ----------
     prop_file: (File/string) regular prop file which contains lines in the form P=? (...)
     intervals: (list of pairs of numbers) list of intervals to assign for the properties
     output_file: (File/string/False) output prop file, if False or not given data_informed_properties as a list of strings is returned
+    silent: (Bool) if silent command line output is set to minimum
     """
     if isinstance(prop_file, str):
         prop_file = Path(prop_file)
@@ -76,7 +77,8 @@ def general_create_data_informed_properties(prop_file, intervals, output_file=Fa
                 print("data_informed_properties", data_informed_properties)
                 raise Exception(f"Number of properties is larger than number of intervals {len(intervals)}")
 
-    print("data_informed_properties", data_informed_properties)
+    if not silent:
+        print("data_informed_properties", data_informed_properties)
     ## Checking sizes of properties and intervals
     if len(intervals) is not i:
         raise Exception(f"Number of properties {i} is not corresponding to number of intervals {len(intervals)}")
