@@ -142,6 +142,7 @@ class Gui(Tk):
 
         ## Settings
         self.version = "1.4.5"  ## version of the gui
+        self.silent = BooleanVar()
 
         ## Settings/data
         # self.alpha = ""  ## confidence
@@ -172,45 +173,34 @@ class Gui(Tk):
         ## DESIGN - STATUS
         frame = Frame(self)
         frame.pack(fill=X)
-        Label(frame, text=f"Model file:", anchor=W, justify=LEFT).pack(side=LEFT)
+
+        Label(frame, text=f"Model file:", anchor=W, justify=LEFT).grid(row=0, column=0, sticky=W, padx=4)
         self.model_label = Label(frame, textvariable=self.model_file, anchor=W, justify=LEFT)
-        self.model_label.pack(side=LEFT, fill=X)
-        # label1.grid(row=1, column=0, sticky=W)
+        self.model_label.grid(row=0, column=1, sticky=W, padx=4)
 
-        frame = Frame(self)
-        frame.pack(fill=X)
-        Label(frame, text=f"Property file:", anchor=W, justify=LEFT).pack(side=LEFT)
+        Label(frame, text=f"Property file:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, padx=4)
         self.property_label = Label(frame, textvariable=self.property_file, anchor=W, justify=LEFT)
-        # property_label.grid(row=2, column=0)
-        self.property_label.pack(side=TOP, fill=X)
+        self.property_label.grid(row=1, column=1, sticky=W, padx=4)
 
-        frame = Frame(self)
-        frame.pack(fill=X)
-        Label(frame, text=f"Functions file:", anchor=W, justify=LEFT).pack(side=LEFT)
+        Label(frame, text=f"Functions file:", anchor=W, justify=LEFT).grid(row=2, column=0, sticky=W, padx=4)
         self.functions_label = Label(frame, textvariable=self.functions_file, anchor=W, justify=LEFT)
-        # functions_label.grid(row=3, column=0)
-        self.functions_label.pack(side=TOP, fill=X)
+        self.functions_label.grid(row=2, column=1, sticky=W, padx=4)
 
-        frame = Frame(self)
-        frame.pack(fill=X)
-        Label(frame, text=f"Data file:", anchor=W, justify=LEFT).pack(side=LEFT)
+        Label(frame, text=f"Data file:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, padx=4)
         self.data_label = Label(frame, textvariable=self.data_file, anchor=W, justify=LEFT)
-        # data_label.grid(row=4, column=0)
-        self.data_label.pack(side=TOP, fill=X)
+        self.data_label.grid(row=3, column=1, sticky=W, padx=4)
 
-        frame = Frame(self)
-        frame.pack(fill=X)
-        Label(frame, text=f"Props file:", anchor=W, justify=LEFT).pack(side=LEFT)
+        Label(frame, text=f"Props file:", anchor=W, justify=LEFT).grid(row=4, column=0, sticky=W, padx=4)
         self.props_label = Label(frame, textvariable=self.props_file, anchor=W, justify=LEFT)
-        # props_label.grid(row=4, column=0)
-        self.props_label.pack(side=TOP, fill=X)
+        self.props_label.grid(row=4, column=1, sticky=W, padx=4)
 
-        frame = Frame(self)
-        frame.pack(fill=X)
-        Label(frame, text=f"Space file:", anchor=W, justify=LEFT).pack(side=LEFT)
+        Label(frame, text=f"Space file:", anchor=W, justify=LEFT).grid(row=5, column=0, sticky=W, padx=4)
         self.space_label = Label(frame, textvariable=self.space_file, anchor=W, justify=LEFT)
-        # space_label.grid(row=5, column=0)
-        self.space_label.pack(side=TOP, fill=X)
+        self.space_label.grid(row=5, column=1, sticky=W, padx=4)
+
+        show_print_checkbutton = Checkbutton(frame, text="Hide print in command line", variable=self.silent)
+        show_print_checkbutton.grid(row=5, column=9, sticky=E, padx=4)
+        # print("self.silent", self.silent.get())
 
         ## DESIGN - TABS
         # Defines and places the notebook widget
@@ -226,7 +216,7 @@ class Gui(Tk):
         # page1.columnconfigure(6, weight=1)
 
         frame_left = Frame(page1, width=600, height=200)
-        #for i in range(4):
+        # for i in range(4):
         #    frame_left.rowconfigure(i, weight=1)
         for i in range(7):
             frame_left.columnconfigure(i, weight=1)
@@ -244,7 +234,7 @@ class Gui(Tk):
         for i in range(7):
             frame_left.columnconfigure(i, weight=1)
         frame_right.rowconfigure(3, weight=1)
-        #frame_right.columnconfigure(6, weight=1)
+        # frame_right.columnconfigure(6, weight=1)
         frame_right.pack(side=RIGHT, fill=X)
 
         Button(frame_right, text='Open property', command=self.load_property).grid(row=0, column=0, sticky=W, pady=4, padx=4)  # pack(anchor=W)
@@ -645,21 +635,26 @@ class Gui(Tk):
             self.status_set("Property loaded.")
             # print("self.property", self.property.get())
 
-    def load_functions(self, file=False):
+    def load_functions(self, file=False, silent=None):
         """ Loads parameter synthesis output text file
 
         Args
         -------------
         file (Path/String): direct path to load the function file
+        silent (Bool): set the print output to minimum
         """
         print("Loading functions ...")
+        if silent is None:
+            silent = self.silent.get()
+
         if self.functions_changed:
             if not askyesno("Loading functions", "Previously obtained functions will be lost. Do you want to proceed?"):
                 return
 
         self.status_set("Loading functions - checking inputs")
 
-        print("self.program.get()", self.program.get())
+        if not silent:
+            print("self.program.get()", self.program.get())
         if self.program.get() == "prism":
             initial_dir = self.prism_results
         elif self.program.get() == "storm":
@@ -669,7 +664,7 @@ class Gui(Tk):
             return
 
         ## If file to load is NOT preselected
-        print(file)
+        # print(file)
         if not file:
             self.status_set("Please select the prism/storm symbolic results to be loaded.")
             spam = filedialog.askopenfilename(initialdir=initial_dir, title="Rational functions loading - Select file",
@@ -703,7 +698,8 @@ class Gui(Tk):
         for key in self.functions.keys():
             if key in rewards.keys():
                 self.functions[key].extend(rewards[key])
-        print("self.functions", self.functions)
+        if not silent:
+            print("self.functions", self.functions)
 
         self.unfold_functions()
 
@@ -723,8 +719,16 @@ class Gui(Tk):
         ## Reseting parsed intervals
         self.parameter_intervals = []
 
-    def unfold_functions(self):
-        """" unfolds the function dictionary into a single list """
+    def unfold_functions(self, silent=None):
+        """" unfolds the function dictionary into a single list
+
+        Args
+        --------------
+        silent (Bool): set the print output to minimum
+        """
+        if silent is None:
+            silent = self.silent.get()
+
         if isinstance(self.functions, dict):
             ## TBD Maybe rewrite this as key and pass the argument to unfold_functions2
             ## NO because dunno how to send it to the function as a argument
@@ -757,29 +761,35 @@ class Gui(Tk):
             spam.bind('<Return>', self.unfold_functions2)
         else:
             functions = ""
-            print("self.functions", self.functions)
+            if not silent:
+                print("self.functions", self.functions)
             for function in self.functions:
                 functions = f"{functions},\n{function}"
             functions = functions[2:]
-            print("functions", functions)
+            if not silent:
+                print("functions", functions)
 
             self.functions_parsed_text.configure(state='normal')
             self.functions_parsed_text.delete('1.0', END)
             self.functions_parsed_text.insert('end', functions)
             self.functions_parsed_text.configure(state='disabled')
 
-    def unfold_functions2(self, fake_param):
+    def unfold_functions2(self, fake_param, silent=None):
         """" dummy method of unfold_functions"""
+        if silent is None:
+            silent = self.silent.get()
+
         try:
             self.functions = self.functions[self.key.get()]
         except KeyError:
             self.functions = self.functions[eval(self.key.get())]
 
-        print(self.functions)
+        if not silent:
+            print("self.functions", self.functions)
         self.functions_window.destroy()
         self.unfold_functions()
 
-    def load_parsed_functions(self):
+    def load_parsed_functions(self, silent=None):
         """Loads parsed rational functions from a pickled file."""
         print("Loading parsed rational functions ...")
         if self.data_changed:
@@ -788,7 +798,8 @@ class Gui(Tk):
 
         self.status_set("Please select the parsed rational functions to be loaded.")
 
-        print("self.program.get()", self.program.get())
+        if not silent:
+            print("self.program.get()", self.program.get())
         if self.program.get() == "prism":
             initial_dir = self.prism_results
         elif self.program.get() == "storm":
@@ -906,14 +917,18 @@ class Gui(Tk):
             self.data_text.insert('end', spam)
             # self.data_text.configure(state='disabled')
 
-    def unfold_data2(self, fake_param):
+    def unfold_data2(self, fake_param, silent=None):
         """" dummy method of unfold_data"""
+        if silent is None:
+            silent = self.silent.get()
+
         try:
             self.data = self.data[self.key.get()]
         except KeyError:
             self.data = self.data[eval(self.key.get())]
 
-        print(self.data)
+        if not silent:
+            print("self.data", self.data)
         self.new_window.destroy()
         self.unfold_data()
 
@@ -929,18 +944,22 @@ class Gui(Tk):
             self.validate_props(position="Props")
         self.status_set("Props recalculated and shown.")
 
-    def load_props(self, append=False):
+    def load_props(self, append=False, silent=None):
         """Loads props from a pickled file."""
         print("Loading props ...")
+        if silent is None:
+            silent = self.silent.get()
+
         if self.props_changed and not append:
             if not askyesno("Loading props", "Previously obtained props will be lost. Do you want to proceed?"):
                 return
         self.status_set("Please select the props to be loaded.")
         spam = filedialog.askopenfilename(initialdir=self.data_dir, title="Props loading - Select file", filetypes=(("text files", "*.p"), ("all files", "*.*")))
 
-        print("old props", self.props)
-        print("old props type", type(self.props))
-        print("loaded props file", spam)
+        if not silent:
+            print("old props", self.props)
+            print("old props type", type(self.props))
+            print("loaded props file", spam)
 
         ## If no file selected
         if spam == "":
@@ -964,7 +983,8 @@ class Gui(Tk):
                 #     for line in file:
                 #         print(line[:-1])
                 #         self.props.append(line[:-1])
-            print("self.props", self.props)
+            if not silent:
+                print("self.props", self.props)
 
             props = ""
             for prop in self.props:
@@ -985,9 +1005,12 @@ class Gui(Tk):
         self.load_props(append=True)
         self.status_set("Props appended.")
 
-    def load_space(self):
+    def load_space(self, silent=None):
         """Loads space from a pickled file."""
         print("Loading space ...")
+
+        if silent is None:
+            silent = self.silent.get()
 
         if self.space_changed:
             if not askyesno("Loading space", "Previously obtained space will be lost. Do you want to proceed?"):
@@ -1009,9 +1032,10 @@ class Gui(Tk):
             self.space = pickle.load(open(self.space_file.get(), "rb"))
 
             ## Show the space as niceprint()
-            print("space", self.space)
-            print()
-            print("space nice print \n", self.space.nice_print())
+            if not silent:
+                print("space", self.space)
+                print()
+                print("space nice print \n", self.space.nice_print())
 
             self.space_text.configure(state='normal')
             self.space_text.delete('1.0', END)
@@ -1041,22 +1065,22 @@ class Gui(Tk):
 
     ## PARSE THE TEXT WINDOWS
     def parse_data_from_window(self):
-        """parses data from the windows"""
-        print("Parsing data ...")
+        """ Parses data from the windows """
+        # print("Parsing data ...")
 
         data = self.data_text.get('1.0', END)
-        print("parsed data as a string", data)
+        # print("parsed data as a string", data)
         data = data.split()
         for i in range(len(data)):
             if "," in data[i]:
                 data[i] = float(data[i][:-1])
             else:
                 data[i] = float(data[i])
-        print("parsed data as a list", data)
+        # print("parsed data as a list", data)
         self.data = data
 
     def save_model(self):
-        """Saves obtained model as a file."""
+        """ Saves obtained model as a file. """
         ## TBD CHECK IF THE MODEL IS NON EMPTY
         # if len(self.model_text.get('1.0', END)) <= 1:
         #    self.status_set("There is no model to be saved.")
@@ -1080,7 +1104,7 @@ class Gui(Tk):
         self.status_set("Model saved.")
 
     def save_property(self):
-        """Saves obtained temporal properties as a file."""
+        """ Saves obtained temporal properties as a file. """
         print("Saving the property ...")
         ## TBD CHECK IF THE PROPERTY IS NON EMPTY
         # if len(self.property_text.get('1.0', END)) <= 1:
@@ -1614,7 +1638,7 @@ class Gui(Tk):
 
         try:
             self.cursor_toggle_busy(True)
-            self.space.sample(self.props, self.size_q, silent=False, save=False)
+            self.space.sample(self.props, self.size_q, silent=self.silent.get(), save=False)
         finally:
             self.cursor_toggle_busy(False)
         ## Show the space as niceprint()
@@ -1682,7 +1706,7 @@ class Gui(Tk):
         # print(colored(f"self.space, {self.space.nice_print()}]", "blue"))
         try:
             self.cursor_toggle_busy(True)
-            spam = check_deeper(self.space, self.props, self.max_depth, self.epsilon, self.coverage, silent=False,
+            spam = check_deeper(self.space, self.props, self.max_depth, self.epsilon, self.coverage, silent=self.silent.get(),
                                 version=int(self.alg.get()), size_q=False, debug=False, save=False,
                                 title="", where=[self.page6_figure, self.page6_a])
         finally:
@@ -1802,7 +1826,7 @@ class Gui(Tk):
                 return
 
             ## Create props
-            self.props = ineq_to_props(self.functions, self.intervals, silent=True)
+            self.props = ineq_to_props(self.functions, self.intervals, silent=self.silent.get())
             self.props_changed = True
             self.props_file.set("")
 
