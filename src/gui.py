@@ -102,9 +102,9 @@ class Gui(Tk):
 
         ## Variables
         ## Directories
-        self.model_dir = ""
-        self.property_dir = ""
-        self.data_dir = ""
+        self.model_dir = ""  ## Path to model
+        self.property_dir = ""  ## Path to temporal properties
+        self.data_dir = ""  ## Path to data
         self.prism_results = ""  ## Path to prism results
         self.storm_results = ""  ## Path to Storm results
         self.refinement_results = ""  ## Path to refinement results
@@ -130,11 +130,11 @@ class Gui(Tk):
         self.space_changed = False
 
         ## True Variables
-        self.model = ""
-        self.property = ""
+        # self.model = ""
+        # self.property = ""
         self.data = ""
-        self.data_informed_property = ""
-        self.functions = ""  ## Model checking results
+        self.data_informed_property = ""  ## Property containing the interval boundaries from the data
+        self.functions = ""  ## Parameter synthesis results (rational functions)
         self.intervals = ""  ## Computed intervals
         self.parameters = ""  ##  Parsed parameters
         self.parameter_intervals = []  ## Parameters intervals
@@ -142,24 +142,24 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.4.5"  ## version of the gui
-        self.silent = BooleanVar()
+        self.version = "1.4.5"  ## Version of the gui
+        self.silent = BooleanVar()  ## Sets the command line output to minumum
 
         ## Settings/data
-        # self.alpha = ""  ## confidence
-        # self.n_samples = ""  ## number of samples
-        self.program = StringVar()  ## prism/storm
-        self.max_depth = ""  ## max recursion depth
-        self.coverage = ""  ## coverage threshold
-        self.epsilon = ""  ## rectangle size threshold
-        self.alg = ""  ## refinement alg. number
+        # self.alpha = ""  ## Confidence
+        # self.n_samples = ""  ## Number of samples
+        self.program = StringVar()  ## "prism"/"storm"
+        self.max_depth = ""  ## Max recursion depth
+        self.coverage = ""  ## Coverage threshold
+        self.epsilon = ""  ## Rectangle size threshold
+        self.alg = ""  ## Refinement alg. number
 
         self.factor = BooleanVar()  ## Flag for factorising rational functions
-        self.size_q = ""  ## number of samples
+        self.size_q = ""  ## Number of samples
         self.save = ""  ## True if saving on
 
         ## OTHER SETTINGS
-        self.button_pressed = BooleanVar()
+        self.button_pressed = BooleanVar()  ## Inner variable to close created window
 
         ## GUI INIT
         self.title('Mpm')
@@ -172,7 +172,7 @@ class Gui(Tk):
         self.status.pack(side=BOTTOM, fill=X)
 
         ## DESIGN - STATUS
-        frame = Frame(self)
+        frame = Frame(self)  ## Upper frame
         frame.pack(fill=X)
 
         Label(frame, text=f"Model file:", anchor=W, justify=LEFT).grid(row=0, column=0, sticky=W, padx=4)
@@ -205,8 +205,9 @@ class Gui(Tk):
 
         ## DESIGN - TABS
         # Defines and places the notebook widget
-        nb = ttk.Notebook(self)
+        nb = ttk.Notebook(self)  ## Tab part of the GUI
         nb.pack(fill="both", expand=1)
+
 
         ## TAB EDIT
         page1 = ttk.Frame(nb, width=600, height=200, name="model_properties")  # Adds tab 1 of the notebook
@@ -215,7 +216,7 @@ class Gui(Tk):
         # page1.rowconfigure(5, weight=1)
         # page1.columnconfigure(6, weight=1)
 
-        frame_left = Frame(page1, width=600, height=200)
+        frame_left = Frame(page1, width=600, height=200)  ## Model part
         # for i in range(4):
         #    frame_left.rowconfigure(i, weight=1)
         for i in range(7):
@@ -234,7 +235,7 @@ class Gui(Tk):
         self.model_text.grid(row=2, column=0, columnspan=16, rowspan=2, sticky=W + E + N + S, padx=4,
                              pady=4)  # pack(anchor=W, fill=X, expand=True)
 
-        frame_right = Frame(page1)
+        frame_right = Frame(page1)  ## Property part
         for i in range(7):
             frame_left.columnconfigure(i, weight=1)
         frame_right.rowconfigure(3, weight=1)
@@ -243,18 +244,17 @@ class Gui(Tk):
 
         Button(frame_right, text='Open property', command=self.load_property).grid(row=0, column=0, sticky=W, pady=4,
                                                                                    padx=4)  # pack(anchor=W)
-        Button(frame_right, text='Save property', command=self.save_property).grid(row=0, column=1, sticky=W,
-                                                                                   pady=4)  # pack(anchor=W)
+        Button(frame_right, text='Save property', command=self.save_property).grid(row=0, column=1, sticky=W, pady=4)  # pack(anchor=W)
         Label(frame_right, text=f"Loaded property file:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W,
                                                                                        pady=4)  # pack(anchor=W)
 
         self.property_text = scrolledtext.ScrolledText(frame_right, height=100)
         # self.property_text.config(state="disabled")
-        self.property_text.grid(row=2, column=0, columnspan=16, rowspan=2, sticky=W + E + N + S,
-                                pady=4)  # pack(anchor=W, fill=X)
+        self.property_text.grid(row=2, column=0, columnspan=16, rowspan=2, sticky=W + E + N + S, pady=4)  # pack(anchor=W, fill=X)
 
         # print(nb.select(0), type(nb.select(0)))
         # print(page1, type(page1))
+
 
         ## TAB SYNTHESISE
         page2 = ttk.Frame(nb, width=400, height=100, name="synthesise")  # Adds tab 2 of the notebook
@@ -293,6 +293,7 @@ class Gui(Tk):
         self.functions_parsed_text = scrolledtext.ScrolledText(page2, height=100, state=DISABLED)
         self.functions_parsed_text.grid(row=5, column=17, columnspan=16, rowspan=2, sticky=W, pady=4)
 
+
         ## TAB SAMPLE AND VISUALISE
         self.page3 = ttk.Frame(nb, width=400, height=200, name="sampling")
         nb.add(self.page3, text='Sample functions')
@@ -326,6 +327,7 @@ class Gui(Tk):
 
         self.page3_figure_in_use = StringVar()
         self.page3_figure_in_use.set("")
+
 
         ## TAB DATA
         page4 = ttk.Frame(nb, width=400, height=200, name="data")
@@ -386,6 +388,7 @@ class Gui(Tk):
 
         Button(page4, text='Save data informed properties', command=self.save_data_informed_properties).grid(row=9, column=12, sticky=W, padx=5, pady=4)
 
+
         ## TAB PROPS
         page5 = ttk.Frame(nb, width=400, height=200, name="props")
         nb.add(page5, text='Props')
@@ -403,6 +406,7 @@ class Gui(Tk):
         Button(page5, text='Open props', command=self.load_props).grid(row=3, column=1, sticky=W, pady=4)
         Button(page5, text='Append props', command=self.append_props).grid(row=3, column=2, sticky=W, pady=4)
         Button(page5, text='Save props', command=self.save_props).grid(row=3, column=3, sticky=W, pady=4)
+
 
         ## TAB SAMPLE AND REFINEMENT
         page6 = ttk.Frame(nb, width=400, height=200, name="refine")
@@ -440,7 +444,6 @@ class Gui(Tk):
         label65 = Label(frame_left, text="Set algorithm: ", anchor=W, justify=LEFT)
         label65.grid(row=4, column=4, padx=10)
         createToolTip(label65, text='Choose from algorithms:\n 1-4 - using SMT solvers \n 1 - DFS search \n 2 - BFS search \n 3 - BFS search with example propagation \n 4 - BFS with example and counterexample propagation \n 5 - interval algorithmic')
-
 
         self.max_dept_entry = Entry(frame_left)
         self.coverage_entry = Entry(frame_left)
@@ -584,7 +587,7 @@ class Gui(Tk):
         os.chdir(cwd)
 
     ## LOGIC
-    ## FILE - LOAD AND SAVE
+    ## FILE - LOAD, PARSE, SHOW, AND SAVE
     def load_model(self):
         """ Loads model from a text file. """
         print("Loading model ...")
@@ -774,7 +777,7 @@ class Gui(Tk):
             self.functions_parsed_text.insert('end', functions)
             self.functions_parsed_text.configure(state='disabled')
 
-    def unfold_functions2(self, fake_param):
+    def unfold_functions2(self):
         """" Dummy method of unfold_functions """
 
         try:
@@ -1063,9 +1066,8 @@ class Gui(Tk):
             self.space_changed = True
             self.status_set("Space loaded.")
 
-    ## PARSE THE TEXT WINDOWS
     def parse_data_from_window(self):
-        """ Parses data from the windows """
+        """ Parses data from the window. """
         # print("Parsing data ...")
 
         data = self.data_text.get('1.0', END)
@@ -1244,7 +1246,7 @@ class Gui(Tk):
         self.status_set("Parsed functions saved.")
 
     def save_data(self):
-        """Saves data as a pickled file."""
+        """Saves data as a pickled file. """
         print("Saving the data ...")
         if self.data is "":
             self.status_set("There is no data to be saved.")
@@ -1492,7 +1494,7 @@ class Gui(Tk):
         self.status_set("Sampling rational functions done.")
 
     def show_funs_in_all_points(self):
-        """ Shows sampled rational functions in all sampled points """
+        """ Shows sampled rational functions in all sampled points. """
         print("Ploting sampled rational functions ...")
         self.status_set("Ploting sampled rational functions.")
 
@@ -1547,7 +1549,7 @@ class Gui(Tk):
         self.status_set("Ploting sampled rational functions finished.")
 
     def show_heatmap(self):
-        """ Shows heatmap - sampling of a rational function in all sampled points """
+        """ Shows heatmap - sampling of a rational function in all sampled points. """
         print("Plotting heatmap of rational functions ...")
         self.status_set("Plotting heatmap of rational functions.")
 
@@ -1608,7 +1610,7 @@ class Gui(Tk):
         self.status_set("Ploting sampled rational functions finished.")
 
     def create_intervals(self):
-        """ Creates intervals from data """
+        """ Creates intervals from data. """
         print("Creating intervals ...")
         self.status_set("Create interval - checking inputs")
         if self.alpha_entry.get() == "":
@@ -1708,6 +1710,7 @@ class Gui(Tk):
         self.status_set("Space sampling finished.")
 
     def refine_space(self):
+        """ Refines (Parameter) Space. Plots the results. """
         print("Refining space ...")
         self.status_set("Space refinement - checking inputs")
 
@@ -1774,9 +1777,9 @@ class Gui(Tk):
         self.space_changed = False
         self.status_set("Space refinement finished.")
 
-    ## VALIDATE ATTRIBUTES
+    ## VALIDATE VARIABLES (PARAMETERS, PROPS, SPACE)
     def validate_parameters(self, where, intervals=True):
-        """ Validates (functions, props, and space) parameters
+        """ Validates (functions, props, and space) parameters.
 
         Args
         ------
@@ -1830,7 +1833,7 @@ class Gui(Tk):
             self.validate_parameters(where=where)
 
     def validate_props(self, position=False):
-        """ Validates created properties
+        """ Validates created properties.
 
         Args:
         ------
@@ -1889,7 +1892,7 @@ class Gui(Tk):
         return True
 
     def refresh_space(self):
-        """ Unloads space """
+        """ Unloads space. """
         if self.space_changed:
             if askyesno("Sample & Refine", "Data of the space, its text representation, and the plot will be lost. Do you want to proceed?"):
                 self.space = ""
@@ -1906,7 +1909,7 @@ class Gui(Tk):
                 self.status_set("Space deleted.")
 
     def validate_space(self, position=False):
-        """ Validates space
+        """ Validates space.
 
         Args:
         ------
@@ -1944,9 +1947,78 @@ class Gui(Tk):
                     return False
         return True
 
-    # def key_pressed_callback(self):
-    #     self.load_param_intervals()
+    ## GUI MENU FUNCTIONS
+    def edit_config(self):
+        """ Opens config file in editor """
+        print("Editing config ...")
+        if "wind" in platform.system().lower():
+            ## TBD TEST THIS ON WINDOWS
+            os.startfile(f'{os.path.join(workspace, "../config.ini")}')
+        else:
+            os.system(f'gedit {os.path.join(workspace, "../config.ini")}')
+        self.load_config()  ## Reloading the config file after change
+        self.status_set("Config file saved.")
 
+    def show_help(self):
+        """ Shows GUI help """
+        print("Showing help ...")
+        webbrowser.open_new("https://github.com/xhajnal/mpm#mpm")
+
+    def check_updates(self):
+        """ Shows latest releases """
+        print("Checking for updates ...")
+        self.status_set("Checking for updates ...")
+        webbrowser.open_new("https://github.com/xhajnal/mpm/releases")
+
+    def print_about(self):
+        """ Shows GUI about """
+        print("Printing about ...")
+        top2 = Toplevel(self)
+        top2.title("About")
+        top2.resizable(0, 0)
+        explanation = f" Mpm version: {self.version} \n More info here: https://github.com/xhajnal/mpm \n Powered by University of Constance and Masaryk University"
+        Label(top2, justify=LEFT, text=explanation).pack(padx=13, pady=20)
+        top2.transient(self)
+        top2.grab_set()
+        self.wait_window(top2)
+
+        print(explanation)
+
+    ## STATUS BAR FUNCTIONS
+    def status_set(self, text, *args):
+        """ Inner function to update status bar """
+        self.status.config(text=text.format(args))
+        self.status.update_idletasks()
+
+    def status_clear(self):
+        """ Inner function to update status bar """
+        self.status.config(text="")
+        self.status.update_idletasks()
+
+    ## INNER TKINTER SETTINGS
+    def cursor_toggle_busy(self, busy=True):
+        """ Inner function to update cursor """
+        if busy:
+            ## System dependent cursor setting
+            if "wind" in platform.system().lower():
+                self.config(cursor='wait')
+            else:
+                self.config(cursor='clock')
+        else:
+            self.config(cursor='')
+        self.update()
+
+    def report_callback_exception(self, exc, val, tb):
+        """ Inner function, Exception handling """
+        import traceback
+        print("Exception in Tkinter callback", file=sys.stderr)
+        sys.last_type = exc
+        sys.last_value = val
+        sys.last_traceback = tb
+        traceback.print_exception(exc, val, tb)
+        messagebox.showerror("Error", message=str(val))
+
+    ## INNER FUNCTIONS
     def load_param_intervals_from_window(self):
         """ Inner function to parse the param intervals from created window """
         region = []
@@ -1975,77 +2047,6 @@ class Gui(Tk):
         del self.new_window
         self.button_pressed.set(True)
         ## print("self.parameter_values", self.parameter_values)
-
-    ## GUI SETTINGS
-    def edit_config(self):
-        """ Opens config file in editor """
-        print("Editing config ...")
-        if "wind" in platform.system().lower():
-            ## TBD TEST THIS ON WINDOWS
-            os.startfile(f'{os.path.join(workspace, "../config.ini")}')
-        else:
-            os.system(f'gedit {os.path.join(workspace, "../config.ini")}')
-        self.load_config()  ## Reloading the config file after change
-        self.status_set("Config file saved.")
-
-    ## HELP
-    def show_help(self):
-        """ Shows GUI help """
-        print("Showing help ...")
-        webbrowser.open_new("https://github.com/xhajnal/mpm#mpm")
-
-    def check_updates(self):
-        """ Shows latest releases """
-        print("Checking for updates ...")
-        self.status_set("Checking for updates ...")
-        webbrowser.open_new("https://github.com/xhajnal/mpm/releases")
-
-    def print_about(self):
-        """ Shows GUI about """
-        print("Printing about ...")
-        top2 = Toplevel(self)
-        top2.title("About")
-        top2.resizable(0, 0)
-        explanation = f" Mpm version: {self.version} \n More info here: https://github.com/xhajnal/mpm \n Powered by University of Constance and Masaryk University"
-        Label(top2, justify=LEFT, text=explanation).pack(padx=13, pady=20)
-        top2.transient(self)
-        top2.grab_set()
-        self.wait_window(top2)
-
-        print(explanation)
-
-    ## STATUS BAR
-    def status_set(self, text, *args):
-        """ Inner function to update status bar """
-        self.status.config(text=text.format(args))
-        self.status.update_idletasks()
-
-    def status_clear(self):
-        """ Inner function to update status bar """
-        self.status.config(text="")
-        self.status.update_idletasks()
-
-    ## INNER TKINTER SETTINGS
-    def cursor_toggle_busy(self, busy=True):
-        """ Inner function to update cursor """
-        if busy:
-            if "wind" in platform.system().lower():
-                self.config(cursor='wait')
-            else:
-                self.config(cursor='clock')
-        else:
-            self.config(cursor='')
-        self.update()
-
-    def report_callback_exception(self, exc, val, tb):
-        """ Inner function, Exception handling """
-        import traceback
-        print("Exception in Tkinter callback", file=sys.stderr)
-        sys.last_type = exc
-        sys.last_value = val
-        sys.last_traceback = tb
-        traceback.print_exception(exc, val, tb)
-        messagebox.showerror("Error", message=str(val))
 
     def reinitialise_plot(self, set_onclick=False):
         """ Inner function, reinitialising the page3 plot """
