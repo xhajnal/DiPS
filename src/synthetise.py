@@ -8,7 +8,6 @@ from time import strftime, localtime, time
 import platform
 from collections.abc import Iterable
 
-
 from termcolor import colored
 from math import log
 import itertools
@@ -18,6 +17,10 @@ from sympy import Interval
 from mpmath import mpi
 from matplotlib.patches import Rectangle
 import unittest
+
+
+from dreal import logical_and, logical_or, logical_not, Variable, CheckSatisfiability, Box
+# from dreal import *
 
 workspace = os.path.dirname(__file__)
 sys.path.append(workspace)
@@ -347,7 +350,7 @@ def refine_by(region1, region2, debug=False):
 
 
 def check_unsafe(region, props, silent=False, called=False):
-    """ Check if the given region is unsafe or not.
+    """ Check if the given region is unsafe or not using z3.
 
     It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given
     **interval** (called a model in SMT), otherwise it is unsafe.
@@ -406,7 +409,7 @@ def check_unsafe(region, props, silent=False, called=False):
 
 
 def check_safe(region, props, silent=False, called=False):
-    """ Check if the given region is safe or not
+    """ Check if the given region is safe or not using z3.
 
     It means whether for all parametrisations in **region** every property(prop) is evaluated within the given
     **interval**, otherwise it is not safe and counterexample is returned.
@@ -465,6 +468,136 @@ def check_safe(region, props, silent=False, called=False):
         return True
     else:
         return s.model()
+
+
+def check_unsafe_dreal(region, props, delta=0.001, silent=False, called=False):
+    """ Check if the given region is unsafe or not using dreal.
+
+    It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given
+    **interval** (called a model in SMT), otherwise it is unsafe.
+
+    Args
+    ----------
+    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
+    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
+    delta:  (Number): allowed error
+    silent: (Bool): if silent printed output is set to minimum
+    called: (Bool): if called updates the global variables (use when calling it directly)
+    """
+    ## Initialisation
+    if not silent:
+        print("checking unsafe", region, "current time is", datetime.datetime.now())
+
+    # p = Real('p')
+    # print(p)
+    # print(type(p))
+
+    if called:
+        globals()["parameters"] = set()
+        parameters = globals()["parameters"]
+        for polynome in props:
+            parameters.update(find_param(polynome))
+        globals()["parameters"] = sorted(list( globals()["parameters"]))
+        ## EXAMPLE:  parameters >> ['p','q']
+        for param in parameters:
+            globals()[param] = Variable(param)
+        ## EXAMPLE: p = Real(p)
+
+        space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
+    else:
+        space = globals()["space"]
+
+    # if not silent:
+    #    print("with parameters", globals()["parameters"])
+
+    ## Adding regional restrictions to solver
+    j = 0
+    for param in globals()["parameters"]:
+        # print("globals()[param]", globals()[param])
+        # print("region[j][0]", region[j][0])
+        if j == 0:
+            f_sat = logical_and(globals()[param] >= region[j][0], globals()[param] <= region[j][1])
+        else:
+            f_sat = logical_and(f_sat, globals()[param] >= region[j][0])
+            f_sat = logical_and(f_sat, globals()[param] <= region[j][1])
+        j = j + 1
+
+    ## Adding properties to solver
+    for i in range(0, len(props)):
+        # print(props[i])
+        f_sat = logical_and(f_sat, eval(props[i]))
+
+    result = CheckSatisfiability(f_sat, 0.001)
+
+    if result is not None:
+        return result
+    else:
+        space.add_red(region)
+        return True
+
+
+def check_safe_dreal(region, props, delta=0.001, silent=False, called=False):
+    """ Check if the given region is safe or not using dreal
+
+    It means whether for all parametrisations in **region** every property(prop) is evaluated within the given
+    **interval**, otherwise it is not safe and counterexample is returned.
+
+    Args
+    ----------
+    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
+    props:  (list of strings): array of properties
+    delta:  (Number): allowed error
+    silent: (Bool): if silent printed output is set to minimum
+    called: (Bool): if called updates the global variables (use when calling it directly)
+    """
+    # initialisation
+    if not silent:
+        print("checking safe", region, "current time is", datetime.datetime.now())
+
+    if called:
+        globals()["parameters"] = set()
+        parameters = globals()["parameters"]
+        for polynome in props:
+            parameters.update(find_param(polynome))
+        globals()["parameters"] = sorted(list(globals()["parameters"]))
+        ## EXAMPLE:  parameters >> ['p','q']
+
+        for param in globals()["parameters"]:
+            globals()[param] = Variable(param)
+        ## EXAMPLE: p = Real(p)
+
+        space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
+    else:
+        space = globals()["space"]
+
+    # if not silent:
+    #    print("with parameters", globals()["parameters"])
+
+    ## Adding regional restrictions to solver
+    j = 0
+    for param in globals()["parameters"]:
+        # print("globals()[param]", globals()[param])
+        # print("region[j][0]", region[j][0])
+        if j == 0:
+            f_sat = logical_and(globals()[param] >= region[j][0], globals()[param] <= region[j][1])
+        else:
+            f_sat = logical_and(f_sat, globals()[param] >= region[j][0])
+            f_sat = logical_and(f_sat, globals()[param] <= region[j][1])
+        j = j + 1
+
+    ## Adding properties to solver
+    formula = logical_not(eval(props[0]))
+    for i in range(1, len(props)):
+        formula = logical_or(formula, logical_not(eval(props[i])))
+    f_sat = logical_and(f_sat, formula)
+
+    result = CheckSatisfiability(f_sat, 0.001)
+
+    if result is None:
+        space.add_green(region)
+        return True
+    else:
+        return result
 
 
 def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=False, debug=False, save=False, title="", where=False):
@@ -1982,7 +2115,7 @@ class TestLoad(unittest.TestCase):
         self.assertEqual(props_to_ineq(["x+3>=0", "x+4<=1"]), False)
         self.assertEqual(props_to_ineq(["x+3"]), False)
 
-    def test_check_single(self):
+    def test_check_single_z3(self):
         print(colored("Checking (un)safe with single properties here", 'blue'))
         ## IS IN
         ## def check_safe(region, props, silent=False, called=False):
@@ -2047,6 +2180,72 @@ class TestLoad(unittest.TestCase):
         self.assertIsInstance(check_unsafe([(1, 4)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True), z3.z3.ModelRef)
         self.assertIsInstance(check_unsafe([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 2)]), silent=True, called=True), z3.z3.ModelRef)
         self.assertEqual(check_unsafe([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(4, 5)]), silent=True, called=True), True)
+
+    def test_check_single_dreal(self):
+        print(colored("Checking (un)safe with single properties here", 'blue'))
+        ## IS IN
+        ## def check_safe_dreal(region, props, silent=False, called=False):
+        # check_deeper([(0, 1)], ["x"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
+        self.assertEqual(check_safe_dreal([(0, 1)], ineq_to_props(["x"], [Interval(0, 1)]), silent=True, called=True), True)
+
+        # check_deeper([(1, 1)], ["x"], [Interval(0, 2)], 0, 0.1, 1, True, 4)
+        self.assertEqual(check_safe_dreal([(1, 1)], ineq_to_props(["x"], [Interval(0, 2)]), silent=True, called=True), True)
+
+        # check_deeper([(0, 1)], ["x"], [Interval(0.5, 3)], 10, 0.1, 1, True, 4)
+        self.assertIsInstance(check_safe_dreal([(0, 1)], ineq_to_props(["x"], [Interval(0.5, 3)]), silent=True, called=True),
+                              Box)  ## has an counter example
+
+        # check_deeper([(0, 1)], ["x"], [Interval(2, 3)], 0, 0.1, 1, True, 4)
+        self.assertIsInstance(check_safe_dreal([(0, 1)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True),
+                              Box)  ## has an counter example
+
+        # check_deeper([(1, 4)], ["x"], [Interval(2, 3)], 0, 0.1, 1, True, 4)
+        self.assertIsInstance(check_safe_dreal([(1, 4)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True),
+                              Box)  ## has an counter example
+
+        # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 2)], 0, 0.1, 1, True, 4)
+        self.assertEqual(check_safe_dreal([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 2)]), silent=True, called=True), True)
+
+        # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
+        self.assertIsInstance(check_safe_dreal([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), silent=True, called="safe"),
+                              Box)  ## has an counter example
+
+        ## IS OUT
+        ## def check_unsafe_dreal(region, props, silent=False, called=False):
+        # check_deeper([(0, 1)], ["x"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
+        self.assertIsInstance(check_unsafe_dreal([(0, 1)], ineq_to_props(["x"], [Interval(0, 1)]), silent=True, called=True),
+                              Box)  ## has an example
+
+        # check_deeper([(1, 1)], ["x"], [Interval(0, 2)], 0, 0.1, 1, True, 4)
+        self.assertIsInstance(check_unsafe_dreal([(1, 1)], ineq_to_props(["x"], [Interval(0, 2)]), silent=True, called=True),
+                              Box)  ## has an example
+
+        # check_deeper([(0, 1)], ["x"], [Interval(0.5, 3)], 10, 0.1, 1, True, 4)
+        self.assertIsInstance(check_unsafe_dreal([(0, 1)], ineq_to_props(["x"], [Interval(0.5, 3)]), silent=True, called=True),
+                              Box)  ## has an example
+
+        # check_deeper([(0, 1)], ["x"], [Interval(2, 3)], 0, 0.1, 1, True, 4)
+        self.assertEqual(check_unsafe_dreal([(0, 1)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True), True)
+
+        # check_deeper([(1, 4)], ["x"], [Interval(2, 3)], 0, 0.1, 1, True, 4)
+        self.assertIsInstance(check_unsafe_dreal([(1, 4)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True),
+                              Box)  ## has an example
+
+        # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 2)], 0, 0.1, 1, True, 4)
+        self.assertIsInstance(check_unsafe_dreal([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 2)]), silent=True, called=True),
+                              Box)  ## has an example
+
+        # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
+        self.assertIsInstance(check_unsafe_dreal([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), silent=True, called=True),
+                              Box)  ## has an example
+
+        self.assertEqual(check_unsafe_dreal([(0, 1)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True), True)
+        self.assertEqual(check_unsafe_dreal([(1, 1)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True), True)
+        self.assertIsInstance(check_unsafe_dreal([(0, 1)], ineq_to_props(["x"], [Interval(1, 3)]), silent=True, called=True), Box)
+        self.assertIsInstance(check_unsafe_dreal([(0, 3)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True), Box)
+        self.assertIsInstance(check_unsafe_dreal([(1, 4)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True), Box)
+        self.assertIsInstance(check_unsafe_dreal([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 2)]), silent=True, called=True), Box)
+        self.assertEqual(check_unsafe_dreal([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(4, 5)]), silent=True, called=True), True)
 
     def test_check_multiple(self):
         print(colored("Check (un)safe with multiple properties here", 'blue'))
@@ -2191,9 +2390,7 @@ class TestLoad(unittest.TestCase):
         # print("  It took", socket.gethostname(), time() - start_time, "seconds to run")
 
         ## VERY VERY INTERESTING RESULT
-        from load import load_all_data
-        D = load_all_data("data/data*.csv")
-        check_deeper([(0, 1), (0, 1)], ineq_to_props(f[2], create_intervals(0.95, 1500, D[2])), 14, 0.01 ** 2, 0.997, False, 5)
+        check_deeper([(0, 1), (0, 1)], ineq_to_props(f[2], create_intervals(0.95, 1500, [0.1, 0.3, 0.6])), 14, 0.01 ** 2, 0.997, False, 5)
 
     def test_sample(self):
         print(colored("Sample test here", 'blue'))
