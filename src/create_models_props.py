@@ -1463,11 +1463,3 @@ def create_rewards_prop():
     file.write('R{"mean"}=? [ F b=1] \n')
     file.write('R{"mean_squared"}=? [ F b=1] \n')
     file.close()
-
-
-create_properties(2)
-create_properties(3)
-create_properties(4)
-create_bee_multiparam_synchronous_model("bee_multiparam_synchronous_"+str(2), 2)
-create_bee_multiparam_synchronous_model("bee_multiparam_synchronous_"+str(3), 3)
-create_bee_multiparam_synchronous_model("bee_multiparam_synchronous_"+str(4), 4)

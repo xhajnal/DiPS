@@ -365,7 +365,7 @@ class Gui(Tk):
         self.alpha_entry.insert(END, '0.95')
         self.n_samples_entry.insert(END, '100')
 
-        ## TBD ADD setting for creating  intervals - alpha, n_samples
+        ## TODO ADD setting for creating  intervals - alpha, n_samples
         Button(page4, text='Create intervals', command=self.create_intervals).grid(row=5, column=0, sticky=W, padx=4, pady=4)
 
         Label(page4, text=f"Intervals:", anchor=W, justify=LEFT).grid(row=6, column=0, sticky=W, padx=4, pady=4)
@@ -515,7 +515,7 @@ class Gui(Tk):
         # file_menu.add_cascade(label="Save", menu=save_menu, underline=0)
         # save_menu.add_command(label="Save model", command=self.save_model)
         # save_menu.add_command(label="Save property", command=self.save_property)
-        # # save_menu.add_command(label="Save rational functions", command=self.save_functions())  ## TBD MAYBE IN THE FUTURE
+        # # save_menu.add_command(label="Save rational functions", command=self.save_functions())  ## TODO MAYBE IN THE FUTURE
         # save_menu.add_command(label="Save data", command=self.save_data)
         # save_menu.add_command(label="Save space", command=self.save_space)
         # file_menu.add_separator()
@@ -733,7 +733,7 @@ class Gui(Tk):
         """" Unfolds the function dictionary into a single list """
 
         if isinstance(self.functions, dict):
-            ## TBD Maybe rewrite this as key and pass the argument to unfold_functions2
+            ## TODO Maybe rewrite this as key and pass the argument to unfold_functions2
             ## NO because dunno how to send it to the function as a argument
             if len(self.functions.keys()) == 1:
                 for key in self.functions.keys():
@@ -863,7 +863,7 @@ class Gui(Tk):
                 self.unfold_data()
             else:
                 print()
-                ## TBD
+                # TODO
                 # self.data = PARSE THE DATA
             # print(self.data)
             self.status_set("Data loaded.")
@@ -872,7 +872,7 @@ class Gui(Tk):
     def unfold_data(self):
         """" Unfolds the data dictionary into a single list """
         if isinstance(self.data, dict):
-            ## TBD Maybe rewrite this as key and pass the argument to unfold_data2
+            ## TODO Maybe rewrite this as key and pass the argument to unfold_data2
             self.key = StringVar()
             self.status_set(
                 "Loaded data are in a form of dictionary, please select which item you would like to choose:")
@@ -1083,7 +1083,7 @@ class Gui(Tk):
 
     def save_model(self):
         """ Saves obtained model as a file. """
-        ## TBD CHECK IF THE MODEL IS NON EMPTY
+        ## TODO CHECK IF THE MODEL IS NON EMPTY
         # if len(self.model_text.get('1.0', END)) <= 1:
         #    self.status_set("There is no model to be saved.")
         #    return
@@ -1108,7 +1108,7 @@ class Gui(Tk):
     def save_property(self):
         """ Saves obtained temporal properties as a file. """
         print("Saving the property ...")
-        ## TBD CHECK IF THE PROPERTY IS NON EMPTY
+        ## TODO CHECK IF THE PROPERTY IS NON EMPTY
         # if len(self.property_text.get('1.0', END)) <= 1:
         #    self.status_set("There is no property to be saved.")
         #    return
@@ -1150,12 +1150,12 @@ class Gui(Tk):
             spam = spam + str(item) + ",\n"
         self.data_informed_property_text.insert('end', spam)
         self.data_informed_property_text.configure(state='disabled')
-        # TBD
+        # TODO
 
     def save_data_informed_properties(self):
         """ Saves computed data informed property as a text file. """
         print("Saving data informed property ...")
-        ## TBD CHECK IF THE PROPERTY IS NON EMPTY
+        ## TODO CHECK IF THE PROPERTY IS NON EMPTY
         # if len(self.property_text.get('1.0', END)) <= 1:
         #    self.status_set("There is no property to be saved.")
         #    return
@@ -1178,7 +1178,7 @@ class Gui(Tk):
 
         self.status_set("Data informed property saved.")
 
-    ## TBD MAYBE IN THE FUTURE
+    ## TODO MAYBE IN THE FUTURE
     def save_functions(self):
         """ Saves parsed functions as a pickled file. """
         print("Saving the rational functions ...")
@@ -1187,7 +1187,7 @@ class Gui(Tk):
             self.status_set("There are no rational functions to be saved.")
             return
 
-            ## TBD choose to save rewards or normal functions
+            ## TODO choose to save rewards or normal functions
 
         self.status_set("Please select folder to store the rational functions in.")
         if self.program is "prism":
@@ -1388,7 +1388,7 @@ class Gui(Tk):
         self.status_set("Sampling rational functions.")
         self.validate_parameters(where=self.functions)
 
-        ## TBD If self.functions got more than one entry
+        ## TODO If self.functions got more than one entry
         try:
             self.cursor_toggle_busy(True)
             self.sampled_functions = sample_fun(self.functions, int(self.fun_size_q_entry.get()),
@@ -1424,7 +1424,7 @@ class Gui(Tk):
 
         self.validate_parameters(where=self.functions, intervals=False)
 
-        ## TBD Maybe rewrite this as key and pass the argument to load_param_intervals
+        ## TODO Maybe rewrite this as key and pass the argument to load_param_intervals
         self.key = StringVar()
         self.status_set("Choosing parameters value:")
         self.new_window = Toplevel(self)
@@ -1458,7 +1458,7 @@ class Gui(Tk):
 
         self.reinitialise_plot()
 
-        ## TBD If self.functions got more than one entry
+        ## TODO If self.functions got more than one entry
         ## Getting the plot values instead of the plot itself
 
         #     self.initialise_plot(what=self.page3_figure, where=self.page3_plotframe)
@@ -1796,7 +1796,7 @@ class Gui(Tk):
                 print("parameters", self.parameters)
 
         if (not self.parameter_intervals) and intervals:
-            ## TBD Maybe rewrite this as key and pass the argument to load_param_intervals
+            ## TODO Maybe rewrite this as key and pass the argument to load_param_intervals
             self.key = StringVar()
             self.status_set("Choosing ranges of parameters:")
             self.new_window = Toplevel(self)
@@ -1927,7 +1927,7 @@ class Gui(Tk):
             self.space = space.RefinedSpace(self.parameter_intervals, self.parameters)
         else:
             if self.props_changed:
-                ## TBD show warning that you are using old space for computation ## HERE
+                ## TODO show warning that you are using old space for computation ## HERE
                 messagebox.showwarning(position,
                                        "Using previously created space with new props. Consider using fresh new space.")
                 ## Check if the properties and data are valid
@@ -1952,7 +1952,7 @@ class Gui(Tk):
         """ Opens config file in editor """
         print("Editing config ...")
         if "wind" in platform.system().lower():
-            ## TBD TEST THIS ON WINDOWS
+            ## TODO TEST THIS ON WINDOWS
             os.startfile(f'{os.path.join(workspace, "../config.ini")}')
         else:
             os.system(f'gedit {os.path.join(workspace, "../config.ini")}')
