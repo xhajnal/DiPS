@@ -38,7 +38,6 @@ os.chdir(workspace)
 
 config.read("../config.ini")
 # config.sections()
-z3_path = config.get("paths", "z3_path")
 
 refine_timeout = int(config.get("paths", "refine_timeout"))
 
@@ -46,69 +45,72 @@ refinement_results = config.get("paths", "refinement_results")
 if not os.path.exists(refinement_results):
     os.makedirs(refinement_results)
 
-if not os.path.exists(z3_path):
-    raise OSError("Directory does not exist: " + str(z3_path))
-
-os.chdir(cwd)
-
-print("z3_path", z3_path)
-
 # import struct
 # print("You are running "+ str(struct.calcsize("P") * 8)+"bit Python, please verify that installed z3 is compatible")
 # print("path: ", os.environ["PATH"])
 
 # print(os.environ["PATH"])
 
-##  Add z3 to PATH
-if '/' in z3_path:
-    z3_path_short = '/'.join(z3_path.split("/")[:-1])
-elif '\\' in z3_path:
-    z3_path_short = '\\'.join(z3_path.split("\\")[:-1])
-else:
-    print("Warning: Could not set path to add to the PATH, please add it manually")
-
-if "PATH" not in os.environ:
-    os.environ["PATH"] = z3_path
-else:
-    if z3_path_short not in os.environ["PATH"]:
-        if z3_path_short.replace("/", "\\") not in os.environ["PATH"]:
-            if "wind" in platform.system().lower():
-                os.environ["PATH"] = os.environ["PATH"] + ";" + z3_path_short
-            else:
-                os.environ["PATH"] = os.environ["PATH"] + ":" + z3_path_short
-
-sys.path.append(z3_path)
-
-## Add z3 to PYTHON PATH
-if "PYTHONPATH" not in os.environ:
-    os.environ["PYTHONPATH"] = z3_path
-else:
-    if z3_path not in os.environ["PYTHONPATH"]:
-
-        if "wind" in platform.system().lower():
-            os.environ["PYTHONPATH"] = os.environ["PYTHONPATH"] + ";" + z3_path
-        else:
-            os.environ["PYTHONPATH"] = os.environ["PYTHONPATH"] + ":" + z3_path
-
-## Add z3 to LDLIB PATH
-if "wind" not in platform.system().lower():
-    if "LD_LIBRARY_PATH" in os.environ:
-        os.environ["LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"] + ":" + z3_path_short
-    else:
-        os.environ["LD_LIBRARY_PATH"] = z3_path_short
-
-##  Add z3 to other variables
-os.environ["Z3_LIBRARY_PATH"] = z3_path_short
-os.environ["Z3_LIBRARY_DIRS"] = z3_path_short
-
-## Try to import z3
 try:
     from z3 import *
-    # print(os.getcwd())
-    # import subprocess
-    # subprocess.call(["python", "example.py"])
+    os.chdir(cwd)
 except:
-    raise Exception("could not load z3 from: ", z3_path)
+    z3_path = config.get("paths", "z3_path")
+
+    if not os.path.exists(z3_path):
+        raise OSError("Directory does not exist: " + str(z3_path))
+    print("z3_path", z3_path)
+    os.chdir(cwd)
+
+    ##  Add z3 to PATH
+    if '/' in z3_path:
+        z3_path_short = '/'.join(z3_path.split("/")[:-1])
+    elif '\\' in z3_path:
+        z3_path_short = '\\'.join(z3_path.split("\\")[:-1])
+    else:
+        print("Warning: Could not set path to add to the PATH, please add it manually")
+
+    if "PATH" not in os.environ:
+        os.environ["PATH"] = z3_path
+    else:
+        if z3_path_short not in os.environ["PATH"]:
+            if z3_path_short.replace("/", "\\") not in os.environ["PATH"]:
+                if "wind" in platform.system().lower():
+                    os.environ["PATH"] = os.environ["PATH"] + ";" + z3_path_short
+                else:
+                    os.environ["PATH"] = os.environ["PATH"] + ":" + z3_path_short
+    sys.path.append(z3_path)
+
+    ## Add z3 to PYTHON PATH
+    if "PYTHONPATH" not in os.environ:
+        os.environ["PYTHONPATH"] = z3_path
+    else:
+        if z3_path not in os.environ["PYTHONPATH"]:
+
+            if "wind" in platform.system().lower():
+                os.environ["PYTHONPATH"] = os.environ["PYTHONPATH"] + ";" + z3_path
+            else:
+                os.environ["PYTHONPATH"] = os.environ["PYTHONPATH"] + ":" + z3_path
+
+    ## Add z3 to LDLIB PATH
+    if "wind" not in platform.system().lower():
+        if "LD_LIBRARY_PATH" in os.environ:
+            os.environ["LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"] + ":" + z3_path_short
+        else:
+            os.environ["LD_LIBRARY_PATH"] = z3_path_short
+
+    ##  Add z3 to other variables
+    os.environ["Z3_LIBRARY_PATH"] = z3_path_short
+    os.environ["Z3_LIBRARY_DIRS"] = z3_path_short
+
+    ## Try to import z3 from a given folder
+    try:
+        from z3 import *
+        # print(os.getcwd())
+        # import subprocess
+        # subprocess.call(["python", "example.py"])
+    except:
+        raise Exception("could not load z3 from: ", z3_path)
 
 ## Try to run z3
 try:
