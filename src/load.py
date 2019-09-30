@@ -7,9 +7,6 @@ import copy
 import re
 from pathlib import Path
 from collections.abc import Iterable
-from mpmath import mpi
-
-import unittest
 
 import scipy.stats as st
 from sympy import factor, Interval

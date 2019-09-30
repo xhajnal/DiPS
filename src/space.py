@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from numpy import prod
 import copy
-import unittest
 ## Colored output
 from termcolor import colored
 

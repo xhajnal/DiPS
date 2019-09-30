@@ -6,7 +6,6 @@ import socket
 import subprocess
 import sys
 from time import time, strftime, localtime
-import unittest
 from pathlib import Path
 
 import psutil

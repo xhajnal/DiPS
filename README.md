@@ -24,6 +24,7 @@ Feel free to leave response either via issues or email.
 * [Storm](http://www.stormchecker.org/) (optional)
 * [Prophesy](https://moves.rwth-aachen.de/research/tools/prophesy/) (optional)
 * missing python packages 
+  * in the main directory run `pip install -v .`
 
 ****
 ### 2. SETUP CONFIG
