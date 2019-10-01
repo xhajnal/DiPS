@@ -1,6 +1,4 @@
 import platform
-# from os.path import isfile
-# from time import sleep
 from tkinter import *
 from tkinter import scrolledtext, messagebox
 import webbrowser
@@ -12,13 +10,8 @@ from tkinter.messagebox import askyesno
 
 import matplotlib.pyplot as pyplt
 import matplotlib
-# from termcolor import colored
-
-from mc_informed import general_create_data_informed_properties
-
 matplotlib.use("TKAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-# from matplotlib.figure import Figure
 
 import configparser
 
@@ -26,6 +19,7 @@ config = configparser.ConfigParser()
 workspace = os.path.dirname(__file__)
 sys.path.append(workspace)
 
+from mc_informed import general_create_data_informed_properties
 from load import create_intervals, load_all_functions, find_param
 import space
 from synthetise import ineq_to_props, check_deeper
@@ -365,7 +359,6 @@ class Gui(Tk):
         self.alpha_entry.insert(END, '0.95')
         self.n_samples_entry.insert(END, '100')
 
-        ## TODO ADD setting for creating  intervals - alpha, n_samples
         Button(page4, text='Create intervals', command=self.create_intervals).grid(row=5, column=0, sticky=W, padx=4, pady=4)
 
         Label(page4, text=f"Intervals:", anchor=W, justify=LEFT).grid(row=6, column=0, sticky=W, padx=4, pady=4)
@@ -517,7 +510,7 @@ class Gui(Tk):
         # file_menu.add_cascade(label="Save", menu=save_menu, underline=0)
         # save_menu.add_command(label="Save model", command=self.save_model)
         # save_menu.add_command(label="Save property", command=self.save_property)
-        # # save_menu.add_command(label="Save rational functions", command=self.save_functions())  ## TODO MAYBE IN THE FUTURE
+        # # save_menu.add_command(label="Save rational functions", command=self.save_functions())
         # save_menu.add_command(label="Save data", command=self.save_data)
         # save_menu.add_command(label="Save space", command=self.save_space)
         # file_menu.add_separator()
@@ -728,7 +721,7 @@ class Gui(Tk):
         self.functions_text.delete('1.0', END)
         self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
         self.functions_text.configure(state='disabled')
-        ## Reseting parsed intervals
+        ## Resetting parsed intervals
         self.parameter_intervals = []
 
     def unfold_functions(self):
@@ -837,7 +830,7 @@ class Gui(Tk):
             self.functions_parsed_text.insert('end', functions)
             self.functions_parsed_text.configure(state='disabled')
 
-            ## Reseting parsed intervals
+            ## Resetting parsed intervals
             self.parameter_intervals = []
             self.status_set("Parsed rational functions loaded.")
 
@@ -924,7 +917,6 @@ class Gui(Tk):
 
     def unfold_data2(self):
         """" Dummy method of unfold_data """
-
         try:
             self.data = self.data[self.key.get()]
         except KeyError:
@@ -999,7 +991,7 @@ class Gui(Tk):
             self.props_text.insert('end', props)
             self.props_text.configure(state='disabled')
 
-            ## Reseting parsed intervals
+            ## Resetting parsed intervals
             self.parameter_intervals = []
             self.status_set("Props loaded.")
 
@@ -1033,11 +1025,6 @@ class Gui(Tk):
             self.space = pickle.load(open(self.space_file.get(), "rb"))
 
             ## Show the space as niceprint()
-            if not self.silent.get():
-                print("space", self.space)
-                print()
-                print("space nice print \n", self.space.nice_print())
-
             self.print_space()
 
             ## Ask if you want to visualise the space
@@ -1065,18 +1052,25 @@ class Gui(Tk):
             self.space_text.insert('end', self.space.nice_print())
         self.space_text.configure(state='disabled')
 
-    def show_space(self, show_refinement, show_samples, show_true_point):
+    def show_space(self, show_refinement, show_samples, show_true_point, clear=False):
         """ Visualises the space in the plot. """
-        figure, axis = self.space.show(green=show_refinement, red=show_refinement, sat_samples=show_samples,
-                                    unsat_samples=show_samples, true_point=show_true_point, save=False,
-                                    where=[self.page6_figure, self.page6_a])
+        if not clear:
+            figure, axis = self.space.show(green=show_refinement, red=show_refinement, sat_samples=show_samples,
+                                        unsat_samples=show_samples, true_point=show_true_point, save=False,
+                                        where=[self.page6_figure, self.page6_a])
 
-        ## If no plot provided
-        if figure is None:
-            messagebox.showinfo("Load Space", axis)
+            ## If no plot provided
+            if figure is None:
+                messagebox.showinfo("Load Space", axis)
+            else:
+                self.page6_figure = figure
+                self.page6_a = axis
+                self.page6_figure.tight_layout()  ## By huypn
+                self.page6_figure.canvas.draw()
+                self.page6_figure.canvas.flush_events()
         else:
-            self.page6_figure = figure
-            self.page6_a = axis
+            self.page6_figure.clf()
+            self.page6_a = self.page6_figure.add_subplot(111)
             self.page6_figure.tight_layout()  ## By huypn
             self.page6_figure.canvas.draw()
             self.page6_figure.canvas.flush_events()
@@ -1087,13 +1081,12 @@ class Gui(Tk):
             print("No space loaded. Cannot set the true_point.")
             return
         else:
-            # self.key = StringVar()
             print(self.space.nice_print())
             self.new_window = Toplevel(self)
             label = Label(self.new_window,
                           text="Please choose values of the parameters to be used:")
             label.grid(row=0)
-            # self.key.set(" ")
+
             i = 1
             ## For each param create an entry
             self.parameter_values = []
@@ -1395,8 +1388,6 @@ class Gui(Tk):
                                                                  Path(self.property_file.get()).stem) + ".txt")))
                     self.status_set("Parameter synthesised finished. Output here: {}", self.functions_file.get())
                     self.load_functions(self.functions_file.get())
-                    # self.functions_text.delete('1.0', END)
-                    # self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
 
                 elif self.program.get().lower() == "storm":
                     self.cursor_toggle_busy(True)
@@ -1409,8 +1400,6 @@ class Gui(Tk):
                                                                  Path(self.property_file.get()).stem) + ".cmd")))
                     self.status_set("Command to run the parameter synthesis saved here: {}", self.functions_file.get())
                     self.load_functions(self.functions_file.get())
-                    # self.functions_text.delete('1.0', END)
-                    # self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
                 else:
                     ## Show window to inform to select the program
                     self.status_set("Program for parameter synthesis not selected")
@@ -1421,7 +1410,7 @@ class Gui(Tk):
 
             self.model_changed = False
             self.property_changed = False
-            ## Reseting parsed intervals
+            ## Resetting parsed intervals
             self.parameter_intervals = []
             self.cursor_toggle_busy(False)
 
@@ -1531,17 +1520,6 @@ class Gui(Tk):
             # self.page3_figure.canvas.draw()
             # self.page3_figure.canvas.flush_events()
 
-        # if spam is None:
-        #     messagebox.showinfo("Plots rational functions in a given point.", egg)
-        # else:
-        #     self.page3_figure = spam
-        #     self.page3_a = egg
-        #     self.page3_a.autoscale(enable=False)
-        #     self.page3_figure.tight_layout()  ## By huypn
-        #     self.page3_figure.canvas.draw()
-        #     self.page3_figure.canvas.flush_events()
-
-        # self.page3_figure_locked.set(False)
         self.status_set("Sampling rational functions done.")
 
     def show_funs_in_all_points(self):
@@ -1563,14 +1541,6 @@ class Gui(Tk):
         self.page3_figure_in_use.set("2")
 
         self.validate_parameters(where=self.functions)
-        ## The following should have been done in the previous line
-        # if not self.parameters:
-        #     globals()["parameters"] = set()
-        #     for polynome in self.functions:
-        #         globals()["parameters"].update(find_param(polynome))
-        #     globals()["parameters"] = sorted(list(globals()["parameters"]))
-        #     self.parameters = globals()["parameters"]
-        #     print("self.parameters", self.parameters)
 
         ## To be used to wait until the button is pressed
         self.button_pressed.set(False)
@@ -1596,7 +1566,6 @@ class Gui(Tk):
 
             self.Next_sample_button.wait_variable(self.button_pressed)
         self.Next_sample_button.config(state="disabled")
-        # self.page3_figure_locked.set(False)
         self.status_set("Ploting sampled rational functions finished.")
 
     def show_heatmap(self):
@@ -1617,14 +1586,6 @@ class Gui(Tk):
             return
 
         self.validate_parameters(where=self.functions)
-        ## The following should have been done in the previous line
-        # if not self.parameters:
-        #     globals()["parameters"] = set()
-        #     for polynome in self.functions:
-        #         globals()["parameters"].update(find_param(polynome))
-        #     globals()["parameters"] = sorted(list(globals()["parameters"]))
-        #     self.parameters = globals()["parameters"]
-        #     print("self.parameters", self.parameters)
 
         if len(self.parameters) is not 2:
             messagebox.showerror("Plot heatmap",
@@ -1643,11 +1604,6 @@ class Gui(Tk):
             if self.page3_figure_in_use.get() is not "3":
                 return
             i = i + 1
-            # heatmap(fun, region, sampling_sizes)
-            # print("self.fun_size_q_entry.get()", self.fun_size_q_entry.get())
-            # print("int(self.fun_size_q_entry.get())", int(self.fun_size_q_entry.get()))
-            # print("self.parameter_intervals", self.parameter_intervals)
-            # print("function", function)
             self.page3_figure = heatmap(function, self.parameter_intervals,
                                         [int(self.fun_size_q_entry.get()), int(self.fun_size_q_entry.get())],
                                         posttitle=f"Function number {i}: {function}", where=True,
@@ -1731,10 +1687,9 @@ class Gui(Tk):
             self.space.sample(self.props, self.size_q, silent=self.silent.get(), save=False)
         finally:
             self.cursor_toggle_busy(False)
-        ## Show the space as niceprint()
+
         self.print_space()
 
-        ## Visualise the sampled space
         self.show_space(show_refinement=False, show_samples=True, show_true_point=self.show_true_point)
 
         self.space_changed = False
@@ -1921,14 +1876,8 @@ class Gui(Tk):
             if askyesno("Sample & Refine", "Data of the space, its text representation, and the plot will be lost. Do you want to proceed?"):
                 self.space = ""
                 self.space_changed = False
-
                 self.print_space(clear=True)
-
-                self.page6_figure.clf()
-                self.page6_a = self.page6_figure.add_subplot(111)
-                self.page6_figure.tight_layout()  ## By huypn
-                self.page6_figure.canvas.draw()
-                self.page6_figure.canvas.flush_events()
+                self.show_space(clear=True)
                 self.space_file.set("")
                 self.status_set("Space deleted.")
 
@@ -1951,7 +1900,6 @@ class Gui(Tk):
             self.space = space.RefinedSpace(self.parameter_intervals, self.parameters)
         else:
             if self.props_changed:
-                ## TODO show warning that you are using old space for computation ## HERE
                 messagebox.showwarning(position,
                                        "Using previously created space with new props. Consider using fresh new space.")
                 ## Check if the properties and data are valid
@@ -1962,12 +1910,10 @@ class Gui(Tk):
                 self.parameters = globals()["parameters"]
 
                 if not len(self.space.params) == len(self.parameters):
-                    messagebox.showerror(position,
-                                         "Cardinality of the space does not correspond to the props. Consider using fresh space.")
+                    messagebox.showerror(position, "Cardinality of the space does not correspond to the props. Consider using fresh space.")
                     return False
                 elif not sorted(self.space.params) == sorted(self.parameters):
-                    messagebox.showerror(position,
-                                         f"Parameters of the space - {self.space.params} - does not correspond to the one in props - {self.parameters}. Consider using fresh space.")
+                    messagebox.showerror(position, f"Parameters of the space - {self.space.params} - does not correspond to the one in props - {self.parameters}. Consider using fresh space.")
                     return False
         return True
 
@@ -2000,7 +1946,7 @@ class Gui(Tk):
         top2 = Toplevel(self)
         top2.title("About")
         top2.resizable(0, 0)
-        explanation = f" Mpm version: {self.version} \n More info here: https://github.com/xhajnal/mpm \n Powered by University of Constance and Masaryk University"
+        explanation = f" Mpm version: {self.version} \n More info here: https://github.com/xhajnal/mpm \n Powered by University of Konstanz and Masaryk University"
         Label(top2, justify=LEFT, text=explanation).pack(padx=13, pady=20)
         top2.transient(self)
         top2.grab_set()
@@ -2055,7 +2001,6 @@ class Gui(Tk):
         del self.key
         self.new_window.destroy()
         del self.new_window
-        # del self.parameter_intervals
         self.parameter_intervals = region
         self.button_pressed.set(True)
         if not self.silent.get():
@@ -2072,7 +2017,6 @@ class Gui(Tk):
         # del self.key
         self.new_window.destroy()
         del self.new_window
-        # del self.parameter_intervals
         self.space.true_point = true_point
 
         print(self.space.nice_print())
@@ -2092,7 +2036,7 @@ class Gui(Tk):
     def reinitialise_plot(self, set_onclick=False):
         """ Inner function, reinitialising the page3 plot """
         ## REINITIALISING THE PLOT
-        ## this is not in one try catch block because I want all of them to be tried
+        ## This is not in one try catch block because I want all of them to be tried
         try:
             self.page3_plotframe.get_tk_widget().destroy()
         except AttributeError:
@@ -2152,5 +2096,5 @@ if "wind" in platform.system().lower():
 else:
     gui.attributes('-zoomed', True)
 
-gui.protocol('WM_DELETE_WINDOW', quit_gui)  # root is your root window
+gui.protocol('WM_DELETE_WINDOW', quit_gui)
 gui.mainloop()
