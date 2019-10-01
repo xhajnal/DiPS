@@ -142,8 +142,8 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.4.5"  ## Version of the gui
-        self.silent = BooleanVar()  ## Sets the command line output to minumum
+        self.version = "1.4.6"  ## Version of the gui
+        self.silent = BooleanVar()  ## Sets the command line output to minimum
 
         ## Settings/data
         # self.alpha = ""  ## Confidence
@@ -472,6 +472,8 @@ class Gui(Tk):
 
         frame_right = Frame(page6, width=200, height=200)
         frame_right.pack(side=TOP)
+
+        Button(frame_right, text='Edit True point', command=self.edit_true_point).pack(pady=10)
 
         Label(frame_right, text=f"Space Visualisation", anchor=W, justify=CENTER).pack(side=TOP)
         self.page6_plotframe = Frame(frame_right)
@@ -1036,35 +1038,84 @@ class Gui(Tk):
                 print()
                 print("space nice print \n", self.space.nice_print())
 
-            self.space_text.configure(state='normal')
-            self.space_text.delete('1.0', END)
-            self.space_text.insert('end', self.space.nice_print())
-            self.space_text.configure(state='disabled')
+            self.print_space()
 
             ## Ask if you want to visualise the space
-            show_samples = messagebox.askyesno("Loaded space", "Do you want to visualise samples?")
-            show_refinement = messagebox.askyesno("Loaded space", "Do you want to visualise refinement (safe & unsafe regions)?")
+            self.show_samples = messagebox.askyesno("Loaded space", "Do you want to visualise samples?")
+            self.show_refinement = messagebox.askyesno("Loaded space", "Do you want to visualise refinement (safe & unsafe regions)?")
             if self.space.true_point is not None:
-                show_true_point = messagebox.askyesno("Loaded space", "Do you want to show the true point?")
+                self.show_true_point = messagebox.askyesno("Loaded space", "Do you want to show the true point?")
             else:
-                show_true_point = False
-
-            spam, egg = self.space.show(green=show_refinement, red=show_refinement, sat_samples=show_samples,
-                                        unsat_samples=show_samples, true_point=show_true_point, save=False,
-                                        where=[self.page6_figure, self.page6_a])
-
-            ## If no plot provided
-            if spam is None:
-                messagebox.showinfo("Load Space", egg)
-            else:
-                self.page6_figure = spam
-                self.page6_a = egg
-                self.page6_figure.tight_layout()  ## By huypn
-                self.page6_figure.canvas.draw()
-                self.page6_figure.canvas.flush_events()
+                self.show_true_point = False
+            self.show_space(self.show_refinement, self.show_samples, self.show_true_point)
 
             self.space_changed = True
             self.status_set("Space loaded.")
+
+    def print_space(self, clear=False):
+        """ Print the niceprint of the space into space text window. """
+        if not self.silent.get():
+            print("space", self.space)
+            print()
+            print("space nice print \n", self.space.nice_print())
+
+        self.space_text.configure(state='normal')
+        self.space_text.delete('1.0', END)
+        if not clear:
+            self.space_text.insert('end', self.space.nice_print())
+        self.space_text.configure(state='disabled')
+
+    def show_space(self, show_refinement, show_samples, show_true_point):
+        """ Visualises the space in the plot. """
+        figure, axis = self.space.show(green=show_refinement, red=show_refinement, sat_samples=show_samples,
+                                    unsat_samples=show_samples, true_point=show_true_point, save=False,
+                                    where=[self.page6_figure, self.page6_a])
+
+        ## If no plot provided
+        if figure is None:
+            messagebox.showinfo("Load Space", axis)
+        else:
+            self.page6_figure = figure
+            self.page6_a = axis
+            self.page6_figure.tight_layout()  ## By huypn
+            self.page6_figure.canvas.draw()
+            self.page6_figure.canvas.flush_events()
+
+    def edit_true_point(self):
+        """ Sets the true point of the space """
+        if self.space is "":
+            print("No space loaded. Cannot set the true_point.")
+            return
+        else:
+            # self.key = StringVar()
+            print(self.space.nice_print())
+            self.new_window = Toplevel(self)
+            label = Label(self.new_window,
+                          text="Please choose values of the parameters to be used:")
+            label.grid(row=0)
+            # self.key.set(" ")
+            i = 1
+            ## For each param create an entry
+            self.parameter_values = []
+            for param in self.space.params:
+                Label(self.new_window, text=param, anchor=W, justify=LEFT).grid(row=i, column=0)
+                spam = Entry(self.new_window)
+                spam.grid(row=i, column=1)
+                spam.insert(END, '0')
+                self.parameter_values.append(spam)
+                i = i + 1
+
+            ## To be used to wait until the button is pressed
+            self.button_pressed.set(False)
+            load_true_point_button = Button(self.new_window, text="OK", command=self.load_true_point_from_window)
+            load_true_point_button.grid(row=i)
+            load_true_point_button.focus()
+            load_true_point_button.bind('<Return>', self.load_true_point_from_window)
+
+            load_true_point_button.wait_variable(self.button_pressed)
+
+            self.print_space()
+            self.show_space(self.show_refinement, self.show_samples, True)
 
     def parse_data_from_window(self):
         """ Parses data from the window. """
@@ -1681,29 +1732,10 @@ class Gui(Tk):
         finally:
             self.cursor_toggle_busy(False)
         ## Show the space as niceprint()
-        if not self.silent.get():
-            print("space", self.space)
-            print()
-            print("space nice print \n", self.space.nice_print())
-
-        self.space_text.configure(state='normal')
-        self.space_text.delete('1.0', END)
-        self.space_text.insert('end', self.space.nice_print())
-        self.space_text.configure(state='disabled')
+        self.print_space()
 
         ## Visualise the sampled space
-        spam, egg = self.space.show(sat_samples=True, unsat_samples=True, red=False, green=False,
-                                    save=False, where=[self.page6_figure, self.page6_a])
-        ## If no plot provided
-        if spam is None:
-            messagebox.showinfo("Sample Space", egg)
-        else:
-            self.page6_figure = spam
-            self.page6_a = egg
-            self.page6_a.autoscale(enable=False)
-            self.page6_figure.tight_layout()  ## By huypn
-            self.page6_figure.canvas.draw()
-            self.page6_figure.canvas.flush_events()
+        self.show_space(show_refinement=False, show_samples=True, show_true_point=self.show_true_point)
 
         self.space_changed = False
         self.props_changed = False
@@ -1763,15 +1795,7 @@ class Gui(Tk):
         self.page6_figure.canvas.draw()
         self.page6_figure.canvas.flush_events()
 
-        ## Show the space as niceprint()
-        if not self.silent.get():
-            print("space", self.space)
-            print()
-            print("space nice print \n", self.space.nice_print())
-        self.space_text.configure(state='normal')
-        self.space_text.delete('1.0', END)
-        self.space_text.insert('end', self.space.nice_print())
-        self.space_text.configure(state='disabled')
+        self.print_space()
 
         self.props_changed = False
         self.space_changed = False
@@ -1897,9 +1921,9 @@ class Gui(Tk):
             if askyesno("Sample & Refine", "Data of the space, its text representation, and the plot will be lost. Do you want to proceed?"):
                 self.space = ""
                 self.space_changed = False
-                self.space_text.configure(state='normal')
-                self.space_text.delete('1.0', END)
-                self.space_text.configure(state='disabled')
+
+                self.print_space(clear=True)
+
                 self.page6_figure.clf()
                 self.page6_a = self.page6_figure.add_subplot(111)
                 self.page6_figure.tight_layout()  ## By huypn
@@ -2037,6 +2061,23 @@ class Gui(Tk):
         if not self.silent.get():
             print("Space: ", self.space)
 
+    def load_true_point_from_window(self):
+        """ Inner function to parse the true point from created window """
+        true_point = []
+        for param_index in range(len(self.space.params)):
+            ## Getting the values from each entry
+            true_point.append(float(self.parameter_values[param_index].get()))
+        if not self.silent.get():
+            print("True point set to: ", true_point)
+        # del self.key
+        self.new_window.destroy()
+        del self.new_window
+        # del self.parameter_intervals
+        self.space.true_point = true_point
+
+        print(self.space.nice_print())
+        self.button_pressed.set(True)
+
     def load_param_values_from_window(self):
         """ Inner function to parse the param values from created window"""
         for param_index in range(len(self.parameter_values)):
@@ -2051,6 +2092,7 @@ class Gui(Tk):
     def reinitialise_plot(self, set_onclick=False):
         """ Inner function, reinitialising the page3 plot """
         ## REINITIALISING THE PLOT
+        ## this is not in one try catch block because I want all of them to be tried
         try:
             self.page3_plotframe.get_tk_widget().destroy()
         except AttributeError:

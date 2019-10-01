@@ -16,10 +16,9 @@ import numpy as np
 from sympy import Interval
 from mpmath import mpi
 from matplotlib.patches import Rectangle
-import unittest
 
-
-from dreal import logical_and, logical_or, logical_not, Variable, CheckSatisfiability, Box
+if "wind" not in platform.system().lower():
+    from dreal import logical_and, logical_or, logical_not, Variable, CheckSatisfiability
 # from dreal import *
 
 workspace = os.path.dirname(__file__)
