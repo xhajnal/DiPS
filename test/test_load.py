@@ -4,11 +4,13 @@ from src.load import *
 
 class MyTestCase(unittest.TestCase):
     def parse_params_from_model(self):
+        print(colored('Parse parameters from a given model', 'blue'))
         model_path = Path(config.get("paths", "models"))
         if os.path.isfile(os.path.join(model_path, "asynchronous_2.pm")):
             self.assertEqual(parse_params_from_model(os.path.join(model_path, "asynchronous_2.pm")), ["p", "q"])
 
     def test_find_param(self):
+        print(colored('Parse parameters from a string', 'blue'))
         self.assertEqual(find_param("56*4+4**6 +   0.1"), set())
         self.assertEqual(find_param("x+0.1"), {'x'})
         self.assertEqual(find_param("p**2-2*p+1"), {'p'})
@@ -20,6 +22,7 @@ class MyTestCase(unittest.TestCase):
             print(find_param(polynome))
 
     def test_load_expressions(self):
+        print(colored('Parse functions from a given file', 'blue'))
         ## THIS WILL PASS ONLY AFTER CREATING THE STORM RESULTS
         agents_quantities = [2]
         f_storm = get_f("./asyn*[0-9]_moments.txt", "storm", True, agents_quantities)
@@ -30,38 +33,47 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(rewards_storm[2])
 
     def test_margins(self):
+        print(colored('Margin/delta computing', 'blue'))
         ## TODO
         pass
 
     def test_create_interval(self):
+        print(colored('Single interval computing', 'blue'))
         ## TODO
         pass
 
     def test_create_intervals(self):
+        print(colored('Multiple intervals computing', 'blue'))
         ## TODO
         pass
 
     def test_catch_data_error(self):
-        ## TODO
-        pass
-
-    def test_load_all_data(self):
+        print(colored('Catching subzero values in data', 'blue'))
         ## TODO
         pass
 
     def test_load_data(self):
+        print(colored('Parsing single data file', 'blue'))
+        ## TODO
+        pass
+
+    def test_load_all_data(self):
+        print(colored('Parsing multiple data files', 'blue'))
         ## TODO
         pass
 
     def test_to_variance(self):
+        print(colored('Computing variance from rewards', 'blue'))
         ## TODO
         pass
 
     def test_load_all_functions(self):
+        print(colored('Parsing single functions file', 'blue'))
         ## TODO
         pass
 
     def test_mpmath_intervals(self):
+        print(colored('mpi math sanity check', 'blue'))
         ## Check more here https://docs.sympy.org/0.6.7/modules/mpmath/basics.html
         ## Sanity check test
         from mpmath import mpi  ## Real intervals
@@ -72,6 +84,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(my_interval.delta, abs(0-5))
 
     def test_sympy_intervals(self):
+        print(colored('Sympy Interval sanity check', 'blue'))
         ## Check more here https://docs.sympy.org/latest/modules/sets.html
         ## Sanity check test
         my_interval = Interval(0, 5)

@@ -1,0 +1,56 @@
+Storm-pars 1.2.4 (dev)
+
+Date: Sun May  5 16:53:00 2019
+Command line arguments: --prism /mpm/models/asynchronous_3.pm --prop 'R{"mean"}=? [ F b=1]'
+Current working directory: /opt/storm/build/bin
+
+Time for model input parsing: 0.001s.
+
+Time for model construction: 0.006s.
+
+-------------------------------------------------------------- 
+Model type: 	DTMC (sparse)
+States: 	18
+Transitions: 	27
+Reward Models:  mean
+State Labels: 	3 labels
+   * deadlock -> 0 item(s)
+   * (b = 1) -> 4 item(s)
+   * init -> 1 item(s)
+Choice Labels: 	none
+-------------------------------------------------------------- 
+
+Model checking property "1": R[exp]{"mean"}=? [F (b = 1)] ...
+Result (initial states): (3 * ((p) * (p^2*q+2*q+(-3)*p*q+1)))/(1)
+Time for model checking: 0.000s.
+
+Storm-pars 1.2.4 (dev)
+
+Date: Sun May  5 16:53:00 2019
+Command line arguments: --prism /mpm/models/asynchronous_3.pm --prop 'R{"mean_squared"}=? [ F b=1]'
+Current working directory: /opt/storm/build/bin
+
+Time for model input parsing: 0.001s.
+
+Time for model construction: 0.006s.
+
+-------------------------------------------------------------- 
+Model type: 	DTMC (sparse)
+States: 	18
+Transitions: 	27
+Reward Models:  mean_squared
+State Labels: 	3 labels
+   * deadlock -> 0 item(s)
+   * (b = 1) -> 4 item(s)
+   * init -> 1 item(s)
+Choice Labels: 	none
+-------------------------------------------------------------- 
+
+Model checking property "1": R[exp]{"mean_squared"}=? [F (b = 1)] ...
+Result (initial states): (3 * ((p) * (2*p^2*q^2+6*q+(-4)*p*q^2+p^2*q+2*q^2+(-7)*p*q+2*p+1)))/(1)
+Time for model checking: 0.000s.
+
+
+real	0m0.043s
+user	0m0.026s
+sys	0m0.017s

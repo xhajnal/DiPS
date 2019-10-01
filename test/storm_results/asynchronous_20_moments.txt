@@ -1,0 +1,56 @@
+Storm-pars 1.2.4 (dev)
+
+Date: Sun May  5 16:53:01 2019
+Command line arguments: --prism /mpm/models/asynchronous_20.pm --prop 'R{"mean"}=? [ F b=1]'
+Current working directory: /opt/storm/build/bin
+
+Time for model input parsing: 0.227s.
+
+Time for model construction: 0.129s.
+
+-------------------------------------------------------------- 
+Model type: 	DTMC (sparse)
+States: 	443
+Transitions: 	843
+Reward Models:  mean
+State Labels: 	3 labels
+   * deadlock -> 0 item(s)
+   * (b = 1) -> 21 item(s)
+   * init -> 1 item(s)
+Choice Labels: 	none
+-------------------------------------------------------------- 
+
+Model checking property "1": R[exp]{"mean"}=? [F (b = 1)] ...
+Result (initial states): (-20 * ((p) * (p^19*q+(-1140)*p^2*q+(-15504)*p^4*q+(-77520)*p^6*q+(-167960)*p^8*q+(-167960)*p^10*q+(-77520)*p^12*q+(-15504)*p^14*q+(-1140)*p^16*q+190*p^17*q+4845*p^15*q+38760*p^13*q+125970*p^11*q+184756*p^9*q+125970*p^7*q+38760*p^5*q+4845*p^3*q+190*p*q+(-19)*q+(-20)*p^18*q+(-1))))/(1)
+Time for model checking: 0.004s.
+
+Storm-pars 1.2.4 (dev)
+
+Date: Sun May  5 16:53:01 2019
+Command line arguments: --prism /mpm/models/asynchronous_20.pm --prop 'R{"mean_squared"}=? [ F b=1]'
+Current working directory: /opt/storm/build/bin
+
+Time for model input parsing: 0.243s.
+
+Time for model construction: 0.212s.
+
+-------------------------------------------------------------- 
+Model type: 	DTMC (sparse)
+States: 	443
+Transitions: 	843
+Reward Models:  mean_squared
+State Labels: 	3 labels
+   * deadlock -> 0 item(s)
+   * (b = 1) -> 21 item(s)
+   * init -> 1 item(s)
+Choice Labels: 	none
+-------------------------------------------------------------- 
+
+Model checking property "1": R[exp]{"mean_squared"}=? [F (b = 1)] ...
+Result (initial states): (-20 * ((p) * (19*p^19*q^2+(-15504)*p^4*q+92055*p^3*q^2+(-77520)*p^6*q+736440*p^5*q^2+(-167960)*p^8*q+2393430*p^7*q^2+125970*p^11*q+3510364*p^9*q^2+(-77520)*p^12*q+2393430*p^11*q^2+(-15504)*p^14*q+736440*p^13*q^2+(-1140)*p^16*q+92055*p^15*q^2+p^19*q+3610*p^17*q^2+(-380)*p^18*q^2+(-20)*p^18*q+(-21660)*p^16*q^2+190*p^17*q+(-294576)*p^14*q^2+4845*p^15*q+(-1472880)*p^12*q^2+38760*p^13*q+(-3191240)*p^10*q^2+(-167960)*p^10*q+(-3191240)*p^8*q^2+184756*p^9*q+(-1472880)*p^6*q^2+125970*p^7*q+(-294576)*p^4*q^2+38760*p^5*q+(-21660)*p^2*q^2+(-342)*q^2+228*p*q+3591*p*q^2+(-57)*q+4845*p^3*q+(-1140)*p^2*q+(-19)*p+(-1))))/(1)
+Time for model checking: 0.007s.
+
+
+real	0m0.996s
+user	0m0.968s
+sys	0m0.028s
