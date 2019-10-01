@@ -132,8 +132,12 @@ class Gui(Tk):
         self.intervals = ""  ## Computed intervals
         self.parameters = ""  ##  Parsed parameters
         self.parameter_intervals = []  ## Parameters intervals
-        self.space = ""  ## Instance of a space Class
         self.props = ""  ## Derived properties
+        self.space = ""  ## Instance of a space Class
+        ## Space visualisation settings
+        self.show_samples = None
+        self.show_refinement = None
+        self.show_true_point = None
 
         ## Settings
         self.version = "1.4.7"  ## Version of the gui
@@ -1061,8 +1065,8 @@ class Gui(Tk):
         """ Visualises the space in the plot. """
         if not clear:
             figure, axis = self.space.show(green=show_refinement, red=show_refinement, sat_samples=show_samples,
-                                        unsat_samples=show_samples, true_point=show_true_point, save=False,
-                                        where=[self.page6_figure, self.page6_a])
+                                           unsat_samples=show_samples, true_point=show_true_point, save=False,
+                                           where=[self.page6_figure, self.page6_a])
 
             ## If no plot provided
             if figure is None:
@@ -1084,6 +1088,7 @@ class Gui(Tk):
         """ Sets the true point of the space """
         if self.space is "":
             print("No space loaded. Cannot set the true_point.")
+            messagebox.showwarning("Edit True point", "Load space first.")
             return
         else:
             print(self.space.nice_print())

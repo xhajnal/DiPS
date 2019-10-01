@@ -56,7 +56,7 @@ if not os.path.exists(refinement_results):
 try:
     from z3 import *
     os.chdir(cwd)
-except:
+except ImportError:
     z3_path = config.get("paths", "z3_path")
 
     if not os.path.exists(z3_path):
@@ -111,7 +111,7 @@ except:
         # print(os.getcwd())
         # import subprocess
         # subprocess.call(["python", "example.py"])
-    except:
+    except ImportError:
         raise Exception("could not load z3 from: ", z3_path)
 
 ## Try to run z3
@@ -374,7 +374,7 @@ def check_unsafe(region, props, silent=False, called=False):
         parameters = globals()["parameters"]
         for polynome in props:
             parameters.update(find_param(polynome))
-        globals()["parameters"] = sorted(list( globals()["parameters"]))
+        globals()["parameters"] = sorted(list(globals()["parameters"]))
         ## EXAMPLE:  parameters >> ['p','q']
         for param in parameters:
             globals()[param] = Real(param)
@@ -1674,7 +1674,7 @@ def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage
     region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
     props:  (list of strings): array of properties
     intervals: (list of pairs/ sympy.Intervals): array of interval to constrain props
-    n (Int): max number of recursions to do
+    n: (Int): max number of recursions to do
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
     silent: (Bool): if silent printed output is set to minimum
@@ -2042,7 +2042,7 @@ def find_max_rectangle(sampled_space, starting_point, silent=True):
                    [sampled_space[index_x, index_y][0][1], sampled_space[index_x, index_y + length][0][1]]])
         print(f"adding rectangle [[{index_x},{index_y}],[{index_x + length},{index_y + length}]] with value [{sampled_space[index_x, index_y][0]},{sampled_space[index_x + length, index_y + length][0]}]")
 
-        ## OLD seen marking (seeting seen for all searched points)
+        ## OLD seen marking (setting seen for all searched points)
         # place(sampled_space[index_x:(index_x + length), index_y:(index_y + length)],
         #      sampled_space[index_x:(index_x + length), index_y:(index_y + length)] == False, 2)
         # place(sampled_space[index_x:(index_x + length), index_y:(index_y + length)],
