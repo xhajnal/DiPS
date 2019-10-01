@@ -287,7 +287,7 @@ def to_interval(points):
 
 
 def is_in(region1, region2):
-    """Returns yes if the interval1 is in the other interval, returns False otherwise
+    """ Returns True if the region1 is in the region2, returns False otherwise
 
     Args
     ----------
@@ -305,7 +305,7 @@ def is_in(region1, region2):
 
 
 def refine_by(region1, region2, debug=False):
-    """Returns the first (hyper)space refined/spliced by the second (hyperspace) into orthogonal subspaces
+    """ Returns the first (hyper)space refined/spliced by the second (hyperspace) into orthogonal subspaces
 
     Args
     ----------

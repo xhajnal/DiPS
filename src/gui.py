@@ -138,6 +138,7 @@ class Gui(Tk):
         ## Settings
         self.version = "1.4.7"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
+        self.debug = False  ## Sets the command line output to maximum
 
         ## Settings/data
         # self.alpha = ""  ## Confidence
@@ -659,7 +660,7 @@ class Gui(Tk):
         self.status_set("Loading functions - checking inputs")
 
         if not self.silent.get():
-            print("self.program.get()", self.program.get())
+            print("Used program: " , self.program.get())
         if self.program.get() == "prism":
             initial_dir = self.prism_results
         elif self.program.get() == "storm":
@@ -703,8 +704,9 @@ class Gui(Tk):
         for key in self.functions.keys():
             if key in rewards.keys():
                 self.functions[key].extend(rewards[key])
-        if not self.silent.get():
-            print("self.functions", self.functions)
+
+        if self.debug:
+            print("Unparsed functions: ", self.functions)
 
         self.unfold_functions()
 
@@ -715,6 +717,9 @@ class Gui(Tk):
         else:
             raise Exception("Loading parameter synthesis results",
                             f"Expected type of the functions is dict or list, got {type(self.functions)}")
+
+        if not self.silent.get():
+            print("Parsed list of functions: ", self.functions)
 
         ## Show loaded functions
         self.functions_text.configure(state='normal')
@@ -759,13 +764,9 @@ class Gui(Tk):
             spam.bind('<Return>', self.unfold_functions2)
         else:
             functions = ""
-            if not self.silent.get():
-                print("self.functions", self.functions)
             for function in self.functions:
                 functions = f"{functions},\n{function}"
             functions = functions[2:]
-            if not self.silent.get():
-                print("functions", functions)
 
             self.functions_parsed_text.configure(state='normal')
             self.functions_parsed_text.delete('1.0', END)
@@ -781,7 +782,7 @@ class Gui(Tk):
             self.functions = self.functions[eval(self.key.get())]
 
         if not self.silent.get():
-            print("self.functions", self.functions)
+            print("Parsed list of functions: ", self.functions)
         self.functions_window.destroy()
         self.unfold_functions()
 
@@ -1452,7 +1453,7 @@ class Gui(Tk):
 
     def show_funs_in_single_point(self):
         """ Plots rational functions in a given point. """
-        print("Ploting rational functions in a given point...")
+        print("Ploting rational functions in a given point ...")
         self.status_set("Ploting rational functions in a given point.")
 
         if self.functions == "":
@@ -1524,6 +1525,8 @@ class Gui(Tk):
             # self.page3_figure.canvas.draw()
             # self.page3_figure.canvas.flush_events()
 
+        if not self.silent.get():
+            print(f"Using point", self.parameter_values)
         self.status_set("Sampling rational functions done.")
 
     def show_funs_in_all_points(self):
@@ -2008,7 +2011,8 @@ class Gui(Tk):
         self.parameter_intervals = region
         self.button_pressed.set(True)
         if not self.silent.get():
-            print("Space: ", self.space)
+            if self.space:
+                print("Space: ", self.space)
 
     def load_true_point_from_window(self):
         """ Inner function to parse the true point from created window """

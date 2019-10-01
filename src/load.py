@@ -37,30 +37,6 @@ if not os.path.exists(data_path):
 
 os.chdir(cwd)
 
-#######################
-###   PARAMETERS    ###
-#######################
-
-
-def parse_params_from_model(file, silent=False):
-    """ Parses the parameters from a given file
-
-    file: (Path/String) a model file to be parsed
-    silent: (Bool) if silent command line output is set to minimum
-    """
-    params = []
-    # print("file", file)
-    with open(file, 'r') as input_file:
-        for line in input_file:
-            if line.startswith('const'):
-                # print(line)
-                line = line.split(" ")[-1].split(";")[0]
-                params.append(line)
-    if not silent:
-        print("params", params)
-    return params
-
-
 ###############################
 ###   RATIONAL FUNCTIONS    ###
 ###############################
@@ -293,6 +269,7 @@ def load_data(path, silent=False, debug=False):
     else:
         return None
 
+
 def load_all_data(path):
     """ loads all experimental data for respective property, returns as dictionary "data"
     
@@ -383,12 +360,12 @@ def create_intervals(alpha, n_samples, data):
     n_samples: (int) number of samples to compute margin
     data: (list of floats), values to be margined
     """
-    foo = []
+    intervals = []
     if not isinstance(data, Iterable):
         return [create_interval(alpha, n_samples, data)]
     for data_point in data:
-        foo.append(create_interval(alpha, n_samples, data_point))
-    return foo
+        intervals.append(create_interval(alpha, n_samples, data_point))
+    return intervals
 
 
 def create_interval(alpha, n_samples, data_point):
@@ -400,8 +377,8 @@ def create_interval(alpha, n_samples, data_point):
     n_samples: (int) number of samples to compute margin
     data_point: (float), the value to be margined
     """
-    change = margin(alpha, n_samples, data_point)
-    return Interval(data_point - change, data_point + change)
+    delta = margin(alpha, n_samples, data_point)
+    return Interval(data_point - delta, data_point + delta)
 
 
 def margin(alpha, n_samples, data_point):
@@ -429,6 +406,30 @@ def margin_experimental(alpha, n_samples, data_point):
     """
     return st.norm.ppf(1 - (1 - alpha) / 2) * math.sqrt(
         data_point * (1 - data_point) / n_samples) + 0.5 / n_samples + 0.005
+
+
+#######################
+###   PARAMETERS    ###
+#######################
+
+
+def parse_params_from_model(file, silent=False):
+    """ Parses the parameters from a given file
+
+    file: (Path/String) a model file to be parsed
+    silent: (Bool) if silent command line output is set to minimum
+    """
+    params = []
+    # print("file", file)
+    with open(file, 'r') as input_file:
+        for line in input_file:
+            if line.startswith('const'):
+                # print(line)
+                line = line.split(" ")[-1].split(";")[0]
+                params.append(line)
+    if not silent:
+        print("params", params)
+    return params
 
 
 def find_param(my_string, debug=False):
