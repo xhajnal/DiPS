@@ -20,7 +20,7 @@ workspace = os.path.dirname(__file__)
 sys.path.append(workspace)
 
 from mc_informed import general_create_data_informed_properties
-from load import create_intervals, load_all_functions, find_param
+from load import create_intervals, load_all_functions, find_param, load_data
 import space
 from synthetise import ineq_to_props, check_deeper
 from mc_prism import call_prism_files, call_storm_files
@@ -136,7 +136,7 @@ class Gui(Tk):
         self.props = ""  ## Derived properties
 
         ## Settings
-        self.version = "1.4.6"  ## Version of the gui
+        self.version = "1.4.7"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
 
         ## Settings/data
@@ -835,7 +835,7 @@ class Gui(Tk):
             self.status_set("Parsed rational functions loaded.")
 
     def load_data(self):
-        """ Loads data from a pickled file. """
+        """ Loads data from a file. Either pickled list or comma separated values in one line"""
         print("Loading data ...")
         if self.data_changed:
             if not askyesno("Loading data", "Previously obtained data will be lost. Do you want to proceed?"):
@@ -857,10 +857,14 @@ class Gui(Tk):
                 self.data = pickle.load(open(self.data_file.get(), "rb"))
                 self.unfold_data()
             else:
-                print()
-                # TODO
-                # self.data = PARSE THE DATA
-            # print(self.data)
+                self.data = load_data(self.data_file.get(), silent=self.silent.get(), debug=not self.silent.get())
+                if not self.data:
+                    messagebox.showerror("Loading data", f"Error, No data loaded.")
+                    self.status_set("Data not loaded properly.")
+                    return
+                self.unfold_data()
+            if not self.silent.get():
+                print("Loaded data: ", self.data)
             self.status_set("Data loaded.")
         # self.parse_data_from_window()
 

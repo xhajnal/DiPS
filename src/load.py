@@ -7,6 +7,7 @@ import copy
 import re
 from pathlib import Path
 from collections.abc import Iterable
+from termcolor import colored
 
 import scipy.stats as st
 from sympy import factor, Interval
@@ -188,7 +189,7 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
                         try:
                             f[N].append(str(factor(line[:-1])))
                         except TypeError:
-                            print(f"Error while factorising polynomial f[{N}][{i+1}], used not factorised instead")
+                            print(f"Error while factorising polynomial f[{N}][{i + 1}], used not factorised instead")
                             f[N].append(line[:-1])
                             # os.chdir(cwd)
                     else:
@@ -246,6 +247,51 @@ def to_variance(dic):
 ###       DATA HERE     ###
 ###########################
 
+def load_data(path, silent=False, debug=False):
+    """ Loads experimental data, returns as list "data"
+
+    Args
+    ----------
+    path: (string) - file name
+    silent: (Bool): if silent printed output is set to minimum
+    debug: (Bool) if debug extensive print will be used
+
+    Returns
+    ----------
+    D: dictionary N -> list of probabilities for respective property
+    """
+    cwd = os.getcwd()
+    if not Path(path).is_absolute():
+        os.chdir(data_path)
+
+    data = []
+    with open(path, "r") as file:
+        for line in file:
+            line = line[:-1]
+            if debug:
+                print("Unparsed line: ", line)
+            if "," not in line:
+                print(colored(f"Comma not in line {line}, skipping this line", "red"))
+                continue
+            correct_line = True
+            data = line.split(",")
+            if debug:
+                print("Parsed line: ", data)
+
+            for value in range(len(data)):
+                try:
+                    data[value] = float(data[value])
+                except ValueError:
+                    print(colored(f"Warning while parsing line number {value + 1}. Expected number, got {type(data[value])}. Skipping this line: {line}", "red"))
+                    correct_line = False
+                    break
+            if correct_line:
+                break
+    os.chdir(cwd)
+    if data:
+        return data
+    else:
+        return None
 
 def load_all_data(path):
     """ loads all experimental data for respective property, returns as dictionary "data"
@@ -284,7 +330,8 @@ def load_all_data(path):
                 try:
                     data[population][value] = float(data[population][value])
                 except:
-                    print("error while parsing population=", population, " i=", value, " of value=", data[population][value])
+                    print("error while parsing population =", population, " i =", value, " of value =",
+                          data[population][value])
                     data[population][value] = 0
                 # print(type(D[population][value]))
             # D[population].append(1-sum(D[population]))
@@ -317,7 +364,7 @@ def catch_data_error(data, minimum, maximum):
     data: (dictionary) structure of data
     minimum: (float) minimal value in data to be set to
     maximum: (float) maximal value in data to be set to
-    
+
     """
     for n in data.keys():
         for i in range(len(data[n])):
@@ -468,7 +515,8 @@ def find_param_old(polynomial):
     ## Get the e-/e+ notation away
     parameters = re.sub('[0-9]e[+|-][0-9]', '0', polynomial)
     parameters = parameters.replace('(', '').replace(')', '').replace('**', '*').replace(' ', '')
-    parameters = parameters.replace("Not", " ").replace("Or", " ").replace("And", " ").replace("Implies", " ").replace("If", " ").replace(',', ' ')
+    parameters = parameters.replace("Not", " ").replace("Or", " ").replace("And", " ").replace("Implies", " ").replace(
+        "If", " ").replace(',', ' ')
     parameters = parameters.replace("<", " ").replace(">", " ").replace("=", " ")
     parameters = re.split('\+|\*|\-|/| ', parameters)
     parameters = [i for i in parameters if not i.replace('.', '', 1).isdigit()]
