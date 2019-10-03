@@ -1050,39 +1050,41 @@ class Gui(Tk):
 
     def print_space(self, clear=False):
         """ Print the niceprint of the space into space text window. """
-        if not self.silent.get():
-            print("space", self.space)
-            print()
-            print("space nice print \n", self.space.nice_print())
+        if not self.space == "":
+            if not self.silent.get():
+                print("space", self.space)
+                print()
+                print("space nice print \n", self.space.nice_print())
 
-        self.space_text.configure(state='normal')
-        self.space_text.delete('1.0', END)
-        if not clear:
-            self.space_text.insert('end', self.space.nice_print())
-        self.space_text.configure(state='disabled')
+            self.space_text.configure(state='normal')
+            self.space_text.delete('1.0', END)
+            if not clear:
+                self.space_text.insert('end', self.space.nice_print())
+            self.space_text.configure(state='disabled')
 
     def show_space(self, show_refinement, show_samples, show_true_point, clear=False):
         """ Visualises the space in the plot. """
-        if not clear:
-            figure, axis = self.space.show(green=show_refinement, red=show_refinement, sat_samples=show_samples,
-                                           unsat_samples=show_samples, true_point=show_true_point, save=False,
-                                           where=[self.page6_figure, self.page6_a])
+        if not self.space == "":
+            if not clear:
+                figure, axis = self.space.show(green=show_refinement, red=show_refinement, sat_samples=show_samples,
+                                               unsat_samples=show_samples, true_point=show_true_point, save=False,
+                                               where=[self.page6_figure, self.page6_a])
 
-            ## If no plot provided
-            if figure is None:
-                messagebox.showinfo("Load Space", axis)
+                ## If no plot provided
+                if figure is None:
+                    messagebox.showinfo("Load Space", axis)
+                else:
+                    self.page6_figure = figure
+                    self.page6_a = axis
+                    self.page6_figure.tight_layout()  ## By huypn
+                    self.page6_figure.canvas.draw()
+                    self.page6_figure.canvas.flush_events()
             else:
-                self.page6_figure = figure
-                self.page6_a = axis
+                self.page6_figure.clf()
+                self.page6_a = self.page6_figure.add_subplot(111)
                 self.page6_figure.tight_layout()  ## By huypn
                 self.page6_figure.canvas.draw()
                 self.page6_figure.canvas.flush_events()
-        else:
-            self.page6_figure.clf()
-            self.page6_a = self.page6_figure.add_subplot(111)
-            self.page6_figure.tight_layout()  ## By huypn
-            self.page6_figure.canvas.draw()
-            self.page6_figure.canvas.flush_events()
 
     def edit_true_point(self):
         """ Sets the true point of the space """
@@ -1888,13 +1890,14 @@ class Gui(Tk):
     def refresh_space(self):
         """ Unloads space. """
         if self.space_changed:
-            if askyesno("Sample & Refine", "Data of the space, its text representation, and the plot will be lost. Do you want to proceed?"):
-                self.space = ""
-                self.space_changed = False
-                self.print_space(clear=True)
-                self.show_space(clear=True)
-                self.space_file.set("")
-                self.status_set("Space deleted.")
+            if not askyesno("Sample & Refine", "Data of the space, its text representation, and the plot will be lost. Do you want to proceed?"):
+                return
+        self.space_changed = False
+        self.print_space(clear=True)
+        self.show_space(None, None, None, clear=True)
+        self.space_file.set("")
+        self.space = ""
+        self.status_set("Space deleted.")
 
     def validate_space(self, position=False):
         """ Validates space.
