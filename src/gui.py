@@ -1576,6 +1576,7 @@ class Gui(Tk):
             if spam is None:
                 messagebox.showinfo("Plots rational functions in a given point.", egg)
             else:
+                spam.tight_layout()
                 self.page3_figure = spam
                 self.page3_a = egg
                 self.initialise_plot(what=self.page3_figure)
