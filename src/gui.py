@@ -140,7 +140,7 @@ class Gui(Tk):
         self.show_true_point = None
 
         ## Settings
-        self.version = "1.4.8"  ## Version of the gui
+        self.version = "1.4.10"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = False  ## Sets the command line output to maximum
 
@@ -215,11 +215,13 @@ class Gui(Tk):
         # page1.rowconfigure(5, weight=1)
         # page1.columnconfigure(6, weight=1)
 
-        frame_left = Frame(page1, width=600, height=200)  ## Model part
+        frame_left = Frame(page1, width=400, height=100)  ## Model part
         # for i in range(4):
         #    frame_left.rowconfigure(i, weight=1)
-        for i in range(7):
-            frame_left.columnconfigure(i, weight=1)
+        frame_left.rowconfigure(2, weight=1)
+        frame_left.columnconfigure(6, weight=1)
+        # for i in range(7):
+        #     frame_left.columnconfigure(i, weight=1)
         frame_left.pack(side=LEFT, fill=X)
 
         Button(frame_left, text='Open model', command=self.load_model).grid(row=0, column=0, sticky=W, padx=4,
@@ -231,7 +233,7 @@ class Gui(Tk):
 
         self.model_text = scrolledtext.ScrolledText(frame_left, height=100)
         # self.model_text.config(state="disabled")
-        self.model_text.grid(row=2, column=0, columnspan=16, rowspan=2, sticky=W + E + N + S, padx=4,
+        self.model_text.grid(row=2, column=0, columnspan=16, rowspan=2, sticky=W, padx=4,
                              pady=4)  # pack(anchor=W, fill=X, expand=True)
 
         frame_right = Frame(page1)  ## Property part
