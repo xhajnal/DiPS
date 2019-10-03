@@ -140,7 +140,7 @@ class Gui(Tk):
         self.show_true_point = None
 
         ## Settings
-        self.version = "1.4.7"  ## Version of the gui
+        self.version = "1.4.8"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = False  ## Sets the command line output to maximum
 
@@ -1450,8 +1450,11 @@ class Gui(Tk):
         self.sampled_functions_text.insert('1.0', "rational function index, [parameter values], function value: \n")
         spam = ""
         for item in self.sampled_functions:
-            item[0] = item[0] + 1
-            spam = spam + str(item) + ",\n"
+            spam = spam + str(item[0]+1) + ", ["
+            for index in range(1, len(item)-1):
+                spam = spam + str(item[index]) + ", "
+            spam = spam[:-2]
+            spam = spam + "], " + str(item[-1]) + ",\n"
         self.sampled_functions_text.insert('2.0', spam[:-2])
         self.sampled_functions_text.configure(state='disabled')
         self.status_set("Sampling rational functions finished.")
