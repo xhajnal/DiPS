@@ -5,7 +5,7 @@ from src.sample_n_visualise import *
 class MyTestCase(unittest.TestCase):
     def test(self):
         ## returns [N, dic_fun[N].index(polynome), datapoint]
-        print(sample({10: ["x+y"]}, [10], 2))
+        print(sample_dictionary_funs({10: ["x+y"]}, 2, [10]))
 
         # heatmap("p+0*q",[[1,5],[1,5]],[6,6])
         heatmap("p+q", [[0, 1], [0, 1]], [5, 5])
@@ -18,3 +18,4 @@ class MyTestCase(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

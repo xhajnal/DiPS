@@ -8,6 +8,7 @@ import pylab as pl
 import seaborn as sns
 from matplotlib import collections as mc
 from matplotlib.ticker import MaxNLocator
+from termcolor import colored
 
 workspace = os.path.dirname(__file__)
 sys.path.append(os.path.join(workspace, '../src/'))
@@ -36,7 +37,7 @@ def get_param_values(parameters, size_q, intervals=False, debug=False):
     for param in range(len(parameters)):
         if intervals:
             if debug:
-                print(f"parameter index:{param} with intervals: [{intervals[param][0]},{intervals[param][1]}]")
+                print(f"Parameter index:{param} with intervals: [{intervals[param][0]},{intervals[param][1]}]")
             parameter_values.append(np.linspace(intervals[param][0], intervals[param][1], size_q, endpoint=True))
         else:
             parameter_values.append(np.linspace(0, 1, size_q, endpoint=True))
@@ -44,7 +45,7 @@ def get_param_values(parameters, size_q, intervals=False, debug=False):
     if (len(parameters) - 1) == 0:
         parameter_values = np.linspace(0, 1, size_q, endpoint=True)[np.newaxis, :].T
     if debug:
-        print("parameter_values", parameter_values)
+        print("Parameter_values: ", parameter_values)
     return parameter_values
 
 
@@ -65,15 +66,15 @@ def eval_and_show(fun_list, parameter_value, cumulative=False, debug=False, give
         parameters.update(find_param(polynome, debug))
     parameters = sorted(list(parameters))
     if debug:
-        print("parameters", parameters)
+        print("Parameters: ", parameters)
 
     title = "Rational functions sampling \n parameter values:"
     a = []
     add = 0
     for param in range(len(parameters)):
         if debug:
-            print("parameters[param]", parameters[param])
-            print("parameter_value[param]", parameter_value[param])
+            print("Parameters[param]", parameters[param])
+            print("Parameter_value[param]", parameter_value[param])
         globals()[parameters[param]] = parameter_value[param]
         title = "{} {}={},".format(title, parameters[param], parameter_value[param])
     title = title[:-1]
@@ -81,7 +82,7 @@ def eval_and_show(fun_list, parameter_value, cumulative=False, debug=False, give
     title = f"{title}\n values: "
     for polynome in fun_list:
         if debug:
-            print("eval ", polynome, eval(polynome))
+            print("Eval ", polynome, eval(polynome))
         if cumulative:
             ## Add sum of all values
             value = eval(polynome)
@@ -108,7 +109,7 @@ def eval_and_show(fun_list, parameter_value, cumulative=False, debug=False, give
         print(title)
     ax.set_title(wraper.fill(title))
     if debug:
-        print("len(fun_list)", len(fun_list))
+        print("Len(fun_list): ", len(fun_list))
     ax.bar(range(1, len(fun_list)+1), a, width, color='b')
     if give_back:
         return fig, ax
@@ -116,63 +117,40 @@ def eval_and_show(fun_list, parameter_value, cumulative=False, debug=False, give
     return a
 
 
-## OLD VERSION NOW USED FOR BACK COMPATIBILITY
-def sample(dic_fun, agents_quantities, size_q, debug=False):
-    """ Returns probabilities of i successes for sampled parametrisation
+def sample_dictionary_funs(dictionary, size_q, keys=None, debug=False):
+    """ Returns a dictionary of function values for sampled parametrisations
 
     Args
     ----------
-    dic_fun: (dictionary N -> list of polynomials)
+    dictionary: dictionary of list of functions
     size_q: (int) sample size in each parameter
-    agents_quantities: (int) pop sizes to be used
+    keys: (list) dictionary keys to be used
     debug: (Bool) if debug extensive output is provided
 
     Returns
     ----------
-    Array of [N, i, parameters, value]
+    Array of [agents_quantity, function index, [parameter values], function value]
 
     """
     arr = []
     if debug:
-        print("Inside of sample_n_visualise.sample()")
-        print("dic_fun", dic_fun)
-    for N in agents_quantities:
-        for polynome in dic_fun[N]:
-            if debug:
-                print("polynome", polynome)
-            parameters = set()
-            parameters.update(find_param(polynome, debug))
+        print("Inside of sample_n_visualise.sample_dictionary_funs()")
+        print("Dictionary of functions: ", dictionary)
 
-            ## THIS THING IS WORKING ONLY FOR THE CASE STUDY
-            # if len(parameters) < N:
-            #     parameters.update(find_param(polynome, debug))
-            if debug:
-                print("parameters", parameters)
-            parameters = sorted(list(parameters))
-            if debug:
-                print("parameters", parameters)
+    ## Initialisation
+    sampling = {}
+    if keys is None:
+        keys = dictionary.keys()
 
-            parameter_values = get_param_values(parameters, size_q, debug)
-
-            for parameter_value in parameter_values:
-                if debug:
-                    print("parameter_value", parameter_value)
-                a = [N, dic_fun[N].index(polynome)]
-                for param in range(len(parameters)):
-                    a.append(parameter_value[param])
-                    if debug:
-                        print("parameters[param]", parameters[param])
-                        print("parameter_value[param]", parameter_value[param])
-                    globals()[parameters[param]] = parameter_value[param]
-                if debug:
-                    print("eval ", polynome, eval(polynome))
-                a.append(eval(polynome))
-                arr.append(a)
-    return arr
+    ## For
+    for key in keys:
+        array = sample_list_funs(dictionary[key], size_q, debug=debug)
+        sampling[key] = array
+    return sampling
 
 
-def sample_fun(list_fun, size_q, intervals=False, debug=False, silent=False):
-    """ Returns probabilities of i successes for sampled parametrisation
+def sample_list_funs(list_fun, size_q, intervals=False, debug=False, silent=False):
+    """ Returns a list of function values for sampled parametrisations
 
     Args
     ----------
@@ -184,17 +162,17 @@ def sample_fun(list_fun, size_q, intervals=False, debug=False, silent=False):
 
     Returns
     ----------
-    Array of [N, i, parameters, value]
+    Array of [function index, [parameter values], function value]
 
     """
     arr = []
     if debug:
-        print("Inside of sample_n_visualise.sample()")
-        print("list_fun", list_fun)
-        print("intervals", intervals)
+        print("Inside of sample_n_visualise.sample_list_funs()")
+        print("List_fun: ", list_fun)
+        print("Intervals: ", intervals)
     for polynome in list_fun:
         if debug:
-            print("polynome", polynome)
+            print("Polynome: ", polynome)
         parameters = set()
         parameters.update(find_param(polynome, debug))
 
@@ -202,25 +180,25 @@ def sample_fun(list_fun, size_q, intervals=False, debug=False, silent=False):
         # if len(parameters) < N:
         #     parameters.update(find_param(polynome, debug))
         if debug:
-            print("parameters", parameters)
+            print("Parameters: ", parameters)
         parameters = sorted(list(parameters))
         if debug:
-            print("parameters", parameters)
+            print("Sorted parameters: ", parameters)
 
         parameter_values = get_param_values(parameters, size_q, intervals=intervals, debug=debug)
 
         for parameter_value in parameter_values:
             if debug:
-                print("parameter_value", parameter_value)
+                print("Parameter_value: ", parameter_value)
             a = [list_fun.index(polynome)]
             for param in range(len(parameters)):
                 a.append(parameter_value[param])
                 if debug:
-                    print("parameters[param]", parameters[param])
-                    print("parameter_value[param]", parameter_value[param])
+                    print("Parameter[param]: ", parameters[param])
+                    print("Parameter_value[param]: ", parameter_value[param])
                 globals()[parameters[param]] = parameter_value[param]
             if debug:
-                print("eval ", polynome, eval(polynome))
+                print("Eval ", polynome, eval(polynome))
             a.append(eval(polynome))
             arr.append(a)
     return arr
@@ -244,23 +222,23 @@ def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug=False,
         parameters = set()
         for polynome in dic_fun[N]:
             if debug:
-                print("polynome", polynome)
+                print("Polynome: ", polynome)
             parameters.update(find_param(polynome, debug))
 
             ## THIS THING IS WORKING ONLY FOR THE CASE STUDY
             # if len(parameters) < N:
             #    parameters.update(find_param(polynome, debug))
         if debug:
-            print("parameters", parameters)
+            print("Parameters: ", parameters)
         parameters = sorted(list(parameters))
         if debug:
-            print("parameters", parameters)
+            print("Sorted parameters: ", parameters)
 
         parameter_values = get_param_values(parameters, size_q, debug)
 
         for parameter_value in parameter_values:
             if debug:
-                print("parameter_value", parameter_value)
+                print("Parameter_value: ", parameter_value)
             add = 0
             a = [N, dic_fun[N].index(polynome)]
             if N == 0:
@@ -270,13 +248,13 @@ def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug=False,
             for param in range(len(parameters)):
                 a.append(parameter_value[param])
                 if debug:
-                    print("parameters[param]", parameters[param])
-                    print("parameter_value[param]", parameter_value[param])
+                    print("Parameter[param]: ", parameters[param])
+                    print("Parameter_value[param]: ", parameter_value[param])
                 globals()[parameters[param]] = parameter_value[param]
                 title = "{} {}={},".format(title, parameters[param], parameter_value[param])
             title = title[:-1]
             if debug:
-                print("eval ", polynome, eval(polynome))
+                print("Eval ", polynome, eval(polynome))
             for polynome in dic_fun[N]:
                 if cumulative:
                     ## Add sum of all values
@@ -287,13 +265,13 @@ def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug=False,
                 else:
                     a.append(eval(polynome))
 
-            print(a)
+            # print(a)
             fig, ax = plt.subplots()
             width = 0.2
             ax.set_ylabel('Value')
             ax.set_xlabel('Rational function indices')
             ax.set_title(wraper.fill(title))
-            print(title)
+            # print(title)
             rects1 = ax.bar(range(len(dic_fun[N])), a[len(parameters) + 2:], width, color='b')
             plt.show()
 
@@ -334,9 +312,9 @@ def visualise_byparam(hyper_rectangles):
         ax.add_collection(lc)
         ax.autoscale()
         ax.margins(0.1)
-        print(intervals)
+        print("Intervals: ", intervals)
     else:
-        print("Given space is empty, no intervals to be visualised")
+        print(colored("Given space is empty, no intervals to be visualised", "red"))
 
 
 def heatmap(fun, region, sampling_sizes, posttitle="", where=False, parameters=False):
@@ -349,7 +327,7 @@ def heatmap(fun, region, sampling_sizes, posttitle="", where=False, parameters=F
     sampling_sizes: (int) tuple of sample size of respective parameter
     posttitle: (string) A string to be put after the title
     where: (Tuple/List) : output matplotlib sources to output created figure
-    parameters (list): list of parameters
+    parameters: (list): list of parameters
 
     Example
     ----------
@@ -433,4 +411,4 @@ def visualise_sampled_byparam(hyper_rectangles, sample_size):
         ax.margins(0.1)
         plt.show()
     else:
-        print("Given space is empty")
+        print(colored("Given space is empty.", "red"))

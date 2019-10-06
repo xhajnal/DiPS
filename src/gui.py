@@ -24,7 +24,7 @@ from load import create_intervals, load_all_functions, find_param, load_data
 import space
 from synthetise import ineq_to_props, check_deeper
 from mc_prism import call_prism_files, call_storm_files
-from sample_n_visualise import sample_fun, eval_and_show, get_param_values, heatmap
+from sample_n_visualise import sample_list_funs, eval_and_show, get_param_values, heatmap
 
 cwd = os.getcwd()
 
@@ -1445,7 +1445,7 @@ class Gui(Tk):
         ## TODO If self.functions got more than one entry
         try:
             self.cursor_toggle_busy(True)
-            self.sampled_functions = sample_fun(self.functions, int(self.fun_size_q_entry.get()),
+            self.sampled_functions = sample_list_funs(self.functions, int(self.fun_size_q_entry.get()),
                                                 intervals=self.parameter_intervals, debug=False, silent=self.silent.get())
         finally:
             self.cursor_toggle_busy(False)
