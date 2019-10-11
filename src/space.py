@@ -21,6 +21,7 @@ config = configparser.ConfigParser()
 workspace = os.path.dirname(__file__)
 # print("workspace", workspace)
 cwd = os.getcwd()
+from miscellaneous import DocumentWrapper
 os.chdir(workspace)
 
 config.read("../config.ini")
@@ -212,6 +213,7 @@ class RefinedSpace:
         save: (Bool) if True, the output is saved
         where: (Tuple/List) : output matplotlib sources to output created figure
         """
+        d = DocumentWrapper(width=70)
 
         # print("self.true_point", self.true_point)
         if save is True:
@@ -271,7 +273,7 @@ class RefinedSpace:
                 circle = plt.Circle((self.true_point[0], self.true_point[1]), size_correction*1, color='b', fill=False)
                 plt.gcf().gca().add_artist(circle)
 
-            whole_title = f"{pretitle} red = unsafe region, green = safe region, white = in between \n{self.title} \n {title}"
+            whole_title = "\n".join(d.wrap(f"{pretitle}\n red = unsafe region, green = safe region, white = in between \n{self.title} \n {title}"))
             pic.set_title(whole_title)
             with open(os.path.join(refinement_results, "figure_to_title.txt"), "a+") as file:
                 file.write(f"{save} : {whole_title}\n")
@@ -288,6 +290,7 @@ class RefinedSpace:
                 del region
                 return fig, pic
             else:
+                plt.tight_layout()
                 plt.show()
             del region
 
@@ -323,7 +326,7 @@ class RefinedSpace:
                         ax.plot(x_axis, sample)
                     ax.set_xlabel("param indices")
                     ax.set_ylabel("parameter value")
-                    whole_title = f"Sat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}, \n{self.title} \n {title}"
+                    whole_title = "\n".join(d.wrap(f"Sat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}, \n{self.title} \n {title}", 70))
                     ax.set_title(whole_title)
                     ax.autoscale()
                     ax.margins(0.1)
@@ -353,6 +356,7 @@ class RefinedSpace:
             if unsat_samples and (not self.gridsampled or self.sat_samples):
                 if self.unsat_samples:
                     fig, ax = plt.subplots()
+                    fig.tight_layout()
                     ## Creates values of the horizontal axis
                     x_axis = []
                     i = 0
@@ -509,7 +513,12 @@ class RefinedSpace:
 
     def get_coverage(self):
         """Returns proportion of nonwhite subspace (coverage)"""
-        return self.get_nonwhite_volume() / self.get_volume()
+        # print("self.get_nonwhite_volume()", self.get_nonwhite_volume())
+        # print("self.get_volume()", self.get_volume())
+        if self.get_nonwhite_volume() == 0:
+            return 0
+        else:
+            return self.get_nonwhite_volume() / self.get_volume()
 
     ## TBD generalise so that the code is not copied
     def show_green(self):
