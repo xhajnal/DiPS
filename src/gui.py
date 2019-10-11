@@ -427,9 +427,9 @@ class Gui(Tk):
         self.size_q_entry.grid(row=1, column=1, columnspan=2)
         self.size_q_entry.insert(END, '5')
 
-        Button(frame_left, text='Sample space', command=self.sample_space).grid(row=6, column=0, sticky=W, padx=10, pady=4)
+        Button(frame_left, text='Sample space', command=self.sample_space).grid(row=7, column=0, sticky=W, padx=10, pady=4)
 
-        ttk.Separator(frame_left, orient=VERTICAL).grid(column=3, row=1, rowspan=6, sticky='ns', padx=10, pady=25)
+        ttk.Separator(frame_left, orient=VERTICAL).grid(column=3, row=1, rowspan=8, sticky='ns', padx=10, pady=25)
 
         label62 = Label(frame_left, text="Set max_dept: ", anchor=W, justify=LEFT)
         label62.grid(row=1, column=4, padx=10)
@@ -445,24 +445,38 @@ class Gui(Tk):
         label65.grid(row=4, column=4, padx=10)
         createToolTip(label65, text='Choose from algorithms:\n 1-4 - using SMT solvers \n 1 - DFS search \n 2 - BFS search \n 3 - BFS search with example propagation \n 4 - BFS with example and counterexample propagation \n 5 - interval algorithmic')
 
+        label66 = Label(frame_left, text="Set solver: ", anchor=W, justify=LEFT)
+        label66.grid(row=5, column=4, padx=10)
+        createToolTip(label66, text='When using SMT solver (alg 1-4), two options are possible, z3 or dreal (with delta complete decision procedures)')
+
+        label67 = Label(frame_left, text="Set delta: ", anchor=W, justify=LEFT)
+        label67.grid(row=6, column=4, padx=10)
+        createToolTip(label67, text='When using dreal solver, delta is used to set solver error boundaries for satisfiability.')
+
         self.max_dept_entry = Entry(frame_left)
         self.coverage_entry = Entry(frame_left)
         self.epsilon_entry = Entry(frame_left)
         self.alg = ttk.Combobox(frame_left, values=('1', '2', '3', '4', '5'))
+        self.solver = ttk.Combobox(frame_left, values=('z3', 'dreal'))
+        self.delta_entry = Entry(frame_left)
 
         self.max_dept_entry.grid(row=1, column=5)
         self.coverage_entry.grid(row=2, column=5)
         self.epsilon_entry.grid(row=3, column=5)
         self.alg.grid(row=4, column=5)
+        self.solver.grid(row=5, column=5)
+        self.delta_entry.grid(row=6, column=5)
 
         self.max_dept_entry.insert(END, '5')
         self.coverage_entry.insert(END, '0.95')
         self.epsilon_entry.insert(END, '0')
         self.alg.current(3)
+        self.solver.current(0)
+        self.delta_entry.insert(END, '0.01')
 
-        Button(frame_left, text='Refine space', command=self.refine_space).grid(row=6, column=4, sticky=W, pady=4, padx=10)
+        Button(frame_left, text='Refine space', command=self.refine_space).grid(row=7, column=4, sticky=W, pady=4, padx=10)
 
-        ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=7, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
+        ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=8, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
 
         frame_left.rowconfigure(13, weight=1)
         frame_left.columnconfigure(16, weight=1)
@@ -1725,6 +1739,7 @@ class Gui(Tk):
         self.max_depth = int(self.max_dept_entry.get())
         self.coverage = float(self.coverage_entry.get())
         self.epsilon = float(self.epsilon_entry.get())
+        self.delta = float(self.delta_entry.get())
 
         ## Checking if all entries filled
         if self.max_depth == "":
@@ -1757,7 +1772,7 @@ class Gui(Tk):
             spam = check_deeper(self.space, self.props, self.max_depth, self.epsilon, self.coverage,
                                 silent=self.silent.get(),
                                 version=int(self.alg.get()), size_q=False, debug=False, save=False,
-                                title="", where=[self.page6_figure, self.page6_a])
+                                title="", where=[self.page6_figure, self.page6_a], solver=str(self.solver.get()), delta=self.delta)
         finally:
             self.cursor_toggle_busy(False)
         ## If the visualisation of the space did not succeed
