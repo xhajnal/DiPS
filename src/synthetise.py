@@ -952,6 +952,8 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
     if where:
         if space_shown[0] is None:
             return space, space_shown[1]
+        else:
+            return space
     else:
         return space
 
@@ -1140,6 +1142,12 @@ def private_check_deeper_queue(region, props, n, epsilon, coverage, silent, solv
     space.add_white(foo)
     space.add_white(foo2)
 
+    ## Check if the que created (if alg1 used before it wont)
+    try:
+        type(globals()["que"])
+    except KeyError:
+        globals()["que"] = Queue()
+
     ## Add calls to the Queue
     # print("adding",[copy.deepcopy(foo),prop,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo),prop,n-1,epsilon,coverage,silent]))
     # print("adding",[copy.deepcopy(foo2),prop,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo2),prop,n-1,epsilon,coverage,silent]))
@@ -1313,6 +1321,8 @@ def private_check_deeper_queue_checking_both(region, props, n, epsilon, coverage
             return f"interval {region} too small, skipped"
 
     ## Stop if the the current coverage is above the given thresholds
+    print(space.get_coverage())
+    aaaaa  = space.get_coverage()
     if space.get_coverage() > coverage:
         globals()["que"] = Queue()
         return "coverage ", space.get_coverage(), " is above the threshold"
@@ -1400,6 +1410,12 @@ def private_check_deeper_queue_checking_both(region, props, n, epsilon, coverage
     if float(eval(counterexample_points[index])) == low + (high - low) / 2:
         model_low[1] = None
         model_high[1] = None
+
+    ## Check if the que created (if alg1 used before it wont)
+    try:
+        type(globals()["que"])
+    except KeyError:
+        globals()["que"] = Queue()
 
     ## Add calls to the Queue
     globals()["que"].enqueue([copy.deepcopy(foo), props, n - 1, epsilon, coverage, silent, model_low, solver, delta])
@@ -1739,6 +1755,12 @@ def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage
     space.add_white(foo)
     space.add_white(foo2)
 
+    ## Check if the que created (if alg1 used before it wont)
+    try:
+        type(globals()["que"])
+    except KeyError:
+        globals()["que"] = Queue()
+
     ## Add calls to the Queue
     # print("adding",[copy.deepcopy(foo),prop,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo),prop,n-1,epsilon,coverage,silent]))
     # print("adding",[copy.deepcopy(foo2),prop,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo2),prop,n-1,epsilon,coverage,silent]))
@@ -2045,12 +2067,3 @@ def find_max_rectangle(sampled_space, starting_point, silent=True):
         return result
     else:
         print(f"Sorry, {dimensions} dimensions TBD")
-
-n = 1
-coverage = 0.95
-epsilon = 0
-show_space = False
-for solver in ["dreal"]:
-    for version in [1, 2, 3, 4, 5]:
-        spam = check_deeper([(0, 1)], ineq_to_props(["x"], [Interval(0, 1)]), silent=True, n=n, epsilon=epsilon,
-                            coverage=coverage, version=version, solver=solver, show_space=show_space)
