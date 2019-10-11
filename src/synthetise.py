@@ -166,15 +166,24 @@ def ineq_to_props(funcs, intervals, silent=True):
             print(colored(f"len of functions {len(funcs)} and intervals {len(intervals)} does not correspond", "red"))
         return False
 
-    spam = []
-    for index in range(len(funcs)):
-        if isinstance(intervals[index], Interval):
-            spam.append(funcs[index] + ">=" + str(intervals[index].start))
-            spam.append(funcs[index] + "<=" + str(intervals[index].end))
+    ## Catching wrong interval errors
+    try:
+        spam = []
+        for index in range(len(funcs)):
+            if isinstance(intervals[index], Interval):
+                spam.append(funcs[index] + ">=" + str(intervals[index].start))
+                spam.append(funcs[index] + "<=" + str(intervals[index].end))
+            else:
+                spam.append(funcs[index] + ">=" + str(intervals[index][0]))
+                spam.append(funcs[index] + "<=" + str(intervals[index][1]))
+        return spam
+    except Exception as error:
+        if "'EmptySet' object does not support indexing" in str(error):
+            raise Exception("ineq_to_props", "Some intervals are incorrect (lover bound > upper bound)")
+        elif "'FiniteSet' object does not support indexing" in str(error):
+            raise Exception("ineq_to_props", "Some intervals are incorrect (empty)")
         else:
-            spam.append(funcs[index] + ">=" + str(intervals[index][0]))
-            spam.append(funcs[index] + "<=" + str(intervals[index][1]))
-    return spam
+            raise error
 
 
 def props_to_ineq(props, silent=True, debug=False):
@@ -348,8 +357,8 @@ def refine_by(region1, region2, debug=False):
     return regions
 
 
-def check_unsafe(region, props, silent=False, called=False):
-    """ Check if the given region is unsafe or not using z3.
+def check_unsafe(region, props, silent=False, called=False, solver="z3", delta=0.001):
+    """ Check if the given region is unsafe or not using z3 or dreal.
 
     It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given
     **interval** (called a model in SMT), otherwise it is unsafe.
@@ -360,6 +369,8 @@ def check_unsafe(region, props, silent=False, called=False):
     props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
     silent: (Bool): if silent printed output is set to minimum
     called: (Bool): if called updates the global variables (use when calling it directly)
+    solver: (string): specified solver, allowed: z3, dreal
+    delta: (number): used for delta solving using dreal
     """
     ## Initialisation
     if not silent:
@@ -376,39 +387,78 @@ def check_unsafe(region, props, silent=False, called=False):
             parameters.update(find_param(polynome))
         globals()["parameters"] = sorted(list(globals()["parameters"]))
         ## EXAMPLE:  parameters >> ['p','q']
-        for param in parameters:
-            globals()[param] = Real(param)
+        for param in globals()["parameters"]:
+            if solver == "z3":
+                globals()[param] = Real(param)
+            elif solver == "dreal":
+                globals()[param] = Variable(param)
+            else:
+                try:
+                    raise Exception(f"Unknown solver: {solver}")
+                except:
+                    raise Exception(
+                        "Unknown solver.")
         ## EXAMPLE: p = Real(p)
 
         space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
     else:
         space = globals()["space"]
 
-    s = Solver()
+    if solver == "z3":
 
-    ## Adding regional restrictions to solver
-    j = 0
-    for param in globals()["parameters"]:
-        # print("globals()[param]", globals()[param])
-        # print("region[j][0]", region[j][0])
-        s.add(globals()[param] >= region[j][0])
-        s.add(globals()[param] <= region[j][1])
-        j = j + 1
+        s = Solver()
 
-    ## Adding properties to solver
-    for i in range(0, len(props)):
-        # print(props[i])
-        s.add(eval(props[i]))
+        ## Adding regional restrictions to solver
+        j = 0
+        for param in globals()["parameters"]:
+            # print("globals()[param]", globals()[param])
+            # print("region[j][0]", region[j][0])
+            s.add(globals()[param] >= region[j][0])
+            s.add(globals()[param] <= region[j][1])
+            j = j + 1
 
-    if s.check() == sat:
-        return s.model()
-    else:
-        space.add_red(region)
-        return True
+        ## Adding properties to solver
+        for i in range(0, len(props)):
+            # print(props[i])
+            s.add(eval(props[i]))
+
+        if s.check() == sat:
+            return s.model()
+        else:
+            space.add_red(region)
+            return True
+
+    elif solver == "dreal":
+        ## Adding regional restrictions to dreal solver
+        j = 0
+        for param in globals()["parameters"]:
+            # print("globals()[param]", globals()[param])
+            # print("region[j][0]", region[j][0])
+            ## TODO possibly a problematic when changing the solver with the same space
+            globals()[param] = Variable(param)
+            if j == 0:
+                f_sat = logical_and(globals()[param] >= region[j][0], globals()[param] <= region[j][1])
+            else:
+                f_sat = logical_and(f_sat, globals()[param] >= region[j][0])
+                f_sat = logical_and(f_sat, globals()[param] <= region[j][1])
+            j = j + 1
+
+        ## Adding properties to dreal solver
+        for i in range(0, len(props)):
+            # print(props[i])
+            f_sat = logical_and(f_sat, eval(props[i]))
+
+        result = CheckSatisfiability(f_sat, delta)
+
+        if result is not None:
+            return result
+        else:
+            space.add_red(region)
+            return True
 
 
-def check_safe(region, props, silent=False, called=False):
-    """ Check if the given region is safe or not using z3.
+def check_safe(region, props, silent=False, called=False, solver="z3", delta=0.001):
+    """ Check if the given region is safe or not using z3 or dreal.
 
     It means whether for all parametrisations in **region** every property(prop) is evaluated within the given
     **interval**, otherwise it is not safe and counterexample is returned.
@@ -419,138 +469,11 @@ def check_safe(region, props, silent=False, called=False):
     props:  (list of strings): array of properties
     silent: (Bool): if silent printed output is set to minimum
     called: (Bool): if called updates the global variables (use when calling it directly)
-    """
-    # initialisation
-    if not silent:
-        print("checking safe", region, "current time is", datetime.datetime.now())
-
-    if called:
-        globals()["parameters"] = set()
-        parameters = globals()["parameters"]
-        for polynome in props:
-            parameters.update(find_param(polynome))
-        globals()["parameters"] = sorted(list(globals()["parameters"]))
-        ## EXAMPLE:  parameters >> ['p','q']
-
-        for param in globals()["parameters"]:
-            globals()[param] = Real(param)
-        ## EXAMPLE: p = Real(p)
-
-        space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
-    else:
-        space = globals()["space"]
-
-    s = Solver()
-
-    # if not silent:
-    #    print("with parameters", globals()["parameters"])
-
-    ## Adding regional restrictions to solver
-    j = 0
-    for param in globals()["parameters"]:
-        # print("globals()[param]", globals()[param])
-        # print("region[j][0]", region[j][0])
-        s.add(globals()[param] >= region[j][0])
-        s.add(globals()[param] <= region[j][1])
-        j = j + 1
-
-    ## Adding properties to solver
-    formula = Not(eval(props[0]))
-    for i in range(1, len(props)):
-        formula = Or(formula, Not(eval(props[i])))
-    s.add(formula)
-
-    # print(s.check_unsafe())
-    # return s.check_unsafe()
-    if s.check() == unsat:
-        space.add_green(region)
-        return True
-    else:
-        return s.model()
-
-
-def check_unsafe_dreal(region, props, delta=0.001, silent=False, called=False):
-    """ Check if the given region is unsafe or not using dreal.
-
-    It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given
-    **interval** (called a model in SMT), otherwise it is unsafe.
-
-    Args
-    ----------
-    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
-    delta:  (Number): allowed error
-    silent: (Bool): if silent printed output is set to minimum
-    called: (Bool): if called updates the global variables (use when calling it directly)
+    solver: (string): specified solver, allowed: z3, dreal
+    delta: (number): used for delta solving using dreal
     """
     ## Initialisation
     if not silent:
-        print("checking unsafe", region, "current time is", datetime.datetime.now())
-
-    # p = Real('p')
-    # print(p)
-    # print(type(p))
-
-    if called:
-        globals()["parameters"] = set()
-        parameters = globals()["parameters"]
-        for polynome in props:
-            parameters.update(find_param(polynome))
-        globals()["parameters"] = sorted(list( globals()["parameters"]))
-        ## EXAMPLE:  parameters >> ['p','q']
-        for param in parameters:
-            globals()[param] = Variable(param)
-        ## EXAMPLE: p = Real(p)
-
-        space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
-    else:
-        space = globals()["space"]
-
-    # if not silent:
-    #    print("with parameters", globals()["parameters"])
-
-    ## Adding regional restrictions to solver
-    j = 0
-    for param in globals()["parameters"]:
-        # print("globals()[param]", globals()[param])
-        # print("region[j][0]", region[j][0])
-        if j == 0:
-            f_sat = logical_and(globals()[param] >= region[j][0], globals()[param] <= region[j][1])
-        else:
-            f_sat = logical_and(f_sat, globals()[param] >= region[j][0])
-            f_sat = logical_and(f_sat, globals()[param] <= region[j][1])
-        j = j + 1
-
-    ## Adding properties to solver
-    for i in range(0, len(props)):
-        # print(props[i])
-        f_sat = logical_and(f_sat, eval(props[i]))
-
-    result = CheckSatisfiability(f_sat, 0.001)
-
-    if result is not None:
-        return result
-    else:
-        space.add_red(region)
-        return True
-
-
-def check_safe_dreal(region, props, delta=0.001, silent=False, called=False):
-    """ Check if the given region is safe or not using dreal
-
-    It means whether for all parametrisations in **region** every property(prop) is evaluated within the given
-    **interval**, otherwise it is not safe and counterexample is returned.
-
-    Args
-    ----------
-    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of properties
-    delta:  (Number): allowed error
-    silent: (Bool): if silent printed output is set to minimum
-    called: (Bool): if called updates the global variables (use when calling it directly)
-    """
-    # initialisation
-    if not silent:
         print("checking safe", region, "current time is", datetime.datetime.now())
 
     if called:
@@ -562,7 +485,17 @@ def check_safe_dreal(region, props, delta=0.001, silent=False, called=False):
         ## EXAMPLE:  parameters >> ['p','q']
 
         for param in globals()["parameters"]:
-            globals()[param] = Variable(param)
+            if solver == "z3":
+                globals()[param] = Real(param)
+            elif solver == "dreal":
+                globals()[param] = Variable(param)
+            else:
+                try:
+                    raise Exception(f"Unknown solver: {solver}")
+                except:
+                    raise Exception(
+                        "Unknown solver.")
+            ## EXAMPLE: p = Real(p)
         ## EXAMPLE: p = Real(p)
 
         space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
@@ -572,34 +505,62 @@ def check_safe_dreal(region, props, delta=0.001, silent=False, called=False):
     # if not silent:
     #    print("with parameters", globals()["parameters"])
 
-    ## Adding regional restrictions to solver
-    j = 0
-    for param in globals()["parameters"]:
-        # print("globals()[param]", globals()[param])
-        # print("region[j][0]", region[j][0])
-        if j == 0:
-            f_sat = logical_and(globals()[param] >= region[j][0], globals()[param] <= region[j][1])
+    if solver == "z3":
+        ## Initialisation of z3 solver
+        s = Solver()
+
+        ## Adding regional restrictions to z3 solver
+        j = 0
+        for param in globals()["parameters"]:
+            # print("globals()[param]", globals()[param])
+            # print("region[j][0]", region[j][0])
+            s.add(globals()[param] >= region[j][0])
+            s.add(globals()[param] <= region[j][1])
+            j = j + 1
+
+        ## Adding properties to z3 solver
+        formula = Not(eval(props[0]))
+        for i in range(1, len(props)):
+            formula = Or(formula, Not(eval(props[i])))
+        s.add(formula)
+
+        # print(s.check_unsafe())
+        # return s.check_unsafe()
+        if s.check() == unsat:
+            space.add_green(region)
+            return True
         else:
-            f_sat = logical_and(f_sat, globals()[param] >= region[j][0])
-            f_sat = logical_and(f_sat, globals()[param] <= region[j][1])
-        j = j + 1
+            return s.model()
 
-    ## Adding properties to solver
-    formula = logical_not(eval(props[0]))
-    for i in range(1, len(props)):
-        formula = logical_or(formula, logical_not(eval(props[i])))
-    f_sat = logical_and(f_sat, formula)
+    elif solver == "dreal":
+        ## Adding regional restrictions to solver
+        j = 0
+        for param in globals()["parameters"]:
+            # print("globals()[param]", globals()[param])
+            # print("region[j][0]", region[j][0])
+            if j == 0:
+                f_sat = logical_and(globals()[param] >= region[j][0], globals()[param] <= region[j][1])
+            else:
+                f_sat = logical_and(f_sat, globals()[param] >= region[j][0])
+                f_sat = logical_and(f_sat, globals()[param] <= region[j][1])
+            j = j + 1
 
-    result = CheckSatisfiability(f_sat, 0.001)
+        ## Adding properties to solver
+        formula = logical_not(eval(props[0]))
+        for i in range(1, len(props)):
+            formula = logical_or(formula, logical_not(eval(props[i])))
+        f_sat = logical_and(f_sat, formula)
 
-    if result is None:
-        space.add_green(region)
-        return True
-    else:
-        return result
+        result = CheckSatisfiability(f_sat, delta)
+
+        if result is None:
+            space.add_green(region)
+            return True
+        else:
+            return result
 
 
-def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=False, debug=False, save=False, title="", where=False):
+def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=False, debug=False, save=False, title="", where=False, show_space=True, solver="z3", delta=0.001):
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
 
     Args
@@ -616,6 +577,9 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
     save: (Bool): if True output is stored
     title: (string): text to be added in Figure titles
     where: (Tuple/List) : output matplotlib sources to output created figure
+    show_space: (Bool): if show_space the refined space will be visualised
+    solver: (string): specified solver, allowed: z3, dreal
+    delta: (number): used for delta solving using dreal
     """
 
     ## INITIALISATION
@@ -671,6 +635,10 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
         space = globals()["space"]
 
         globals()["default_region"] = copy.deepcopy(region)
+
+    ## Checking zero or negative size of dimension
+    if space.get_volume() <= 0:
+        raise Exception("Some dimension of the parameter space has nonpositive size.")
 
     if not silent:
         print("the area is: ", space.region)
@@ -879,19 +847,19 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
     if len(white_space) is 1:
         if version == 1:
             print("Using DFS method")
-            private_check_deeper(region, props, n, epsilon, coverage, silent)
+            private_check_deeper(region, props, n, epsilon, coverage, silent, solver=solver, delta=delta)
         elif version == 2:
             print("Using BFS method")
             globals()["que"] = Queue()
-            private_check_deeper_queue(region, props, n, epsilon, coverage, silent)
+            private_check_deeper_queue(region, props, n, epsilon, coverage, silent, solver=solver, delta=delta)
         elif version == 3:
             print("Using BFS method with passing examples")
             globals()["que"] = Queue()
-            private_check_deeper_queue_checking(region, props, n, epsilon, coverage, silent, None)
+            private_check_deeper_queue_checking(region, props, n, epsilon, coverage, silent, model=None, solver=solver, delta=delta)
         elif version == 4:
             print("Using BFS method with passing examples and counterexamples")
             globals()["que"] = Queue()
-            private_check_deeper_queue_checking_both(region, props, n, epsilon, coverage, silent, None)
+            private_check_deeper_queue_checking_both(region, props, n, epsilon, coverage, silent, model=None, solver=solver, delta=delta)
         elif version == 5:
             print("Using interval arithmetic")
             globals()["que"] = Queue()
@@ -932,16 +900,16 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
 
             if version == 1:
                 print(f"Using DFS method to solve spliced rectangle number {white_space.index(rectangle)+1}")
-                private_check_deeper(rectangle, props, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent)
+                private_check_deeper(rectangle, props, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, solver=solver, delta=delta)
             elif version == 2:
                 print(f"Using BFS method to solve spliced rectangle number {white_space.index(rectangle)+1}")
-                private_check_deeper_queue(rectangle, props, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent)
+                private_check_deeper_queue(rectangle, props, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, solver=solver, delta=delta)
             elif version == 3:
                 print(f"Using BFS method with passing examples to solve spliced rectangle number {white_space.index(rectangle)+1}")
-                private_check_deeper_queue_checking(rectangle, props, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, None)
+                private_check_deeper_queue_checking(rectangle, props, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, model=None, solver=solver, delta=delta)
             elif version == 4:
                 print(f"Using BFS method with passing examples and counterexamples to solve spliced rectangle number {white_space.index(rectangle)+1}")
-                private_check_deeper_queue_checking_both(rectangle, props, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, None)
+                private_check_deeper_queue_checking_both(rectangle, props, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, model=None, solver=solver, delta=delta)
             elif version == 5:
                 print(f"Using interval method to solve spliced rectangle number {white_space.index(rectangle)+1}")
 
@@ -955,13 +923,13 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
 
             ## Showing the step refinements of respective rectangles from the white space
             ## If the visualisation of the space did not succeed space_shown = (None, error message)
-            space_shown = space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time() - start_time)} second(s)", save=save, where=where)
+            space_shown = space.show(f"max_recursion_depth:{n}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time() - start_time)} second(s)", save=save, where=where)
             print()
             if space.get_coverage() >= coverage:
                 break
 
             ## OLD REFINEMENT HERE
-            # # to_be_searched = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y", "0"], [Interval(0, 1), Interval(0, 1)], , compress=True, silent=False)
+            ## to_be_searched = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y", "0"], [Interval(0, 1), Interval(0, 1)], , compress=True, silent=False)
 
             # to_be_searched = refine_into_rectangles(to_be_searched, silent=False)
 
@@ -978,16 +946,17 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
     ## VISUALISATION
     if not size_q:
         ## If the visualisation of the space did not succeed space_shown = (None, error message)
-        space_shown = space.show(f"max_recursion_depth:{n},\n min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time() - start_time)} second(s)", save=save, where=where)
+        if show_space:
+            space_shown = space.show(f"max_recursion_depth:{n}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time() - start_time)} second(s)", save=save, where=where)
     print("result coverage is: ", space.get_coverage())
     if where:
         if space_shown[0] is None:
             return space, space_shown[1]
-        else:
-            return space
+    else:
+        return space
 
 
-def private_check_deeper(region, props, n, epsilon, coverage, silent):
+def private_check_deeper(region, props, n, epsilon, coverage, silent, solver="z3", delta=0.01):
     """ Refining the parameter space into safe and unsafe regions
 
     Args
@@ -998,6 +967,8 @@ def private_check_deeper(region, props, n, epsilon, coverage, silent):
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
     silent: (Bool): if silent printed output is set to minimum
+    solver: (string): specified solver, allowed: z3, dreal
+    delta: (number): used for delta solving using dreal
     """
 
     ## TBD check consistency
@@ -1027,9 +998,12 @@ def private_check_deeper(region, props, n, epsilon, coverage, silent):
         return "coverage ", space.get_coverage(), " is above the threshold"
 
     # HERE MAY ADDING THE MODEL
-    if check_unsafe(region, props, silent) is True:
+    print("region", region)
+    print("props", props)
+    print("space", space.nice_print())
+    if check_unsafe(region, props, silent, solver=solver, delta=delta) is True:
         result = "unsafe"
-    elif check_safe(region, props, silent) is True:
+    elif check_safe(region, props, silent, solver=solver, delta=delta) is True:
         result = "safe"
     else:
         result = "unknown"
@@ -1065,21 +1039,21 @@ def private_check_deeper(region, props, n, epsilon, coverage, silent):
             space.add_white(foo2)  # add this region as white
             # print("white area",globals()["hyper_rectangles_white"])
             if silent:
-                private_check_deeper(foo, props, n - 1, epsilon, coverage, silent)
+                private_check_deeper(foo, props, n - 1, epsilon, coverage, silent, solver=solver, delta=delta)
                 if space.get_coverage() > coverage:
                     return f"coverage {space.get_coverage()} is above the threshold"
-                private_check_deeper(foo2, props, n - 1, epsilon, coverage, silent)
+                private_check_deeper(foo2, props, n - 1, epsilon, coverage, silent, solver=solver, delta=delta)
             else:
                 print(n, foo, space.get_coverage(),
-                      private_check_deeper(foo, props, n - 1, epsilon, coverage, silent))
+                      private_check_deeper(foo, props, n - 1, epsilon, coverage, silent, solver=solver, delta=delta))
                 if space.get_coverage() > coverage:
                     return f"coverage {space.get_coverage()} is above the threshold"
                 print(n, foo2, space.get_coverage(),
-                      private_check_deeper(foo2, props, n - 1, epsilon, coverage, silent))
+                      private_check_deeper(foo2, props, n - 1, epsilon, coverage, silent, solver=solver, delta=delta))
     return result
 
 
-def private_check_deeper_queue(region, props, n, epsilon, coverage, silent):
+def private_check_deeper_queue(region, props, n, epsilon, coverage, silent, solver="z3", delta=0.01):
     """ Refining the parameter space into safe and unsafe regions
 
     Args
@@ -1090,6 +1064,8 @@ def private_check_deeper_queue(region, props, n, epsilon, coverage, silent):
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
     silent: (Bool): if silent printed output is set to minimum
+    solver: (string): specified solver, allowed: z3, dreal
+    delta: (number): used for delta solving using dreal
     """
 
     ## TBD check consitency
@@ -1120,11 +1096,11 @@ def private_check_deeper_queue(region, props, n, epsilon, coverage, silent):
         return "coverage ", space.get_coverage(), " is above the threshold"
 
     ## HERE I CAN APPEND THE VALUE OF EXAMPLE AND COUNTEREXAMPLE
-    # print("hello check =",check_unsafe(region,prop,silent))
-    # print("hello check safe =",check_safe(region,prop,n_samples,silent))
-    if check_unsafe(region, props, silent) is True:
+    # print("hello check =",check_unsafe(region,prop,silent, solver=solver, delta=delta))
+    # print("hello check safe =",check_safe(region,prop,n_samples,silent, solver=solver, delta=delta))
+    if check_unsafe(region, props, silent, solver=solver, delta=delta) is True:
         result = "unsafe"
-    elif check_safe(region, props, silent) is True:
+    elif check_safe(region, props, silent, solver=solver, delta=delta) is True:
         result = "safe"
     else:
         result = "unknown"
@@ -1167,8 +1143,8 @@ def private_check_deeper_queue(region, props, n, epsilon, coverage, silent):
     ## Add calls to the Queue
     # print("adding",[copy.deepcopy(foo),prop,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo),prop,n-1,epsilon,coverage,silent]))
     # print("adding",[copy.deepcopy(foo2),prop,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo2),prop,n-1,epsilon,coverage,silent]))
-    globals()["que"].enqueue([copy.deepcopy(foo), props, n - 1, epsilon, coverage, silent])
-    globals()["que"].enqueue([copy.deepcopy(foo2), props, n - 1, epsilon, coverage, silent])
+    globals()["que"].enqueue([copy.deepcopy(foo), props, n - 1, epsilon, coverage, silent, solver, delta])
+    globals()["que"].enqueue([copy.deepcopy(foo2), props, n - 1, epsilon, coverage, silent, solver, delta])
 
     ## Execute the Queue
     # print(globals()["que"].printQueue())
@@ -1176,7 +1152,7 @@ def private_check_deeper_queue(region, props, n, epsilon, coverage, silent):
         private_check_deeper_queue(*que.dequeue())
 
 
-def private_check_deeper_queue_checking(region, props, n, epsilon, coverage, silent, model=None):
+def private_check_deeper_queue_checking(region, props, n, epsilon, coverage, silent, model=None, solver="z3", delta=0.01):
     """ THIS IS OBSOLETE METHOD, HERE JUST TO BE COMPARED WITH THE NEW ONE
 
     Refining the parameter space into safe and unsafe regions
@@ -1190,6 +1166,8 @@ def private_check_deeper_queue_checking(region, props, n, epsilon, coverage, sil
     coverage: (Float): coverage threshold to stop computation
     silent: (Bool): if silent printed output is set to minimum
     model: (example,counterexample) of the satisfaction in the given region
+    solver: (string): specified solver, allowed: z3, dreal
+    delta: (number): used for delta solving using dreal
     """
 
     ## TBD check consistency
@@ -1220,10 +1198,10 @@ def private_check_deeper_queue_checking(region, props, n, epsilon, coverage, sil
         return "coverage ", space.get_coverage(), " is above the threshold"
 
     if model is None:
-        example = check_unsafe(region, props, silent)
-        # counterexample = check_safe(region,prop,silent)
+        example = check_unsafe(region, props, silent, solver=solver, delta=delta)
+        # counterexample = check_safe(region,prop,silent, solver=solver, delta=delta)
     elif model[0] is None:
-        example = check_unsafe(region, props, silent)
+        example = check_unsafe(region, props, silent, solver=solver, delta=delta)
     else:
         if not silent:
             print("skipping check_unsafe at", region, "since example", model[0])
@@ -1235,7 +1213,7 @@ def private_check_deeper_queue_checking(region, props, n, epsilon, coverage, sil
         if not silent:
             print(n, region, colored(f"{space.get_coverage()} unsafe", "red"))
         return
-    elif check_safe(region, props, silent) is True:
+    elif check_safe(region, props, silent, solver=solver, delta=delta) is True:
         space.remove_white(region)
         if not silent:
             print(n, region, colored(f"{space.get_coverage()} safe", "red"))
@@ -1247,8 +1225,10 @@ def private_check_deeper_queue_checking(region, props, n, epsilon, coverage, sil
     if n == 0:
         return
 
-    example_points = re.findall(r'[0-9/]+', str(example))
-    # counterexample_points= re.findall(r'[0-9/]+', str(counterexample))
+    example_points = re.findall(r'[0-9./]+', str(example))
+    if solver == "dreal":
+        del example_points[::2]
+    # counterexample_points= re.findall(r'[0-9./]+', str(counterexample))
     # print(example_points)
     # print(counterexample_points)
 
@@ -1284,9 +1264,9 @@ def private_check_deeper_queue_checking(region, props, n, epsilon, coverage, sil
 
     ## Add calls to the Queue
     globals()["que"].enqueue(
-        [copy.deepcopy(foo), props, n - 1, epsilon, coverage, silent, model_low])
+        [copy.deepcopy(foo), props, n - 1, epsilon, coverage, silent, model_low, solver, delta])
     globals()["que"].enqueue(
-        [copy.deepcopy(foo2), props, n - 1, epsilon, coverage, silent, model_high])
+        [copy.deepcopy(foo2), props, n - 1, epsilon, coverage, silent, model_high, solver, delta])
 
     ## Execute the Queue
     # print(globals()["que"].printQueue())
@@ -1294,7 +1274,7 @@ def private_check_deeper_queue_checking(region, props, n, epsilon, coverage, sil
         private_check_deeper_queue_checking(*que.dequeue())
 
 
-def private_check_deeper_queue_checking_both(region, props, n, epsilon, coverage, silent, model=None):
+def private_check_deeper_queue_checking_both(region, props, n, epsilon, coverage, silent, model=None, solver="z3", delta=0.01):
     """ Refining the parameter space into safe and unsafe regions
 
     Args
@@ -1306,6 +1286,8 @@ def private_check_deeper_queue_checking_both(region, props, n, epsilon, coverage
     coverage: (Float): coverage threshold to stop computation
     silent: (Bool): if silent printed output is set to minimum
     model: (example, counterexample) of the satisfaction in the given region
+    solver: (string): specified solver, allowed: z3, dreal
+    delta: (number): used for delta solving using dreal
     """
 
     ## TBD check consistency
@@ -1337,17 +1319,17 @@ def private_check_deeper_queue_checking_both(region, props, n, epsilon, coverage
 
     ## Resolving if the region safe/unsafe/unknown
     if model is None:
-        example = check_unsafe(region, props, silent)
-        counterexample = check_safe(region, props, silent)
+        example = check_unsafe(region, props, silent, solver=solver, delta=delta)
+        counterexample = check_safe(region, props, silent, solver=solver, delta=delta)
     elif model[0] is None:
-        example = check_unsafe(region, props, silent)
+        example = check_unsafe(region, props, silent, solver=solver, delta=delta)
     else:
         if not silent:
             print("skipping check_unsafe at", region, "since example", model[0])
         example = model[0]
     if model is not None:
         if model[1] is None:
-            counterexample = check_safe(region, props, silent)
+            counterexample = check_safe(region, props, silent, solver=solver, delta=delta)
         else:
             if not silent:
                 print("skipping check_safe at", region, "since counterexample", model[1])
@@ -1372,8 +1354,11 @@ def private_check_deeper_queue_checking_both(region, props, n, epsilon, coverage
         return
 
     # print("example", example)
-    example_points = re.findall(r'[0-9/]+', str(example))
-    counterexample_points = re.findall(r'[0-9/]+', str(counterexample))
+    example_points = re.findall(r'[0-9./]+', str(example))
+    counterexample_points = re.findall(r'[0-9./]+', str(counterexample))
+    if solver == "dreal":
+        del example_points[::2]
+        del counterexample_points[::2]
     # print("example_points", example_points)
     # print(counterexample_points)
 
@@ -1417,8 +1402,8 @@ def private_check_deeper_queue_checking_both(region, props, n, epsilon, coverage
         model_high[1] = None
 
     ## Add calls to the Queue
-    globals()["que"].enqueue([copy.deepcopy(foo), props, n - 1, epsilon, coverage, silent, model_low])
-    globals()["que"].enqueue([copy.deepcopy(foo2), props, n - 1, epsilon, coverage, silent, model_high])
+    globals()["que"].enqueue([copy.deepcopy(foo), props, n - 1, epsilon, coverage, silent, model_low, solver, delta])
+    globals()["que"].enqueue([copy.deepcopy(foo2), props, n - 1, epsilon, coverage, silent, model_high, solver, delta])
 
     ## Execute the Queue
     # print(globals()["que"].printQueue())
@@ -1483,7 +1468,7 @@ def color_margins(greater, smaller):
     # pic.add_collection(pc)
 
 
-def check_deeper_iter(region, props, n, epsilon, coverage, silent):
+def check_deeper_iter(region, props, n, epsilon, coverage, silent, solver="z3", delta=0.01):
     """ New Refining the parameter space into safe and unsafe regions with iterative method using alg1
 
     Args
@@ -1494,6 +1479,8 @@ def check_deeper_iter(region, props, n, epsilon, coverage, silent):
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
     silent: (Bool): if silent printed output is set to minimum
+    solver: (string): specified solver, allowed: z3, dreal
+    delta: (number): used for delta solving using dreal
     """
     new_tresh = copy.deepcopy(region)
 
@@ -1526,7 +1513,7 @@ def check_deeper_iter(region, props, n, epsilon, coverage, silent):
             print("Computed hull of nonred region is:", new_tresh)
         # globals()["hyper_rectangles_white"]=[new_tresh]
     globals()["default_region"] = None
-    check_deeper(new_tresh, props, n, epsilon, coverage, True, 1)
+    check_deeper(new_tresh, props, n, epsilon, coverage, True, 1, solver=solver, delta=delta)
 
 
 def check_interval_in(region, props, intervals, silent=False, called=False):
@@ -1795,7 +1782,7 @@ def private_create_matrix(size_q, dim, n_param):
     return [private_create_matrix(size_q, dim - 1, n_param) for _ in range(size_q)]
 
 
-def sample(space, props, size_q, compress=False, silent=True, save=False):
+def sample(space, props, size_q, compress=False, silent=True, debug=False, save=False):
     """ Samples the space in **size_q** samples in each dimension and saves if the point is in respective interval
 
     Args
@@ -1803,8 +1790,9 @@ def sample(space, props, size_q, compress=False, silent=True, save=False):
     space: (space.RefinedSpace): space
     props:  (list of strings): array of properties
     size_q: (int): number of samples in dimension
-    silent: (Bool): if silent printed output is set to minimum
     compress: (Bool): if True, only a conjunction of the values (prop in the interval) is used
+    silent: (Bool): if silent printed output is set to minimum
+    debug: (Bool) if True extensive print will be used
     save: (Bool): if True output is pickled
 
     Returns
@@ -1814,6 +1802,10 @@ def sample(space, props, size_q, compress=False, silent=True, save=False):
     """
     parameter_values = []
     parameter_indices = []
+    if debug:
+        print("space.params", space.params)
+        print("space.region", space.region)
+        print("size_q", size_q)
     for param in range(len(space.params)):
         parameter_values.append(np.linspace(space.region[param][0], space.region[param][1], size_q, endpoint=True))
         parameter_indices.append(np.asarray(range(0, size_q)))
@@ -2053,3 +2045,12 @@ def find_max_rectangle(sampled_space, starting_point, silent=True):
         return result
     else:
         print(f"Sorry, {dimensions} dimensions TBD")
+
+n = 1
+coverage = 0.95
+epsilon = 0
+show_space = False
+for solver in ["dreal"]:
+    for version in [1, 2, 3, 4, 5]:
+        spam = check_deeper([(0, 1)], ineq_to_props(["x"], [Interval(0, 1)]), silent=True, n=n, epsilon=epsilon,
+                            coverage=coverage, version=version, solver=solver, show_space=show_space)
