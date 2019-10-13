@@ -140,7 +140,7 @@ class Gui(Tk):
         self.show_true_point = None
 
         ## Settings
-        self.version = "1.4.10"  ## Version of the gui
+        self.version = "1.5.0"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = False  ## Sets the command line output to maximum
 
@@ -1769,6 +1769,7 @@ class Gui(Tk):
         # print(colored(f"self.space, {self.space.nice_print()}]", "blue"))
         try:
             self.cursor_toggle_busy(True)
+            ## RETURNS TUPLE -- (SPACE,(NONE, ERROR TEXT)) or (SPACE, )
             spam = check_deeper(self.space, self.props, self.max_depth, self.epsilon, self.coverage,
                                 silent=self.silent.get(),
                                 version=int(self.alg.get()), size_q=False, debug=False, save=False,
@@ -1781,9 +1782,9 @@ class Gui(Tk):
             messagebox.showinfo("Space refinement", spam[1])
         else:
             self.space = spam
-        self.page6_figure.tight_layout()  ## By huypn
-        self.page6_figure.canvas.draw()
-        self.page6_figure.canvas.flush_events()
+            self.page6_figure.tight_layout()  ## By huypn
+            self.page6_figure.canvas.draw()
+            self.page6_figure.canvas.flush_events()
 
         self.print_space()
 

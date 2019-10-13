@@ -699,6 +699,7 @@ if __name__ == "__main__":
     unittest.main()
 
     print(colored("Presampled refinement here", 'blue'))
+    show_space = True
 
     parameters = ["x", "y"]
     region = [(0, 1), (2, 3)]

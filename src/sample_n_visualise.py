@@ -33,6 +33,15 @@ def cartesian_product(*arrays):
 
 
 def get_param_values(parameters, size_q, intervals=False, debug=False):
+    """ Creates linearly sampled parameter space from the given parameter intervals and number of samples
+
+    Args
+    ----------
+    parameters: (list) of parameters to sample
+    size_q: (int) sample size in each parameter
+    intervals: (Bool) if False (0,1) interval is used
+    debug: (Bool) if debug extensive output is provided
+    """
     parameter_values = []
     for param in range(len(parameters)):
         if intervals:
@@ -50,7 +59,7 @@ def get_param_values(parameters, size_q, intervals=False, debug=False):
 
 
 def eval_and_show(fun_list, parameter_value, cumulative=False, debug=False, give_back=False, where=False):
-    """ Creates bar plot of probabilities of i successes for given parametrisation
+    """ Creates bar plot of evaluation of given functions for given point in parameter space
 
     Args
     ----------
@@ -149,16 +158,16 @@ def sample_dictionary_funs(dictionary, size_q, keys=None, debug=False):
     return sampling
 
 
-def sample_list_funs(list_fun, size_q, intervals=False, debug=False, silent=False):
+def sample_list_funs(list_fun, size_q, intervals=False, silent=False, debug=False):
     """ Returns a list of function values for sampled parametrisations
 
     Args
     ----------
-    list_fun: (list of polynomials)
+    list_fun: (list of functions)
     size_q: (int) sample size in each parameter
     intervals: (list of pairs of numbers) intervals of parameters
-    debug: (Bool) if debug extensive output is provided
     silent: (Bool) if silent command line output is set to minimum
+    debug: (Bool) if debug extensive output is provided
 
     Returns
     ----------
@@ -276,17 +285,19 @@ def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug=False,
             plt.show()
 
 
-def visualise_byparam(hyper_rectangles):
+## SOURCE: https://stackoverflow.com/questions/21352580/matplotlib-plotting-numerous-disconnected-line-segments-with-different-colors
+def visualise_by_param(hyper_rectangles, title="", where=False):
     """
     Visualises domain intervals of each dimension in a plot.
 
     Args
     ----------
     hyper_rectangles: list of (hyper)rectangles
+    title: (String) title used for the Figure
+    where: (Tuple/List) : output matplotlib sources to output created figure
     """
     from sympy import Interval
 
-    ## https://stackoverflow.com/questions/21352580/matplotlib-plotting-numerous-disconnected-line-segments-with-different-colors
     if hyper_rectangles:
         lines = []
         intervals = []
@@ -303,18 +314,28 @@ def visualise_byparam(hyper_rectangles):
 
         lc = mc.LineCollection(lines, color='g', linewidths=2)
 
-        fig, ax = pl.subplots()
+        if where:
+            fig, ax = where
+        else:
+            fig, ax = plt.subplots()
 
         ax.set_xlabel('Parameter indices')
         ax.set_ylabel('Parameter values')
-        ax.set_title("Domain in which respective parameter belongs to in the given space")
+        if title:
+            ax.set_title(wraper.fill(title))
+        else:
+            ax.set_title(wraper.fill("Domain in which respective parameter belongs to in the given space"))
 
         ax.add_collection(lc)
         ax.autoscale()
         ax.margins(0.1)
         print("Intervals: ", intervals)
+        if where:
+            return fig, ax
     else:
         print(colored("Given space is empty, no intervals to be visualised", "red"))
+        if where:
+            return None
 
 
 def heatmap(fun, region, sampling_sizes, posttitle="", where=False, parameters=False):
@@ -375,7 +396,7 @@ def heatmap(fun, region, sampling_sizes, posttitle="", where=False, parameters=F
         plt.show()
 
 
-def visualise_sampled_byparam(hyper_rectangles, sample_size):
+def visualise_sampled_by_param(hyper_rectangles, sample_size):
     """
     Visualises sampled hyperspace by connecting the values in each dimension.
 

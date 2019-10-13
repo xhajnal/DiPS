@@ -12,8 +12,8 @@ class MyTestCase(unittest.TestCase):
         hyper_rectangles_sat = [[(0.5, 0.5625), (0.125, 0.25)], [(0.5, 0.5625), (0.0625, 0.125)],
                                 [(0.5625, 0.625), (0, 0.0625)], [(0.46875, 0.5), (0.125, 0.1875)],
                                 [(0.46875, 0.5), (0.1875, 0.25)]]
-        visualise_byparam(hyper_rectangles_sat)
-        visualise_sampled_byparam(hyper_rectangles_sat, 8)
+        visualise_by_param(hyper_rectangles_sat)
+        visualise_sampled_by_param(hyper_rectangles_sat, 8)
 
 
 if __name__ == '__main__':

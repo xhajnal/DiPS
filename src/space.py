@@ -1,18 +1,20 @@
 from collections import Iterable
 from time import localtime, strftime
-
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from numpy import prod
 import copy
-## Colored output
-from termcolor import colored
+from termcolor import colored ## Colored output
 
 ## ONLY FOR SAVING FILES
 import os
 import sys
+
+from sample_n_visualise import visualise_by_param  ## Multidensional refinement proxy
+from miscellaneous import DocumentWrapper  ## Text wrapper for figure tight layout
+
 workspace = os.path.dirname(__file__)
 sys.path.append(workspace)
 import configparser
@@ -21,7 +23,6 @@ config = configparser.ConfigParser()
 workspace = os.path.dirname(__file__)
 # print("workspace", workspace)
 cwd = os.getcwd()
-from miscellaneous import DocumentWrapper
 os.chdir(workspace)
 
 config.read("../config.ini")
@@ -198,6 +199,9 @@ class RefinedSpace:
         else:
             self.title = ""
 
+        ## TEXT WRAPPER
+        self.wrapper = DocumentWrapper(width=70)
+
     def show(self, title="", green=True, red=True, sat_samples=False, unsat_samples=False, true_point=True, save=False, where=False):
         """
         Visualises the space
@@ -213,7 +217,6 @@ class RefinedSpace:
         save: (Bool) if True, the output is saved
         where: (Tuple/List) : output matplotlib sources to output created figure
         """
-        d = DocumentWrapper(width=70)
 
         # print("self.true_point", self.true_point)
         if save is True:
@@ -273,7 +276,7 @@ class RefinedSpace:
                 circle = plt.Circle((self.true_point[0], self.true_point[1]), size_correction*1, color='b', fill=False)
                 plt.gcf().gca().add_artist(circle)
 
-            whole_title = "\n".join(d.wrap(f"{pretitle}\n red = unsafe region, green = safe region, white = in between \n{self.title} \n {title}"))
+            whole_title = "\n".join(self.wrapper.wrap(f"{pretitle}\n red = unsafe region, green = safe region, white = in between \n{self.title} \n {title}"))
             pic.set_title(whole_title)
             with open(os.path.join(refinement_results, "figure_to_title.txt"), "a+") as file:
                 file.write(f"{save} : {whole_title}\n")
@@ -295,7 +298,7 @@ class RefinedSpace:
             del region
 
         else:
-            print("Multidimensional space, showing only samples")
+            print("Multidimensional space")
             ## Show only if sat_samples selected and either there are some unsat samples or the sampling was not grid
             if sat_samples and (not self.gridsampled or self.unsat_samples):
                 if self.sat_samples:
@@ -326,7 +329,7 @@ class RefinedSpace:
                         ax.plot(x_axis, sample)
                     ax.set_xlabel("param indices")
                     ax.set_ylabel("parameter value")
-                    whole_title = "\n".join(d.wrap(f"Sat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}, \n{self.title} \n {title}", 70))
+                    whole_title = "\n".join(self.wrapper.wrap(f"Sat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}, \n{self.title} \n {title}", 70))
                     ax.set_title(whole_title)
                     ax.autoscale()
                     ax.margins(0.1)
@@ -399,7 +402,21 @@ class RefinedSpace:
 
             if red or green:
                 if where:
-                    return None, "Visualisation of multidimensional space not implemented yet."
+                    fig = where[0]
+                    ax = where[1]
+                    plt.autoscale()
+                    ax.autoscale()
+                    if self.rectangles_sat:
+                        fig, ax = visualise_by_param(self.rectangles_sat, title="Refinement,\n Domains of respective parameter of safe subspace.", where=[fig, ax])
+                        return fig, ax
+                    else:
+                        return None, "While refining multidimensional space no green area found, no reasonable plot to be shown."
+                else:
+                    if self.rectangles_sat:
+                        fig = visualise_by_param(self.rectangles_sat)
+                        plt.show()
+                    else:
+                        print("No sat rectangles so far, nothing to show")
 
     def get_volume(self):
         """Returns the volume of the space"""
@@ -635,7 +652,9 @@ class RefinedSpace:
         return spam
 
     def __repr__(self):
-        return str([self.region, self.rectangles_sat, self.rectangles_unsat, self.unknown])
+        return str([self.region, self.params, self.types, self.rectangles_sat, self.rectangles_unsat, self.unknown,
+                    self.sat_samples, self.unsat_samples, self.true_point])
 
     def __str__(self):
-        return str([self.region, self.rectangles_sat, self.rectangles_unsat, self.unknown])
+        return str([self.region, self.params, self.types, self.rectangles_sat, self.rectangles_unsat, self.unknown,
+                    self.sat_samples, self.unsat_samples, self.true_point])
