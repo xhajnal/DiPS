@@ -86,12 +86,16 @@ class RefinedSpace:
         if not isinstance(region, Iterable):
             raise Exception("Given region is not iterable")
         if isinstance(region, tuple):
-            self.region = [region]
+            self.region = list(region)
         else:
-            ### Taking care of unchangeable tuples
-            for interval_index in range(len(region)):
-                region[interval_index] = [region[interval_index][0], region[interval_index][1]]
             self.region = region
+        if not isinstance(self.region[0], Iterable):  ## Simple rectangle managing
+            self.region = [self.region]
+        ### Taking care of unchangeable tuples
+        for interval_index in range(len(self.region)):
+            if isinstance(region[interval_index], tuple):
+                self.region[interval_index] = [self.region[interval_index][0], self.region[interval_index][1]]
+
 
         ## PARAMS
         self.params = params
@@ -132,6 +136,8 @@ class RefinedSpace:
             raise Exception("Given rectangles_sat is not iterable")
         if isinstance(rectangles_sat, tuple):
             self.rectangles_sat = [rectangles_sat]
+        elif rectangles_sat is False:
+            self.rectangles_sat = []
         else:
             self.rectangles_sat = rectangles_sat
         self.rectangles_sat_to_show = copy.copy(self.rectangles_sat)
@@ -144,6 +150,8 @@ class RefinedSpace:
             raise Exception("Given rectangles_unsat is not iterable")
         if isinstance(rectangles_unsat, tuple):
             self.rectangles_unsat = [rectangles_unsat]
+        elif rectangles_unsat is False:
+            self.rectangles_unsat = []
         else:
             self.rectangles_unsat = rectangles_unsat
         self.rectangles_unsat_to_show = copy.copy(self.rectangles_unsat)
@@ -152,13 +160,15 @@ class RefinedSpace:
         # print("rectangles_unknown", rectangles_unknown)
         if rectangles_unknown is None:
             ## TBD THIS IS NOT CORRECT
-            self.unknown = [region]
+            self.rectangles_unknown = [self.region]
         elif not isinstance(rectangles_unknown, Iterable):
             raise Exception("Given rectangles_unknown is not iterable")
         elif isinstance(rectangles_unknown, tuple):
-            self.unknown = [rectangles_unknown]
+            self.rectangles_unknown = [rectangles_unknown]
+        elif rectangles_unknown is False:
+            self.rectangles_unknown = []
         else:
-            self.unknown = rectangles_unknown
+            self.rectangles_unknown = rectangles_unknown
 
         ## SAT SAMPLES
         if sat_samples is None:
@@ -418,12 +428,73 @@ class RefinedSpace:
                     else:
                         print("No sat rectangles so far, nothing to show")
 
+    def get_region(self):
+        """Returns whole domain"""
+        return self.region
+
+    def get_params(self):
+        """Returns parameters"""
+        return self.params
+
+    def get_green(self):
+        """Returns green (hyper)rectangles"""
+        return self.rectangles_sat
+
+    def get_red(self):
+        """Returns red (hyper)rectangles"""
+        return self.rectangles_unsat
+
+    def get_white(self):
+        """Returns white (hyper)rectangles"""
+        return self.rectangles_unknown
+
     def get_volume(self):
         """Returns the volume of the space"""
         intervals = []
         for interval in self.region:
             intervals.append(interval[1] - interval[0])
         return prod(intervals)
+
+    def get_green_volume(self):
+        """Returns volume of green subspace"""
+        cumulative_volume = 0
+
+        ## If there is no hyperrectangle in the sat space
+        if not self.rectangles_sat:
+            return 0.0
+
+        for rectangle in self.rectangles_sat:
+            cumulative_volume = cumulative_volume + get_rectangle_volume(rectangle)
+        return cumulative_volume
+
+    def get_red_volume(self):
+        """Returns volume of red subspace"""
+        cumulative_volume = 0
+
+        ## If there is no hyperrectangle in the unsat space
+        if not self.rectangles_unsat:
+            return 0.0
+
+        for rectangle in self.rectangles_unsat:
+            cumulative_volume = cumulative_volume + get_rectangle_volume(rectangle)
+        return cumulative_volume
+
+    def get_white_volume(self):
+        """Returns volume of white subspace"""
+        return self.get_volume() - self.get_nonwhite_volume()
+
+    def get_nonwhite_volume(self):
+        """Returns volume of nonwhite subspace"""
+        return self.get_green_volume() + self.get_red_volume()
+
+    def get_coverage(self):
+        """Returns proportion of nonwhite subspace (coverage)"""
+        # print("self.get_nonwhite_volume()", self.get_nonwhite_volume())
+        # print("self.get_volume()", self.get_volume())
+        if self.get_nonwhite_volume() == 0:
+            return 0
+        else:
+            return self.get_nonwhite_volume() / self.get_volume()
 
     def add_green(self, green):
         """Adds green (hyper)rectangle"""
@@ -437,7 +508,7 @@ class RefinedSpace:
 
     def add_white(self, white):
         """Adds white (hyper)rectangle"""
-        self.unknown.append(white)
+        self.rectangles_unknown.append(white)
 
     def add_sat_samples(self, sat_samples):
         """Adds sat samples
@@ -478,64 +549,11 @@ class RefinedSpace:
     def remove_white(self, white):
         """Removes white (hyper)rectangle"""
         try:
-            self.unknown.remove(white)
+            self.rectangles_unknown.remove(white)
         except:
             print("Could not remove white area ", white)
             return False
         return True
-
-    def get_green(self):
-        """Returns green (hyper)rectangles"""
-        return self.rectangles_sat
-
-    def get_red(self):
-        """Returns red (hyper)rectangles"""
-        return self.rectangles_unsat
-
-    def get_white(self):
-        """Returns white (hyper)rectangles"""
-        return self.unknown
-
-    def get_params(self):
-        """Returns parameters"""
-        return self.params
-
-    def get_green_volume(self):
-        """Returns volume of green subspace"""
-        cumulative_volume = 0
-
-        ## If there is no hyperrectangle in the sat space
-        if not self.rectangles_sat:
-            return 0.0
-
-        for rectangle in self.rectangles_sat:
-            cumulative_volume = cumulative_volume + get_rectangle_volume(rectangle)
-        return cumulative_volume
-
-    def get_red_volume(self):
-        """Returns volume of red subspace"""
-        cumulative_volume = 0
-
-        ## If there is no hyperrectangle in the unsat space
-        if not self.rectangles_unsat:
-            return 0.0
-
-        for rectangle in self.rectangles_unsat:
-            cumulative_volume = cumulative_volume + get_rectangle_volume(rectangle)
-        return cumulative_volume
-
-    def get_nonwhite_volume(self):
-        """Returns volume of nonwhite subspace"""
-        return self.get_green_volume() + self.get_red_volume()
-
-    def get_coverage(self):
-        """Returns proportion of nonwhite subspace (coverage)"""
-        # print("self.get_nonwhite_volume()", self.get_nonwhite_volume())
-        # print("self.get_volume()", self.get_volume())
-        if self.get_nonwhite_volume() == 0:
-            return 0
-        else:
-            return self.get_nonwhite_volume() / self.get_volume()
 
     ## TBD generalise so that the code is not copied
     def show_green(self):
@@ -645,16 +663,16 @@ class RefinedSpace:
         spam = spam + str(f"types: {self.types}\n")
         spam = spam + str(f"rectangles_sat: {(f'{self.rectangles_sat[:5]} ... more', self.rectangles_sat)[len(self.rectangles_sat) <= 30 or full_print]} \n")
         spam = spam + str(f"rectangles_unsat: {(f'{self.rectangles_unsat[:5]} ... more', self.rectangles_unsat)[len(self.rectangles_unsat) <= 30 or full_print]} \n")
-        spam = spam + str(f"rectangles_unknown: {(f'{self.unknown[:5]} ... more', self.unknown)[len(self.unknown) <= 30 or full_print]} \n")
+        spam = spam + str(f"rectangles_unknown: {(f'{self.rectangles_unknown[:5]} ... more', self.rectangles_unknown)[len(self.rectangles_unknown) <= 30 or full_print]} \n")
         spam = spam + str(f"sat_samples: {(f'{self.sat_samples[:5]} ... more', self.sat_samples)[len(self.sat_samples) <= 30 or full_print]} \n")
         spam = spam + str(f"unsat_samples: {(f'{self.unsat_samples[:5]} ... more', self.unsat_samples)[len(self.unsat_samples) <= 30 or full_print]} \n")
         spam = spam + str(f"true_point: {self.true_point}\n")
         return spam
 
     def __repr__(self):
-        return str([self.region, self.params, self.types, self.rectangles_sat, self.rectangles_unsat, self.unknown,
+        return str([self.region, self.params, self.types, self.rectangles_sat, self.rectangles_unsat, self.rectangles_unknown,
                     self.sat_samples, self.unsat_samples, self.true_point])
 
     def __str__(self):
-        return str([self.region, self.params, self.types, self.rectangles_sat, self.rectangles_unsat, self.unknown,
+        return str([self.region, self.params, self.types, self.rectangles_sat, self.rectangles_unsat, self.rectangles_unknown,
                     self.sat_samples, self.unsat_samples, self.true_point])
