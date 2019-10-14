@@ -50,7 +50,7 @@ def get_rectangle_volume(rectangle):
 
 
 class RefinedSpace:
-    """ Class to represent space refinement into sat(green), unsat(red), and unknown(white) regions
+    """ Class to represent space. The space can be sampled or refined into sat(green), unsat(red), and unknown(white) regions
 
     Attributes
     ------
@@ -95,7 +95,6 @@ class RefinedSpace:
         for interval_index in range(len(self.region)):
             if isinstance(region[interval_index], tuple):
                 self.region[interval_index] = [self.region[interval_index][0], self.region[interval_index][1]]
-
 
         ## PARAMS
         self.params = params
@@ -159,7 +158,7 @@ class RefinedSpace:
         ## UNKNOWN RECTANGLES
         # print("rectangles_unknown", rectangles_unknown)
         if rectangles_unknown is None:
-            ## TBD THIS IS NOT CORRECT
+            ## TODO THIS IS NOT CORRECT
             self.rectangles_unknown = [self.region]
         elif not isinstance(rectangles_unknown, Iterable):
             raise Exception("Given rectangles_unknown is not iterable")
@@ -298,7 +297,7 @@ class RefinedSpace:
                 with open(os.path.join(refinement_results, "figure_to_title.txt"), "a+") as file:
                     file.write(f"Refinement{save} : {whole_title}\n")
             if where:
-                ## TBD probably yield
+                ## TODO probably yield
                 # print("returning tuple")
                 del region
                 return fig, pic
@@ -339,7 +338,7 @@ class RefinedSpace:
                         ax.plot(x_axis, sample)
                     ax.set_xlabel("param indices")
                     ax.set_ylabel("parameter value")
-                    whole_title = "\n".join(self.wrapper.wrap(f"Sat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}, \n{self.title} \n {title}", 70))
+                    whole_title = "\n".join(self.wrapper.wrap(f"Sat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}, \n{self.title} \n {title}"))
                     ax.set_title(whole_title)
                     ax.autoscale()
                     ax.margins(0.1)
@@ -352,7 +351,7 @@ class RefinedSpace:
                             file.write(f"Samples_sat{save} : {whole_title}\n")
 
                     if where:
-                        ## TBD probably yield
+                        ## TODO probably yield
                         print("returning tuple")
                         return fig, ax
                     else:
@@ -397,7 +396,7 @@ class RefinedSpace:
                         with open(os.path.join(refinement_results, "figure_to_title.txt"), "a+") as file:
                             file.write(f"Samples_unsat{save} : {whole_title}\n")
                     if where:
-                        ## TBD probably yield
+                        ## TODO probably yield
                         print("returning tuple")
                         return fig, ax
                     else:
@@ -448,6 +447,10 @@ class RefinedSpace:
         """Returns white (hyper)rectangles"""
         return self.rectangles_unknown
 
+    def get_nonwhite(self):
+        """Returns nonwhite (hyper)rectangles"""
+        return self.rectangles_sat + self.rectangles_unsat
+
     def get_volume(self):
         """Returns the volume of the space"""
         intervals = []
@@ -495,6 +498,22 @@ class RefinedSpace:
             return 0
         else:
             return self.get_nonwhite_volume() / self.get_volume()
+
+    def get_sat_samples(self):
+        """Returns green (sat) samples"""
+        return self.sat_samples
+
+    def get_unsat_samples(self):
+        """Returns red (unsat) samples"""
+        return self.unsat_samples
+
+    def get_all_samples(self):
+        """Returns all (sat and unsat) samples"""
+        return self.sat_samples + self.unsat_samples
+
+    def get_true_point(self):
+        """Returns the true point"""
+        return self.true_point
 
     def add_green(self, green):
         """Adds green (hyper)rectangle"""
@@ -555,7 +574,7 @@ class RefinedSpace:
             return False
         return True
 
-    ## TBD generalise so that the code is not copied
+    ## TODO generalise so that the code is not copied
     def show_green(self):
         """Adds green (hyper)rectangles to be visualised"""
         rectangles_sat = []
@@ -594,7 +613,7 @@ class RefinedSpace:
         self.rectangles_unsat_to_show = []
         return PatchCollection(rectangles_unsat, facecolor='r', alpha=0.5)
 
-    ## TBD DELETED AS IT IS GRID SAMPLING
+    ## TODO DELETE THIS AS IT IS GRID SAMPLING
     def sample(self, props, size_q, silent=False, save=False):
         """ Executes grid sampling
 
@@ -620,7 +639,7 @@ class RefinedSpace:
             save: (Bool): if True output is pickled
         """
         self.gridsampled = True
-        self.sample(self, props, size_q, silent=silent, save=save)
+        self.sample(self, props, size_q, save=save)
 
     def show_samples(self, which):
         """ Visualises samples in 2D"""
@@ -631,8 +650,8 @@ class RefinedSpace:
         elif len(self.region) == 2:
             # print("samples", self.samples)
             try:
-                x_size = self.region[0][1]-self.region[0][0]
-                y_size = self.region[1][1]-self.region[1][0]
+                x_size = self.region[0][1] - self.region[0][0]
+                y_size = self.region[1][1] - self.region[1][0]
                 x_size_correction = min(1 / (len(self.sat_samples) + len(self.unsat_samples)) ** (1 / len(self.region)), 0.01 * x_size)
                 y_size_correction = min(1 / (len(self.sat_samples) + len(self.unsat_samples)) ** (1 / len(self.region)), 0.01 * y_size)
 

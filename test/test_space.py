@@ -2,6 +2,8 @@ import pickle
 import unittest
 from src.space import *
 
+curr_dir = os.path.dirname(__file__)
+
 
 class MyTestCase(unittest.TestCase):
     def test_get_rectangle_volume(self) :
@@ -22,6 +24,7 @@ class MyTestCase(unittest.TestCase):
 
         space = RefinedSpace((0, 1), ["x"])
         self.assertEqual(space.get_region(), [[0, 1]])
+        self.assertEqual(space.get_params(), ["x"])
         self.assertEqual(space.get_volume(), 1)
         self.assertEqual(space.get_green(), [])
         self.assertEqual(space.get_green_volume(), 0)
@@ -29,11 +32,14 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(space.get_red_volume(), 0)
         self.assertEqual(space.get_white(), [[[0, 1]]])
         self.assertEqual(space.get_white_volume(), 1)
+        self.assertEqual(space.get_nonwhite(), [])
         self.assertEqual(space.get_nonwhite_volume(), 0)
         self.assertEqual(space.get_coverage(), 0)
+        self.assertEqual(space.get_true_point(), None)
 
         space = RefinedSpace([(0, 1), (2, 4)], ["x", "y"])
         self.assertEqual(space.get_region(), [[0, 1], [2, 4]])
+        self.assertEqual(space.get_params(), ["x", "y"])
         self.assertEqual(space.get_volume(), 2)
         self.assertEqual(space.get_green(), [])
         self.assertEqual(space.get_green_volume(), 0)
@@ -41,11 +47,28 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(space.get_red_volume(), 0)
         self.assertEqual(space.get_white(), [[[0, 1], [2, 4]]])
         self.assertEqual(space.get_white_volume(), 2)
+        self.assertEqual(space.get_nonwhite(), [])
         self.assertEqual(space.get_nonwhite_volume(), 0)
         self.assertEqual(space.get_coverage(), 0)
+        self.assertEqual(space.get_true_point(), None)
 
-        space = pickle.load(open("data/space.p", "rb"))
-        ## TODO test all getters
+        space = pickle.load(open(os.path.join(curr_dir, "data/space.p"), "rb"))
+        self.assertEqual(space.get_region(), [[0, 1], [0, 1]])
+        self.assertEqual(space.get_params(), ["p", "q"])
+        self.assertEqual(space.get_volume(), 1)
+        self.assertEqual(space.get_green(), [[(0.375, 0.5), (0.0, 0.125)]])
+        self.assertEqual(space.get_green_volume(), 0.015625)
+        self.assertEqual(space.get_red(), [[(0.0, 0.5), (0.5, 1.0)], [(0.5, 1.0), (0.5, 1.0)], [(0.0, 0.25), (0.0, 0.5)], [(0.75, 1.0), (0.0, 0.5)], [(0.5, 0.75), (0.25, 0.5)], [(0.625, 0.75), (0.0, 0.25)], [(0.25, 0.375), (0.375, 0.5)]])
+        self.assertEqual(space.get_red_volume(), 0.859375)
+        self.assertEqual(space.get_white(), [[(0.25, 0.375), (0.0, 0.125)], [(0.25, 0.375), (0.125, 0.25)], [(0.375, 0.5), (0.125, 0.25)], [(0.25, 0.375), (0.25, 0.375)], [(0.375, 0.5), (0.25, 0.375)], [(0.375, 0.5), (0.375, 0.5)], [(0.5, 0.625), (0.0, 0.125)], [(0.5, 0.625), (0.125, 0.25)]])
+        self.assertEqual(space.get_white_volume(), 0.125)
+        self.assertEqual(space.get_nonwhite(), [[(0.375, 0.5), (0.0, 0.125)], [(0.0, 0.5), (0.5, 1.0)], [(0.5, 1.0), (0.5, 1.0)], [(0.0, 0.25), (0.0, 0.5)], [(0.75, 1.0), (0.0, 0.5)], [(0.5, 0.75), (0.25, 0.5)], [(0.625, 0.75), (0.0, 0.25)], [(0.25, 0.375), (0.375, 0.5)]])
+        self.assertEqual(space.get_nonwhite_volume(), 0.015625 + 0.859375)
+        self.assertEqual(space.get_coverage(), 0.015625 + 0.859375)
+        self.assertEqual(space.get_true_point(), None)
+        self.assertEqual(space.get_sat_samples(), [[0.5, 0.0]])
+        self.assertEqual(space.get_unsat_samples(), [[0.0, 0.0], [0.0, 0.25], [0.0, 0.5], [0.0, 0.75], [0.0, 1.0], [0.25, 0.0], [0.25, 0.25], [0.25, 0.5], [0.25, 0.75], [0.25, 1.0], [0.5, 0.25], [0.5, 0.5], [0.5, 0.75], [0.5, 1.0], [0.75, 0.0], [0.75, 0.25], [0.75, 0.5], [0.75, 0.75], [0.75, 1.0], [1.0, 0.0], [1.0, 0.25], [1.0, 0.5], [1.0, 0.75], [1.0, 1.0]])
+        self.assertEqual(space.get_all_samples(), [[0.5, 0.0], [0.0, 0.0], [0.0, 0.25], [0.0, 0.5], [0.0, 0.75], [0.0, 1.0], [0.25, 0.0], [0.25, 0.25], [0.25, 0.5], [0.25, 0.75], [0.25, 1.0], [0.5, 0.25], [0.5, 0.5], [0.5, 0.75], [0.5, 1.0], [0.75, 0.0], [0.75, 0.25], [0.75, 0.5], [0.75, 0.75], [0.75, 1.0], [1.0, 0.0], [1.0, 0.25], [1.0, 0.5], [1.0, 0.75], [1.0, 1.0]])
 
     def test_space_basics(self):
         print(colored("Basic space tests", 'blue'))
@@ -75,7 +98,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(space.get_white_volume(), 0.0)
 
         ## TODO test the rest of methods
-
+        space = RefinedSpace((0, 1), ["x"])
         # space.show( "max_recursion_depth:{},\n min_rec_size:{}, achieved_coverage:{}, alg{} \n It took {} {} second(s)".format(
         #        n, epsilon, self.get_coverage(), version, socket.gethostname(), round(time.time() - start_time, 1)))
 
@@ -118,7 +141,9 @@ class MyTestCase(unittest.TestCase):
     def test_visualisation(self):
         print(colored("Space visualisations tests", 'blue'))
 
-        space = pickle.load(open("data/space.p", "rb"))
+        # os.chdir(cwd)
+        print("curr dir", curr_dir)
+        space = pickle.load(open(os.path.join(curr_dir, "data/space.p"), "rb"))
 
         ## Only sampling here
         space.show(sat_samples=True, unsat_samples=True, green=False, red=False)

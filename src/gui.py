@@ -1067,7 +1067,7 @@ class Gui(Tk):
     def print_space(self, clear=False):
         """ Print the niceprint of the space into space text window. """
         if not self.space == "":
-            if not self.silent.get():
+            if not self.silent.get() and not clear:
                 print("space", self.space)
                 print()
                 print("space nice print \n", self.space.nice_print())
