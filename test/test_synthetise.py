@@ -45,273 +45,273 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(is_in([(0, 2), (1, 3)], [(0, 1), (1, 4)]), False)
         self.assertEqual(is_in([(0, 2), (1, 3)], [(0, 2), (1, 2)]), False)
 
-    def test_ineq_to_props(self):
+    def test_ineq_to_constraints(self):
         print(colored("Checking conversion from a list of inequalities to list of properties", 'blue'))
-        self.assertEqual(ineq_to_props(["x+3"], [[0, 1]]), ["x+3>=0", "x+3<=1"])
-        self.assertEqual(ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 2)]), ['x>=0', 'x<=1', '2*x>=0', '2*x<=2'])
+        self.assertEqual(ineq_to_constraints(["x+3"], [[0, 1]]), ["x+3>=0", "x+3<=1"])
+        self.assertEqual(ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 2)]), ['x>=0', 'x<=1', '2*x>=0', '2*x<=2'])
 
-        self.assertEqual(ineq_to_props(["x+3"], []), False)
+        self.assertEqual(ineq_to_constraints(["x+3"], []), False)
 
         ## Bad intervals
         with self.assertRaises(Exception) as context:
-            ineq_to_props(["x"], [Interval(3, 2)])
+            ineq_to_constraints(["x"], [Interval(3, 2)])
         self.assertTrue('Some intervals are incorrect' in str(context.exception))
 
         with self.assertRaises(Exception) as context:
-            ineq_to_props(["x"], [Interval(2, 2)])
+            ineq_to_constraints(["x"], [Interval(2, 2)])
         self.assertTrue('Some intervals are incorrect' in str(context.exception))
 
-    def test_props_to_ineq(self):
+    def test_constraints_to_ineq(self):
         print(colored("Checking conversion from a list properties to a list of inequalities", 'blue'))
-        self.assertEqual(props_to_ineq(["x+3>=0", "x+3<=1"]), (["x+3"], [Interval(0, 1)]))
-        self.assertEqual(props_to_ineq(['x>=0', 'x<=1', '2*x>=0', '2*x<=2']), (["x", "2*x"], [Interval(0, 1), Interval(0, 2)]))
+        self.assertEqual(constraints_to_ineq(["x+3>=0", "x+3<=1"]), (["x+3"], [Interval(0, 1)]))
+        self.assertEqual(constraints_to_ineq(['x>=0', 'x<=1', '2*x>=0', '2*x<=2']), (["x", "2*x"], [Interval(0, 1), Interval(0, 2)]))
 
         ## Properties not in a form of inequalities
-        self.assertEqual(props_to_ineq(["x+3>=0", "x+4<=1"]), False)
-        self.assertEqual(props_to_ineq(["x+3"]), False)
+        self.assertEqual(constraints_to_ineq(["x+3>=0", "x+4<=1"]), False)
+        self.assertEqual(constraints_to_ineq(["x+3"]), False)
 
     def test_check_single_z3(self):
         print(colored("Checking (un)safe with single properties using z3 here", 'blue'))
         ## IS IN
-        ## def check_safe(region, props, silent=False, called=False, solver="z3", delta=0.001)
+        ## def check_safe(region, constraints, silent=False, called=False, solver="z3", delta=0.001)
         # check_deeper([(0, 1)], ["x"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
-        self.assertEqual(check_safe([(0, 1)], ineq_to_props(["x"], [Interval(0, 1)]), silent=True, called=True), True)
+        self.assertEqual(check_safe([(0, 1)], ineq_to_constraints(["x"], [Interval(0, 1)]), silent=True, called=True), True)
 
         # check_deeper([(1, 1)], ["x"], [Interval(0, 2)], 0, 0.1, 1, True, 4)
-        self.assertEqual(check_safe([(1, 1)], ineq_to_props(["x"], [Interval(0, 2)]), silent=True, called=True), True)
+        self.assertEqual(check_safe([(1, 1)], ineq_to_constraints(["x"], [Interval(0, 2)]), silent=True, called=True), True)
 
         # check_deeper([(0, 1)], ["x"], [Interval(0.5, 3)], 10, 0.1, 1, True, 4)
-        self.assertIsInstance(check_safe([(0, 1)], ineq_to_props(["x"], [Interval(0.5, 3)]), silent=True, called=True),
+        self.assertIsInstance(check_safe([(0, 1)], ineq_to_constraints(["x"], [Interval(0.5, 3)]), silent=True, called=True),
                               z3.z3.ModelRef)  ## has an counter example
 
         # check_deeper([(0, 1)], ["x"], [Interval(2, 3)], 0, 0.1, 1, True, 4)
-        self.assertIsInstance(check_safe([(0, 1)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True),
+        self.assertIsInstance(check_safe([(0, 1)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True),
                               z3.z3.ModelRef)  ## has an counter example
 
         # check_deeper([(1, 4)], ["x"], [Interval(2, 3)], 0, 0.1, 1, True, 4)
-        self.assertIsInstance(check_safe([(1, 4)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True),
+        self.assertIsInstance(check_safe([(1, 4)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True),
                               z3.z3.ModelRef)  ## has an counter example
 
         # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 2)], 0, 0.1, 1, True, 4)
-        self.assertEqual(check_safe([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 2)]), silent=True, called=True), True)
+        self.assertEqual(check_safe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 2)]), silent=True, called=True), True)
 
         # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
-        self.assertIsInstance(check_safe([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), silent=True, called=True),
+        self.assertIsInstance(check_safe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), silent=True, called=True),
                               z3.z3.ModelRef)  ## has an counter example
 
         ## IS OUT
-        ## def check_unsafe(region, props, silent=False, called=False, solver="z3", delta=0.001)
+        ## def check_unsafe(region, constraints, silent=False, called=False, solver="z3", delta=0.001)
         # check_deeper([(0, 1)], ["x"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
-        self.assertIsInstance(check_unsafe([(0, 1)], ineq_to_props(["x"], [Interval(0, 1)]), silent=True, called=True),
+        self.assertIsInstance(check_unsafe([(0, 1)], ineq_to_constraints(["x"], [Interval(0, 1)]), silent=True, called=True),
                               z3.z3.ModelRef)  ## has an example
 
         # check_deeper([(1, 1)], ["x"], [Interval(0, 2)], 0, 0.1, 1, True, 4)
-        self.assertIsInstance(check_unsafe([(1, 1)], ineq_to_props(["x"], [Interval(0, 2)]), silent=True, called=True),
+        self.assertIsInstance(check_unsafe([(1, 1)], ineq_to_constraints(["x"], [Interval(0, 2)]), silent=True, called=True),
                               z3.z3.ModelRef)  ## has an example
 
         # check_deeper([(0, 1)], ["x"], [Interval(0.5, 3)], 10, 0.1, 1, True, 4)
-        self.assertIsInstance(check_unsafe([(0, 1)], ineq_to_props(["x"], [Interval(0.5, 3)]), silent=True, called=True),
+        self.assertIsInstance(check_unsafe([(0, 1)], ineq_to_constraints(["x"], [Interval(0.5, 3)]), silent=True, called=True),
                               z3.z3.ModelRef)  ## has an example
 
         # check_deeper([(0, 1)], ["x"], [Interval(2, 3)], 0, 0.1, 1, True, 4)
-        self.assertEqual(check_unsafe([(0, 1)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True), True)
+        self.assertEqual(check_unsafe([(0, 1)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True), True)
 
         # check_deeper([(1, 4)], ["x"], [Interval(2, 3)], 0, 0.1, 1, True, 4)
-        self.assertIsInstance(check_unsafe([(1, 4)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True),
+        self.assertIsInstance(check_unsafe([(1, 4)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True),
                               z3.z3.ModelRef)  ## has an example
 
         # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 2)], 0, 0.1, 1, True, 4)
-        self.assertIsInstance(check_unsafe([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 2)]), silent=True, called=True),
+        self.assertIsInstance(check_unsafe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 2)]), silent=True, called=True),
                               z3.z3.ModelRef)  ## has an example
 
         # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
-        self.assertIsInstance(check_unsafe([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), silent=True, called=True),
+        self.assertIsInstance(check_unsafe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), silent=True, called=True),
                               z3.z3.ModelRef)  ## has an example
 
-        self.assertEqual(check_unsafe([(0, 1)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True), True)
-        self.assertEqual(check_unsafe([(1, 1)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True), True)
-        self.assertIsInstance(check_unsafe([(0, 1)], ineq_to_props(["x"], [Interval(1, 3)]), silent=True, called=True), z3.z3.ModelRef)
-        self.assertIsInstance(check_unsafe([(0, 3)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True), z3.z3.ModelRef)
-        self.assertIsInstance(check_unsafe([(1, 4)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True), z3.z3.ModelRef)
-        self.assertIsInstance(check_unsafe([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 2)]), silent=True, called=True), z3.z3.ModelRef)
-        self.assertEqual(check_unsafe([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(4, 5)]), silent=True, called=True), True)
+        self.assertEqual(check_unsafe([(0, 1)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True), True)
+        self.assertEqual(check_unsafe([(1, 1)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True), True)
+        self.assertIsInstance(check_unsafe([(0, 1)], ineq_to_constraints(["x"], [Interval(1, 3)]), silent=True, called=True), z3.z3.ModelRef)
+        self.assertIsInstance(check_unsafe([(0, 3)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True), z3.z3.ModelRef)
+        self.assertIsInstance(check_unsafe([(1, 4)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True), z3.z3.ModelRef)
+        self.assertIsInstance(check_unsafe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 2)]), silent=True, called=True), z3.z3.ModelRef)
+        self.assertEqual(check_unsafe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(4, 5)]), silent=True, called=True), True)
 
     def test_check_single_dreal(self):
         print(colored("Checking (un)safe with single properties using dreal here", 'blue'))
         import dreal
         ## IS IN
-        ## def check_safe(region, props, silent=False, called=False, solver="z3", delta=0.001)
+        ## def check_safe(region, constraints, silent=False, called=False, solver="z3", delta=0.001)
         # check_deeper([(0, 1)], ["x"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
-        self.assertEqual(check_safe([(0, 1)], ineq_to_props(["x"], [Interval(0, 1)]), silent=True, called=True, solver="dreal"), True)
+        self.assertEqual(check_safe([(0, 1)], ineq_to_constraints(["x"], [Interval(0, 1)]), silent=True, called=True, solver="dreal"), True)
 
         # check_deeper([(1, 1)], ["x"], [Interval(0, 2)], 0, 0.1, 1, True, 4)
         self.assertEqual(
-            check_safe([(1, 1)], ineq_to_props(["x"], [Interval(0, 2)]), silent=True, called=True, solver="dreal"),
+            check_safe([(1, 1)], ineq_to_constraints(["x"], [Interval(0, 2)]), silent=True, called=True, solver="dreal"),
             True)
 
         # check_deeper([(0, 1)], ["x"], [Interval(0.5, 3)], 10, 0.1, 1, True, 4)
         self.assertIsInstance(
-            check_safe([(0, 1)], ineq_to_props(["x"], [Interval(0.5, 3)]), silent=True, called=True, solver="dreal"),
+            check_safe([(0, 1)], ineq_to_constraints(["x"], [Interval(0.5, 3)]), silent=True, called=True, solver="dreal"),
             dreal._dreal_py.Box)  ## has an counter example
 
         # check_deeper([(0, 1)], ["x"], [Interval(2, 3)], 0, 0.1, 1, True, 4)
         self.assertIsInstance(
-            check_safe([(0, 1)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
+            check_safe([(0, 1)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
             dreal._dreal_py.Box)  ## has an counter example
 
         # check_deeper([(1, 4)], ["x"], [Interval(2, 3)], 0, 0.1, 1, True, 4)
         self.assertIsInstance(
-            check_safe([(1, 4)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
+            check_safe([(1, 4)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
             dreal._dreal_py.Box)  ## has an counter example
 
         # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 2)], 0, 0.1, 1, True, 4)
         self.assertEqual(
-            check_safe([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 2)]), silent=True, called=True,
+            check_safe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 2)]), silent=True, called=True,
                        solver="dreal"), True)
 
         # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
-        self.assertIsInstance(check_safe([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), silent=True,
+        self.assertIsInstance(check_safe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), silent=True,
                                          called=True, solver = "dreal"), dreal._dreal_py.Box)  ## has an counter example
 
         ## IS OUT
-        ## def check_unsafe(region, props, silent=False, called=False, solver="z3", delta=0.001)
+        ## def check_unsafe(region, constraints, silent=False, called=False, solver="z3", delta=0.001)
         # check_deeper([(0, 1)], ["x"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
         self.assertIsInstance(
-            check_unsafe([(0, 1)], ineq_to_props(["x"], [Interval(0, 1)]), silent=True, called=True, solver="dreal"),
+            check_unsafe([(0, 1)], ineq_to_constraints(["x"], [Interval(0, 1)]), silent=True, called=True, solver="dreal"),
             dreal._dreal_py.Box)  ## has an example
 
         # check_deeper([(1, 1)], ["x"], [Interval(0, 2)], 0, 0.1, 1, True, 4)
         self.assertIsInstance(
-            check_unsafe([(1, 1)], ineq_to_props(["x"], [Interval(0, 2)]), silent=True, called=True, solver="dreal"),
+            check_unsafe([(1, 1)], ineq_to_constraints(["x"], [Interval(0, 2)]), silent=True, called=True, solver="dreal"),
             dreal._dreal_py.Box)  ## has an example
 
         # check_deeper([(0, 1)], ["x"], [Interval(0.5, 3)], 10, 0.1, 1, True, 4)
         self.assertIsInstance(
-            check_unsafe([(0, 1)], ineq_to_props(["x"], [Interval(0.5, 3)]), silent=True, called=True, solver="dreal"),
+            check_unsafe([(0, 1)], ineq_to_constraints(["x"], [Interval(0.5, 3)]), silent=True, called=True, solver="dreal"),
             dreal._dreal_py.Box)  ## has an example
 
         # check_deeper([(0, 1)], ["x"], [Interval(2, 3)], 0, 0.1, 1, True, 4)
         self.assertEqual(
-            check_unsafe([(0, 1)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
+            check_unsafe([(0, 1)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
             True)
 
         # check_deeper([(1, 4)], ["x"], [Interval(2, 3)], 0, 0.1, 1, True, 4)
         self.assertIsInstance(
-            check_unsafe([(1, 4)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
+            check_unsafe([(1, 4)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
             dreal._dreal_py.Box)  ## has an example
 
         # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 2)], 0, 0.1, 1, True, 4)
         self.assertIsInstance(
-            check_unsafe([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 2)]), silent=True, called=True,
+            check_unsafe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 2)]), silent=True, called=True,
                          solver="dreal"),
             dreal._dreal_py.Box)  ## has an example
 
         # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
         self.assertIsInstance(
-            check_unsafe([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), silent=True, called=True,
+            check_unsafe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), silent=True, called=True,
                          solver="dreal"),
             dreal._dreal_py.Box)  ## has an example
 
         self.assertEqual(
-            check_unsafe([(0, 1)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
+            check_unsafe([(0, 1)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
             True)
         self.assertEqual(
-            check_unsafe([(1, 1)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
+            check_unsafe([(1, 1)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
             True)
         self.assertIsInstance(
-            check_unsafe([(0, 1)], ineq_to_props(["x"], [Interval(1, 3)]), silent=True, called=True, solver="dreal"),
+            check_unsafe([(0, 1)], ineq_to_constraints(["x"], [Interval(1, 3)]), silent=True, called=True, solver="dreal"),
             dreal._dreal_py.Box)
         self.assertIsInstance(
-            check_unsafe([(0, 3)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
+            check_unsafe([(0, 3)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
             dreal._dreal_py.Box)
         self.assertIsInstance(
-            check_unsafe([(1, 4)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
+            check_unsafe([(1, 4)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
             dreal._dreal_py.Box)
         self.assertIsInstance(
-            check_unsafe([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 2)]), silent=True, called=True,
+            check_unsafe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 2)]), silent=True, called=True,
                          solver="dreal"), dreal._dreal_py.Box)
         self.assertEqual(
-            check_unsafe([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(4, 5)]), silent=True, called=True,
+            check_unsafe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(4, 5)]), silent=True, called=True,
                          solver="dreal"), True)
 
     def test_check_multiple_z3(self):
         print(colored("Check (un)safe with multiple properties using z3 here", 'blue'))
         ## IS IN
-        ## def check_safe(region, props, silent=False, called=False, solver="z3", delta=0.001)
+        ## def check_safe(region, constraints, silent=False, called=False, solver="z3", delta=0.001)
         self.assertEqual(
-            check_safe([(0, 1)], ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 2)]), silent=True, called=True), True)
+            check_safe([(0, 1)], ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 2)]), silent=True, called=True), True)
         self.assertIsInstance(
-            check_safe([(0, 1)], ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=True, called=True), z3.z3.ModelRef)
+            check_safe([(0, 1)], ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=True, called=True), z3.z3.ModelRef)
 
         ## !!!TRICKY
         self.assertIsInstance(
-            check_safe([(0, 2)], ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=True, called=True), z3.z3.ModelRef)
+            check_safe([(0, 2)], ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=True, called=True), z3.z3.ModelRef)
 
         self.assertEqual(
-            check_safe([(0, 1), (0, 1)], ineq_to_props(["x", "y"], [Interval(0, 1), Interval(0, 1)]), silent=True, called=True), True)
+            check_safe([(0, 1), (0, 1)], ineq_to_constraints(["x", "y"], [Interval(0, 1), Interval(0, 1)]), silent=True, called=True), True)
         self.assertIsInstance(
-            check_safe([(0, 1), (0, 2)], ineq_to_props(["x", "y"], [Interval(0, 1), Interval(0, 1)]), silent=True, called=True), z3.z3.ModelRef)
+            check_safe([(0, 1), (0, 2)], ineq_to_constraints(["x", "y"], [Interval(0, 1), Interval(0, 1)]), silent=True, called=True), z3.z3.ModelRef)
 
         ## IS OUT
-        ## def check_unsafe(region, props, silent=False, called=False, solver="z3", delta=0.001)
+        ## def check_unsafe(region, constraints, silent=False, called=False, solver="z3", delta=0.001)
         self.assertEqual(
-            check_unsafe([(0, 1)], ineq_to_props(["x", "2*x"], [Interval(2, 3), Interval(3, 4)]), silent=True, called=True), True)
+            check_unsafe([(0, 1)], ineq_to_constraints(["x", "2*x"], [Interval(2, 3), Interval(3, 4)]), silent=True, called=True), True)
         self.assertIsInstance(
-            check_unsafe([(0, 1)], ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=True, called=True), z3.z3.ModelRef)
+            check_unsafe([(0, 1)], ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=True, called=True), z3.z3.ModelRef)
 
         ## !!!TRICKY
         self.assertIsInstance(
-            check_unsafe([(0, 2)], ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=False, called=True), z3.z3.ModelRef)
+            check_unsafe([(0, 2)], ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=False, called=True), z3.z3.ModelRef)
 
         self.assertEqual(
-            check_unsafe([(0, 1), (0, 1)], ineq_to_props(["x", "y"], [Interval(2, 3), Interval(2, 3)]), silent=True, called=True), True)
+            check_unsafe([(0, 1), (0, 1)], ineq_to_constraints(["x", "y"], [Interval(2, 3), Interval(2, 3)]), silent=True, called=True), True)
         self.assertIsInstance(
-            check_unsafe([(0, 1), (0, 2)], ineq_to_props(["x", "y"], [Interval(0, 1), Interval(0, 1)]), silent=True, called=True), z3.z3.ModelRef)
+            check_unsafe([(0, 1), (0, 2)], ineq_to_constraints(["x", "y"], [Interval(0, 1), Interval(0, 1)]), silent=True, called=True), z3.z3.ModelRef)
 
     def test_check_multiple_dreal(self):
         print(colored("Check (un)safe with multiple properties using dreal here", 'blue'))
         import dreal
 
         ## IS IN
-        ## check_safe(region, props, silent=False, called=False, solver="z3", delta=0.001)
+        ## check_safe(region, constraints, silent=False, called=False, solver="z3", delta=0.001)
         self.assertEqual(
-            check_safe([(0, 1)], ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 2)]), silent=True,
+            check_safe([(0, 1)], ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 2)]), silent=True,
                        called=True, solver="dreal"), True)
         self.assertIsInstance(
-            check_safe([(0, 1)], ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=True,
+            check_safe([(0, 1)], ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=True,
                        called=True, solver="dreal"), dreal._dreal_py.Box)
 
         ## !!!TRICKY
         self.assertIsInstance(
-            check_safe([(0, 2)], ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=True,
+            check_safe([(0, 2)], ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=True,
                        called=True, solver="dreal"), dreal._dreal_py.Box)
 
         self.assertEqual(
-            check_safe([(0, 1), (0, 1)], ineq_to_props(["x", "y"], [Interval(0, 1), Interval(0, 1)]), silent=True,
+            check_safe([(0, 1), (0, 1)], ineq_to_constraints(["x", "y"], [Interval(0, 1), Interval(0, 1)]), silent=True,
                        called=True, solver="dreal"), True)
         self.assertIsInstance(
-            check_safe([(0, 1), (0, 2)], ineq_to_props(["x", "y"], [Interval(0, 1), Interval(0, 1)]), silent=True,
+            check_safe([(0, 1), (0, 2)], ineq_to_constraints(["x", "y"], [Interval(0, 1), Interval(0, 1)]), silent=True,
                        called=True, solver="dreal"), dreal._dreal_py.Box)
 
         ## IS OUT
-        ## def check_unsafe(region, props, silent=False, called=False, solver="z3", delta=0.001)
+        ## def check_unsafe(region, constraints, silent=False, called=False, solver="z3", delta=0.001)
         self.assertEqual(
-            check_unsafe([(0, 1)], ineq_to_props(["x", "2*x"], [Interval(2, 3), Interval(3, 4)]), silent=True,
+            check_unsafe([(0, 1)], ineq_to_constraints(["x", "2*x"], [Interval(2, 3), Interval(3, 4)]), silent=True,
                          called=True, solver="dreal"), True)
         self.assertIsInstance(
-            check_unsafe([(0, 1)], ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=True,
+            check_unsafe([(0, 1)], ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=True,
                          called=True, solver="dreal"), dreal._dreal_py.Box)
 
         ## !!!TRICKY
         self.assertIsInstance(
-            check_unsafe([(0, 2)], ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=False,
+            check_unsafe([(0, 2)], ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=False,
                          called=True, solver="dreal"), dreal._dreal_py.Box)
 
         self.assertEqual(
-            check_unsafe([(0, 1), (0, 1)], ineq_to_props(["x", "y"], [Interval(2, 3), Interval(2, 3)]), silent=True,
+            check_unsafe([(0, 1), (0, 1)], ineq_to_constraints(["x", "y"], [Interval(2, 3), Interval(2, 3)]), silent=True,
                          called=True, solver="dreal"), True)
         self.assertIsInstance(
-            check_unsafe([(0, 1), (0, 2)], ineq_to_props(["x", "y"], [Interval(0, 1), Interval(0, 1)]), silent=True,
+            check_unsafe([(0, 1), (0, 2)], ineq_to_constraints(["x", "y"], [Interval(0, 1), Interval(0, 1)]), silent=True,
                          called=True, solver="dreal"), dreal._dreal_py.Box)
 
     def test_check_interval_single(self):
@@ -377,108 +377,108 @@ class MyTestCase(unittest.TestCase):
             for version in [1, 2, 3, 4, 5]:
                 # Bad dimensions
                 with self.assertRaises(Exception) as context:
-                    check_deeper([(1, 1)], ineq_to_props(["x"], [Interval(0, 2)]), silent=True, n=n, epsilon=epsilon,
+                    check_deeper([(1, 1)], ineq_to_constraints(["x"], [Interval(0, 2)]), silent=True, n=n, epsilon=epsilon,
                                  coverage=coverage, version=version, solver=solver, show_space=show_space)
                 self.assertTrue('Some dime' in str(context.exception))
 
                 with self.assertRaises(Exception) as context:
-                    check_deeper([(2, 1)], ineq_to_props(["x"], [Interval(0, 2)]), silent=True, n=n, epsilon=epsilon,
+                    check_deeper([(2, 1)], ineq_to_constraints(["x"], [Interval(0, 2)]), silent=True, n=n, epsilon=epsilon,
                                  coverage=coverage, version=version, solver=solver, show_space=show_space)
                 self.assertTrue('Some dime' in str(context.exception))
 
                 ## Normal check_deeper
-                spam = check_deeper([(0, 1)], ineq_to_props(["x"], [Interval(0, 1)]), silent=True, n=n, epsilon=epsilon,
+                spam = check_deeper([(0, 1)], ineq_to_constraints(["x"], [Interval(0, 1)]), silent=True, n=n, epsilon=epsilon,
                                     coverage=coverage, version=version, solver=solver, show_space=show_space)
                 self.assertEqual(spam.get_coverage(), 1.0)
 
-                space = check_deeper([(0, 1)], ineq_to_props(["x"], [Interval(0.5, 3)]), silent=True, n=n,
+                space = check_deeper([(0, 1)], ineq_to_constraints(["x"], [Interval(0.5, 3)]), silent=True, n=n,
                                      epsilon=epsilon,
                                      coverage=coverage, version=version, solver=solver, show_space=show_space)
                 self.assertEqual(space.get_coverage(), 0.5)
 
-                space = check_deeper([(0, 1)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, n=n,
+                space = check_deeper([(0, 1)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, n=n,
                                      epsilon=epsilon,
                                      coverage=coverage, version=version, solver=solver, show_space=show_space)
                 self.assertEqual(space.get_coverage(), 1.0)
 
-                space = check_deeper([(1, 4)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, n=n,
+                space = check_deeper([(1, 4)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, n=n,
                                      epsilon=epsilon,
                                      coverage=coverage, version=version, solver=solver, show_space=show_space)
                 self.assertEqual(space.get_coverage(), 0.0)
 
-                space = check_deeper([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 2)]), silent=True, n=n,
+                space = check_deeper([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 2)]), silent=True, n=n,
                                      epsilon=epsilon, coverage=coverage, version=version, solver=solver,
                                      show_space=show_space)
                 self.assertEqual(space.get_coverage(), 1.0)
 
-                space = check_deeper([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), silent=True, n=n,
+                space = check_deeper([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), silent=True, n=n,
                                      epsilon=epsilon, coverage=coverage, version=version, solver=solver,
                                      show_space=show_space)
                 self.assertEqual(space.get_coverage(), 0.0)
 
-                space = check_deeper([(0, 1)], ineq_to_props(["x"], [Interval(0, 1)]), silent=True, n=n,
+                space = check_deeper([(0, 1)], ineq_to_constraints(["x"], [Interval(0, 1)]), silent=True, n=n,
                                      epsilon=epsilon,
                                      coverage=coverage, version=version, solver=solver, show_space=show_space)
                 self.assertEqual(space.get_coverage(), 1.0)
 
-                space = check_deeper([(0, 1)], ineq_to_props(["x"], [Interval(0.5, 3)]), silent=True, n=n,
+                space = check_deeper([(0, 1)], ineq_to_constraints(["x"], [Interval(0.5, 3)]), silent=True, n=n,
                                      epsilon=epsilon,
                                      coverage=coverage, version=version, solver=solver, show_space=show_space)
                 self.assertEqual(space.get_coverage(), 0.5)
 
-                space = check_deeper([(0, 1)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, n=n,
+                space = check_deeper([(0, 1)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, n=n,
                                      epsilon=epsilon,
                                      coverage=coverage, version=version, solver=solver, show_space=show_space)
                 self.assertEqual(space.get_coverage(), 1.0)
 
-                space = check_deeper([(1, 4)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, n=n,
+                space = check_deeper([(1, 4)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, n=n,
                                      epsilon=epsilon,
                                      coverage=coverage, version=version, solver=solver, show_space=show_space)
                 self.assertEqual(space.get_coverage(), 0.0)
 
-                space = check_deeper([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 2)]), silent=True, n=n,
+                space = check_deeper([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 2)]), silent=True, n=n,
                                      epsilon=epsilon, coverage=coverage, version=version, solver=solver,
                                      show_space=show_space)
                 self.assertEqual(space.get_coverage(), 1.0)
 
-                space = check_deeper([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), silent=True, n=n,
+                space = check_deeper([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), silent=True, n=n,
                                      epsilon=epsilon,
                                      coverage=coverage, version=version, solver=solver, show_space=show_space)
                 self.assertEqual(space.get_coverage(), 0.0)
 
-                space = check_deeper([(0, 1)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, n=n,
+                space = check_deeper([(0, 1)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, n=n,
                                      epsilon=epsilon,
                                      coverage=coverage, version=version, solver=solver, show_space=show_space)
                 self.assertEqual(space.get_coverage(), 1)
 
-                space = check_deeper([(0, 1)], ineq_to_props(["x"], [Interval(1, 3)]), silent=True, n=n,
+                space = check_deeper([(0, 1)], ineq_to_constraints(["x"], [Interval(1, 3)]), silent=True, n=n,
                                      epsilon=epsilon,
                                      coverage=coverage, version=version, solver=solver, show_space=show_space)
                 self.assertEqual(space.get_coverage(), 0.5)
 
-                space = check_deeper([(0, 3)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, n=n,
+                space = check_deeper([(0, 3)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, n=n,
                                      epsilon=epsilon,
                                      coverage=coverage, version=version, solver=solver, show_space=show_space)
                 self.assertEqual(space.get_coverage(), 0.5)
 
-                space = check_deeper([(1, 4)], ineq_to_props(["x"], [Interval(2, 3)]), silent=True, n=n,
+                space = check_deeper([(1, 4)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, n=n,
                                      epsilon=epsilon,
                                      coverage=coverage, version=version, solver=solver, show_space=show_space)
                 self.assertEqual(space.get_coverage(), 0.0)
 
-                space = check_deeper([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 2)]), silent=True, n=n,
+                space = check_deeper([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 2)]), silent=True, n=n,
                                      epsilon=epsilon, coverage=coverage, version=version, solver=solver,
                                      show_space=show_space)
                 self.assertEqual(space.get_coverage(), 1.0)
 
-                space = check_deeper([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(4, 5)]), silent=True, n=n,
+                space = check_deeper([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(4, 5)]), silent=True, n=n,
                                      epsilon=epsilon, coverage=coverage, version=version, solver=solver,
                                      show_space=show_space)
                 self.assertEqual(space.get_coverage(), 1.0)
 
     def test_refine_two_param(self):
         print(colored("Two-param refinement here", 'blue'))
-        ## def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=False, debug=False, save=False, title="", where=False, solver="z3", delta=0.001, show_space=show_space)
+        ## def check_deeper(region, constraints, n, epsilon, coverage, silent, version, size_q=False, debug=False, save=False, title="", where=False, solver="z3", delta=0.001, show_space=show_space)
         ## def check_deeper_interval(region, prop, n, epsilon, cov, silent, version)
         show_space = True
 
@@ -492,27 +492,27 @@ class MyTestCase(unittest.TestCase):
         alpha, n_samples, max_depth, min_rect_size, N, algorithm, v_p, v_q = 0.95, 100, 10, 1e-05, 2, 4, 0.028502714675268215, 0.03259111103419188
 
         ## Z3
-        space = check_deeper([(0, 1), (0, 0.9)], ineq_to_props(f[N],
+        space = check_deeper([(0, 1), (0, 0.9)], ineq_to_constraints(f[N],
                              create_intervals(alpha, n_samples, D3[("synchronous_", N, n_samples, v_p, v_q)])),
                              max_depth, min_rect_size, coverage_thresh, False, algorithm, show_space=show_space)
         ## Dreal
         solver = "z3"
         delta = 0.001
-        space = check_deeper([(0, 1), (0, 0.9)], ineq_to_props(f[N],
+        space = check_deeper([(0, 1), (0, 0.9)], ineq_to_constraints(f[N],
                              create_intervals(alpha, n_samples, D3[("synchronous_", N, n_samples, v_p, v_q)])),
                              max_depth, min_rect_size, coverage_thresh, False, algorithm, solver=solver, delta=delta, show_space=show_space)
 
         ## Interval algorithmic
         algorithm = 5
-        space = check_deeper([(0, 1), (0, 0.9)], ineq_to_props(f[N], create_intervals(alpha, n_samples, D3[("synchronous_", N, n_samples, v_p, v_q)])), max_depth, min_rect_size, coverage_thresh, False, algorithm, show_space=show_space)
+        space = check_deeper([(0, 1), (0, 0.9)], ineq_to_constraints(f[N], create_intervals(alpha, n_samples, D3[("synchronous_", N, n_samples, v_p, v_q)])), max_depth, min_rect_size, coverage_thresh, False, algorithm, show_space=show_space)
 
         ## UNCOMMENT FOLLOWING to run this test
-        # check_deeper([(0, 4)], ineq_to_props(["x"], [Interval(0, 3)]), 5, 0, 0.95, silent=False, version=5, show_space=show_space)
-        # check_deeper([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), 5, 0, 0.95, silent=True, version=5, show_space=show_space)
-        # check_deeper([(0, 0.5), (0, 0.5)], ineq_to_props(["x+y"], [Interval(0, 1)]), 5, 0, 0.95, silent=False, version=5, show_space=show_space)
+        # check_deeper([(0, 4)], ineq_to_constraints(["x"], [Interval(0, 3)]), 5, 0, 0.95, silent=False, version=5, show_space=show_space)
+        # check_deeper([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), 5, 0, 0.95, silent=True, version=5, show_space=show_space)
+        # check_deeper([(0, 0.5), (0, 0.5)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), 5, 0, 0.95, silent=False, version=5, show_space=show_space)
 
         ## VERY VERY INTERESTING RESULT
-        check_deeper([(0, 1), (0, 1)], ineq_to_props(f[2], create_intervals(0.95, 1500, [0.1, 0.3, 0.6])), 14, 0.01 ** 2, 0.997, False, 5, show_space=show_space)
+        check_deeper([(0, 1), (0, 1)], ineq_to_constraints(f[2], create_intervals(0.95, 1500, [0.1, 0.3, 0.6])), 14, 0.01 ** 2, 0.997, False, 5, show_space=show_space)
 
         print(colored('End of two-param test', 'blue'))
 
@@ -542,17 +542,17 @@ class MyTestCase(unittest.TestCase):
         sys.setrecursionlimit(23000)
         start_time = time()
 
-        # result6 = check_deeper([(0.0869140625000000, 0.112304687500000), (0, 1)], ineq_to_props([replaced_f6], [intervals[6]], 16, 0.01**3*0.5, 0.999, False, 5, show_space=show_space)
+        # result6 = check_deeper([(0.0869140625000000, 0.112304687500000), (0, 1)], ineq_to_constraints([replaced_f6], [intervals[6]], 16, 0.01**3*0.5, 0.999, False, 5, show_space=show_space)
 
         ## TO RUN THIS TEST UNCOMMENT FOLLOWING LINE
-        # result6 = check_deeper([(0.0869140625000000, 0.112304687500000), (0, 1)], ineq_to_props([replaced_f6], [intervals[6]], 16, 0.01 ** 3 , 0.999, False, 4, show_space=show_space)
+        # result6 = check_deeper([(0.0869140625000000, 0.112304687500000), (0, 1)], ineq_to_constraints([replaced_f6], [intervals[6]], 16, 0.01 ** 3 , 0.999, False, 4, show_space=show_space)
 
         print("  It took", socket.gethostname(), time() - start_time, "seconds to run")
 
         # start_time = time()
-        # check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=False, debug=False, save=False, title="", where=False, solver="z3", delta=0.001, show_space=show_space)
+        # check_deeper(region, constraints, n, epsilon, coverage, silent, version, size_q=False, debug=False, save=False, title="", where=False, solver="z3", delta=0.001, show_space=show_space)
 
-        check_deeper([(0, 2)], ineq_to_props(["x**2", "x+3"], [Interval(0, 1), Interval(0, 1)]), 6, 0.01 ** 2, 0.9, False, 4, show_space=show_space)
+        check_deeper([(0, 2)], ineq_to_constraints(["x**2", "x+3"], [Interval(0, 1), Interval(0, 1)]), 6, 0.01 ** 2, 0.9, False, 4, show_space=show_space)
         # print("  It took", socket.gethostname(), time() - start_time, "seconds to run")
 
     def test_space_sample(self):
@@ -563,33 +563,33 @@ class MyTestCase(unittest.TestCase):
 
         debug = False
 
-        props1 = ["x<3"]
-        props2 = ["x>3"]
+        constraints1 = ["x<3"]
+        constraints2 = ["x>3"]
 
-        props3 = ["x>3", "x<3"]
-        props4 = ["x<=1", "x>=0"]
-        props5 = ["x>3", "x>=0"]
+        constraints3 = ["x>3", "x<3"]
+        constraints4 = ["x<=1", "x>=0"]
+        constraints5 = ["x>3", "x>=0"]
 
-        ## def sample(space, props, size_q, compress)
-        ## Example:  sample(space, props1, 1, debug=debug)
-        self.assertEqual(sample(space, props1, 1, debug=debug)[0][1][0], True)
-        self.assertEqual(sample(space, props2, 1, debug=debug)[0][1][0], False)
+        ## def sample(space, constraints, size_q, compress)
+        ## Example:  sample(space, constraints1, 1, debug=debug)
+        self.assertEqual(sample(space, constraints1, 1, debug=debug)[0][1][0], True)
+        self.assertEqual(sample(space, constraints2, 1, debug=debug)[0][1][0], False)
 
-        self.assertEqual(sample(space, props2, 1, debug=debug)[0][1][0], False)
+        self.assertEqual(sample(space, constraints2, 1, debug=debug)[0][1][0], False)
 
-        self.assertEqual(sample(space, props3, 1, compress=True, debug=debug)[0][1], False)
-        self.assertEqual(sample(space, props4, 1, compress=True, debug=debug)[0][1], True)
-        self.assertEqual(sample(space, props5, 1, compress=True, debug=debug)[0][1], False)
+        self.assertEqual(sample(space, constraints3, 1, compress=True, debug=debug)[0][1], False)
+        self.assertEqual(sample(space, constraints4, 1, compress=True, debug=debug)[0][1], True)
+        self.assertEqual(sample(space, constraints5, 1, compress=True, debug=debug)[0][1], False)
 
         space2 = RefinedSpace([(0, 1), (0, 1)], ["x", "y"])
 
-        props3 = ["x+y>3", "x+y<3"]
-        props4 = ["x+y<=1", "x+y>=0"]
-        props5 = ["x+y>3", "x+y>=0"]
+        constraints3 = ["x+y>3", "x+y<3"]
+        constraints4 = ["x+y<=1", "x+y>=0"]
+        constraints5 = ["x+y>3", "x+y>=0"]
 
-        self.assertEqual(sample(space2, props3, 1, compress=True, debug=debug)[0][0][1], False)
-        self.assertEqual(sample(space2, props4, 1, compress=True, debug=debug)[0][0][1], True)
-        self.assertEqual(sample(space2, props5, 1, compress=True, debug=debug)[0][0][1], False)
+        self.assertEqual(sample(space2, constraints3, 1, compress=True, debug=debug)[0][0][1], False)
+        self.assertEqual(sample(space2, constraints4, 1, compress=True, debug=debug)[0][0][1], True)
+        self.assertEqual(sample(space2, constraints5, 1, compress=True, debug=debug)[0][0][1], False)
 
         # TODO maybe test all the sampled points not only the first
 
@@ -601,26 +601,26 @@ class MyTestCase(unittest.TestCase):
         space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
 
         print("space", space)
-        check_deeper(space, ineq_to_props(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 15, 0, 0.95, silent=False, version=5, size_q=3, show_space=show_space)
+        check_deeper(space, ineq_to_constraints(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 15, 0, 0.95, silent=False, version=5, size_q=3, show_space=show_space)
         print("space", space)
         print(space.get_coverage())
 
         ## UNCOMMENT THIS TBD
-        # check_deeper([(0, 1), (2, 3)], ineq_to_props(["x+y"], [Interval(0, 3)]), 5, 0, 0.95, silent=False, version=5, show_space=show_space)
+        # check_deeper([(0, 1), (2, 3)], ineq_to_constraints(["x+y"], [Interval(0, 3)]), 5, 0, 0.95, silent=False, version=5, show_space=show_space)
 
-        # check_deeper([(0, 1), (2, 3)], ineq_to_props(["x+y"], [Interval(0, 3)]), 5, 0, 0.95, silent=True, version=5, show_space=show_space)
-        # check_deeper([(0, 1), (2, 3)], ineq_to_props(["x+y"], [Interval(0, 3)]), 5, 0, 0.95, silent=True, version=5, size_q=11, show_space=show_space)
+        # check_deeper([(0, 1), (2, 3)], ineq_to_constraints(["x+y"], [Interval(0, 3)]), 5, 0, 0.95, silent=True, version=5, show_space=show_space)
+        # check_deeper([(0, 1), (2, 3)], ineq_to_constraints(["x+y"], [Interval(0, 3)]), 5, 0, 0.95, silent=True, version=5, size_q=11, show_space=show_space)
 
-        # check_deeper([(0, 1), (2, 3)], ineq_to_props(["x", "y"], [Interval(0.5, 3), Interval(2.5, 3)]), 5, 0, 0.95, silent=True, version=5, show_space=show_space)
-        # check_deeper([(0, 1), (2, 3)], ineq_to_props(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 20, 0, 0.95, silent=True, version=5, show_space=show_space)
+        # check_deeper([(0, 1), (2, 3)], ineq_to_constraints(["x", "y"], [Interval(0.5, 3), Interval(2.5, 3)]), 5, 0, 0.95, silent=True, version=5, show_space=show_space)
+        # check_deeper([(0, 1), (2, 3)], ineq_to_constraints(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 20, 0, 0.95, silent=True, version=5, show_space=show_space)
 
-        # check_deeper([[0, 1], [2, 2.5]], ineq_to_props(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 20, 0, 0.95, silent=False, version=5, show_space=show_space)
+        # check_deeper([[0, 1], [2, 2.5]], ineq_to_constraints(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 20, 0, 0.95, silent=False, version=5, show_space=show_space)
 
-        check_deeper([(0, 1), (2, 3)], ineq_to_props(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 15, 0, 0.95, silent=False, version=5, size_q=11, show_space=show_space)
+        check_deeper([(0, 1), (2, 3)], ineq_to_constraints(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 15, 0, 0.95, silent=False, version=5, size_q=11, show_space=show_space)
 
-        # check_deeper([(0, 0.5), (0, 0.5)], ineq_to_props(["x+y"], [Interval(0, 1)]), 5, 0, 0.95, silent=False, version=5, show_space=show_space)
+        # check_deeper([(0, 0.5), (0, 0.5)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), 5, 0, 0.95, silent=False, version=5, show_space=show_space)
 
-        # a = sample(RefinedSpace([(0, 1), (0, 1), (0, 1)], ineq_to_props(["x", "y", "z"]), ["x+y"], [Interval(0, 1)]), 3, compress=True)
+        # a = sample(RefinedSpace([(0, 1), (0, 1), (0, 1)], ineq_to_constraints(["x", "y", "z"]), ["x+y"], [Interval(0, 1)]), 3, compress=True)
         # print(a)
         # b = refine_into_rectangles(a)
         print(colored("Presampled refinement ends here", 'blue'))
@@ -628,20 +628,20 @@ class MyTestCase(unittest.TestCase):
     # def test_timeout(self):
         # print(colored("Timeout test here", 'blue'))
 
-        # check_deeper([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), 10, 0, 0.95, True, 1, show_space=show_space)
+        # check_deeper([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), 10, 0, 0.95, True, 1, show_space=show_space)
 
         ## TIMEOUT TEST
         # print("TIMEOUT TEST not finish")
-        # print(timeout(check_deeper, ([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), 10, 0, 0.95, True, 1), timeout_duration=20, default=4, show_space=show_space))
+        # print(timeout(check_deeper, ([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), 10, 0, 0.95, True, 1), timeout_duration=20, default=4, show_space=show_space))
 
         # print("TIMEOUT TEST2 not finish")
-        # print(type(check_deeper([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), 10, 0, 0.95, silent=True, version=1, time_out=2, show_space=show_space)))
+        # print(type(check_deeper([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), 10, 0, 0.95, silent=True, version=1, time_out=2, show_space=show_space)))
 
         # print("TIMEOUT TEST finish")
-        # timeout(check_deeper, ([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), 10, 0, 0.95, True, 1), timeout_duration=20, default=4, show_space=show_space)
+        # timeout(check_deeper, ([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), 10, 0, 0.95, True, 1), timeout_duration=20, default=4, show_space=show_space)
 
         # print("TIMEOUT TEST2 finish")
-        # print(type(check_deeper([(0, 1), (0, 1)], ineq_to_props(["x+y"], [Interval(0, 1)]), 10, 0, 0.95, silent=True, version=1, time_out=20, show_space=show_space)))
+        # print(type(check_deeper([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), 10, 0, 0.95, silent=True, version=1, time_out=20, show_space=show_space)))
 
 
 if __name__ == "__main__":
@@ -694,7 +694,7 @@ if __name__ == "__main__":
     #
     # space = RefinedSpace([(0, 1), (0, 1), (0, 1), (0, 1), (0, 1)], ["p", "low", "high", "qmin", "qmax"],
     #                                ["Real", "Real", "Real", "Real", "Real"], [], [])
-    # check_deeper(space, ineq_to_props(f_low_high_low_syn[2],create_intervals(0.95, 1500, D[2])),10,10e-6,0.95,False,4, size_q=5, show_space=show_space)
+    # check_deeper(space, ineq_to_constraints(f_low_high_low_syn[2],create_intervals(0.95, 1500, D[2])),10,10e-6,0.95,False,4, size_q=5, show_space=show_space)
 
     unittest.main()
 
@@ -706,7 +706,7 @@ if __name__ == "__main__":
     space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
 
     print("space", space)
-    check_deeper(space, ineq_to_props(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 15, 0, 0.95, silent=False,
+    check_deeper(space, ineq_to_constraints(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 15, 0, 0.95, silent=False,
                  version=5, show_space=show_space)
     print("space", space)
     print(space.get_coverage())
@@ -714,7 +714,7 @@ if __name__ == "__main__":
     # print(Interval(0, 1))
     # print(type(float(Interval(0, 1).start)))
 
-    # print(check_safe([(0, 1)], ineq_to_props(["x", "2*x"], [Interval(0, 1), Interval(0, 2)]), silent=True, called=True))
+    # print(check_safe([(0, 1)], ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 2)]), silent=True, called=True))
 
     # print(check_safe_new([(0, 1)], ["x>5"], silent=True, called=True))
     # print(check_unsafe_new([(0, 1)], ["x>5"], silent=True, called=True))

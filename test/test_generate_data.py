@@ -1,5 +1,6 @@
 import unittest
 from src.generate_data import *
+import numpy
 
 
 class MyTestCase(unittest.TestCase):

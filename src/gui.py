@@ -22,7 +22,7 @@ sys.path.append(workspace)
 from mc_informed import general_create_data_informed_properties
 from load import create_intervals, load_all_functions, find_param, load_data
 import space
-from synthetise import ineq_to_props, check_deeper
+from synthetise import ineq_to_constraints, check_deeper
 from mc_prism import call_prism_files, call_storm_files
 from sample_n_visualise import sample_list_funs, eval_and_show, get_param_values, heatmap
 
@@ -111,7 +111,7 @@ class Gui(Tk):
         self.data_informed_property_file = StringVar()  ## Data informed property file
         self.data_file = StringVar()  ## Data file
         self.functions_file = StringVar()  ## Rational functions file
-        self.props_file = StringVar()  ## Props file
+        self.constraints_file = StringVar()  ## constraints file
         self.space_file = StringVar()  ## Space file
 
         ## Checking the change
@@ -120,7 +120,7 @@ class Gui(Tk):
         self.functions_changed = False
         self.data_changed = False
         self.intervals_changed = False
-        self.props_changed = False
+        self.constraints_changed = False
         self.space_changed = False
 
         ## True Variables
@@ -132,7 +132,7 @@ class Gui(Tk):
         self.intervals = ""  ## Computed intervals
         self.parameters = ""  ##  Parsed parameters
         self.parameter_intervals = []  ## Parameters intervals
-        self.props = ""  ## Derived properties
+        self.constraints = ""  ## Derived properties
         self.space = ""  ## Instance of a space Class
         ## Space visualisation settings
         self.show_samples = None
@@ -190,9 +190,9 @@ class Gui(Tk):
         self.data_label = Label(frame, textvariable=self.data_file, anchor=W, justify=LEFT)
         self.data_label.grid(row=3, column=1, sticky=W, padx=4)
 
-        Label(frame, text=f"Props file:", anchor=W, justify=LEFT).grid(row=4, column=0, sticky=W, padx=4)
-        self.props_label = Label(frame, textvariable=self.props_file, anchor=W, justify=LEFT)
-        self.props_label.grid(row=4, column=1, sticky=W, padx=4)
+        Label(frame, text=f"Constraints file:", anchor=W, justify=LEFT).grid(row=4, column=0, sticky=W, padx=4)
+        self.constraints_label = Label(frame, textvariable=self.constraints_file, anchor=W, justify=LEFT)
+        self.constraints_label.grid(row=4, column=1, sticky=W, padx=4)
 
         Label(frame, text=f"Space file:", anchor=W, justify=LEFT).grid(row=5, column=0, sticky=W, padx=4)
         self.space_label = Label(frame, textvariable=self.space_file, anchor=W, justify=LEFT)
@@ -389,23 +389,23 @@ class Gui(Tk):
         Button(page4, text='Save data informed properties', command=self.save_data_informed_properties).grid(row=9, column=12, sticky=W, padx=5, pady=4)
 
 
-        ## TAB PROPS
-        page5 = ttk.Frame(nb, width=400, height=200, name="props")
-        nb.add(page5, text='Props')
+        ## TAB constraints
+        page5 = ttk.Frame(nb, width=400, height=200, name="constraints")
+        nb.add(page5, text='Constraints')
 
         page5.rowconfigure(2, weight=1)
         page5.columnconfigure(16, weight=1)
 
-        Button(page5, text='Recalculate props', command=self.recalculate_props).grid(row=0, column=0, sticky=W, padx=4, pady=4)
+        Button(page5, text='Recalculate constraints', command=self.recalculate_constraints).grid(row=0, column=0, sticky=W, padx=4, pady=4)
 
-        self.props_text = scrolledtext.ScrolledText(page5, height=100, state=DISABLED)
-        self.props_text.grid(row=1, column=0, columnspan=16, rowspan=2, sticky=W, padx=4,
+        self.constraints_text = scrolledtext.ScrolledText(page5, height=100, state=DISABLED)
+        self.constraints_text.grid(row=1, column=0, columnspan=16, rowspan=2, sticky=W, padx=4,
                              pady=4)  # pack(anchor=W, fill=X)
 
         Label(page5, text=f"Import/Export:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, padx=4, pady=4)
-        Button(page5, text='Open props', command=self.load_props).grid(row=3, column=1, sticky=W, pady=4)
-        Button(page5, text='Append props', command=self.append_props).grid(row=3, column=2, sticky=W, pady=4)
-        Button(page5, text='Save props', command=self.save_props).grid(row=3, column=3, sticky=W, pady=4)
+        Button(page5, text='Open constraints', command=self.load_constraints).grid(row=3, column=1, sticky=W, pady=4)
+        Button(page5, text='Append constraints', command=self.append_constraints).grid(row=3, column=2, sticky=W, pady=4)
+        Button(page5, text='Save constraints', command=self.save_constraints).grid(row=3, column=3, sticky=W, pady=4)
 
 
         ## TAB SAMPLE AND REFINEMENT
@@ -952,78 +952,78 @@ class Gui(Tk):
         self.new_window.destroy()
         self.unfold_data()
 
-    def recalculate_props(self):
-        """ Merges rational functions and intervals into props. Shows it afterwards. """
-        ## If there is some props
-        if len(self.props_text.get('1.0', END)) > 1:
-            proceed = messagebox.askyesno("Recalculate props",
-                                          "Previously obtained props will be lost. Do you want to proceed?")
+    def recalculate_constraints(self):
+        """ Merges rational functions and intervals into constraints. Shows it afterwards. """
+        ## If there is some constraints
+        if len(self.constraints_text.get('1.0', END)) > 1:
+            proceed = messagebox.askyesno("Recalculate constraints",
+                                          "Previously obtained constraints will be lost. Do you want to proceed?")
         else:
             proceed = True
         if proceed:
-            self.props = ""
-            self.validate_props(position="Props")
-        self.status_set("Props recalculated and shown.")
+            self.constraints = ""
+            self.validate_constraints(position="constraints")
+        self.status_set("constraints recalculated and shown.")
 
-    def load_props(self, append=False):
-        """ Loads props from a pickled file. """
-        print("Loading props ...")
+    def load_constraints(self, append=False):
+        """ Loads constraints from a pickled file. """
+        print("Loading constraints ...")
 
-        if self.props_changed and not append:
-            if not askyesno("Loading props", "Previously obtained props will be lost. Do you want to proceed?"):
+        if self.constraints_changed and not append:
+            if not askyesno("Loading constraints", "Previously obtained constraints will be lost. Do you want to proceed?"):
                 return
-        self.status_set("Please select the props to be loaded.")
-        spam = filedialog.askopenfilename(initialdir=self.data_dir, title="Props loading - Select file",
+        self.status_set("Please select the constraints to be loaded.")
+        spam = filedialog.askopenfilename(initialdir=self.data_dir, title="constraints loading - Select file",
                                           filetypes=(("text files", "*.p"), ("all files", "*.*")))
 
         if not self.silent.get():
-            print("old props", self.props)
-            print("old props type", type(self.props))
-            print("loaded props file", spam)
+            print("old constraints", self.constraints)
+            print("old constraints type", type(self.constraints))
+            print("loaded constraints file", spam)
 
         ## If no file selected
         if spam == "":
             self.status_set("No file selected.")
             return
         else:
-            self.props_changed = True
-            self.props_file.set(spam)
+            self.constraints_changed = True
+            self.constraints_file.set(spam)
 
             if append:
-                if self.props == "":
-                    self.props = []
-                spam = pickle.load(open(self.props_file.get(), "rb"))
-                self.props.extend(spam)
+                if self.constraints == "":
+                    self.constraints = []
+                spam = pickle.load(open(self.constraints_file.get(), "rb"))
+                self.constraints.extend(spam)
             else:
-                self.props = pickle.load(open(self.props_file.get(), "rb"))
+                self.constraints = pickle.load(open(self.constraints_file.get(), "rb"))
 
-                # self.props = []
+                # self.constraints = []
                 #
-                # with open(self.props_file.get(), 'r') as file:
+                # with open(self.constraints_file.get(), 'r') as file:
                 #     for line in file:
                 #         print(line[:-1])
-                #         self.props.append(line[:-1])
+                #         self.constraints.append(line[:-1])
             if not self.silent.get():
-                print("self.props", self.props)
+                print("self.constraints", self.constraints)
 
-            props = ""
-            for prop in self.props:
-                props = f"{prop},\n{props}"
-            props = props[:-2]
+            constraints = ""
+            for prop in self.constraints:
+                constraints = f"{prop},\n{constraints}"
+            constraints = constraints[:-2]
 
-            self.props_text.configure(state='normal')
-            self.props_text.delete('1.0', END)
-            self.props_text.insert('end', props)
-            self.props_text.configure(state='disabled')
+            self.constraints_text.configure(state='normal')
+            self.constraints_text.delete('1.0', END)
+            self.constraints_text.insert('end', constraints)
+            self.constraints_text.configure(state='disabled')
 
             ## Resetting parsed intervals
             self.parameter_intervals = []
-            self.status_set("Props loaded.")
+            self.status_set("constraints loaded.")
 
-    def append_props(self):
-        """ Appends loaded props from a pickled file to previously obtained props. """
-        self.load_props(append=True)
-        self.status_set("Props appended.")
+    def append_constraints(self):
+        """ Appends loaded constraints from a pickled file to previously obtained constraints. """
+        self.load_constraints(append=True)
+        self.status_set("constraints appended.")
 
     def load_space(self):
         """ Loads space from a pickled file. """
@@ -1283,7 +1283,7 @@ class Gui(Tk):
             return
 
         with open(save_functions_file, "w") as file:
-            for line in self.props:
+            for line in self.constraints:
                 file.write(line)
         self.status_set("Rational functions saved.")
 
@@ -1336,24 +1336,24 @@ class Gui(Tk):
         pickle.dump(self.data, open(save_data_file, 'wb'))
         self.status_set("Data saved.")
 
-    def save_props(self):
-        """ Saves props as a pickled file. """
-        print("Saving the props ...")
-        if self.props is "":
-            self.status_set("There is no props to be saved.")
+    def save_constraints(self):
+        """ Saves constraints as a pickled file. """
+        print("Saving the constraints ...")
+        if self.constraints is "":
+            self.status_set("There is no constraints to be saved.")
             return
 
-        self.status_set("Please select folder to store the props in.")
-        save_props_file = filedialog.asksaveasfilename(initialdir=self.data_dir, title="Props saving - Select file",
+        self.status_set("Please select folder to store the constraints in.")
+        save_constraints_file = filedialog.asksaveasfilename(initialdir=self.data_dir, title="constraints saving - Select file",
                                                        filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
-        if "." not in save_props_file:
-            save_props_file = save_props_file + ".p"
+        if "." not in save_constraints_file:
+            save_constraints_file = save_constraints_file + ".p"
 
         if not self.silent.get():
-            print("Saving props as a file:", save_props_file)
+            print("Saving constraints as a file:", save_constraints_file)
 
-        pickle.dump(self.props, open(save_props_file, 'wb'))
-        self.status_set("Props saved.")
+        pickle.dump(self.constraints, open(save_constraints_file, 'wb'))
+        self.status_set("constraints saved.")
 
     def save_space(self):
         """ Saves space as a pickled file. """
@@ -1702,8 +1702,8 @@ class Gui(Tk):
             messagebox.showwarning("Sample space", "Choose size_q, number of samples before sampling.")
             return
 
-        if self.props == "":
-            messagebox.showwarning("Sample space", "Load or calculate props before refinement.")
+        if self.constraints == "":
+            messagebox.showwarning("Sample space", "Load or calculate constraints before refinement.")
             return
 
         ## Check space
@@ -1713,12 +1713,12 @@ class Gui(Tk):
         self.status_set("Space sampling is running ...")
         if not self.silent.get():
             print("space.params", self.space.params)
-            print("props", self.props)
+            print("constraints", self.constraints)
             print("size_q", self.size_q)
 
         try:
             self.cursor_toggle_busy(True)
-            self.space.sample(self.props, self.size_q, silent=self.silent.get(), save=False)
+            self.space.sample(self.constraints, self.size_q, silent=self.silent.get(), save=False)
         finally:
             self.cursor_toggle_busy(False)
 
@@ -1727,7 +1727,7 @@ class Gui(Tk):
         self.show_space(show_refinement=False, show_samples=True, show_true_point=self.show_true_point)
 
         self.space_changed = False
-        self.props_changed = False
+        self.constraints_changed = False
         self.status_set("Space sampling finished.")
 
     def refine_space(self):
@@ -1758,8 +1758,8 @@ class Gui(Tk):
             messagebox.showwarning("Refine space", "Pick algorithm for the refinement before running.")
             return
 
-        if self.props == "":
-            messagebox.showwarning("Refine space", "Load or calculate props before refinement.")
+        if self.constraints == "":
+            messagebox.showwarning("Refine space", "Load or calculate constraints before refinement.")
             return
 
         if not self.validate_space("Refine Space"):
@@ -1770,7 +1770,7 @@ class Gui(Tk):
         try:
             self.cursor_toggle_busy(True)
             ## RETURNS TUPLE -- (SPACE,(NONE, ERROR TEXT)) or (SPACE, )
-            spam = check_deeper(self.space, self.props, self.max_depth, self.epsilon, self.coverage,
+            spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
                                 silent=self.silent.get(),
                                 version=int(self.alg.get()), size_q=False, debug=False, save=False,
                                 title="", where=[self.page6_figure, self.page6_a], solver=str(self.solver.get()), delta=self.delta)
@@ -1788,13 +1788,13 @@ class Gui(Tk):
 
         self.print_space()
 
-        self.props_changed = False
+        self.constraints_changed = False
         self.space_changed = False
         self.status_set("Space refinement finished.")
 
-    ## VALIDATE VARIABLES (PARAMETERS, PROPS, SPACE)
+    ## VALIDATE VARIABLES (PARAMETERS, constraints, SPACE)
     def validate_parameters(self, where, intervals=True):
-        """ Validates (functions, props, and space) parameters.
+        """ Validates (functions, constraints, and space) parameters.
 
         Args
         ------
@@ -1847,21 +1847,21 @@ class Gui(Tk):
             self.parameter_intervals = []
             self.validate_parameters(where=where)
 
-    def validate_props(self, position=False):
+    def validate_constraints(self, position=False):
         """ Validates created properties.
 
         Args:
         ------
         position: (String) Name of the place from which is being called e.g. "Refine Space"/"Sample space"
         """
-        print("Validating props ...")
+        print("Validating constraints ...")
         ## MAYBE an error here
-        if not self.props == "":
-            print("Props not empty, not checking them.")
+        if not self.constraints == "":
+            print("constraints not empty, not checking them.")
             return True
         if position is False:
-            position = "Validating props"
-        ## If props empty create props
+            position = "Validating constraints"
+        ## If constraints empty create constraints
         if self.functions_changed or self.intervals_changed:
             if not self.silent.get():
                 print("Functions: ", self.functions)
@@ -1889,21 +1889,21 @@ class Gui(Tk):
                                      "The number of rational functions and data points (or intervals) is not equal")
                 return
 
-            ## Create props
-            self.props = ineq_to_props(self.functions, self.intervals, silent=self.silent.get())
-            self.props_changed = True
-            self.props_file.set("")
+            ## Create constraints
+            self.constraints = ineq_to_constraints(self.functions, self.intervals, silent=self.silent.get())
+            self.constraints_changed = True
+            self.constraints_file.set("")
 
-            props = ""
-            for prop in self.props:
-                props = f"{props},\n{prop}"
-            props = props[2:]
-            self.props_text.configure(state='normal')
-            self.props_text.delete('1.0', END)
-            self.props_text.insert('end', props)
-            self.props_text.configure(state='disabled')
+            constraints = ""
+            for prop in self.constraints:
+                constraints = f"{constraints},\n{prop}"
+            constraints = constraints[2:]
+            self.constraints_text.configure(state='normal')
+            self.constraints_text.delete('1.0', END)
+            self.constraints_text.insert('end', constraints)
+            self.constraints_text.configure(state='disabled')
             if not self.silent.get():
-                print("Props: ", self.props)
+                print("constraints: ", self.constraints)
         return True
 
     def refresh_space(self):
@@ -1933,24 +1933,24 @@ class Gui(Tk):
             if not self.silent.get():
                 print("Space is empty - creating a new one.")
             ## Parse params and its intervals
-            self.validate_parameters(where=self.props)
+            self.validate_parameters(where=self.constraints)
             self.space = space.RefinedSpace(self.parameter_intervals, self.parameters)
         else:
-            if self.props_changed:
+            if self.constraints_changed:
                 messagebox.showwarning(position,
-                                       "Using previously created space with new props. Consider using fresh new space.")
+                                       "Using previously created space with new constraints. Consider using fresh new space.")
                 ## Check if the properties and data are valid
                 globals()["parameters"] = set()
-                for polynome in self.props:
+                for polynome in self.constraints:
                     globals()["parameters"].update(find_param(polynome))
                 globals()["parameters"] = sorted(list(globals()["parameters"]))
                 self.parameters = globals()["parameters"]
 
                 if not len(self.space.params) == len(self.parameters):
-                    messagebox.showerror(position, "Cardinality of the space does not correspond to the props. Consider using fresh space.")
+                    messagebox.showerror(position, "Cardinality of the space does not correspond to the constraints. Consider using fresh space.")
                     return False
                 elif not sorted(self.space.params) == sorted(self.parameters):
-                    messagebox.showerror(position, f"Parameters of the space - {self.space.params} - does not correspond to the one in props - {self.parameters}. Consider using fresh space.")
+                    messagebox.showerror(position, f"Parameters of the space - {self.space.params} - does not correspond to the one in constraints - {self.parameters}. Consider using fresh space.")
                     return False
         return True
 

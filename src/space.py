@@ -614,32 +614,32 @@ class RefinedSpace:
         return PatchCollection(rectangles_unsat, facecolor='r', alpha=0.5)
 
     ## TODO DELETE THIS AS IT IS GRID SAMPLING
-    def sample(self, props, size_q, silent=False, save=False):
+    def sample(self, constraints, size_q, silent=False, save=False):
         """ Executes grid sampling
 
             Args
             -------
-            props:  (list of strings): array of properties
+            constraints:  (list of strings): array of properties
             size_q: (int): number of samples in dimension
             silent: (Bool): if silent printed output is set to minimum
             save: (Bool): if True output is pickled
         """
         from synthetise import sample
         self.gridsampled = True
-        sample(self, props, size_q, compress=True, silent=silent, save=save)
+        sample(self, constraints, size_q, compress=True, silent=silent, save=save)
 
-    def grid_sample(self, props, size_q, silent=False, save=False):
+    def grid_sample(self, constraints, size_q, silent=False, save=False):
         """ Executes grid sampling
 
             Args
             -------
-            props:  (list of strings): array of properties
+            constraints:  (list of strings): array of properties
             size_q: (int): number of samples in dimension
             silent: (Bool): if silent printed output is set to minimum
             save: (Bool): if True output is pickled
         """
         self.gridsampled = True
-        self.sample(self, props, size_q, save=save)
+        self.sample(self, constraints, size_q, save=save)
 
     def show_samples(self, which):
         """ Visualises samples in 2D"""

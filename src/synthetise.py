@@ -149,7 +149,7 @@ class Queue:
         return self.queue
 
 
-def ineq_to_props(funcs, intervals, silent=True):
+def ineq_to_constraints(funcs, intervals, silent=True):
     """ Converts inequalities of the function given by the interval to properties
 
     Example: ["x+3"],[[0,1]] ->  ["x+3>=0","x+3<=1"]
@@ -179,25 +179,25 @@ def ineq_to_props(funcs, intervals, silent=True):
         return spam
     except Exception as error:
         if "'EmptySet' object does not support indexing" in str(error):
-            raise Exception("ineq_to_props", "Some intervals are incorrect (lover bound > upper bound)")
+            raise Exception("ineq_to_constraints", "Some intervals are incorrect (lover bound > upper bound)")
         elif "'FiniteSet' object does not support indexing" in str(error):
-            raise Exception("ineq_to_props", "Some intervals are incorrect (empty)")
+            raise Exception("ineq_to_constraints", "Some intervals are incorrect (empty)")
         else:
             raise error
 
 
-def props_to_ineq(props, silent=True, debug=False):
+def constraints_to_ineq(constraints, silent=True, debug=False):
     """ Converts properties to functions and inequalities if possible
 
     Example: ["x+3>=0","x+3<=1"] -> ["x+3"],[[0,1]]
 
     Args
     ----------
-    props:  (list of strings) properties to be converted
+    constraints:  (list of strings) properties to be converted
     silent: (Bool): if silent printed output is set to minimum
     debug: (Bool) if True extensive print will be used
     """
-    if len(props) % 2:
+    if len(constraints) % 2:
         if not silent:
             print(colored("Number of properties is not even, some interval will be invalid", "red"))
         return False
@@ -206,7 +206,7 @@ def props_to_ineq(props, silent=True, debug=False):
     is_odd = False
     index = 0
 
-    for prop in props:
+    for prop in constraints:
         spam = "None"
         if debug:
             print(f"property {index + 1} before splitting", prop)
@@ -357,7 +357,7 @@ def refine_by(region1, region2, debug=False):
     return regions
 
 
-def check_unsafe(region, props, silent=False, called=False, solver="z3", delta=0.001):
+def check_unsafe(region, constraints, silent=False, called=False, solver="z3", delta=0.001):
     """ Check if the given region is unsafe or not using z3 or dreal.
 
     It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given
@@ -366,7 +366,7 @@ def check_unsafe(region, props, silent=False, called=False, solver="z3", delta=0
     Args
     ----------
     region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of functions (rational functions in the case of Markov Chains)
+    constraints:  (list of strings): array of functions (rational functions in the case of Markov Chains)
     silent: (Bool): if silent printed output is set to minimum
     called: (Bool): if called updates the global variables (use when calling it directly)
     solver: (string): specified solver, allowed: z3, dreal
@@ -383,7 +383,7 @@ def check_unsafe(region, props, silent=False, called=False, solver="z3", delta=0
     if called:
         globals()["parameters"] = set()
         parameters = globals()["parameters"]
-        for polynome in props:
+        for polynome in constraints:
             parameters.update(find_param(polynome))
         globals()["parameters"] = sorted(list(globals()["parameters"]))
         ## EXAMPLE:  parameters >> ['p','q']
@@ -418,9 +418,9 @@ def check_unsafe(region, props, silent=False, called=False, solver="z3", delta=0
             j = j + 1
 
         ## Adding properties to solver
-        for i in range(0, len(props)):
-            # print(props[i])
-            s.add(eval(props[i]))
+        for i in range(0, len(constraints)):
+            # print(constraints[i])
+            s.add(eval(constraints[i]))
 
         if s.check() == sat:
             return s.model()
@@ -444,9 +444,9 @@ def check_unsafe(region, props, silent=False, called=False, solver="z3", delta=0
             j = j + 1
 
         ## Adding properties to dreal solver
-        for i in range(0, len(props)):
-            # print(props[i])
-            f_sat = logical_and(f_sat, eval(props[i]))
+        for i in range(0, len(constraints)):
+            # print(constraints[i])
+            f_sat = logical_and(f_sat, eval(constraints[i]))
 
         result = CheckSatisfiability(f_sat, delta)
 
@@ -457,7 +457,7 @@ def check_unsafe(region, props, silent=False, called=False, solver="z3", delta=0
             return True
 
 
-def check_safe(region, props, silent=False, called=False, solver="z3", delta=0.001):
+def check_safe(region, constraints, silent=False, called=False, solver="z3", delta=0.001):
     """ Check if the given region is safe or not using z3 or dreal.
 
     It means whether for all parametrisations in **region** every property(prop) is evaluated within the given
@@ -466,7 +466,7 @@ def check_safe(region, props, silent=False, called=False, solver="z3", delta=0.0
     Args
     ----------
     region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of properties
+    constraints:  (list of strings): array of properties
     silent: (Bool): if silent printed output is set to minimum
     called: (Bool): if called updates the global variables (use when calling it directly)
     solver: (string): specified solver, allowed: z3, dreal
@@ -479,7 +479,7 @@ def check_safe(region, props, silent=False, called=False, solver="z3", delta=0.0
     if called:
         globals()["parameters"] = set()
         parameters = globals()["parameters"]
-        for polynome in props:
+        for polynome in constraints:
             parameters.update(find_param(polynome))
         globals()["parameters"] = sorted(list(globals()["parameters"]))
         ## EXAMPLE:  parameters >> ['p','q']
@@ -519,9 +519,9 @@ def check_safe(region, props, silent=False, called=False, solver="z3", delta=0.0
             j = j + 1
 
         ## Adding properties to z3 solver
-        formula = Not(eval(props[0]))
-        for i in range(1, len(props)):
-            formula = Or(formula, Not(eval(props[i])))
+        formula = Not(eval(constraints[0]))
+        for i in range(1, len(constraints)):
+            formula = Or(formula, Not(eval(constraints[i])))
         s.add(formula)
 
         # print(s.check_unsafe())
@@ -546,9 +546,9 @@ def check_safe(region, props, silent=False, called=False, solver="z3", delta=0.0
             j = j + 1
 
         ## Adding properties to solver
-        formula = logical_not(eval(props[0]))
-        for i in range(1, len(props)):
-            formula = logical_or(formula, logical_not(eval(props[i])))
+        formula = logical_not(eval(constraints[0]))
+        for i in range(1, len(constraints)):
+            formula = logical_or(formula, logical_not(eval(constraints[i])))
         f_sat = logical_and(f_sat, formula)
 
         result = CheckSatisfiability(f_sat, delta)
@@ -560,13 +560,13 @@ def check_safe(region, props, silent=False, called=False, solver="z3", delta=0.0
             return result
 
 
-def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=False, debug=False, save=False, title="", where=False, show_space=True, solver="z3", delta=0.001):
+def check_deeper(region, constraints, n, epsilon, coverage, silent, version, size_q=False, debug=False, save=False, title="", where=False, show_space=True, solver="z3", delta=0.001):
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
 
     Args
     ----------
     region: (list of intervals/space) array of pairs, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of properties
+    constraints:  (list of strings): array of properties
     n: (Int): max number of recursions to do
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
@@ -593,7 +593,7 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
 
     ## Parameters
     globals()["parameters"] = set()
-    for polynome in props:
+    for polynome in constraints:
         globals()["parameters"].update(find_param(polynome))
     globals()["parameters"] = sorted(list(globals()["parameters"]))
     parameters = globals()["parameters"]
@@ -628,7 +628,7 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
             region[interval_index] = [region[interval_index][0], region[interval_index][1]]
 
         ### Params
-        if not isinstance(props, Iterable):
+        if not isinstance(constraints, Iterable):
             raise Exception("Given properties are not iterable, to use single property use list of length 1")
 
         globals()["space"] = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[], title=title)
@@ -649,7 +649,7 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
 
     if debug:
         print("region", region)
-        print("props", props)
+        print("constraints", constraints)
 
     ## PRESAMPLING HERE
     if size_q:
@@ -673,9 +673,9 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
 
         # globals()["space"] = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
 
-        # funcs, intervals = props_to_ineq(props)
+        # funcs, intervals = constraints_to_ineq(constraints)
 
-        to_be_searched = sample(space, props, size_q, compress=True, silent=not debug, save=save)
+        to_be_searched = sample(space, constraints, size_q, compress=True, silent=not debug, save=save)
 
         if debug:
             print(type(to_be_searched))
@@ -848,28 +848,28 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
     if len(white_space) is 1:
         if version == 1:
             print("Using DFS method")
-            private_check_deeper(region, props, n, epsilon, coverage, silent, solver=solver, delta=delta)
+            private_check_deeper(region, constraints, n, epsilon, coverage, silent, solver=solver, delta=delta)
         elif version == 2:
             print("Using BFS method")
             globals()["que"] = Queue()
-            private_check_deeper_queue(region, props, n, epsilon, coverage, silent, solver=solver, delta=delta)
+            private_check_deeper_queue(region, constraints, n, epsilon, coverage, silent, solver=solver, delta=delta)
         elif version == 3:
             print("Using BFS method with passing examples")
             globals()["que"] = Queue()
-            private_check_deeper_queue_checking(region, props, n, epsilon, coverage, silent, model=None, solver=solver, delta=delta)
+            private_check_deeper_queue_checking(region, constraints, n, epsilon, coverage, silent, model=None, solver=solver, delta=delta)
         elif version == 4:
             print("Using BFS method with passing examples and counterexamples")
             globals()["que"] = Queue()
-            private_check_deeper_queue_checking_both(region, props, n, epsilon, coverage, silent, model=None, solver=solver, delta=delta)
+            private_check_deeper_queue_checking_both(region, constraints, n, epsilon, coverage, silent, model=None, solver=solver, delta=delta)
         elif version == 5:
             print("Using interval arithmetic")
             globals()["que"] = Queue()
 
-            egg = props_to_ineq(props, debug=False)
+            egg = constraints_to_ineq(constraints, debug=False)
             if not egg:
                 return space
             if not silent:
-                print("props", props)
+                print("constraints", constraints)
                 print("converted_intervals", egg)
 
             private_check_deeper_interval(region, egg[0], egg[1], n, epsilon, coverage, silent)
@@ -886,7 +886,7 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
             ## THE PROBLEM IS THAT COVERAGE IS COMPUTED FOR THE WHOLE SPACE NOT ONLY FOR THE GIVEN REGION
             rectangle_size = get_rectangle_volume(rectangle)
 
-            # print("rectangle", rectangle, " props", props, "silent", silent)
+            # print("rectangle", rectangle, " constraints", constraints, "silent", silent)
             # print("current coverage", space.get_coverage())
             # print("whole area", space.get_volume())
             # print("rectangle_size", rectangle_size)
@@ -897,24 +897,24 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
 
             if debug:
                 print("region", rectangle)
-                print("props", props)
+                print("constraints", constraints)
 
             if version == 1:
                 print(f"Using DFS method to solve spliced rectangle number {white_space.index(rectangle)+1}")
-                private_check_deeper(rectangle, props, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, solver=solver, delta=delta)
+                private_check_deeper(rectangle, constraints, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, solver=solver, delta=delta)
             elif version == 2:
                 print(f"Using BFS method to solve spliced rectangle number {white_space.index(rectangle)+1}")
-                private_check_deeper_queue(rectangle, props, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, solver=solver, delta=delta)
+                private_check_deeper_queue(rectangle, constraints, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, solver=solver, delta=delta)
             elif version == 3:
                 print(f"Using BFS method with passing examples to solve spliced rectangle number {white_space.index(rectangle)+1}")
-                private_check_deeper_queue_checking(rectangle, props, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, model=None, solver=solver, delta=delta)
+                private_check_deeper_queue_checking(rectangle, constraints, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, model=None, solver=solver, delta=delta)
             elif version == 4:
                 print(f"Using BFS method with passing examples and counterexamples to solve spliced rectangle number {white_space.index(rectangle)+1}")
-                private_check_deeper_queue_checking_both(rectangle, props, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, model=None, solver=solver, delta=delta)
+                private_check_deeper_queue_checking_both(rectangle, constraints, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, model=None, solver=solver, delta=delta)
             elif version == 5:
                 print(f"Using interval method to solve spliced rectangle number {white_space.index(rectangle)+1}")
 
-                egg = props_to_ineq(props, debug=False)
+                egg = constraints_to_ineq(constraints, debug=False)
                 if not egg:
                     return space
                 private_check_deeper_interval(rectangle, egg[0], egg[1], max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent)
@@ -943,7 +943,7 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
             #     # print("safe", space.get_green())
             #     print("unsafe", space.get_red())
             #     space.add_white(rectangle)
-            #     private_check_deeper_interval(rectangle, props, 0, epsilon, coverage, silent)
+            #     private_check_deeper_interval(rectangle, constraints, 0, epsilon, coverage, silent)
 
     ## VISUALISATION
     if not size_q:
@@ -960,13 +960,13 @@ def check_deeper(region, props, n, epsilon, coverage, silent, version, size_q=Fa
         return space
 
 
-def private_check_deeper(region, props, n, epsilon, coverage, silent, solver="z3", delta=0.01):
+def private_check_deeper(region, constraints, n, epsilon, coverage, silent, solver="z3", delta=0.01):
     """ Refining the parameter space into safe and unsafe regions
 
     Args
     ----------
     region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of properties
+    constraints:  (list of strings): array of properties
     n: (Int): max number of recursions to do
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
@@ -1003,11 +1003,11 @@ def private_check_deeper(region, props, n, epsilon, coverage, silent, solver="z3
 
     # HERE MAY ADDING THE MODEL
     print("region", region)
-    print("props", props)
+    print("constraints", constraints)
     print("space", space.nice_print())
-    if check_unsafe(region, props, silent, solver=solver, delta=delta) is True:
+    if check_unsafe(region, constraints, silent, solver=solver, delta=delta) is True:
         result = "unsafe"
-    elif check_safe(region, props, silent, solver=solver, delta=delta) is True:
+    elif check_safe(region, constraints, silent, solver=solver, delta=delta) is True:
         result = "safe"
     else:
         result = "unknown"
@@ -1043,27 +1043,27 @@ def private_check_deeper(region, props, n, epsilon, coverage, silent, solver="z3
             space.add_white(foo2)  # add this region as white
             # print("white area",globals()["hyper_rectangles_white"])
             if silent:
-                private_check_deeper(foo, props, n - 1, epsilon, coverage, silent, solver=solver, delta=delta)
+                private_check_deeper(foo, constraints, n - 1, epsilon, coverage, silent, solver=solver, delta=delta)
                 if space.get_coverage() > coverage:
                     return f"coverage {space.get_coverage()} is above the threshold"
-                private_check_deeper(foo2, props, n - 1, epsilon, coverage, silent, solver=solver, delta=delta)
+                private_check_deeper(foo2, constraints, n - 1, epsilon, coverage, silent, solver=solver, delta=delta)
             else:
                 print(n, foo, space.get_coverage(),
-                      private_check_deeper(foo, props, n - 1, epsilon, coverage, silent, solver=solver, delta=delta))
+                      private_check_deeper(foo, constraints, n - 1, epsilon, coverage, silent, solver=solver, delta=delta))
                 if space.get_coverage() > coverage:
                     return f"coverage {space.get_coverage()} is above the threshold"
                 print(n, foo2, space.get_coverage(),
-                      private_check_deeper(foo2, props, n - 1, epsilon, coverage, silent, solver=solver, delta=delta))
+                      private_check_deeper(foo2, constraints, n - 1, epsilon, coverage, silent, solver=solver, delta=delta))
     return result
 
 
-def private_check_deeper_queue(region, props, n, epsilon, coverage, silent, solver="z3", delta=0.01):
+def private_check_deeper_queue(region, constraints, n, epsilon, coverage, silent, solver="z3", delta=0.01):
     """ Refining the parameter space into safe and unsafe regions
 
     Args
     ----------
     region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of properties
+    constraints:  (list of strings): array of properties
     n: (Int): max number of recursions to do
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
@@ -1102,9 +1102,9 @@ def private_check_deeper_queue(region, props, n, epsilon, coverage, silent, solv
     ## HERE I CAN APPEND THE VALUE OF EXAMPLE AND COUNTEREXAMPLE
     # print("hello check =",check_unsafe(region,prop,silent, solver=solver, delta=delta))
     # print("hello check safe =",check_safe(region,prop,n_samples,silent, solver=solver, delta=delta))
-    if check_unsafe(region, props, silent, solver=solver, delta=delta) is True:
+    if check_unsafe(region, constraints, silent, solver=solver, delta=delta) is True:
         result = "unsafe"
-    elif check_safe(region, props, silent, solver=solver, delta=delta) is True:
+    elif check_safe(region, constraints, silent, solver=solver, delta=delta) is True:
         result = "safe"
     else:
         result = "unknown"
@@ -1153,8 +1153,8 @@ def private_check_deeper_queue(region, props, n, epsilon, coverage, silent, solv
     ## Add calls to the Queue
     # print("adding",[copy.deepcopy(foo),prop,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo),prop,n-1,epsilon,coverage,silent]))
     # print("adding",[copy.deepcopy(foo2),prop,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo2),prop,n-1,epsilon,coverage,silent]))
-    globals()["que"].enqueue([copy.deepcopy(foo), props, n - 1, epsilon, coverage, silent, solver, delta])
-    globals()["que"].enqueue([copy.deepcopy(foo2), props, n - 1, epsilon, coverage, silent, solver, delta])
+    globals()["que"].enqueue([copy.deepcopy(foo), constraints, n - 1, epsilon, coverage, silent, solver, delta])
+    globals()["que"].enqueue([copy.deepcopy(foo2), constraints, n - 1, epsilon, coverage, silent, solver, delta])
 
     ## Execute the Queue
     # print(globals()["que"].printQueue())
@@ -1162,7 +1162,7 @@ def private_check_deeper_queue(region, props, n, epsilon, coverage, silent, solv
         private_check_deeper_queue(*que.dequeue())
 
 
-def private_check_deeper_queue_checking(region, props, n, epsilon, coverage, silent, model=None, solver="z3", delta=0.01):
+def private_check_deeper_queue_checking(region, constraints, n, epsilon, coverage, silent, model=None, solver="z3", delta=0.01):
     """ THIS IS OBSOLETE METHOD, HERE JUST TO BE COMPARED WITH THE NEW ONE
 
     Refining the parameter space into safe and unsafe regions
@@ -1170,7 +1170,7 @@ def private_check_deeper_queue_checking(region, props, n, epsilon, coverage, sil
     Args
     ----------
     region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of properties
+    constraints:  (list of strings): array of properties
     n: (Int): max number of recursions to do
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
@@ -1208,10 +1208,10 @@ def private_check_deeper_queue_checking(region, props, n, epsilon, coverage, sil
         return "coverage ", space.get_coverage(), " is above the threshold"
 
     if model is None:
-        example = check_unsafe(region, props, silent, solver=solver, delta=delta)
+        example = check_unsafe(region, constraints, silent, solver=solver, delta=delta)
         # counterexample = check_safe(region,prop,silent, solver=solver, delta=delta)
     elif model[0] is None:
-        example = check_unsafe(region, props, silent, solver=solver, delta=delta)
+        example = check_unsafe(region, constraints, silent, solver=solver, delta=delta)
     else:
         if not silent:
             print("skipping check_unsafe at", region, "since example", model[0])
@@ -1223,7 +1223,7 @@ def private_check_deeper_queue_checking(region, props, n, epsilon, coverage, sil
         if not silent:
             print(n, region, colored(f"{space.get_coverage()} unsafe", "red"))
         return
-    elif check_safe(region, props, silent, solver=solver, delta=delta) is True:
+    elif check_safe(region, constraints, silent, solver=solver, delta=delta) is True:
         space.remove_white(region)
         if not silent:
             print(n, region, colored(f"{space.get_coverage()} safe", "red"))
@@ -1274,9 +1274,9 @@ def private_check_deeper_queue_checking(region, props, n, epsilon, coverage, sil
 
     ## Add calls to the Queue
     globals()["que"].enqueue(
-        [copy.deepcopy(foo), props, n - 1, epsilon, coverage, silent, model_low, solver, delta])
+        [copy.deepcopy(foo), constraints, n - 1, epsilon, coverage, silent, model_low, solver, delta])
     globals()["que"].enqueue(
-        [copy.deepcopy(foo2), props, n - 1, epsilon, coverage, silent, model_high, solver, delta])
+        [copy.deepcopy(foo2), constraints, n - 1, epsilon, coverage, silent, model_high, solver, delta])
 
     ## Execute the Queue
     # print(globals()["que"].printQueue())
@@ -1284,13 +1284,13 @@ def private_check_deeper_queue_checking(region, props, n, epsilon, coverage, sil
         private_check_deeper_queue_checking(*que.dequeue())
 
 
-def private_check_deeper_queue_checking_both(region, props, n, epsilon, coverage, silent, model=None, solver="z3", delta=0.01):
+def private_check_deeper_queue_checking_both(region, constraints, n, epsilon, coverage, silent, model=None, solver="z3", delta=0.01):
     """ Refining the parameter space into safe and unsafe regions
 
     Args
     ----------
     region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of properties
+    constraints:  (list of strings): array of properties
     n: (Int): max number of recursions to do
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
@@ -1331,17 +1331,17 @@ def private_check_deeper_queue_checking_both(region, props, n, epsilon, coverage
 
     ## Resolving if the region safe/unsafe/unknown
     if model is None:
-        example = check_unsafe(region, props, silent, solver=solver, delta=delta)
-        counterexample = check_safe(region, props, silent, solver=solver, delta=delta)
+        example = check_unsafe(region, constraints, silent, solver=solver, delta=delta)
+        counterexample = check_safe(region, constraints, silent, solver=solver, delta=delta)
     elif model[0] is None:
-        example = check_unsafe(region, props, silent, solver=solver, delta=delta)
+        example = check_unsafe(region, constraints, silent, solver=solver, delta=delta)
     else:
         if not silent:
             print("skipping check_unsafe at", region, "since example", model[0])
         example = model[0]
     if model is not None:
         if model[1] is None:
-            counterexample = check_safe(region, props, silent, solver=solver, delta=delta)
+            counterexample = check_safe(region, constraints, silent, solver=solver, delta=delta)
         else:
             if not silent:
                 print("skipping check_safe at", region, "since counterexample", model[1])
@@ -1420,8 +1420,8 @@ def private_check_deeper_queue_checking_both(region, props, n, epsilon, coverage
         globals()["que"] = Queue()
 
     ## Add calls to the Queue
-    globals()["que"].enqueue([copy.deepcopy(foo), props, n - 1, epsilon, coverage, silent, model_low, solver, delta])
-    globals()["que"].enqueue([copy.deepcopy(foo2), props, n - 1, epsilon, coverage, silent, model_high, solver, delta])
+    globals()["que"].enqueue([copy.deepcopy(foo), constraints, n - 1, epsilon, coverage, silent, model_low, solver, delta])
+    globals()["que"].enqueue([copy.deepcopy(foo2), constraints, n - 1, epsilon, coverage, silent, model_high, solver, delta])
 
     ## Execute the Queue
     # print(globals()["que"].printQueue())
@@ -1486,13 +1486,13 @@ def color_margins(greater, smaller):
     # pic.add_collection(pc)
 
 
-def check_deeper_iter(region, props, n, epsilon, coverage, silent, solver="z3", delta=0.01):
+def check_deeper_iter(region, constraints, n, epsilon, coverage, silent, solver="z3", delta=0.01):
     """ New Refining the parameter space into safe and unsafe regions with iterative method using alg1
 
     Args
     ----------
     region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of properties
+    constraints:  (list of strings): array of properties
     n: (Int): max number of recursions to do
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
@@ -1502,12 +1502,12 @@ def check_deeper_iter(region, props, n, epsilon, coverage, silent, solver="z3", 
     """
     new_tresh = copy.deepcopy(region)
 
-    ## Implement ordering of the props with intervals
-    for i in range(len(props) - 1):
+    ## Implement ordering of the constraints with intervals
+    for i in range(len(constraints) - 1):
         if not silent:
             # print("white: ",globals()["hyper_rectangles_white"])
-            print("check_deeper(", new_tresh, [props[i]], ")")
-        check_deeper(new_tresh, [props[i]], n, epsilon, coverage, True, 1)
+            print("check_deeper(", new_tresh, [constraints[i]], ")")
+        check_deeper(new_tresh, [constraints[i]], n, epsilon, coverage, True, 1)
 
         new_tresh = []
         for interval_index in range(len(region)):
@@ -1531,10 +1531,10 @@ def check_deeper_iter(region, props, n, epsilon, coverage, silent, solver="z3", 
             print("Computed hull of nonred region is:", new_tresh)
         # globals()["hyper_rectangles_white"]=[new_tresh]
     globals()["default_region"] = None
-    check_deeper(new_tresh, props, n, epsilon, coverage, True, 1, solver=solver, delta=delta)
+    check_deeper(new_tresh, constraints, n, epsilon, coverage, True, 1, solver=solver, delta=delta)
 
 
-def check_interval_in(region, props, intervals, silent=False, called=False):
+def check_interval_in(region, constraints, intervals, silent=False, called=False):
     """ Check if the given region is unsafe or not.
 
     It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given
@@ -1543,12 +1543,12 @@ def check_interval_in(region, props, intervals, silent=False, called=False):
     Args
     ----------
     region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of properties
-    intervals: (list of pairs/ sympy.Intervals): array of interval to constrain props
+    constraints:  (list of strings): array of properties
+    intervals: (list of pairs/ sympy.Intervals): array of interval to constrain constraints
     silent: (Bool): if silent printed output is set to minimum
     called: (Bool): if called updates the global variables (use when calling it directly)
     """
-    # print(f"props: {props}")
+    # print(f"constraints: {constraints}")
     if not silent:
         print("checking interval in", region, "current time is", datetime.datetime.now())
 
@@ -1557,7 +1557,7 @@ def check_interval_in(region, props, intervals, silent=False, called=False):
             print("CALLED")
         globals()["parameters"] = set()
         parameters = globals()["parameters"]
-        for polynome in props:
+        for polynome in constraints:
             parameters.update(find_param(polynome))
         parameters = sorted(list(parameters))
         space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
@@ -1572,7 +1572,7 @@ def check_interval_in(region, props, intervals, silent=False, called=False):
 
     ## Check that all prop are in its interval
     i = 0
-    for prop in props:
+    for prop in constraints:
         # print(eval(prop))
         # print(intervals[i])
         # print(float(intervals[i].start), float(intervals[i].end))
@@ -1586,11 +1586,11 @@ def check_interval_in(region, props, intervals, silent=False, called=False):
 
         if not eval(prop) in interval:
             if not silent:
-                print(f"property {props.index(prop) + 1} ϵ {eval(prop)}, which is not in the interval {interval}")
+                print(f"property {constraints.index(prop) + 1} ϵ {eval(prop)}, which is not in the interval {interval}")
             return False
         else:
             if not silent:
-                print(f"property {props.index(prop)+1} ϵ {eval(prop)} -- safe")
+                print(f"property {constraints.index(prop)+1} ϵ {eval(prop)} -- safe")
 
         i = i + 1
 
@@ -1598,7 +1598,7 @@ def check_interval_in(region, props, intervals, silent=False, called=False):
     return True
 
 
-def check_interval_out(region, props, intervals, silent=False, called=False):
+def check_interval_out(region, constraints, intervals, silent=False, called=False):
     """ Check if the given region is unsafe or not.
 
     It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given
@@ -1607,8 +1607,8 @@ def check_interval_out(region, props, intervals, silent=False, called=False):
     Args
     ----------
     region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): of functions
-    intervals: (list of pairs/ sympy.Intervals): array of interval to constrain props
+    constraints:  (list of strings): of functions
+    intervals: (list of pairs/ sympy.Intervals): array of interval to constrain constraints
     silent: (Bool): if silent printed output is set to minimum
     called: (Bool): if called updates the global variables (use when calling it directly)
     """
@@ -1621,7 +1621,7 @@ def check_interval_out(region, props, intervals, silent=False, called=False):
             print("CALLED")
         globals()["parameters"] = set()
         parameters = globals()["parameters"]
-        for polynome in props:
+        for polynome in constraints:
             parameters.update(find_param(polynome))
         parameters = sorted(list(parameters))
         space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
@@ -1641,7 +1641,7 @@ def check_interval_out(region, props, intervals, silent=False, called=False):
 
     ## Check that all prop are in its interval
     i = 0
-    for prop in props:
+    for prop in constraints:
         # print(eval(prop))
         # print(intervals[i])
         # print((intervals[i].start, intervals[i].end))
@@ -1661,24 +1661,24 @@ def check_interval_out(region, props, intervals, silent=False, called=False):
         ## If there exists an intersection (neither of these interval is greater in all points)
         if not (prop_eval > interval or prop_eval < interval):
             if not silent:
-                print(f"property {props.index(prop) + 1} ϵ {eval(prop)}, which is not outside of interval {interval}")
+                print(f"property {constraints.index(prop) + 1} ϵ {eval(prop)}, which is not outside of interval {interval}")
         else:
             space.add_red(region)
             if not silent:
-                print(f"property {props.index(prop) + 1} ϵ {eval(prop)} -- unsafe")
+                print(f"property {constraints.index(prop) + 1} ϵ {eval(prop)} -- unsafe")
             return True
         i = i + 1
     return False
 
 
-def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage, silent):
+def private_check_deeper_interval(region, constraints, intervals, n, epsilon, coverage, silent):
     """ Refining the parameter space into safe and unsafe regions
 
     Args
     ----------
     region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
-    props:  (list of strings): array of properties
-    intervals: (list of pairs/ sympy.Intervals): array of interval to constrain props
+    constraints:  (list of strings): array of properties
+    intervals: (list of pairs/ sympy.Intervals): array of interval to constrain constraints
     n: (Int): max number of recursions to do
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
@@ -1720,9 +1720,9 @@ def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage
 
     ## Resolve the result
     # print("gonna check region: ", region)
-    if check_interval_out(region, props, intervals, silent=silent, called=False) is True:
+    if check_interval_out(region, constraints, intervals, silent=silent, called=False) is True:
         result = "unsafe"
-    elif check_interval_in(region, props, intervals, silent=silent, called=False) is True:
+    elif check_interval_in(region, constraints, intervals, silent=silent, called=False) is True:
         result = "safe"
     else:
         result = "unknown"
@@ -1766,8 +1766,8 @@ def private_check_deeper_interval(region, props, intervals, n, epsilon, coverage
     ## Add calls to the Queue
     # print("adding",[copy.deepcopy(foo),prop,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo),prop,n-1,epsilon,coverage,silent]))
     # print("adding",[copy.deepcopy(foo2),prop,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo2),prop,n-1,epsilon,coverage,silent]))
-    globals()["que"].enqueue([copy.deepcopy(foo), props, intervals, n - 1, epsilon, coverage, silent])
-    globals()["que"].enqueue([copy.deepcopy(foo2), props, intervals, n - 1, epsilon, coverage, silent])
+    globals()["que"].enqueue([copy.deepcopy(foo), constraints, intervals, n - 1, epsilon, coverage, silent])
+    globals()["que"].enqueue([copy.deepcopy(foo2), constraints, intervals, n - 1, epsilon, coverage, silent])
 
     ## Execute the queue
     # print(globals()["que"].printQueue())
@@ -1806,13 +1806,13 @@ def private_create_matrix(size_q, dim, n_param):
     return [private_create_matrix(size_q, dim - 1, n_param) for _ in range(size_q)]
 
 
-def sample(space, props, size_q, compress=False, silent=True, debug=False, save=False):
+def sample(space, constraints, size_q, compress=False, silent=True, debug=False, save=False):
     """ Samples the space in **size_q** samples in each dimension and saves if the point is in respective interval
 
     Args
     -------
     space: (space.RefinedSpace): space
-    props:  (list of strings): array of properties
+    constraints:  (list of strings): array of properties
     size_q: (int): number of samples in dimension
     compress: (Bool): if True, only a conjunction of the values (prop in the interval) is used
     silent: (Bool): if silent printed output is set to minimum
@@ -1877,15 +1877,15 @@ def sample(space, props, size_q, compress=False, silent=True, debug=False, save=
 
         satisfied_list = []
         ## For each property,interval
-        for index in range(len(props)):
-            # print(props[index])
-            # print("type(props[index])", type(props[index]))
+        for index in range(len(constraints)):
+            # print(constraints[index])
+            # print("type(constraints[index])", type(constraints[index]))
             # for param in range(len(space.params)):
             #     print(space.params[param], parameter_value[param])
             #     print("type(space.params[param])", type(space.params[param]))
             #     print("type(parameter_value[param])", type(parameter_value[param]))
 
-            spam = (eval(props[index]))
+            spam = (eval(constraints[index]))
             if isinstance(spam, z3.z3.BoolRef):
                 if z3.simplify(spam):
                     satisfied_list.append(True)
