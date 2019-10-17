@@ -153,6 +153,9 @@ class Gui(Tk):
         self.epsilon = ""  ## Rectangle size threshold
         self.alg = ""  ## Refinement alg. number
 
+        self.solver = ""  ## SMT solver - z3 or dreal
+        self.delta = 0.01  ## dreal setting
+
         self.factor = BooleanVar()  ## Flag for factorising rational functions
         self.size_q = ""  ## Number of samples
         self.save = ""  ## True if saving on
@@ -399,8 +402,7 @@ class Gui(Tk):
         Button(page5, text='Recalculate constraints', command=self.recalculate_constraints).grid(row=0, column=0, sticky=W, padx=4, pady=4)
 
         self.constraints_text = scrolledtext.ScrolledText(page5, height=100, state=DISABLED)
-        self.constraints_text.grid(row=1, column=0, columnspan=16, rowspan=2, sticky=W, padx=4,
-                             pady=4)  # pack(anchor=W, fill=X)
+        self.constraints_text.grid(row=1, column=0, columnspan=16, rowspan=2, sticky=W, padx=4, pady=4)
 
         Label(page5, text=f"Import/Export:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, padx=4, pady=4)
         Button(page5, text='Open constraints', command=self.load_constraints).grid(row=3, column=1, sticky=W, pady=4)
@@ -427,30 +429,60 @@ class Gui(Tk):
         self.size_q_entry.grid(row=1, column=1, columnspan=2)
         self.size_q_entry.insert(END, '5')
 
-        Button(frame_left, text='Sample space', command=self.sample_space).grid(row=7, column=0, sticky=W, padx=10, pady=4)
+        Button(frame_left, text='Grid sampling', command=self.sample_space).grid(row=7, column=0, sticky=W, padx=10, pady=4)
 
-        ttk.Separator(frame_left, orient=VERTICAL).grid(column=3, row=1, rowspan=8, sticky='ns', padx=10, pady=25)
+        ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=3, rowspan=8, sticky='ns', padx=0, pady=25)
+
+        label71 = Label(frame_left, text="Set N_obs: ", anchor=W, justify=LEFT)
+        label71.grid(row=1, column=4, pady=16, padx=10)
+        createToolTip(label71, text='number of samples to be used for sampling - subset of all samples')
+
+        self.N_obs_entry = Entry(frame_left)
+        self.N_obs_entry.grid(row=1, column=5, padx=10)
+        self.N_obs_entry.insert(END, '500')
+
+        label71 = Label(frame_left, text="Set MH_samples: ", anchor=W, justify=LEFT)
+        label71.grid(row=2, column=4, padx=10)
+        createToolTip(label71, text='number of iterations')
+
+        self.MH_samples_entry = Entry(frame_left)
+        self.MH_samples_entry.grid(row=2, column=5, padx=10)
+        self.MH_samples_entry.insert(END, '500')
+
+        label71 = Label(frame_left, text="Set eps: ", anchor=W, justify=LEFT)
+        label71.grid(row=3, column=4, padx=10)
+        createToolTip(label71, text='very small value used as probability of non-feasible values in prior')
+
+        self.eps_entry = Entry(frame_left)
+        self.eps_entry.grid(row=3, column=5, padx=10)
+        self.eps_entry.insert(END, '0')
+
+        # N: int, N_obs: int, MH_samples: int, eps
+
+        Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=7, column=4, sticky=W, padx=5, pady=4)
+
+        ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=7, rowspan=8, sticky='ns', padx=10, pady=25)
 
         label62 = Label(frame_left, text="Set max_dept: ", anchor=W, justify=LEFT)
-        label62.grid(row=1, column=4, padx=10)
+        label62.grid(row=1, column=8, padx=10)
         createToolTip(label62, text='Maximal number of splits')
         label63 = Label(frame_left, text="Set coverage: ", anchor=W, justify=LEFT)
-        label63.grid(row=2, column=4, padx=10)
+        label63.grid(row=2, column=8, padx=10)
         createToolTip(label63, text='Proportion of the nonwhite area to be reached')
         label64 = Label(frame_left, text="Set epsilon: ", anchor=W, justify=LEFT)
-        label64.grid(row=3, column=4, padx=10)
+        label64.grid(row=3, column=8, padx=10)
         createToolTip(label64,
                       text='Minimal size of the rectangle to be checked (if 0 all rectangles are being checked)')
         label65 = Label(frame_left, text="Set algorithm: ", anchor=W, justify=LEFT)
-        label65.grid(row=4, column=4, padx=10)
+        label65.grid(row=4, column=8, padx=10)
         createToolTip(label65, text='Choose from algorithms:\n 1-4 - using SMT solvers \n 1 - DFS search \n 2 - BFS search \n 3 - BFS search with example propagation \n 4 - BFS with example and counterexample propagation \n 5 - interval algorithmic')
 
         label66 = Label(frame_left, text="Set solver: ", anchor=W, justify=LEFT)
-        label66.grid(row=5, column=4, padx=10)
+        label66.grid(row=5, column=8, padx=10)
         createToolTip(label66, text='When using SMT solver (alg 1-4), two options are possible, z3 or dreal (with delta complete decision procedures)')
 
         label67 = Label(frame_left, text="Set delta: ", anchor=W, justify=LEFT)
-        label67.grid(row=6, column=4, padx=10)
+        label67.grid(row=6, column=8, padx=10)
         createToolTip(label67, text='When using dreal solver, delta is used to set solver error boundaries for satisfiability.')
 
         self.max_dept_entry = Entry(frame_left)
@@ -460,12 +492,12 @@ class Gui(Tk):
         self.solver = ttk.Combobox(frame_left, values=('z3', 'dreal'))
         self.delta_entry = Entry(frame_left)
 
-        self.max_dept_entry.grid(row=1, column=5)
-        self.coverage_entry.grid(row=2, column=5)
-        self.epsilon_entry.grid(row=3, column=5)
-        self.alg.grid(row=4, column=5)
-        self.solver.grid(row=5, column=5)
-        self.delta_entry.grid(row=6, column=5)
+        self.max_dept_entry.grid(row=1, column=9)
+        self.coverage_entry.grid(row=2, column=9)
+        self.epsilon_entry.grid(row=3, column=9)
+        self.alg.grid(row=4, column=9)
+        self.solver.grid(row=5, column=9)
+        self.delta_entry.grid(row=6, column=9)
 
         self.max_dept_entry.insert(END, '5')
         self.coverage_entry.insert(END, '0.95')
@@ -474,7 +506,7 @@ class Gui(Tk):
         self.solver.current(0)
         self.delta_entry.insert(END, '0.01')
 
-        Button(frame_left, text='Refine space', command=self.refine_space).grid(row=7, column=4, sticky=W, pady=4, padx=10)
+        Button(frame_left, text='Refine space', command=self.refine_space).grid(row=7, column=8, sticky=W, pady=4, padx=10)
 
         ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=8, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
 
@@ -503,6 +535,22 @@ class Gui(Tk):
         self.page6_toolbar.update()
         self.page6_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
         self.page6_a = self.page6_figure.add_subplot(111)
+
+        ##################################################### NEW PLOT ################################################
+        self.page6_plotframe2 = Frame(frame_right)
+        self.page6_plotframe2.pack(fill=BOTH, pady=10)
+        self.page6_figure2 = pyplt.figure()
+        self.page6_figure2.tight_layout()  ## By huypn
+
+        self.page6_canvas2 = FigureCanvasTkAgg(self.page6_figure2, master=self.page6_plotframe2)  # A tk.DrawingArea.
+        self.page6_canvas2.draw()
+        self.page6_canvas2.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+
+        self.page6_toolbar2 = NavigationToolbar2Tk(self.page6_canvas2, self.page6_plotframe2)
+        self.page6_toolbar2.update()
+        self.page6_canvas2.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+        self.page6_b = self.page6_figure2.add_subplot(111)
+        #################################################### /NEW PLOT ################################################
 
         Button(frame_left, text='Open space', command=self.load_space).grid(row=14, column=2, sticky=S, padx=4, pady=4)
         Button(frame_left, text='Save space', command=self.save_space).grid(row=14, column=3, sticky=S, padx=4, pady=4)
@@ -1729,6 +1777,37 @@ class Gui(Tk):
         self.space_changed = False
         self.constraints_changed = False
         self.status_set("Space sampling finished.")
+
+    def hastings(self):
+        """ Samples (Parameter) Space using Metropolis hastings"""
+        print("Space Metropolis-Hastings ...")
+        self.status_set("Space Metropolis-Hastings - checking inputs")
+        ## TODO transformation back to data and functions from constraints
+        if self.data == "":
+            messagebox.showwarning("Sample space", "Load data before Metropolis-Hastings.")
+            return
+
+        if self.data == "":
+            messagebox.showwarning("Sample space", "Load data before Metropolis-Hastings.")
+            return
+
+        ## Check space
+        if not self.validate_space("Sample Space"):
+            return
+
+        self.status_set("Space sampling using Metropolis Hastings is running ...")
+        if not self.silent.get():
+            print("space.params", self.space.params)
+            print("data", self.data)
+            print("functions", self.functions)
+
+        if self.space.get_true_point() is None:
+            self.edit_true_point()
+
+        from metropolis_hastings import initialise_sampling
+        self.page6_figure2, self.page6_b = initialise_sampling(self.space, self.data, self.functions, int(self.n_samples_entry.get()), int(self.N_obs_entry.get()), int(self.MH_samples_entry.get()), float(self.eps_entry.get()), where=[self.page6_figure2, self.page6_b])
+        self.page6_figure2.canvas.draw()
+        self.page6_figure2.canvas.flush_events()
 
     def refine_space(self):
         """ Refines (Parameter) Space. Plots the results. """

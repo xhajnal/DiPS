@@ -190,7 +190,7 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
     return res
 
 
-def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_obs: int, MH_samples: int, eps):
+def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_obs: int, MH_samples: int, eps, where=False):
     """ Initialisation method for Metropolis Hastings
     Args
     -----------------
@@ -201,6 +201,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
     N_obs: (number) number of samples
     MH_samples: (number) number of iterations
     eps: (number) very small value used as probability of non-feasible values in prior
+    where: (Tuple/List) : output matplotlib sources to output created figure
 
     @author: tpetrov
     @edit: xhajnal
@@ -243,13 +244,13 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
     print("observations", observations)
     N_obs = min(N, N_obs)
 
-    fig = plt.figure(figsize=(10, 10))
-    ax = fig.add_subplot(1, 1, 1)
-    ax.hist(observations, bins=range(len(functions)))
-    ax.set_xlabel("Value")
-    ax.set_ylabel("Frequency")
-    ax.set_title(f"Figure 1: Distribution of {N_obs} observations (from full sample= {N})")
-    plt.show()
+    # fig = plt.figure(figsize=(10, 10))
+    # ax = fig.add_subplot(1, 1, 1)
+    # ax.hist(observations, bins=range(len(functions)))
+    # ax.set_xlabel("Value")
+    # ax.set_ylabel("Frequency")
+    # ax.set_title(f"Figure 1: Distribution of {N_obs} observations (from full sample= {N})")
+    # plt.show()
 
     theta_new = transition_model_a(theta_true, parameter_intervals)     ## apparently just a print call
     r = prior(theta_true, eps)
@@ -272,39 +273,48 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
     # print("accepted[100:to_show, 1]", accepted[100:to_show, 1])
     # print("rejected", rejected)
 
-    fig = plt.figure(figsize=(10, 10))
-    ax = fig.add_subplot(2, 1, 1)
-    to_show = accepted.shape[0]
-    ax.plot(rejected[(0, 100)[len(rejected) > 200]:to_show, 1], 'rx', label='Rejected', alpha=0.5)
-    ax.plot(accepted[(0, 100)[len(accepted) > 200]:to_show, 1], 'b.', label='Accepted', alpha=0.5)
-    ax.set_xlabel("Step")
-    ax.set_ylabel("Value")
-    ax.set_title("Figure 2: MCMC sampling for N=" + str(N_obs) + " with Metropolis-Hastings. First " + str(
-        to_show) + " samples are shown.")
-    ax.grid()
-    ax.legend()
-    plt.show()
+    # fig = plt.figure(figsize=(10, 10))
+    # ax = fig.add_subplot(2, 1, 1)
+    # to_show = accepted.shape[0]
+    # ax.plot(rejected[(0, 100)[len(rejected) > 200]:to_show, 1], 'rx', label='Rejected', alpha=0.5)
+    # ax.plot(accepted[(0, 100)[len(accepted) > 200]:to_show, 1], 'b.', label='Accepted', alpha=0.5)
+    # ax.set_xlabel("Step")
+    # ax.set_ylabel("Value")
+    # ax.set_title("Figure 2: MCMC sampling for N=" + str(N_obs) + " with Metropolis-Hastings. First " + str(to_show) + " samples are shown.")
+    # ax.grid()
+    # ax.legend()
+    # plt.show()
 
     show = int(-0.75 * accepted.shape[0])
-    hist_show = int(-0.75 * accepted.shape[0])
-    fig = plt.figure(figsize=(20, 10))
-    ax = fig.add_subplot(1, 2, 1)
-    ax.plot(accepted[show:, 0])
-    ax.set_title(f"Figure 4: Trace for {space.get_params()[0]}")
-    ax.set_ylabel(f"${space.get_params()[0]}$")
-    ax = fig.add_subplot(1, 2, 2)
-    ax.hist(accepted[hist_show:, 0], bins=20, density=True)
-    ax.set_ylabel("Frequency")
-    ax.set_xlabel(f"${space.get_params()[0]}$")
-    ax.set_title(f"Fig.5: Histogram of ${space.get_params()[0]}$")
-    fig.tight_layout()
+    # hist_show = int(-0.75 * accepted.shape[0])
+    # fig = plt.figure(figsize=(20, 10))
+    # ax = fig.add_subplot(1, 2, 1)
+    # ax.plot(accepted[show:, 0])
+    # ax.set_title(f"Figure 4: Trace for {space.get_params()[0]}")
+    # ax.set_ylabel(f"${space.get_params()[0]}$")
+    # ax = fig.add_subplot(1, 2, 2)
+    # ax.hist(accepted[hist_show:, 0], bins=20, density=True)
+    # ax.set_ylabel("Frequency")
+    # ax.set_xlabel(f"${space.get_params()[0]}$")
+    # ax.set_title(f"Fig.5: Histogram of ${space.get_params()[0]}$")
+    # fig.tight_layout()
 
     # to elaborate the heat map
-    plt.figure(figsize=(12, 6))
-    plt.hist2d(accepted[show:, 0], accepted[show:, 1], bins=20)
-    plt.colorbar()
-    plt.xlabel(space.get_params()[0])
-    plt.ylabel(space.get_params()[1])
-    plt.title(
-        f'{space.get_params()[0]},{space.get_params()[1]} estimate with MH algorithm, {MH_samples} iterations, sample size = {N_obs}')
-    plt.show()
+    if where:
+        where[0] = plt.figure(figsize=(12, 6))
+        where[1] = where[0].add_subplot(1, 2, 1)
+        where[1].hist2d(accepted[show:, 0], accepted[show:, 1], bins=20)
+        plt.colorbar()
+        where[1].xlabel(space.get_params()[0])
+        where[1].ylabel(space.get_params()[1])
+        where[1].title(f'{space.get_params()[0]},{space.get_params()[1]} estimate with MH algorithm, {MH_samples} iterations, sample size = {N_obs}')
+        return where[0], where[1]
+    else:
+        plt.figure(figsize=(12, 6))
+        plt.hist2d(accepted[show:, 0], accepted[show:, 1], bins=20)
+        plt.colorbar()
+        plt.xlabel(space.get_params()[0])
+        plt.ylabel(space.get_params()[1])
+        plt.title(
+            f'{space.get_params()[0]},{space.get_params()[1]} estimate with MH algorithm, {MH_samples} iterations, sample size = {N_obs}')
+        plt.show()
