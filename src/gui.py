@@ -140,7 +140,7 @@ class Gui(Tk):
         self.show_true_point = None
 
         ## Settings
-        self.version = "1.6.0"  ## Version of the gui
+        self.version = "1.6.1"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = False  ## Sets the command line output to maximum
 
@@ -341,6 +341,7 @@ class Gui(Tk):
         # page4.rowconfigure(7, weight=1)
 
         Button(page4, text='Open data file', command=self.load_data).grid(row=0, column=0, sticky=W, padx=4, pady=4)
+        Button(page4, text='Save data', command=self.save_data).grid(row=0, column=1, sticky=W, padx=4)
 
         label10 = Label(page4, text=f"Data:", anchor=W, justify=LEFT)
         label10.grid(row=1, column=0, sticky=W, padx=4, pady=4)
@@ -350,7 +351,7 @@ class Gui(Tk):
         ## self.data_text.bind("<FocusOut>", self.parse_data)
         # self.data_text = Text(page4, height=12, state=DISABLED)  # , height=10, width=30
         # self.data_text.config(state="disabled")
-        self.data_text.grid(row=2, column=0, columnspan=2, sticky=W, padx=4, pady=4)
+        self.data_text.grid(row=2, column=0, columnspan=16, sticky=W, padx=4, pady=4)
 
         ## SET THE INTERVAL COMPUTATION SETTINGS
         label42 = Label(page4, text="Set alpha, the confidence:", anchor=W, justify=LEFT)
@@ -375,21 +376,21 @@ class Gui(Tk):
 
         self.intervals_text = Text(page4, height=12, state=DISABLED)  # height=10, width=30
         # self.interval_text.config(state="disabled")
-        self.intervals_text.grid(row=7, column=0, columnspan=2, sticky=W, padx=4, pady=4)
+        self.intervals_text.grid(row=7, column=0, columnspan=16, sticky=W, padx=4, pady=4)
 
-        ttk.Separator(page4, orient=VERTICAL).grid(row=0, column=11, rowspan=10, sticky='ns', padx=50, pady=10)
-        Label(page4, text=f"Data informed property section.", anchor=W, justify=LEFT).grid(row=0, column=12, sticky=W, padx=5, pady=4)
-        Label(page4, text=f"Loaded property file:", anchor=W, justify=LEFT).grid(row=1, column=12, sticky=W, padx=5, pady=4)
+        ttk.Separator(page4, orient=VERTICAL).grid(row=0, column=17, rowspan=10, sticky='ns', padx=50, pady=10)
+        Label(page4, text=f"Data informed property section.", anchor=W, justify=LEFT).grid(row=0, column=18, sticky=W, padx=5, pady=4)
+        Label(page4, text=f"Loaded property file:", anchor=W, justify=LEFT).grid(row=1, column=18, sticky=W, padx=5, pady=4)
 
         self.property_text2 = scrolledtext.ScrolledText(page4, height=4, state=DISABLED)
         # self.property_text2.config(state="disabled")
-        self.property_text2.grid(row=2, column=12, columnspan=16, rowspan=2, sticky=W + E + N + S, padx=5, pady=4)
-        Button(page4, text='Generate data informed properties', command=self.generate_data_informed_properties).grid(row=5, column=12, sticky=W, padx=5, pady=4)
+        self.property_text2.grid(row=2, column=18, columnspan=16, rowspan=2, sticky=W + E + N + S, padx=5, pady=4)
+        Button(page4, text='Generate data informed properties', command=self.generate_data_informed_properties).grid(row=5, column=18, sticky=W, padx=5, pady=4)
 
         self.data_informed_property_text = scrolledtext.ScrolledText(page4, height=4, state=DISABLED)
-        self.data_informed_property_text.grid(row=6, column=12, columnspan=16, rowspan=2, sticky=W + E + N + S, padx=5, pady=4)
+        self.data_informed_property_text.grid(row=6, column=18, columnspan=16, rowspan=2, sticky=W + E + N + S, padx=5, pady=4)
 
-        Button(page4, text='Save data informed properties', command=self.save_data_informed_properties).grid(row=9, column=12, sticky=W, padx=5, pady=4)
+        Button(page4, text='Save data informed properties', command=self.save_data_informed_properties).grid(row=9, column=18, sticky=W, padx=5, pady=4)
 
 
         ## TAB constraints
@@ -421,47 +422,47 @@ class Gui(Tk):
 
         ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=1, column=0, columnspan=15, sticky='nwe', padx=10, pady=8)
 
-        label61 = Label(frame_left, text="Set size_q: ", anchor=W, justify=LEFT)
+        label61 = Label(frame_left, text="Set size_q: ", anchor=W, justify=LEFT, padx=10)
         label61.grid(row=1, pady=16)
         createToolTip(label61, text='number of samples per dimension')
 
         self.size_q_entry = Entry(frame_left)
-        self.size_q_entry.grid(row=1, column=1, columnspan=2)
+        self.size_q_entry.grid(row=1, column=1)
         self.size_q_entry.insert(END, '5')
 
-        Button(frame_left, text='Grid sampling', command=self.sample_space).grid(row=7, column=0, sticky=W, padx=10, pady=4)
+        Button(frame_left, text='Grid sampling', command=self.sample_space).grid(row=7, column=0, columnspan=2, sticky=W, padx=10, pady=4)
 
-        ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=3, rowspan=8, sticky='ns', padx=0, pady=25)
+        ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=2, rowspan=8, sticky='ns', padx=0, pady=25)
 
         label71 = Label(frame_left, text="Set N_obs: ", anchor=W, justify=LEFT)
-        label71.grid(row=1, column=4, pady=16, padx=10)
+        label71.grid(row=1, column=3)
         createToolTip(label71, text='number of samples to be used for sampling - subset of all samples')
 
         self.N_obs_entry = Entry(frame_left)
-        self.N_obs_entry.grid(row=1, column=5, padx=10)
+        self.N_obs_entry.grid(row=1, column=4)
         self.N_obs_entry.insert(END, '500')
 
         label71 = Label(frame_left, text="Set MH_samples: ", anchor=W, justify=LEFT)
-        label71.grid(row=2, column=4, padx=10)
+        label71.grid(row=2, column=3)
         createToolTip(label71, text='number of iterations')
 
         self.MH_samples_entry = Entry(frame_left)
-        self.MH_samples_entry.grid(row=2, column=5, padx=10)
+        self.MH_samples_entry.grid(row=2, column=4)
         self.MH_samples_entry.insert(END, '500')
 
         label71 = Label(frame_left, text="Set eps: ", anchor=W, justify=LEFT)
-        label71.grid(row=3, column=4, padx=10)
+        label71.grid(row=3, column=3)
         createToolTip(label71, text='very small value used as probability of non-feasible values in prior')
 
         self.eps_entry = Entry(frame_left)
-        self.eps_entry.grid(row=3, column=5, padx=10)
+        self.eps_entry.grid(row=3, column=4)
         self.eps_entry.insert(END, '0')
 
         # N: int, N_obs: int, MH_samples: int, eps
 
-        Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=7, column=4, sticky=W, padx=5, pady=4)
+        Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=7, column=3, columnspan=2, sticky=W, pady=4)
 
-        ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=7, rowspan=8, sticky='ns', padx=10, pady=25)
+        ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=5, rowspan=8, sticky='ns', padx=10, pady=25)
 
         label62 = Label(frame_left, text="Set max_dept: ", anchor=W, justify=LEFT)
         label62.grid(row=1, column=8, padx=10)
@@ -506,15 +507,15 @@ class Gui(Tk):
         self.solver.current(0)
         self.delta_entry.insert(END, '0.01')
 
-        Button(frame_left, text='Refine space', command=self.refine_space).grid(row=7, column=8, sticky=W, pady=4, padx=10)
+        Button(frame_left, text='Refine space', command=self.refine_space).grid(row=7, column=8, columnspan=2, sticky=W, pady=4, padx=10)
 
         ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=8, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
 
-        frame_left.rowconfigure(13, weight=1)
-        frame_left.columnconfigure(16, weight=1)
+        self.space_text = scrolledtext.ScrolledText(frame_left, height=200, width=100, state=DISABLED)
+        self.space_text.grid(row=12, column=0, columnspan=15, rowspan=2, sticky=W, padx=10)  # pack(anchor=W, fill=X)
 
-        self.space_text = scrolledtext.ScrolledText(frame_left, height=100, state=DISABLED)
-        self.space_text.grid(row=12, column=0, columnspan=16, rowspan=2, sticky=W, pady=4)  # pack(anchor=W, fill=X)
+        frame_left.rowconfigure(13, weight=1)
+        frame_left.columnconfigure(15, weight=1)
 
         frame_right = Frame(page6, width=200, height=200)
         frame_right.pack(side=TOP)
