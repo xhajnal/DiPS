@@ -58,16 +58,16 @@ def get_param_values(parameters, size_q, intervals=False, debug=False):
     return parameter_values
 
 
-def eval_and_show(fun_list, parameter_value, cumulative=False, debug=False, give_back=False, where=False):
+def eval_and_show(fun_list, parameter_value, data=False, cumulative=False, debug=False, where=False):
     """ Creates bar plot of evaluation of given functions for given point in parameter space
 
     Args
     ----------
     fun_list: (list of strings) list of rational functions
     parameter_value: (list of floats) array of param values
+    data: (list) Data comparison next to respective function
     cumulative: (Bool) if True cdf instead of pdf is visualised
     debug: (Bool) if debug extensive output is provided
-    give_back: (Bool) if True the plot is not shown but returned
     where: (Tuple/List) : output matplotlib sources to output created figure
     """
     parameters = set()
@@ -103,6 +103,12 @@ def eval_and_show(fun_list, parameter_value, cumulative=False, debug=False, give
             a.append(eval(polynome))
             title = f"{title} {eval(polynome)} ,"
     title = title[:-2]
+    if data:
+        if cumulative:
+            for index in range(1, len(data)):
+                data[index] = data[index] + data[index - 1]
+        title = f"{title}\n Comparing with the data: \n{data}"
+
     if where:
         fig = where[0]
         ax = where[1]
@@ -112,15 +118,21 @@ def eval_and_show(fun_list, parameter_value, cumulative=False, debug=False, give
         fig, ax = plt.subplots()
     width = 0.2
     ax.set_ylabel('Value')
-    ax.set_xlabel('Rational function indices')
+    if data:
+        ax.set_xlabel('Rational function indices (blue), Data point indices (red)')
+    else:
+        ax.set_xlabel('Rational function indices')
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     if debug:
         print(title)
     ax.set_title(wraper.fill(title))
     if debug:
         print("Len(fun_list): ", len(fun_list))
-    ax.bar(range(1, len(fun_list)+1), a, width, color='b')
-    if give_back:
+    ax.bar(range(1, len(fun_list) + 1), a, width, color='b')
+    if data:
+        ax.bar(list(map(lambda x: x + width, range(1, len(data) + 1))), data, width, color='r')
+
+    if where:
         return fig, ax
     plt.show()
     return a
