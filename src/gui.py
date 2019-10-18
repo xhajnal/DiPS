@@ -140,7 +140,7 @@ class Gui(Tk):
         self.show_true_point = None
 
         ## Settings
-        self.version = "1.5.0"  ## Version of the gui
+        self.version = "1.6.0"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = False  ## Sets the command line output to maximum
 
@@ -1150,6 +1150,12 @@ class Gui(Tk):
                 self.page6_figure.canvas.draw()
                 self.page6_figure.canvas.flush_events()
 
+                self.page6_figure2.clf()
+                self.page6_b = self.page6_figure2.add_subplot(111)
+                self.page6_figure2.tight_layout()  ## By huypn
+                self.page6_figure2.canvas.draw()
+                self.page6_figure2.canvas.flush_events()
+
     def edit_true_point(self):
         """ Sets the true point of the space """
         if self.space is "":
@@ -1784,15 +1790,20 @@ class Gui(Tk):
         self.status_set("Space Metropolis-Hastings - checking inputs")
         ## TODO transformation back to data and functions from constraints
         if self.data == "":
-            messagebox.showwarning("Sample space", "Load data before Metropolis-Hastings.")
+            messagebox.showwarning("Space Metropolis-Hastings", "Load data before Metropolis-Hastings.")
             return
 
         if self.data == "":
-            messagebox.showwarning("Sample space", "Load data before Metropolis-Hastings.")
+            messagebox.showwarning("Space Metropolis-Hastings", "Load data before Metropolis-Hastings.")
             return
 
         ## Check space
-        if not self.validate_space("Sample Space"):
+        if not self.validate_space("Space Metropolis-Hastings"):
+            return
+
+        if len(self.space.get_params()) > 2:
+            # TODO multi dim MH
+            messagebox.showwarning("Space Metropolis-Hastings", "Multidimensional MH not implemented yet")
             return
 
         self.status_set("Space sampling using Metropolis Hastings is running ...")
@@ -1805,7 +1816,12 @@ class Gui(Tk):
             self.edit_true_point()
 
         from metropolis_hastings import initialise_sampling
-        self.page6_figure2, self.page6_b = initialise_sampling(self.space, self.data, self.functions, int(self.n_samples_entry.get()), int(self.N_obs_entry.get()), int(self.MH_samples_entry.get()), float(self.eps_entry.get()), where=[self.page6_figure2, self.page6_b])
+        try:
+            self.cursor_toggle_busy(True)
+            initialise_sampling(self.space, self.data, self.functions, int(self.n_samples_entry.get()), int(self.N_obs_entry.get()), int(self.MH_samples_entry.get()), float(self.eps_entry.get()), where=[self.page6_figure2, self.page6_b])
+        finally:
+            self.cursor_toggle_busy(False)
+        self.page6_figure2.tight_layout()
         self.page6_figure2.canvas.draw()
         self.page6_figure2.canvas.flush_events()
 
@@ -1995,6 +2011,8 @@ class Gui(Tk):
         self.show_space(None, None, None, clear=True)
         self.space_file.set("")
         self.space = ""
+        self.parameters = ""
+        self.parameter_intervals = []
         self.status_set("Space deleted.")
 
     def validate_space(self, position=False):
