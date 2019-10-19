@@ -124,10 +124,11 @@ def eval_and_show(fun_list, parameter_value, data=False, cumulative=False, debug
         ax.set_xlabel('Rational function indices')
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     if debug:
-        print(title)
+        print("title: \n", title)
     ax.set_title(wraper.fill(title))
     if debug:
         print("Len(fun_list): ", len(fun_list))
+        print("values:", a)
     ax.bar(range(1, len(fun_list) + 1), a, width, color='b')
     if data:
         ax.bar(list(map(lambda x: x + width, range(1, len(data) + 1))), data, width, color='r')

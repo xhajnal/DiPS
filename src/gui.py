@@ -140,7 +140,7 @@ class Gui(Tk):
         self.show_true_point = None
 
         ## Settings
-        self.version = "1.7.0"  ## Version of the gui
+        self.version = "1.7.1"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = False  ## Sets the command line output to maximum
 
@@ -1592,6 +1592,7 @@ class Gui(Tk):
         #     pyplt.close()
         #     self.page3_figure = pyplt.figure()
         #     self.page3_a = self.page3_figure.add_subplot(111)
+        # print("self.parameter_values", self.parameter_values)
         spam, egg = eval_and_show(self.functions, self.parameter_values, data=self.data, debug=False,
                                   where=[self.page3_figure, self.page3_a])
 
@@ -1639,7 +1640,9 @@ class Gui(Tk):
             if self.page3_figure_in_use.get() is not "2":
                 return
 
-            spam, egg = eval_and_show(self.functions, parameter_point, data=self.data, where=[self.page3_figure, self.page3_a])
+            # print("parameter_point", parameter_point)
+            self.page3_a.cla()
+            spam, egg = eval_and_show(self.functions, parameter_point, data=self.data, debug=False, where=[self.page3_figure, self.page3_a])
 
             if spam is None:
                 messagebox.showinfo("Plots rational functions in a given point.", egg)
