@@ -162,6 +162,7 @@ class Gui(Tk):
 
         ## OTHER SETTINGS
         self.button_pressed = BooleanVar()  ## Inner variable to close created window
+        self.python_recursion_depth = 1000  ## Inner python setting
 
         ## GUI INIT
         self.title('Mpm')
@@ -1872,7 +1873,7 @@ class Gui(Tk):
             spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
                                 silent=self.silent.get(),
                                 version=int(self.alg.get()), size_q=False, debug=False, save=False,
-                                title="", where=[self.page6_figure, self.page6_a], solver=str(self.solver.get()), delta=self.delta)
+                                title="", where=[self.page6_figure, self.page6_a], solver=str(self.solver.get()), delta=self.delta, gui=True)
         finally:
             self.cursor_toggle_busy(False)
         ## If the visualisation of the space did not succeed
@@ -2125,6 +2126,9 @@ class Gui(Tk):
         sys.last_traceback = tb
         traceback.print_exception(exc, val, tb)
         messagebox.showerror("Error", message=str(val))
+        if "maximum recursion depth" in str(val):
+            self.python_recursion_depth = self.python_recursion_depth + 1000
+            sys.setrecursionlimit(self.python_recursion_depth)
 
     ## INNER FUNCTIONS
     def load_param_intervals_from_window(self):

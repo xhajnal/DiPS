@@ -211,7 +211,7 @@ class RefinedSpace:
         ## TEXT WRAPPER
         self.wrapper = DocumentWrapper(width=70)
 
-    def show(self, title="", green=True, red=True, sat_samples=False, unsat_samples=False, true_point=True, save=False, where=False):
+    def show(self, title="", green=True, red=True, sat_samples=False, unsat_samples=False, true_point=True, save=False, where=False, show_all=True):
         """
         Visualises the space
 
@@ -225,6 +225,7 @@ class RefinedSpace:
         true_point: (Bool) if True showing true point
         save: (Bool) if True, the output is saved
         where: (Tuple/List) : output matplotlib sources to output created figure
+        show_all: (Bool) if all, not only newly added rectangles are shown
         """
 
         # print("self.true_point", self.true_point)
@@ -268,9 +269,9 @@ class RefinedSpace:
             if pretitle:
                 pretitle = pretitle + "\n"
             if green:
-                pic.add_collection(self.show_green())
+                pic.add_collection(self.show_green(show_all=show_all))
             if red:
-                pic.add_collection(self.show_red())
+                pic.add_collection(self.show_red(show_all=show_all))
             if sat_samples:
                 pic.add_collection(self.show_samples(True))
             if unsat_samples:
@@ -302,7 +303,7 @@ class RefinedSpace:
                 del region
                 return fig, pic
             else:
-                plt.tight_layout()
+                # plt.tight_layout()
                 plt.show()
             del region
 
@@ -368,7 +369,7 @@ class RefinedSpace:
             if unsat_samples and (not self.gridsampled or self.sat_samples):
                 if self.unsat_samples:
                     fig, ax = plt.subplots()
-                    fig.tight_layout()
+                    # fig.tight_layout()
                     ## Creates values of the horizontal axis
                     x_axis = []
                     i = 0
@@ -575,38 +576,48 @@ class RefinedSpace:
         return True
 
     ## TODO generalise so that the code is not copied
-    def show_green(self):
-        """Adds green (hyper)rectangles to be visualised"""
+    def show_green(self, show_all=True):
+        """Adds green (hyper)rectangles to be visualised
+
+        Args
+        -------
+        show_all: (Bool) if all, not only newly added rectangles are shown
+        """
         rectangles_sat = []
         if len(self.region) > 2:
             print("Error while visualising", len(self.region), "dimensional space")
             return
         elif len(self.region) == 2:
-            for rectangle in self.rectangles_sat_to_show:
+            for rectangle in (self.rectangles_sat_to_show, self.rectangles_sat)[show_all]:
                 ## (Rectangle((low_x,low_y), width, height, fc= color)
                 rectangles_sat.append(Rectangle((rectangle[0][0], rectangle[1][0]), rectangle[0][1] - rectangle[0][0],
                                                 rectangle[1][1] - rectangle[1][0], fc='g'))
         elif len(self.region) == 1:
-            for rectangle in self.rectangles_sat_to_show:
+            for rectangle in (self.rectangles_sat_to_show, self.rectangles_sat)[show_all]:
                 ## (Rectangle((low_x,low_y), width, height, fc= color)
                 rectangles_sat.append(
                     Rectangle((rectangle[0][0], 0.33), rectangle[0][1] - rectangle[0][0], 0.33, fc='g'))
         self.rectangles_sat_to_show = []
         return PatchCollection(rectangles_sat, facecolor='g', alpha=0.5)
 
-    def show_red(self):
-        """Adds red (hyper)rectangles to be visualised"""
+    def show_red(self, show_all=True):
+        """Adds red (hyper)rectangles to be visualised
+
+        Args
+        -------
+        all: (Bool) if all, not only newly added rectangles are shown
+        """
         rectangles_unsat = []
         if len(self.region) > 2:
             print("Error while visualising", len(self.region), "dimensional space")
             return
         elif len(self.region) == 2:
-            for rectangle in self.rectangles_unsat_to_show:
+            for rectangle in (self.rectangles_unsat_to_show, self.rectangles_unsat)[show_all]:
                 ## (Rectangle((low_x,low_y), width, height, fc= color)
                 rectangles_unsat.append(Rectangle((rectangle[0][0], rectangle[1][0]), rectangle[0][1] - rectangle[0][0],
                                                   rectangle[1][1] - rectangle[1][0], fc='r'))
         elif len(self.region) == 1:
-            for rectangle in self.rectangles_unsat_to_show:
+            for rectangle in (self.rectangles_unsat_to_show, self.rectangles_unsat)[show_all]:
                 ## (Rectangle((low_x,low_y), width, height, fc= color)
                 rectangles_unsat.append(
                     Rectangle((rectangle[0][0], 0.33), rectangle[0][1] - rectangle[0][0], 0.33, fc='r'))
