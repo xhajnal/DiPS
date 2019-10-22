@@ -99,7 +99,7 @@ def general_create_data_informed_properties(prop_file, intervals, output_file=Fa
 
 def create_data_informed_properties(population, data, alpha, n_samples, multiparam, seq):
     """ Creates property file of reaching each BSCC of the model of *N* agents as prop_<N>.pctl file.
-    For more information see paper.
+    For more information see the HSB19 paper..
     
     Args
     ----------
