@@ -140,7 +140,7 @@ class Gui(Tk):
         self.show_true_point = None
 
         ## Settings
-        self.version = "1.7.1"  ## Version of the gui
+        self.version = "1.7.2"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = False  ## Sets the command line output to maximum
 
@@ -1079,7 +1079,7 @@ class Gui(Tk):
         """ Loads space from a pickled file. """
         print("Loading space ...")
 
-        if self.space_changed:
+        if self.space:
             if not askyesno("Loading space", "Previously obtained space will be lost. Do you want to proceed?"):
                 return
         ## Delete previous space
@@ -1192,7 +1192,7 @@ class Gui(Tk):
             load_true_point_button.wait_variable(self.button_pressed)
 
             self.print_space()
-            self.show_space(self.show_refinement, self.show_samples, True)
+            self.show_space(False, False, True)
 
     def parse_data_from_window(self):
         """ Parses data from the window. """
@@ -1221,7 +1221,7 @@ class Gui(Tk):
         save_model_file = filedialog.asksaveasfilename(initialdir=self.model_dir, title="Model saving - Select file",
                                                        filetypes=(("pm files", "*.pm"), ("all files", "*.*")))
         if save_model_file == "":
-            self.status_set("No file selected.")
+            self.status_set("No file selected to store the model.")
             return
 
         if "." not in save_model_file:
@@ -1246,7 +1246,7 @@ class Gui(Tk):
                                                           title="Property saving - Select file",
                                                           filetypes=(("pctl files", "*.pctl"), ("all files", "*.*")))
         if save_property_file == "":
-            self.status_set("No file selected.")
+            self.status_set("No file selected to store the property.")
             return
 
         if "." not in save_property_file:
@@ -1294,7 +1294,7 @@ class Gui(Tk):
                                                                         filetypes=(
                                                                         ("pctl files", "*.pctl"), ("all files", "*.*")))
         if save_data_informed_property_file == "":
-            self.status_set("No file selected.")
+            self.status_set("No file selected to store data informed property.")
             return
 
         if "." not in save_data_informed_property_file:
@@ -1321,13 +1321,11 @@ class Gui(Tk):
         if self.program is "prism":
             save_functions_file = filedialog.asksaveasfilename(initialdir=self.prism_results,
                                                                title="Rational functions saving - Select file",
-                                                               filetypes=(
-                                                               ("pickle files", "*.p"), ("all files", "*.*")))
+                                                               filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
         elif self.program is "storm":
             save_functions_file = filedialog.asksaveasfilename(initialdir=self.storm_results,
                                                                title="Rational functions saving - Select file",
-                                                               filetypes=(
-                                                               ("pickle files", "*.p"), ("all files", "*.*")))
+                                                               filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
         else:
             self.status_set("Error - Selected program not recognised.")
             save_functions_file = "Error - Selected program not recognised."
@@ -1335,7 +1333,7 @@ class Gui(Tk):
             print("Saving functions in file: ", save_functions_file)
 
         if save_functions_file == "":
-            self.status_set("No file selected.")
+            self.status_set("No file selected to store the rational functions.")
             return
 
         with open(save_functions_file, "w") as file:
@@ -1363,6 +1361,9 @@ class Gui(Tk):
         save_functions_file = filedialog.asksaveasfilename(initialdir=initial_dir,
                                                            title="Rational functions saving - Select file",
                                                            filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+        if save_functions_file == "":
+            self.status_set("No file selected to store the parsed rational functions.")
+            return
 
         if "." not in save_functions_file:
             save_functions_file = save_functions_file + ".p"
@@ -1383,6 +1384,10 @@ class Gui(Tk):
         self.status_set("Please select folder to store the data in.")
         save_data_file = filedialog.asksaveasfilename(initialdir=self.data_dir, title="Data saving - Select file",
                                                       filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+        if save_data_file == "":
+            self.status_set("No file selected to store the data.")
+            return
+
         if "." not in save_data_file:
             save_data_file = save_data_file + ".p"
 
@@ -1402,6 +1407,10 @@ class Gui(Tk):
         self.status_set("Please select folder to store the constraints in.")
         save_constraints_file = filedialog.asksaveasfilename(initialdir=self.data_dir, title="constraints saving - Select file",
                                                        filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+        if save_constraints_file == "":
+            self.status_set("No file selected to store the constraints.")
+            return
+
         if "." not in save_constraints_file:
             save_constraints_file = save_constraints_file + ".p"
 
@@ -1420,6 +1429,10 @@ class Gui(Tk):
         self.status_set("Please select folder to store the space in.")
         save_space_file = filedialog.asksaveasfilename(initialdir=self.data_dir, title="Space saving - Select file",
                                                        filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+        if save_space_file == "":
+            self.status_set("No file selected to store the space in.")
+            return
+
         if "." not in save_space_file:
             save_space_file = save_space_file + ".p"
 
@@ -1824,6 +1837,8 @@ class Gui(Tk):
         try:
             self.cursor_toggle_busy(True)
             initialise_sampling(self.space, self.data, self.functions, int(self.n_samples_entry.get()), int(self.N_obs_entry.get()), int(self.MH_samples_entry.get()), float(self.eps_entry.get()), where=[self.page6_figure2, self.page6_b])
+        except:
+            messagebox.showerror(f"{sys.exc_info()[1]}. \n Try to check whether the data, functions, and computed constraints are aligned.")
         finally:
             self.cursor_toggle_busy(False)
         self.page6_figure2.tight_layout()
@@ -2008,7 +2023,7 @@ class Gui(Tk):
 
     def refresh_space(self):
         """ Unloads space. """
-        if self.space_changed:
+        if self.space:
             if not askyesno("Sample & Refine", "Data of the space, its text representation, and the plot will be lost. Do you want to proceed?"):
                 return
         self.space_changed = False
@@ -2227,9 +2242,10 @@ class Gui(Tk):
         self.page3_toolbar.update()
         self.page3_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
 
-
-def quit_gui():
-    gui.quit()
+    def ask_quit(self):
+        """ x button handler """
+        if askyesno("Quit", "Do you want to quit the application?"):
+            self.quit()
 
 
 gui = Gui()
@@ -2239,5 +2255,5 @@ if "wind" in platform.system().lower():
 else:
     gui.attributes('-zoomed', True)
 
-gui.protocol('WM_DELETE_WINDOW', quit_gui)
+gui.protocol('WM_DELETE_WINDOW', gui.ask_quit)
 gui.mainloop()
