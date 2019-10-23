@@ -1192,7 +1192,8 @@ class Gui(Tk):
             load_true_point_button.wait_variable(self.button_pressed)
 
             self.print_space()
-            self.show_space(False, False, True)
+            self.page6_a.cla()
+            self.show_space(self.show_refinement, self.show_samples, True)
 
     def parse_data_from_window(self):
         """ Parses data from the window. """

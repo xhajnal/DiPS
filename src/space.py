@@ -284,7 +284,10 @@ class RefinedSpace:
                 else:
                     size_correction = min(1 / (len(self.sat_samples) + len(self.unsat_samples)) ** (1 / len(self.region)), 0.01)
                 circle = plt.Circle((self.true_point[0], self.true_point[1]), size_correction*1, color='b', fill=False)
-                plt.gcf().gca().add_artist(circle)
+                if where:
+                    where[1].add_artist(circle)
+                else:
+                    plt.gcf().gca().add_artist(circle)
 
             whole_title = "\n".join(self.wrapper.wrap(f"{pretitle}\n red = unsafe region, green = safe region, white = in between \n{self.title} \n {title}"))
             pic.set_title(whole_title)
