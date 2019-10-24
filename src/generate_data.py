@@ -3,6 +3,7 @@ import time
 import os
 import socket
 import configparser
+import numpy
 
 config = configparser.ConfigParser()
 print(os.getcwd())
@@ -122,6 +123,9 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
                 sim_length = 2 * N
 
             model = os.path.join(model_path, (model_type + str(N) + ".pm"))
+            # A bad way how to deal with model without N
+            if isinstance(N, str):
+                N = 0
             if not silent:
                 print("model: ", model)
 
@@ -191,16 +195,19 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
                     state = sum(list(map(lambda x: int(x), last_line.split(" ")[2:-1])))
 
                     ## If some error occurred
-                    if state > N or debug or "2" in last_line.split(" ")[2:-1]:
-                        print(last_line[:-1])
-                        print("state: ", state)
-                        print()
-                    else:  ## If no error remove the file
-                        os.remove(path_file)
-                    for n_sample in n_samples:
-                        if sample <= n_sample:
-                            experiments[model_type][N][n_sample][column_values].append(state)
+                    ## A bad way how to deal with files without N
+                    if N is not 0:
+                        if state > N or debug or "2" in last_line.split(" ")[2:-1]:
+                            print(last_line[:-1])
+                            print("state: ", state)
+                            print()
+                        else:  ## If no error remove the file
+                            os.remove(path_file)
+                        for n_sample in n_samples:
+                            if sample <= n_sample:
+                                experiments[model_type][N][n_sample][column_values].append(state)
                 for n_sample in n_samples:
+                    ## A bad way how to deal with files without N
                     for i in range(N + 1):
                         data[model_type][N][n_sample][column_values].append(len(list(
                             filter(lambda x: x == i, experiments[model_type][N][n_sample][column_values]))) / n_sample)
@@ -246,24 +253,3 @@ def generate_data(model_types, n_samples, populations, dimension_sample_size,
     """
     return generate_experiments_and_data(model_types, n_samples, populations, dimension_sample_size,
                                          sim_length=sim_length, modular_param_space=modular_param_space, silent=silent, debug=debug)[1]
-
-
-if __name__ == "__main__":
-    model_types = ["synchronous_parallel_"]
-    n_samples = [3, 2]
-    populations = [10]
-    dimension_sample_size = 5
-    Debug, Debug2 = generate_experiments_and_data(model_types, n_samples, populations, 4, None, True)
-    print(Debug)
-
-    p_values = [0.028502714675268215, 0.45223461506339047, 0.8732745414252937, 0.6855555397734584, 0.13075717833714784]
-    q_values = [0.5057623641293089, 0.29577906622244676, 0.8440550299528644, 0.8108008054929994, 0.03259111103419188]
-    import numpy
-    default_2dim_param_space = numpy.zeros((2, 5))
-    default_2dim_param_space[0] = p_values
-    default_2dim_param_space[1] = q_values
-
-    Debug, Debug2 = generate_experiments_and_data(["synchronous_parallel_"], [3, 2], [2], 4, default_2dim_param_space, False)
-    print(Debug["synchronous_parallel_"][2][3][(0.45223461506339047, 0.29577906622244676)])
-    print(Debug2["synchronous_parallel_"][2][3][(0.45223461506339047, 0.29577906622244676)])
-
