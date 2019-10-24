@@ -4,7 +4,6 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import pylab as pl
 import seaborn as sns
 from matplotlib import collections as mc
 from matplotlib.ticker import MaxNLocator
@@ -58,22 +57,24 @@ def get_param_values(parameters, size_q, intervals=False, debug=False):
     return parameter_values
 
 
-def eval_and_show(fun_list, parameter_value, data=False, cumulative=False, debug=False, where=False):
+def eval_and_show(fun_list, parameter_value, parameters=False, data=False, cumulative=False, debug=False, where=False):
     """ Creates bar plot of evaluation of given functions for given point in parameter space
 
     Args
     ----------
     fun_list: (list of strings) list of rational functions
     parameter_value: (list of floats) array of param values
+    parameters: (list of strings) parameter names (used for faster eval)
     data: (list) Data comparison next to respective function
     cumulative: (Bool) if True cdf instead of pdf is visualised
     debug: (Bool) if debug extensive output is provided
     where: (Tuple/List) : output matplotlib sources to output created figure
     """
-    parameters = set()
-    for polynome in fun_list:
-        parameters.update(find_param(polynome, debug))
-    parameters = sorted(list(parameters))
+    if not parameters:
+        parameters = set()
+        for polynome in fun_list:
+            parameters.update(find_param(polynome, debug))
+        parameters = sorted(list(parameters))
     if debug:
         print("Parameters: ", parameters)
 
@@ -91,6 +92,7 @@ def eval_and_show(fun_list, parameter_value, data=False, cumulative=False, debug
     title = f"{title}\n values: "
     for polynome in fun_list:
         if debug:
+            print(polynome)
             print("Eval ", polynome, eval(polynome))
         if cumulative:
             ## Add sum of all values
