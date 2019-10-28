@@ -142,7 +142,7 @@ class Gui(Tk):
         self.show_true_point = None
 
         ## Settings
-        self.version = "1.7.2"  ## Version of the gui
+        self.version = "1.7.3"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = False  ## Sets the command line output to maximum
 
@@ -755,8 +755,9 @@ class Gui(Tk):
             else:
                 spam = ""
 
+        # print("File selected:", spam)
         ## If no file / not a file selected
-        if spam == "":
+        if spam == "" or spam == ():
             self.status_set("No file selected.")
             return
         # print("self.functions_file.get() ", self.functions_file.get())
@@ -895,9 +896,11 @@ class Gui(Tk):
             if ".p" in self.functions_file.get():
                 self.functions = pickle.load(open(self.functions_file.get(), "rb"))
 
+            print("loaded functions", self.functions)
             functions = ""
+
             for function in self.functions:
-                functions = f"({functions},\n{function}"
+                functions = f"{functions},\n{function}"
             functions = functions[2:]
 
             self.functions_parsed_text.configure(state='normal')
@@ -1382,7 +1385,12 @@ class Gui(Tk):
     def save_data(self):
         """Saves data as a pickled file. """
         print("Saving the data ...")
-        if self.data is "":
+        self.parse_data_from_window()
+
+        print("data", self.data)
+
+        if not self.data:
+            messagebox.showwarning("Saving data", "There is no data to be saved.")
             self.status_set("There is no data to be saved.")
             return
 
