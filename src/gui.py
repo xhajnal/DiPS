@@ -25,6 +25,8 @@ import space
 from synthetise import ineq_to_constraints, check_deeper
 from mc_prism import call_prism_files, call_storm_files
 from sample_n_visualise import sample_list_funs, eval_and_show, get_param_values, heatmap
+from optimize import optimize
+
 
 cwd = os.getcwd()
 
@@ -129,7 +131,7 @@ class Gui(Tk):
         self.data = ""
         self.data_informed_property = ""  ## Property containing the interval boundaries from the data
         self.functions = ""  ## Parameter synthesis results (rational functions)
-        self.intervals = ""  ## Computed intervals
+        self.data_intervals = ""  ## Computed intervals
         self.parameters = ""  ##  Parsed parameters
         self.parameter_intervals = []  ## Parameters intervals
         self.constraints = ""  ## Derived properties
@@ -348,36 +350,38 @@ class Gui(Tk):
         label10.grid(row=1, column=0, sticky=W, padx=4, pady=4)
         createToolTip(label10, text='For each rational function exactly one data point should be assigned.')
 
-        self.data_text = Text(page4, height=12)  # , height=10, width=30
+        self.data_text = Text(page4, height=11)  # , height=10, width=30
         ## self.data_text.bind("<FocusOut>", self.parse_data)
         # self.data_text = Text(page4, height=12, state=DISABLED)  # , height=10, width=30
         # self.data_text.config(state="disabled")
         self.data_text.grid(row=2, column=0, columnspan=16, sticky=W, padx=4, pady=4)
 
         ## SET THE INTERVAL COMPUTATION SETTINGS
+        Button(page4, text='Optimize parameters', command=self.optimize).grid(row=3, column=0, sticky=W, padx=4, pady=4)
+
         label42 = Label(page4, text="Set alpha, the confidence:", anchor=W, justify=LEFT)
-        label42.grid(row=3)
+        label42.grid(row=4)
         createToolTip(label42, text='confidence')
         label43 = Label(page4, text="Set n_samples, number of samples: ", anchor=W, justify=LEFT)
-        label43.grid(row=4)
+        label43.grid(row=5)
         createToolTip(label43, text='number of samples')
 
         self.alpha_entry = Entry(page4)
         self.n_samples_entry = Entry(page4)
 
-        self.alpha_entry.grid(row=3, column=1)
-        self.n_samples_entry.grid(row=4, column=1)
+        self.alpha_entry.grid(row=4, column=1)
+        self.n_samples_entry.grid(row=5, column=1)
 
         self.alpha_entry.insert(END, '0.95')
         self.n_samples_entry.insert(END, '100')
 
-        Button(page4, text='Create intervals', command=self.create_intervals).grid(row=5, column=0, sticky=W, padx=4, pady=4)
+        Button(page4, text='Create intervals', command=self.create_intervals).grid(row=6, column=0, sticky=W, padx=4, pady=4)
 
-        Label(page4, text=f"Intervals:", anchor=W, justify=LEFT).grid(row=6, column=0, sticky=W, padx=4, pady=4)
+        Label(page4, text=f"Intervals:", anchor=W, justify=LEFT).grid(row=7, column=0, sticky=W, padx=4, pady=4)
 
-        self.intervals_text = Text(page4, height=12, state=DISABLED)  # height=10, width=30
+        self.intervals_text = Text(page4, height=11, state=DISABLED)  # height=10, width=30
         # self.interval_text.config(state="disabled")
-        self.intervals_text.grid(row=7, column=0, columnspan=16, sticky=W, padx=4, pady=4)
+        self.intervals_text.grid(row=8, column=0, rowspan=2, columnspan=16, sticky=W, padx=4, pady=4)
 
         ttk.Separator(page4, orient=VERTICAL).grid(row=0, column=17, rowspan=10, sticky='ns', padx=50, pady=10)
         Label(page4, text=f"Data informed property section.", anchor=W, justify=LEFT).grid(row=0, column=18, sticky=W, padx=5, pady=4)
@@ -386,10 +390,10 @@ class Gui(Tk):
         self.property_text2 = scrolledtext.ScrolledText(page4, height=4, state=DISABLED)
         # self.property_text2.config(state="disabled")
         self.property_text2.grid(row=2, column=18, columnspan=16, rowspan=2, sticky=W + E + N + S, padx=5, pady=4)
-        Button(page4, text='Generate data informed properties', command=self.generate_data_informed_properties).grid(row=5, column=18, sticky=W, padx=5, pady=4)
+        Button(page4, text='Generate data informed properties', command=self.generate_data_informed_properties).grid(row=4, column=18, sticky=W, padx=5, pady=4)
 
         self.data_informed_property_text = scrolledtext.ScrolledText(page4, height=4, state=DISABLED)
-        self.data_informed_property_text.grid(row=6, column=18, columnspan=16, rowspan=2, sticky=W + E + N + S, padx=5, pady=4)
+        self.data_informed_property_text.grid(row=5, column=18, columnspan=16, rowspan=4, sticky=W + E + N + S, padx=5, pady=10)
 
         Button(page4, text='Save data informed properties', command=self.save_data_informed_properties).grid(row=9, column=18, sticky=W, padx=5, pady=4)
 
@@ -1265,13 +1269,13 @@ class Gui(Tk):
             messagebox.showwarning("Data informed property generation", "No property file loaded.")
             return False
 
-        if self.intervals == "":
+        if self.data_intervals == "":
             print("Intervals not computed, properties cannot be generated")
             messagebox.showwarning("Data informed property generation", "Compute intervals first.")
             return False
 
         # general_create_data_informed_properties(prop_file, intervals, output_file=False)
-        self.data_informed_property = general_create_data_informed_properties(self.property_file.get(), self.intervals, silent=self.silent.get())
+        self.data_informed_property = general_create_data_informed_properties(self.property_file.get(), self.data_intervals, silent=self.silent.get())
         self.data_informed_property_text.configure(state='normal')
         self.data_informed_property_text.delete('1.0', END)
         spam = ""
@@ -1723,6 +1727,39 @@ class Gui(Tk):
         # self.update()
         self.status_set("Ploting sampled rational functions finished.")
 
+    def optimize(self):
+        """ Search for parameter values minimizing the distance of function to data. """
+        print("Optimizing the distance between functions and data ...")
+        self.status_set("Optimizing the distance between functions and data.")
+
+        if self.functions == "":
+            messagebox.showwarning("Optimize functions", "Load the functions first, please")
+            return
+
+        if self.data == "":
+            messagebox.showwarning("Optimize functions", "Load the data first, please")
+            return
+
+        self.validate_parameters(where=self.functions)
+
+        print("self.parameters", self.parameters)
+        print("self.parameter_intervals", self.parameter_intervals)
+
+        result = optimize(self.functions, self.parameters, self.parameter_intervals, self.data)
+
+        new_window = Toplevel(self)
+        Label(new_window, text="Results of optimisation").grid(row=0)
+        Label(new_window, text=f"Parameter point: {result[0]}").grid(row=1)
+        Label(new_window, text=f"Function values: {result[1]}").grid(row=2)
+        Label(new_window, text=f"Distance: {result[2]}").grid(row=3)
+        # a = Entry(new_window, textvariable=StringVar().set("Hello World! But, Wait!!! You Can Select Me :)"), fg="black", bg="white", bd=0, state="readonly")
+        # a.config(insertbackground='white', exportselection=1, state="disabled")
+        # a.grid(row=4)
+
+        print("parameter point", result[0])
+        print("function values", result[1])
+        print("distance", result[2])
+
     def create_intervals(self):
         """ Creates intervals from data. """
         print("Creating intervals ...")
@@ -1746,12 +1783,12 @@ class Gui(Tk):
         self.parse_data_from_window()
 
         self.status_set("Intervals are being created ...")
-        self.intervals = create_intervals(float(self.alpha_entry.get()), float(self.n_samples_entry.get()), self.data)
+        self.data_intervals = create_intervals(float(self.alpha_entry.get()), float(self.n_samples_entry.get()), self.data)
 
         intervals = ""
         if not self.silent.get():
-            print("Created intervals", self.intervals)
-        for interval in self.intervals:
+            print("Created intervals", self.data_intervals)
+        for interval in self.data_intervals:
             intervals = f"{intervals},\n({interval.inf}, {interval.sup})"
         # print("intervals", intervals)
         intervals = intervals[2:]
@@ -1981,14 +2018,14 @@ class Gui(Tk):
         if self.functions_changed or self.intervals_changed:
             if not self.silent.get():
                 print("Functions: ", self.functions)
-                print("Intervals: ", self.intervals)
+                print("Intervals: ", self.data_intervals)
             ## If functions empty raise an error (return False)
             if self.functions == "":
                 print("No functions loaded nor not computed to create properties")
                 messagebox.showwarning(position, "Load or synthesise functions first.")
                 return False
             ## If intervals empty raise an error (return False)
-            if self.intervals == "":
+            if self.data_intervals == "":
                 print("Intervals not computed, properties cannot be computed")
                 messagebox.showwarning(position, "Compute intervals first.")
                 return False
@@ -2000,13 +2037,13 @@ class Gui(Tk):
                 self.intervals_changed = False
 
             ## Check if the number of functions and intervals is equal
-            if len(self.functions) != len(self.intervals):
+            if len(self.functions) != len(self.data_intervals):
                 messagebox.showerror(position,
                                      "The number of rational functions and data points (or intervals) is not equal")
                 return
 
             ## Create constraints
-            self.constraints = ineq_to_constraints(self.functions, self.intervals, silent=self.silent.get())
+            self.constraints = ineq_to_constraints(self.functions, self.data_intervals, silent=self.silent.get())
             self.constraints_changed = True
             self.constraints_file.set("")
 
