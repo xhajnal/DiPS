@@ -142,7 +142,7 @@ class Gui(Tk):
         self.show_true_point = None
 
         ## Settings
-        self.version = "1.7.5"  ## Version of the gui
+        self.version = "1.7.6"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = True  ## Sets the command line output to maximum
 
@@ -1122,7 +1122,10 @@ class Gui(Tk):
             self.status_set("Space loaded.")
 
     def print_space(self, clear=False):
-        """ Print the niceprint of the space into space text window. """
+        """ Print the niceprint of the space into space text window.
+
+        :param clear: (Bool) if True the text is cleared
+        """
         if not self.space == "":
             if not self.silent.get() and not clear:
                 print("space", self.space)
@@ -1135,13 +1138,20 @@ class Gui(Tk):
                 self.space_text.insert('end', self.space.nice_print())
             # self.space_text.configure(state='disabled')
 
-    def show_space(self, show_refinement, show_samples, show_true_point, clear=False):
-        """ Visualises the space in the plot. """
+    def show_space(self, show_refinement, show_samples, show_true_point, clear=False, show_all=False):
+        """ Visualises the space in the plot.
+
+        :param show_refinement: (Bool) if True refinement is shown
+        :param show_samples: (Bool) if True samples are shown
+        :param show_true_point: (Bool) if True the true point is shown
+        :param clear: (Bool) if True the plot is cleared
+        :param show_all: (Bool)  if True, not only newly added rectangles are shown
+        """
         if not self.space == "":
             if not clear:
                 figure, axis = self.space.show(green=show_refinement, red=show_refinement, sat_samples=show_samples,
                                                unsat_samples=show_samples, true_point=show_true_point, save=False,
-                                               where=[self.page6_figure, self.page6_a])
+                                               where=[self.page6_figure, self.page6_a], show_all=show_all)
 
                 ## If no plot provided
                 if figure is None:
@@ -1194,7 +1204,7 @@ class Gui(Tk):
 
             self.print_space()
             self.page6_a.cla()
-            self.show_space(self.show_refinement, self.show_samples, True)
+            self.show_space(self.show_refinement, self.show_samples, True, show_all=True)
 
     def parse_data_from_window(self):
         """ Parses data from the window. """
