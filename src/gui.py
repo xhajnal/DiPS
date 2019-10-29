@@ -142,7 +142,7 @@ class Gui(Tk):
         self.show_true_point = None
 
         ## Settings
-        self.version = "1.7.3"  ## Version of the gui
+        self.version = "1.7.4"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = False  ## Sets the command line output to maximum
 
@@ -800,7 +800,7 @@ class Gui(Tk):
         self.functions_text.configure(state='normal')
         self.functions_text.delete('1.0', END)
         self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
-        self.functions_text.configure(state='disabled')
+        # self.functions_text.configure(state='disabled')
         ## Resetting parsed intervals
         self.parameter_intervals = []
 
@@ -846,7 +846,7 @@ class Gui(Tk):
             self.functions_parsed_text.configure(state='normal')
             self.functions_parsed_text.delete('1.0', END)
             self.functions_parsed_text.insert('end', functions)
-            self.functions_parsed_text.configure(state='disabled')
+            # self.functions_parsed_text.configure(state='disabled')
 
     def unfold_functions2(self):
         """" Dummy method of unfold_functions """
@@ -906,7 +906,7 @@ class Gui(Tk):
             self.functions_parsed_text.configure(state='normal')
             self.functions_parsed_text.delete('1.0', END)
             self.functions_parsed_text.insert('end', functions)
-            self.functions_parsed_text.configure(state='disabled')
+            # self.functions_parsed_text.configure(state='disabled')
 
             ## Resetting parsed intervals
             self.parameter_intervals = []
@@ -1071,7 +1071,7 @@ class Gui(Tk):
             self.constraints_text.configure(state='normal')
             self.constraints_text.delete('1.0', END)
             self.constraints_text.insert('end', constraints)
-            self.constraints_text.configure(state='disabled')
+            # self.constraints_text.configure(state='disabled')
 
             ## Resetting parsed intervals
             self.parameter_intervals = []
@@ -1133,7 +1133,7 @@ class Gui(Tk):
             self.space_text.delete('1.0', END)
             if not clear:
                 self.space_text.insert('end', self.space.nice_print())
-            self.space_text.configure(state='disabled')
+            # self.space_text.configure(state='disabled')
 
     def show_space(self, show_refinement, show_samples, show_true_point, clear=False):
         """ Visualises the space in the plot. """
@@ -1158,12 +1158,6 @@ class Gui(Tk):
                 self.page6_figure.tight_layout()  ## By huypn
                 self.page6_figure.canvas.draw()
                 self.page6_figure.canvas.flush_events()
-
-                self.page6_figure2.clf()
-                self.page6_b = self.page6_figure2.add_subplot(111)
-                self.page6_figure2.tight_layout()  ## By huypn
-                self.page6_figure2.canvas.draw()
-                self.page6_figure2.canvas.flush_events()
 
     def edit_true_point(self):
         """ Sets the true point of the space """
@@ -1285,7 +1279,7 @@ class Gui(Tk):
         for item in self.data_informed_property:
             spam = spam + str(item) + ",\n"
         self.data_informed_property_text.insert('end', spam)
-        self.data_informed_property_text.configure(state='disabled')
+        # self.data_informed_property_text.configure(state='disabled')
         # TODO
 
     def save_data_informed_properties(self):
@@ -1556,7 +1550,7 @@ class Gui(Tk):
             spam = spam[:-2]
             spam = spam + "], " + str(item[-1]) + ",\n"
         self.sampled_functions_text.insert('2.0', spam[:-2])
-        self.sampled_functions_text.configure(state='disabled')
+        # self.sampled_functions_text.configure(state='disabled')
         self.status_set("Sampling rational functions finished.")
 
     def show_funs_in_single_point(self):
@@ -1684,7 +1678,7 @@ class Gui(Tk):
                 # self.page3_figure.canvas.flush_events()
 
             self.Next_sample_button.wait_variable(self.button_pressed)
-        self.Next_sample_button.config(state="disabled")
+        # self.Next_sample_button.config(state="disabled")
         self.status_set("Ploting sampled rational functions finished.")
 
     def show_heatmap(self):
@@ -1730,7 +1724,7 @@ class Gui(Tk):
             self.initialise_plot(what=self.page3_figure)
 
             self.Next_sample_button.wait_variable(self.button_pressed)
-        self.Next_sample_button.config(state="disabled")
+        # self.Next_sample_button.config(state="disabled")
         # self.page3_figure_locked.set(False)
         # self.update()
         self.status_set("Ploting sampled rational functions finished.")
@@ -1755,14 +1749,32 @@ class Gui(Tk):
 
         result = optimize(self.functions, self.parameters, self.parameter_intervals, self.data)
 
-        new_window = Toplevel(self)
-        Label(new_window, text="Results of optimisation").grid(row=0)
-        Label(new_window, text=f"Parameter point: {result[0]}").grid(row=1)
-        Label(new_window, text=f"Function values: {result[1]}").grid(row=2)
-        Label(new_window, text=f"Distance: {result[2]}").grid(row=3)
-        # a = Entry(new_window, textvariable=StringVar().set("Hello World! But, Wait!!! You Can Select Me :)"), fg="black", bg="white", bd=0, state="readonly")
-        # a.config(insertbackground='white', exportselection=1, state="disabled")
-        # a.grid(row=4)
+        window = Toplevel(self)
+        window.title('Results of optimisation')
+        window.state('normal')
+        width = max(len(str(result[0])), len(str(result[1])), len(str(result[2])))
+
+        window.minsize(400, width+20)
+        window.resizable(False, False)
+        Label(window, text=f"Parameter point: ").grid(row=1)
+        Label(window, text=f"Function values: ").grid(row=2)
+        Label(window, text=f"Distance: ").grid(row=3)
+
+
+        var = StringVar()
+        var.set(result[0])
+        ent = Entry(window, state='readonly', textvariable=var, width=width, relief='flat', readonlybackground='white', fg='black')
+        ent.grid(row=1, column=1)
+
+        var = StringVar()
+        var.set(result[1])
+        ent = Entry(window, state='readonly', textvariable=var, width=width, relief='flat', readonlybackground='white', fg='black')
+        ent.grid(row=2, column=1)
+
+        var = StringVar()
+        var.set(result[2])
+        ent = Entry(window, state='readonly', textvariable=var, width=width, relief='flat', readonlybackground='white', fg='black')
+        ent.grid(row=3, column=1)
 
         print("parameter point", result[0])
         print("function values", result[1])
@@ -1803,7 +1815,7 @@ class Gui(Tk):
         self.intervals_text.configure(state='normal')
         self.intervals_text.delete('1.0', END)
         self.intervals_text.insert('end', intervals)
-        self.intervals_text.configure(state='disabled')
+        # self.intervals_text.configure(state='disabled')
         self.status_set("Intervals created.")
 
         self.intervals_changed = True
@@ -1879,12 +1891,19 @@ class Gui(Tk):
         if self.space.get_true_point() is None:
             self.edit_true_point()
 
+        self.page6_figure2.clf()
+        self.page6_b = self.page6_figure2.add_subplot(111)
+        self.page6_figure2.tight_layout()  ## By huypn
+        self.page6_figure2.canvas.draw()
+        self.page6_figure2.canvas.flush_events()
+
         from metropolis_hastings import initialise_sampling
+
         try:
             self.cursor_toggle_busy(True)
             initialise_sampling(self.space, self.data, self.functions, int(self.n_samples_entry.get()), int(self.N_obs_entry.get()), int(self.MH_samples_entry.get()), float(self.eps_entry.get()), where=[self.page6_figure2, self.page6_b])
         except:
-            messagebox.showerror(f"{sys.exc_info()[1]}. \n Try to check whether the data, functions, and computed constraints are aligned.")
+            messagebox.showerror(sys.exc_info()[1], "Try to check whether the data, functions, and computed constraints are aligned.")
         finally:
             self.cursor_toggle_busy(False)
         self.page6_figure2.tight_layout()
@@ -2062,7 +2081,7 @@ class Gui(Tk):
             self.constraints_text.configure(state='normal')
             self.constraints_text.delete('1.0', END)
             self.constraints_text.insert('end', constraints)
-            self.constraints_text.configure(state='disabled')
+            # self.constraints_text.configure(state='disabled')
             if not self.silent.get():
                 print("constraints: ", self.constraints)
         return True
