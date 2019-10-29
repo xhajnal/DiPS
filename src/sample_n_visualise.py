@@ -8,6 +8,7 @@ import seaborn as sns
 from matplotlib import collections as mc
 from matplotlib.ticker import MaxNLocator
 from termcolor import colored
+from z3 import *
 
 workspace = os.path.dirname(__file__)
 sys.path.append(os.path.join(workspace, '../src/'))
@@ -57,7 +58,7 @@ def get_param_values(parameters, size_q, intervals=False, debug=False):
     return parameter_values
 
 
-def eval_and_show(fun_list, parameter_value, parameters=False, data=False, cumulative=False, debug=False, where=False):
+def eval_and_show(fun_list, parameter_value, parameters=False, data=False, intervals=False, cumulative=False, debug=False, where=False):
     """ Creates bar plot of evaluation of given functions for given point in parameter space
 
     Args
@@ -66,6 +67,7 @@ def eval_and_show(fun_list, parameter_value, parameters=False, data=False, cumul
     parameter_value: (list of floats) array of param values
     parameters: (list of strings) parameter names (used for faster eval)
     data: (list) Data comparison next to respective function
+    intervals: (list) intervals obtained from the data to check if the function are within the intervals
     cumulative: (Bool) if True cdf instead of pdf is visualised
     debug: (Bool) if debug extensive output is provided
     where: (Tuple/List) : output matplotlib sources to output created figure
@@ -79,7 +81,7 @@ def eval_and_show(fun_list, parameter_value, parameters=False, data=False, cumul
         print("Parameters: ", parameters)
 
     title = "Rational functions sampling \n parameter values:"
-    a = []
+    values = []
     add = 0
     for param in range(len(parameters)):
         if debug:
@@ -91,19 +93,25 @@ def eval_and_show(fun_list, parameter_value, parameters=False, data=False, cumul
 
     title = f"{title}\n values: "
     for polynome in fun_list:
+        ## Z3 improvement
+        expression = eval(polynome)
+        try:
+            expression = z3.simplify(expression).as_decimal(30)
+        except:
+            pass
+        expression = float(expression)
         if debug:
             print(polynome)
-            print("Eval ", polynome, eval(polynome))
+            print("Eval ", polynome, expression)
         if cumulative:
             ## Add sum of all values
-            value = eval(polynome)
-            add = add + value
-            a.append(add)
+            add = add + expression
+            values.append(add)
             title = f"{title} {add} , "
-            del value
+            del expression
         else:
-            a.append(eval(polynome))
-            title = f"{title} {eval(polynome)} ,"
+            values.append(expression)
+            title = f"{title} {expression} ,"
     title = title[:-2]
     if data:
         if cumulative:
@@ -122,6 +130,14 @@ def eval_and_show(fun_list, parameter_value, parameters=False, data=False, cumul
     ax.set_ylabel('Value')
     if data:
         ax.set_xlabel('Rational function indices (blue), Data point indices (red)')
+        if intervals:
+            functions_inside_of_intervals = []
+            for index in range(len(data)):
+                if values[index] in intervals[index]:
+                    functions_inside_of_intervals.append(True)
+                else:
+                    functions_inside_of_intervals.append(False)
+            title = f"{title} \n Function value within the respective interval:\n {functions_inside_of_intervals}"
     else:
         ax.set_xlabel('Rational function indices')
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
@@ -130,15 +146,19 @@ def eval_and_show(fun_list, parameter_value, parameters=False, data=False, cumul
     ax.set_title(wraper.fill(title))
     if debug:
         print("Len(fun_list): ", len(fun_list))
-        print("values:", a)
-    ax.bar(range(1, len(fun_list) + 1), a, width, color='b')
+        print("values:", values)
+        print("range:", range(1, len(values) + 1))
+        print("title", title)
+    ax.bar(range(1, len(values) + 1), values, width, color='b')
     if data:
         ax.bar(list(map(lambda x: x + width, range(1, len(data) + 1))), data, width, color='r')
+
+
 
     if where:
         return fig, ax
     plt.show()
-    return a
+    return values
 
 
 def sample_dictionary_funs(dictionary, size_q, keys=None, debug=False):
@@ -221,9 +241,16 @@ def sample_list_funs(list_fun, size_q, intervals=False, silent=False, debug=Fals
                     print("Parameter[param]: ", parameters[param])
                     print("Parameter_value[param]: ", parameter_value[param])
                 globals()[parameters[param]] = parameter_value[param]
+
+            print("polynome", polynome)
+            try:
+                expression = z3.simplify(eval(polynome)).as_decimal(30)
+            except:
+                expression = eval(polynome)
+            expression = float(expression)
             if debug:
-                print("Eval ", polynome, eval(polynome))
-            a.append(eval(polynome))
+                print("Eval ", polynome, expression)
+            a.append(expression)
             arr.append(a)
     return arr
 
@@ -280,14 +307,20 @@ def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug=False,
             if debug:
                 print("Eval ", polynome, eval(polynome))
             for polynome in dic_fun[N]:
+                expression = eval(polynome)
+                try:
+                    expression = z3.simplify(expression).as_decimal(30)
+                except:
+                    pass
+                expression = float(expression)
+
                 if cumulative:
                     ## Add sum of all values
-                    value = eval(polynome)
-                    add = add + value
+                    add = add + expression
                     a.append(add)
-                    del value
+                    del expression
                 else:
-                    a.append(eval(polynome))
+                    a.append(expression)
 
             # print(a)
             fig, ax = plt.subplots()
@@ -391,7 +424,14 @@ def heatmap(fun, region, sampling_sizes, posttitle="", where=False, parameters=F
             locals()[parameters[1]] = j
             arr[jj, 0] = round(i, 2)
             arr[jj, 1] = round(j, 2)
-            arr[jj, 2] = eval(fun)
+
+            expression = eval(fun)
+            try:
+                expression = z3.simplify(expression).as_decimal(30)
+            except:
+                pass
+            expression = float(expression)
+            arr[jj, 2] = expression
     # print(arr)
     # d = pd.DataFrame(arr, columns=["p","q","E"])
     d = pd.DataFrame(arr, columns=[parameters[0], parameters[1], "E"])

@@ -208,6 +208,12 @@ class RefinedSpace:
         else:
             self.title = ""
 
+        ## INTERNAL VARIABLES
+        self.time_last_sampling = 0
+        self.time_sampling = 0
+        self.time_last_refinement = 0
+        self.time_refinement = 0
+
         ## TEXT WRAPPER
         self.wrapper = DocumentWrapper(width=70)
 
@@ -225,7 +231,7 @@ class RefinedSpace:
         true_point: (Bool) if True showing true point
         save: (Bool) if True, the output is saved
         where: (Tuple/List) : output matplotlib sources to output created figure
-        show_all: (Bool) if all, not only newly added rectangles are shown
+        show_all: (Bool) if True, not only newly added rectangles are shown
         """
 
         # print("self.true_point", self.true_point)
@@ -262,21 +268,27 @@ class RefinedSpace:
                 max_region_size = max(max_region_size, region[1][1] - region[1][0])
 
             pretitle = ""
-            if green or red:
-                pretitle = pretitle + " Refinement,"
-            if sat_samples or unsat_samples:
-                pretitle = pretitle + " Samples,"
+            if (green or red) and (sat_samples or unsat_samples):
+                pretitle = pretitle + "Refinement and Sampling, \n red = unsafe region / unsat points, green = safe region / sat points, white = in between"
+            else:
+                if green or red:
+                    pretitle = pretitle + "Refinement, \n red = unsafe region, green = safe region, white = in between"
+                if sat_samples or unsat_samples:
+                    pretitle = pretitle + "Samples, \n red = unsat points, green = sat points"
+            if (green or red) and (self.rectangles_sat or self.rectangles_unsat) and show_all:
+                pretitle = pretitle + f"\n Last refinement took {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole time"
+            if (sat_samples or unsat_samples) and (self.sat_samples or self.unsat_samples):
+                pretitle = pretitle + f"\n Last sampling took {round(self.time_last_sampling, 2)} of {round(self.time_sampling, 2)} sec. whole sampling time"
             if pretitle:
                 pretitle = pretitle + "\n"
             if green:
                 pic.add_collection(self.show_green(show_all=show_all))
             if red:
                 pic.add_collection(self.show_red(show_all=show_all))
-            if sat_samples:
+            if sat_samples and self.sat_samples:
                 pic.add_collection(self.show_samples(True))
-            if unsat_samples:
-                unsat_samples_set = self.show_samples(False)
-                pic.add_collection(unsat_samples_set)
+            if unsat_samples and self.unsat_samples:
+                pic.add_collection(self.show_samples(False))
             if self.true_point and true_point:
                 # print(self.true_point)
                 if (len(self.sat_samples) + len(self.unsat_samples)) == 0 or len(self.region) == 0:
@@ -289,7 +301,7 @@ class RefinedSpace:
                 else:
                     plt.gcf().gca().add_artist(circle)
 
-            whole_title = "\n".join(self.wrapper.wrap(f"{pretitle}\n red = unsafe region, green = safe region, white = in between \n{self.title} \n {title}"))
+            whole_title = "\n".join(self.wrapper.wrap(f"{pretitle} \n{self.title} \n {title}"))
             pic.set_title(whole_title)
             with open(os.path.join(refinement_results, "figure_to_title.txt"), "a+") as file:
                 file.write(f"{save} : {whole_title}\n")
@@ -608,7 +620,7 @@ class RefinedSpace:
 
         Args
         -------
-        all: (Bool) if all, not only newly added rectangles are shown
+        show_all: (Bool) if all, not only newly added rectangles are shown
         """
         rectangles_unsat = []
         if len(self.region) > 2:
@@ -657,10 +669,13 @@ class RefinedSpace:
 
     def show_samples(self, which):
         """ Visualises samples in 2D"""
+        if not (self.sat_samples or self.unsat_samples):
+            return None
+
         samples = []
         if len(self.region) > 2:
             print("Error while visualising", len(self.region), "dimensional space")
-            return
+            return None
         elif len(self.region) == 2:
             # print("samples", self.samples)
             try:
@@ -689,7 +704,7 @@ class RefinedSpace:
                 return PatchCollection(samples, facecolor='r', alpha=0.5)
 
     def nice_print(self, full_print=False):
-        """ Returns the class in a human readable format"""
+        """ Returns the class in a human readable format """
         spam = ""
         spam = spam + str(f"params: {self.params}\n")
         spam = spam + str(f"region: {self.region}\n")
@@ -702,10 +717,20 @@ class RefinedSpace:
         spam = spam + str(f"true_point: {self.true_point}\n")
         return spam
 
+    def sampling_took(self, time):
+        """ Manages the time the sampling took """
+        self.time_last_sampling = time
+        self.time_sampling = self.time_sampling + self.time_last_sampling
+
+    def refinement_took(self, time):
+        """ Manages the time the refinement took """
+        self.time_last_refinement = time
+        self.time_refinement = self.time_refinement + self.time_last_refinement
+
     def __repr__(self):
-        return str([self.region, self.params, self.types, self.rectangles_sat, self.rectangles_unsat, self.rectangles_unknown,
-                    self.sat_samples, self.unsat_samples, self.true_point])
+        return str([self.region, self.params, self.types, self.rectangles_sat, self.rectangles_unsat,
+                    self.rectangles_unknown, self.sat_samples, self.unsat_samples, self.true_point])
 
     def __str__(self):
-        return str([self.region, self.params, self.types, self.rectangles_sat, self.rectangles_unsat, self.rectangles_unknown,
-                    self.sat_samples, self.unsat_samples, self.true_point])
+        return str([self.region, self.params, self.types, self.rectangles_sat, self.rectangles_unsat,
+                    self.rectangles_unknown, self.sat_samples, self.unsat_samples, self.true_point])

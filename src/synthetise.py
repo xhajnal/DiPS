@@ -823,7 +823,7 @@ def check_deeper(region, constraints, n, epsilon, coverage, silent, version, siz
             print("space white", white_space)
 
         print("Presampling resulted in splicing the region into these subregions: ", white_space)
-        print(f"It took {socket.gethostname()} {round(time() - start_time)} second(s)")
+        print(f"Refinement took {socket.gethostname()} {round(time() - start_time)} second(s)")
         print()
 
     ## Choosing version/algorithm here
@@ -878,7 +878,7 @@ def check_deeper(region, constraints, n, epsilon, coverage, silent, version, siz
             print(colored("Chosen version not found", "red"))
     else:
         for rectangle in white_space:
-            start_time = time()
+            single_rectangle_start_time = time()
             ## To get more similar result substituting the number of splits from the max_depth
             if debug:
                 print("max_depth = ", max(1, n-(int(log(len(white_space), 2)))))
@@ -901,16 +901,16 @@ def check_deeper(region, constraints, n, epsilon, coverage, silent, version, siz
                 print("constraints", constraints)
 
             if version == 1:
-                print(f"Using DFS method to solve spliced rectangle number {white_space.index(rectangle)+1}")
+                print(f"Using DFS method to solve spliced rectangle number {white_space.index(rectangle)+1} of {len(white_space)}")
                 private_check_deeper(rectangle, constraints, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, solver=solver, delta=delta)
             elif version == 2:
                 print(f"Using BFS method to solve spliced rectangle number {white_space.index(rectangle)+1}")
                 private_check_deeper_queue(rectangle, constraints, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, solver=solver, delta=delta)
             elif version == 3:
-                print(f"Using BFS method with passing examples to solve spliced rectangle number {white_space.index(rectangle)+1}")
+                print(f"Using BFS method with passing examples to solve spliced rectangle number {white_space.index(rectangle)+1} of {len(white_space)}")
                 private_check_deeper_queue_checking(rectangle, constraints, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, model=None, solver=solver, delta=delta)
             elif version == 4:
-                print(f"Using BFS method with passing examples and counterexamples to solve spliced rectangle number {white_space.index(rectangle)+1}")
+                print(f"Using BFS method with passing examples and counterexamples to solve spliced rectangle number {white_space.index(rectangle)+1} of {len(white_space)}")
                 private_check_deeper_queue_checking_both(rectangle, constraints, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, model=None, solver=solver, delta=delta)
             elif version == 5:
                 print(f"Using interval method to solve spliced rectangle number {white_space.index(rectangle)+1} of {len(white_space)}.")
@@ -926,7 +926,7 @@ def check_deeper(region, constraints, n, epsilon, coverage, silent, version, siz
             ## Showing the step refinements of respective rectangles from the white space
             ## If the visualisation of the space did not succeed space_shown = (None, error message)
             if not where:
-                space_shown = space.show(f"max_recursion_depth:{n}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time() - start_time)} second(s)", save=save, where=where, show_all=not gui)
+                space_shown = space.show(f"max_recursion_depth:{n}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n Refinement took {socket.gethostname()} {round(time() - single_rectangle_start_time)} second(s)", save=save, where=where, show_all=not gui)
             print()
             if space.get_coverage() >= coverage:
                 break
@@ -950,7 +950,8 @@ def check_deeper(region, constraints, n, epsilon, coverage, silent, version, siz
     if not size_q:
         ## If the visualisation of the space did not succeed space_shown = (None, error message)
         if show_space:
-            space_shown = space.show(f"max_recursion_depth:{n}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n It took {socket.gethostname()} {round(time() - start_time)} second(s)", save=save, where=where, show_all=not gui)
+            space.refinement_took(time() - start_time)
+            space_shown = space.show(f"max_recursion_depth:{n}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n Refinement took {socket.gethostname()} {round(time() - start_time, 2)} of {round(space.time_refinement,2)} second(s)", sat_samples=gui, unsat_samples=gui, save=save, where=where, show_all=not gui)
     print("result coverage is: ", space.get_coverage())
     if where:
         if space_shown[0] is None:
@@ -1825,6 +1826,7 @@ def sample(space, constraints, size_q, compress=False, silent=True, debug=False,
     A map from point to list of Bool whether f(point) in interval[index]
 
     """
+    start_time = time()
     parameter_values = []
     parameter_indices = []
     if debug:
@@ -1850,12 +1852,15 @@ def sample(space, constraints, size_q, compress=False, silent=True, debug=False,
         print("parameter_values", parameter_values)
         print("parameter_indices", parameter_indices)
         # print("a sample:", sampling[0][0])
-    i = 0
-    ## For each parametrisation
+    parameter_index = 0
+    ## For each parametrisation eval the constraints
     for parameter_value in parameter_values:
-        ## For each parameter
+        ## For each parameter set the current sample point value
         for param in range(len(space.params)):
             locals()[space.params[param]] = float(parameter_value[param])
+            if debug:
+                print("type(locals()[space.params[param]])", type(locals()[space.params[param]]))
+                print(f"locals()[space.params[param]] = {space.params[param]} = {float(parameter_value[param])}")
         ## print("parameter_value", parameter_value)
         # print(str(parameter_value))
         # print(type(parameter_value))
@@ -1874,10 +1879,10 @@ def sample(space, constraints, size_q, compress=False, silent=True, debug=False,
         # sampling[0, 0] = 9
         # sampling[0, 0] = True
 
-        sampling[tuple(parameter_indices[i])][0] = list(parameter_value)
+        sampling[tuple(parameter_indices[parameter_index])][0] = list(parameter_value)
 
         satisfied_list = []
-        ## For each property,interval
+        ## For each constraint (inequality - interval bound)
         for index in range(len(constraints)):
             # print(constraints[index])
             # print("type(constraints[index])", type(constraints[index]))
@@ -1886,6 +1891,9 @@ def sample(space, constraints, size_q, compress=False, silent=True, debug=False,
             #     print("type(space.params[param])", type(space.params[param]))
             #     print("type(parameter_value[param])", type(parameter_value[param]))
 
+            if debug:
+                print("constraints[index]", constraints[index])
+                print("eval(constraints[index])", eval(constraints[index]))
             spam = (eval(constraints[index]))
             if isinstance(spam, z3.z3.BoolRef):
                 if z3.simplify(spam):
@@ -1903,19 +1911,19 @@ def sample(space, constraints, size_q, compress=False, silent=True, debug=False,
 
         if False in satisfied_list:
             # print("adding unsat", sampling[tuple(parameter_indices[i])][0])
-            space.add_unsat_samples([sampling[tuple(parameter_indices[i])][0]])
+            space.add_unsat_samples([sampling[tuple(parameter_indices[parameter_index])][0]])
             if compress:
-                sampling[tuple(parameter_indices[i])][1] = False
+                sampling[tuple(parameter_indices[parameter_index])][1] = False
             else:
-                sampling[tuple(parameter_indices[i])][1] = satisfied_list
+                sampling[tuple(parameter_indices[parameter_index])][1] = satisfied_list
         else:
             # print("adding sat", sampling[tuple(parameter_indices[i])][0])
-            space.add_sat_samples([sampling[tuple(parameter_indices[i])][0]])
+            space.add_sat_samples([sampling[tuple(parameter_indices[parameter_index])][0]])
             if compress:
-                sampling[tuple(parameter_indices[i])][1] = True
+                sampling[tuple(parameter_indices[parameter_index])][1] = True
             else:
-                sampling[tuple(parameter_indices[i])][1] = satisfied_list
-        i = i + 1
+                sampling[tuple(parameter_indices[parameter_index])][1] = satisfied_list
+        parameter_index = parameter_index + 1
 
     ## Setting flag to not visualise sat if no unsat and vice versa
     space.gridsampled = True
@@ -1926,6 +1934,7 @@ def sample(space, constraints, size_q, compress=False, silent=True, debug=False,
             save = str(strftime("%d-%b-%Y-%H-%M-%S", localtime()))
         pickle.dump(sampling, open(os.path.join(refinement_results, ("Sampled_space_" + save).split(".")[0] + ".p"), "wb"))
 
+    space.sampling_took(time() - start_time)
     return sampling
 
 

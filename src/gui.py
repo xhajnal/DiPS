@@ -142,9 +142,9 @@ class Gui(Tk):
         self.show_true_point = None
 
         ## Settings
-        self.version = "1.7.4"  ## Version of the gui
+        self.version = "1.7.5"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
-        self.debug = False  ## Sets the command line output to maximum
+        self.debug = True  ## Sets the command line output to maximum
 
         ## Settings/data
         # self.alpha = ""  ## Confidence
@@ -1536,7 +1536,7 @@ class Gui(Tk):
         try:
             self.cursor_toggle_busy(True)
             self.sampled_functions = sample_list_funs(self.functions, int(self.fun_size_q_entry.get()),
-                                                intervals=self.parameter_intervals, debug=False, silent=self.silent.get())
+                                                intervals=self.parameter_intervals, debug=self.debug, silent=self.silent.get())
         finally:
             self.cursor_toggle_busy(False)
         self.sampled_functions_text.configure(state='normal')
@@ -1614,8 +1614,8 @@ class Gui(Tk):
         #     self.page3_figure = pyplt.figure()
         #     self.page3_a = self.page3_figure.add_subplot(111)
         # print("self.parameter_values", self.parameter_values)
-        spam, egg = eval_and_show(self.functions, self.parameter_values, data=self.data, debug=False,
-                                  where=[self.page3_figure, self.page3_a])
+        spam, egg = eval_and_show(self.functions, self.parameter_values, data=self.data, intervals=self.intervals,
+                                  debug=self.debug, where=[self.page3_figure, self.page3_a])
 
         if spam is None:
             messagebox.showinfo("Plots rational functions in a given point.", egg)
@@ -1634,8 +1634,8 @@ class Gui(Tk):
 
     def show_funs_in_all_points(self):
         """ Shows sampled rational functions in all sampled points. """
-        print("Ploting sampled rational functions ...")
-        self.status_set("Ploting sampled rational functions.")
+        print("Plotting sampled rational functions ...")
+        self.status_set("Plotting sampled rational functions.")
 
         if self.page3_figure_in_use.get():
             if not askyesno("Show all sampled points", "The result plot is currently in use. Do you want override?"):
@@ -1663,7 +1663,8 @@ class Gui(Tk):
 
             # print("parameter_point", parameter_point)
             self.page3_a.cla()
-            spam, egg = eval_and_show(self.functions, parameter_point, data=self.data, debug=False, where=[self.page3_figure, self.page3_a])
+            spam, egg = eval_and_show(self.functions, parameter_point, data=self.data, intervals=self.intervals,
+                                      debug=self.debug, where=[self.page3_figure, self.page3_a])
 
             if spam is None:
                 messagebox.showinfo("Plots rational functions in a given point.", egg)
@@ -1679,7 +1680,7 @@ class Gui(Tk):
 
             self.Next_sample_button.wait_variable(self.button_pressed)
         # self.Next_sample_button.config(state="disabled")
-        self.status_set("Ploting sampled rational functions finished.")
+        self.status_set("Plotting sampled rational functions finished.")
 
     def show_heatmap(self):
         """ Shows heatmap - sampling of a rational function in all sampled points. """
@@ -1869,24 +1870,26 @@ class Gui(Tk):
             messagebox.showwarning("Space Metropolis-Hastings", "Load data before Metropolis-Hastings.")
             return
 
-        if self.data == "":
-            messagebox.showwarning("Space Metropolis-Hastings", "Load data before Metropolis-Hastings.")
+        if self.functions == "":
+            messagebox.showwarning("Space Metropolis-Hastings", "Load functions before Metropolis-Hastings.")
             return
 
-        ## Check space
-        if not self.validate_space("Space Metropolis-Hastings"):
-            return
+        ## Check functions / Get function parameters
+        self.validate_parameters(where=self.functions)
 
-        if len(self.space.get_params()) > 2:
+        if len(self.parameters) > 2:
             # TODO multi dim MH
             messagebox.showwarning("Space Metropolis-Hastings", "Multidimensional MH not implemented yet")
             return
 
         self.status_set("Space sampling using Metropolis Hastings is running ...")
         if not self.silent.get():
-            print("space.params", self.space.params)
-            print("data", self.data)
             print("functions", self.functions)
+            print("function params", self.parameters)
+            print("data", self.data)
+
+        if not self.validate_space("Space Metropolis-Hastings"):
+            return
 
         if self.space.get_true_point() is None:
             self.edit_true_point()
@@ -1951,9 +1954,9 @@ class Gui(Tk):
             self.cursor_toggle_busy(True)
             ## RETURNS TUPLE -- (SPACE,(NONE, ERROR TEXT)) or (SPACE, )
             spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
-                                silent=self.silent.get(),
-                                version=int(self.alg.get()), size_q=False, debug=False, save=False,
-                                title="", where=[self.page6_figure, self.page6_a], solver=str(self.solver.get()), delta=self.delta, gui=True)
+                                silent=self.silent.get(), version=int(self.alg.get()), size_q=False, debug=self.debug,
+                                save=False, title="", where=[self.page6_figure, self.page6_a],
+                                solver=str(self.solver.get()), delta=self.delta, gui=True)
         finally:
             self.cursor_toggle_busy(False)
         ## If the visualisation of the space did not succeed
@@ -1961,6 +1964,7 @@ class Gui(Tk):
             self.space = spam[0]
             messagebox.showinfo("Space refinement", spam[1])
         else:
+            # self.show_space(True, True, True, clear=False)
             self.space = spam
             self.page6_figure.tight_layout()  ## By huypn
             self.page6_figure.canvas.draw()
