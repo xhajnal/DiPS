@@ -193,13 +193,14 @@ def sample_dictionary_funs(dictionary, size_q, keys=None, debug=False):
     return sampling
 
 
-def sample_list_funs(list_fun, size_q, intervals=False, silent=False, debug=False):
+def sample_list_funs(list_fun, size_q, parameters=False, intervals=False, silent=False, debug=False):
     """ Returns a list of function values for sampled parametrisations
 
     Args
     ----------
     list_fun: (list of functions)
     size_q: (int) sample size in each parameter
+    parameters: (list of strings) parameter names (used for faster eval)
     intervals: (list of pairs of numbers) intervals of parameters
     silent: (Bool) if silent command line output is set to minimum
     debug: (Bool) if debug extensive output is provided
@@ -217,37 +218,43 @@ def sample_list_funs(list_fun, size_q, intervals=False, silent=False, debug=Fals
     for polynome in list_fun:
         if debug:
             print("Polynome: ", polynome)
-        parameters = set()
-        parameters.update(find_param(polynome, debug))
 
-        ## THIS THING IS WORKING ONLY FOR THE CASE STUDY
-        # if len(parameters) < N:
-        #     parameters.update(find_param(polynome, debug))
-        if debug:
-            print("Parameters: ", parameters)
-        parameters = sorted(list(parameters))
-        if debug:
-            print("Sorted parameters: ", parameters)
+        if parameters:
+            fun_parameters = parameters
+        else:
+            fun_parameters = set()
+            fun_parameters.update(find_param(polynome, debug))
 
-        parameter_values = get_param_values(parameters, size_q, intervals=intervals, debug=debug)
+            ## THIS THING IS WORKING ONLY FOR THE CASE STUDY
+            # if len(parameters) < N:
+            #     parameters.update(find_param(polynome, debug))
+            if debug:
+                print("Parameters: ", fun_parameters)
+            fun_parameters = sorted(list(fun_parameters))
+
+        if debug:
+            print("Sorted parameters: ", fun_parameters)
+
+        parameter_values = get_param_values(fun_parameters, size_q, intervals=intervals, debug=debug)
 
         for parameter_value in parameter_values:
             if debug:
                 print("Parameter_value: ", parameter_value)
             a = [list_fun.index(polynome)]
-            for param in range(len(parameters)):
-                a.append(parameter_value[param])
+            for param_index in range(len(fun_parameters)):
+                a.append(parameter_value[param_index])
                 if debug:
-                    print("Parameter[param]: ", parameters[param])
-                    print("Parameter_value[param]: ", parameter_value[param])
-                globals()[parameters[param]] = parameter_value[param]
+                    print("Parameter[param]: ", fun_parameters[param_index])
+                    print("Parameter_value[param]: ", parameter_value[param_index])
+                locals()[fun_parameters[param_index]] = float(parameter_value[param_index])
 
             print("polynome", polynome)
+
+            expression = eval(polynome)
             try:
-                expression = z3.simplify(eval(polynome)).as_decimal(30)
+                expression = z3.simplify(expression).as_decimal(30)
             except:
-                expression = eval(polynome)
-            expression = float(expression)
+                pass
             if debug:
                 print("Eval ", polynome, expression)
             a.append(expression)

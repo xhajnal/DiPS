@@ -136,6 +136,10 @@ class Gui(Tk):
         self.parameter_intervals = []  ## Parameters intervals
         self.constraints = ""  ## Derived properties
         self.space = ""  ## Instance of a space Class
+
+        ## Results
+        self.sampled_functions = []
+
         ## Space visualisation settings
         self.show_samples = None
         self.show_refinement = None
@@ -1546,7 +1550,8 @@ class Gui(Tk):
         try:
             self.cursor_toggle_busy(True)
             self.sampled_functions = sample_list_funs(self.functions, int(self.fun_size_q_entry.get()),
-                                                intervals=self.parameter_intervals, debug=self.debug, silent=self.silent.get())
+                                                      parameters=self.parameters, intervals=self.parameter_intervals,
+                                                      debug=self.debug, silent=self.silent.get())
         finally:
             self.cursor_toggle_busy(False)
         self.sampled_functions_text.configure(state='normal')
@@ -1624,7 +1629,7 @@ class Gui(Tk):
         #     self.page3_figure = pyplt.figure()
         #     self.page3_a = self.page3_figure.add_subplot(111)
         # print("self.parameter_values", self.parameter_values)
-        spam, egg = eval_and_show(self.functions, self.parameter_values, data=self.data, intervals=self.intervals,
+        spam, egg = eval_and_show(self.functions, self.parameter_values, data=self.data, intervals=self.data_intervals,
                                   debug=self.debug, where=[self.page3_figure, self.page3_a])
 
         if spam is None:
