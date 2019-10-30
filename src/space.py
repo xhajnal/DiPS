@@ -255,15 +255,16 @@ class RefinedSpace:
 
             ## Set axis ranges
             region = copy.deepcopy(self.region)
-            if region[0][1] - region[0][0] < 0.1:
-                region[0] = (region[0][0] - 0.2, region[0][1] + 0.2)
-            pic.axis([region[0][0], region[0][1], 0, 1])
-
+            if len(self.region) == 1:
+                if region[0][1] - region[0][0] < 0.1:
+                     region[0] = (region[0][0] - 0.2, region[0][1] + 0.2)
+                pic.axis([region[0][0], region[0][1], 0, 1])
             max_region_size = region[0][1] - region[0][0]
+
             if len(self.region) == 2:
                 pic.set_ylabel(self.params[1])
-                if region[1][1] - region[1][0] < 0.1:
-                    region[1] = (region[1][0] - 0.2, region[1][1] + 0.2)
+                # if region[1][1] - region[1][0] < 0.1:
+                #     region[1] = (region[1][0] - 0.2, region[1][1] + 0.2)
                 pic.axis([region[0][0], region[0][1], region[1][0], region[1][1]])
                 max_region_size = max(max_region_size, region[1][1] - region[1][0])
 

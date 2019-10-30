@@ -379,6 +379,8 @@ def check_unsafe(region, constraints, silent=False, called=False, solver="z3", d
     # p = Real('p')
     # print(p)
     # print(type(p))
+    if solver == "z3":
+        del delta
 
     if called:
         globals()["parameters"] = set()
@@ -405,7 +407,6 @@ def check_unsafe(region, constraints, silent=False, called=False, solver="z3", d
         space = globals()["space"]
 
     if solver == "z3":
-
         s = Solver()
 
         ## Adding regional restrictions to solver
@@ -475,6 +476,8 @@ def check_safe(region, constraints, silent=False, called=False, solver="z3", del
     ## Initialisation
     if not silent:
         print("checking safe", region, "current time is", datetime.datetime.now())
+    if solver == "z3":
+        del delta
 
     if called:
         globals()["parameters"] = set()
