@@ -1375,8 +1375,12 @@ def private_check_deeper_queue_checking_both(region, constraints, n, epsilon, co
 
     ## Resolving if the region safe/unsafe/unknown
     if model is None:
-        example = check_unsafe(region, constraints, silent, solver=solver, delta=delta)
-        counterexample = check_safe(region, constraints, silent, solver=solver, delta=delta)
+        example = check_unsafe(region, constraints, silent, solver=solver, delta=delta, debug=debug)
+        # print("example", example)
+        if example is True:
+            counterexample = None
+        else:
+            counterexample = check_safe(region, constraints, silent, solver=solver, delta=delta, debug=debug)
     elif model[0] is None:
         example = check_unsafe(region, constraints, silent, solver=solver, delta=delta, debug=debug)
     else:
