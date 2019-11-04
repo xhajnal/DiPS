@@ -210,6 +210,8 @@ class Gui(Tk):
 
         show_print_checkbutton = Checkbutton(frame, text="Hide print in command line", variable=self.silent)
         show_print_checkbutton.grid(row=5, column=9, sticky=E, padx=4)
+        debug_checkbutton = Checkbutton(frame, text="Debug mode", variable=self.debug)
+        debug_checkbutton.grid(row=5, column=10, sticky=E, padx=4)
         # print("self.silent", self.silent.get())
 
         ## DESIGN - TABS
@@ -1307,8 +1309,7 @@ class Gui(Tk):
         self.status_set("Please select folder to store data informed property in.")
         save_data_informed_property_file = filedialog.asksaveasfilename(initialdir=self.property_dir,
                                                                         title="Data informed property saving - Select file",
-                                                                        filetypes=(
-                                                                        ("pctl files", "*.pctl"), ("all files", "*.*")))
+                                                                        filetypes=(("pctl files", "*.pctl"), ("all files", "*.*")))
         if save_data_informed_property_file == "":
             self.status_set("No file selected to store data informed property.")
             return
