@@ -1,5 +1,6 @@
 import unittest
 from src.synthetise import *
+cwd = os.getcwd()
 
 
 class MyTestCase(unittest.TestCase):
@@ -138,101 +139,104 @@ class MyTestCase(unittest.TestCase):
 
     def test_check_single_dreal(self):
         print(colored("Checking (un)safe with single properties using dreal here", 'blue'))
-        import dreal
-        ## IS IN
-        ## def check_safe(region, constraints, silent=False, called=False, solver="z3", delta=0.001)
-        # check_deeper([(0, 1)], ["x"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
-        self.assertEqual(check_safe([(0, 1)], ineq_to_constraints(["x"], [Interval(0, 1)]), silent=True, called=True, solver="dreal"), True)
+        try:
+            import dreal
+            ## IS IN
+            ## def check_safe(region, constraints, silent=False, called=False, solver="z3", delta=0.001)
+            # check_deeper([(0, 1)], ["x"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
+            self.assertEqual(check_safe([(0, 1)], ineq_to_constraints(["x"], [Interval(0, 1)]), silent=True, called=True, solver="dreal"), True)
 
-        # check_deeper([(1, 1)], ["x"], [Interval(0, 2)], 0, 0.1, 1, True, 4)
-        self.assertEqual(
-            check_safe([(1, 1)], ineq_to_constraints(["x"], [Interval(0, 2)]), silent=True, called=True, solver="dreal"),
-            True)
+            # check_deeper([(1, 1)], ["x"], [Interval(0, 2)], 0, 0.1, 1, True, 4)
+            self.assertEqual(
+                check_safe([(1, 1)], ineq_to_constraints(["x"], [Interval(0, 2)]), silent=True, called=True, solver="dreal"),
+                True)
 
-        # check_deeper([(0, 1)], ["x"], [Interval(0.5, 3)], 10, 0.1, 1, True, 4)
-        self.assertIsInstance(
-            check_safe([(0, 1)], ineq_to_constraints(["x"], [Interval(0.5, 3)]), silent=True, called=True, solver="dreal"),
-            dreal._dreal_py.Box)  ## has an counter example
+            # check_deeper([(0, 1)], ["x"], [Interval(0.5, 3)], 10, 0.1, 1, True, 4)
+            self.assertIsInstance(
+                check_safe([(0, 1)], ineq_to_constraints(["x"], [Interval(0.5, 3)]), silent=True, called=True, solver="dreal"),
+                dreal._dreal_py.Box)  ## has an counter example
 
-        # check_deeper([(0, 1)], ["x"], [Interval(2, 3)], 0, 0.1, 1, True, 4)
-        self.assertIsInstance(
-            check_safe([(0, 1)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
-            dreal._dreal_py.Box)  ## has an counter example
+            # check_deeper([(0, 1)], ["x"], [Interval(2, 3)], 0, 0.1, 1, True, 4)
+            self.assertIsInstance(
+                check_safe([(0, 1)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
+                dreal._dreal_py.Box)  ## has an counter example
 
-        # check_deeper([(1, 4)], ["x"], [Interval(2, 3)], 0, 0.1, 1, True, 4)
-        self.assertIsInstance(
-            check_safe([(1, 4)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
-            dreal._dreal_py.Box)  ## has an counter example
+            # check_deeper([(1, 4)], ["x"], [Interval(2, 3)], 0, 0.1, 1, True, 4)
+            self.assertIsInstance(
+                check_safe([(1, 4)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
+                dreal._dreal_py.Box)  ## has an counter example
 
-        # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 2)], 0, 0.1, 1, True, 4)
-        self.assertEqual(
-            check_safe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 2)]), silent=True, called=True,
-                       solver="dreal"), True)
+            # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 2)], 0, 0.1, 1, True, 4)
+            self.assertEqual(
+                check_safe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 2)]), silent=True, called=True,
+                           solver="dreal"), True)
 
-        # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
-        self.assertIsInstance(check_safe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), silent=True,
-                                         called=True, solver = "dreal"), dreal._dreal_py.Box)  ## has an counter example
+            # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
+            self.assertIsInstance(check_safe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), silent=True,
+                                             called=True, solver = "dreal"), dreal._dreal_py.Box)  ## has an counter example
 
-        ## IS OUT
-        ## def check_unsafe(region, constraints, silent=False, called=False, solver="z3", delta=0.001)
-        # check_deeper([(0, 1)], ["x"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
-        self.assertIsInstance(
-            check_unsafe([(0, 1)], ineq_to_constraints(["x"], [Interval(0, 1)]), silent=True, called=True, solver="dreal"),
-            dreal._dreal_py.Box)  ## has an example
+            ## IS OUT
+            ## def check_unsafe(region, constraints, silent=False, called=False, solver="z3", delta=0.001)
+            # check_deeper([(0, 1)], ["x"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
+            self.assertIsInstance(
+                check_unsafe([(0, 1)], ineq_to_constraints(["x"], [Interval(0, 1)]), silent=True, called=True, solver="dreal"),
+                dreal._dreal_py.Box)  ## has an example
 
-        # check_deeper([(1, 1)], ["x"], [Interval(0, 2)], 0, 0.1, 1, True, 4)
-        self.assertIsInstance(
-            check_unsafe([(1, 1)], ineq_to_constraints(["x"], [Interval(0, 2)]), silent=True, called=True, solver="dreal"),
-            dreal._dreal_py.Box)  ## has an example
+            # check_deeper([(1, 1)], ["x"], [Interval(0, 2)], 0, 0.1, 1, True, 4)
+            self.assertIsInstance(
+                check_unsafe([(1, 1)], ineq_to_constraints(["x"], [Interval(0, 2)]), silent=True, called=True, solver="dreal"),
+                dreal._dreal_py.Box)  ## has an example
 
-        # check_deeper([(0, 1)], ["x"], [Interval(0.5, 3)], 10, 0.1, 1, True, 4)
-        self.assertIsInstance(
-            check_unsafe([(0, 1)], ineq_to_constraints(["x"], [Interval(0.5, 3)]), silent=True, called=True, solver="dreal"),
-            dreal._dreal_py.Box)  ## has an example
+            # check_deeper([(0, 1)], ["x"], [Interval(0.5, 3)], 10, 0.1, 1, True, 4)
+            self.assertIsInstance(
+                check_unsafe([(0, 1)], ineq_to_constraints(["x"], [Interval(0.5, 3)]), silent=True, called=True, solver="dreal"),
+                dreal._dreal_py.Box)  ## has an example
 
-        # check_deeper([(0, 1)], ["x"], [Interval(2, 3)], 0, 0.1, 1, True, 4)
-        self.assertEqual(
-            check_unsafe([(0, 1)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
-            True)
+            # check_deeper([(0, 1)], ["x"], [Interval(2, 3)], 0, 0.1, 1, True, 4)
+            self.assertEqual(
+                check_unsafe([(0, 1)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
+                True)
 
-        # check_deeper([(1, 4)], ["x"], [Interval(2, 3)], 0, 0.1, 1, True, 4)
-        self.assertIsInstance(
-            check_unsafe([(1, 4)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
-            dreal._dreal_py.Box)  ## has an example
+            # check_deeper([(1, 4)], ["x"], [Interval(2, 3)], 0, 0.1, 1, True, 4)
+            self.assertIsInstance(
+                check_unsafe([(1, 4)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
+                dreal._dreal_py.Box)  ## has an example
 
-        # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 2)], 0, 0.1, 1, True, 4)
-        self.assertIsInstance(
-            check_unsafe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 2)]), silent=True, called=True,
-                         solver="dreal"),
-            dreal._dreal_py.Box)  ## has an example
+            # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 2)], 0, 0.1, 1, True, 4)
+            self.assertIsInstance(
+                check_unsafe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 2)]), silent=True, called=True,
+                             solver="dreal"),
+                dreal._dreal_py.Box)  ## has an example
 
-        # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
-        self.assertIsInstance(
-            check_unsafe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), silent=True, called=True,
-                         solver="dreal"),
-            dreal._dreal_py.Box)  ## has an example
+            # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
+            self.assertIsInstance(
+                check_unsafe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), silent=True, called=True,
+                             solver="dreal"),
+                dreal._dreal_py.Box)  ## has an example
 
-        self.assertEqual(
-            check_unsafe([(0, 1)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
-            True)
-        self.assertEqual(
-            check_unsafe([(1, 1)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
-            True)
-        self.assertIsInstance(
-            check_unsafe([(0, 1)], ineq_to_constraints(["x"], [Interval(1, 3)]), silent=True, called=True, solver="dreal"),
-            dreal._dreal_py.Box)
-        self.assertIsInstance(
-            check_unsafe([(0, 3)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
-            dreal._dreal_py.Box)
-        self.assertIsInstance(
-            check_unsafe([(1, 4)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
-            dreal._dreal_py.Box)
-        self.assertIsInstance(
-            check_unsafe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 2)]), silent=True, called=True,
-                         solver="dreal"), dreal._dreal_py.Box)
-        self.assertEqual(
-            check_unsafe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(4, 5)]), silent=True, called=True,
-                         solver="dreal"), True)
+            self.assertEqual(
+                check_unsafe([(0, 1)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
+                True)
+            self.assertEqual(
+                check_unsafe([(1, 1)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
+                True)
+            self.assertIsInstance(
+                check_unsafe([(0, 1)], ineq_to_constraints(["x"], [Interval(1, 3)]), silent=True, called=True, solver="dreal"),
+                dreal._dreal_py.Box)
+            self.assertIsInstance(
+                check_unsafe([(0, 3)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
+                dreal._dreal_py.Box)
+            self.assertIsInstance(
+                check_unsafe([(1, 4)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, called=True, solver="dreal"),
+                dreal._dreal_py.Box)
+            self.assertIsInstance(
+                check_unsafe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 2)]), silent=True, called=True,
+                             solver="dreal"), dreal._dreal_py.Box)
+            self.assertEqual(
+                check_unsafe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(4, 5)]), silent=True, called=True,
+                             solver="dreal"), True)
+        except ModuleNotFoundError:
+            pass
 
     def test_check_multiple_z3(self):
         print(colored("Check (un)safe with multiple properties using z3 here", 'blue'))
@@ -270,49 +274,52 @@ class MyTestCase(unittest.TestCase):
 
     def test_check_multiple_dreal(self):
         print(colored("Check (un)safe with multiple properties using dreal here", 'blue'))
-        import dreal
+        try:
+            import dreal
 
-        ## IS IN
-        ## check_safe(region, constraints, silent=False, called=False, solver="z3", delta=0.001)
-        self.assertEqual(
-            check_safe([(0, 1)], ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 2)]), silent=True,
-                       called=True, solver="dreal"), True)
-        self.assertIsInstance(
-            check_safe([(0, 1)], ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=True,
-                       called=True, solver="dreal"), dreal._dreal_py.Box)
+            ## IS IN
+            ## check_safe(region, constraints, silent=False, called=False, solver="z3", delta=0.001)
+            self.assertEqual(
+                check_safe([(0, 1)], ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 2)]), silent=True,
+                           called=True, solver="dreal"), True)
+            self.assertIsInstance(
+                check_safe([(0, 1)], ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=True,
+                           called=True, solver="dreal"), dreal._dreal_py.Box)
 
-        ## !!!TRICKY
-        self.assertIsInstance(
-            check_safe([(0, 2)], ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=True,
-                       called=True, solver="dreal"), dreal._dreal_py.Box)
+            ## !!!TRICKY
+            self.assertIsInstance(
+                check_safe([(0, 2)], ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=True,
+                           called=True, solver="dreal"), dreal._dreal_py.Box)
 
-        self.assertEqual(
-            check_safe([(0, 1), (0, 1)], ineq_to_constraints(["x", "y"], [Interval(0, 1), Interval(0, 1)]), silent=True,
-                       called=True, solver="dreal"), True)
-        self.assertIsInstance(
-            check_safe([(0, 1), (0, 2)], ineq_to_constraints(["x", "y"], [Interval(0, 1), Interval(0, 1)]), silent=True,
-                       called=True, solver="dreal"), dreal._dreal_py.Box)
+            self.assertEqual(
+                check_safe([(0, 1), (0, 1)], ineq_to_constraints(["x", "y"], [Interval(0, 1), Interval(0, 1)]), silent=True,
+                           called=True, solver="dreal"), True)
+            self.assertIsInstance(
+                check_safe([(0, 1), (0, 2)], ineq_to_constraints(["x", "y"], [Interval(0, 1), Interval(0, 1)]), silent=True,
+                           called=True, solver="dreal"), dreal._dreal_py.Box)
 
-        ## IS OUT
-        ## def check_unsafe(region, constraints, silent=False, called=False, solver="z3", delta=0.001)
-        self.assertEqual(
-            check_unsafe([(0, 1)], ineq_to_constraints(["x", "2*x"], [Interval(2, 3), Interval(3, 4)]), silent=True,
-                         called=True, solver="dreal"), True)
-        self.assertIsInstance(
-            check_unsafe([(0, 1)], ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=True,
-                         called=True, solver="dreal"), dreal._dreal_py.Box)
+            ## IS OUT
+            ## def check_unsafe(region, constraints, silent=False, called=False, solver="z3", delta=0.001)
+            self.assertEqual(
+                check_unsafe([(0, 1)], ineq_to_constraints(["x", "2*x"], [Interval(2, 3), Interval(3, 4)]), silent=True,
+                             called=True, solver="dreal"), True)
+            self.assertIsInstance(
+                check_unsafe([(0, 1)], ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=True,
+                             called=True, solver="dreal"), dreal._dreal_py.Box)
 
-        ## !!!TRICKY
-        self.assertIsInstance(
-            check_unsafe([(0, 2)], ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=False,
-                         called=True, solver="dreal"), dreal._dreal_py.Box)
+            ## !!!TRICKY
+            self.assertIsInstance(
+                check_unsafe([(0, 2)], ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 1)]), silent=False,
+                             called=True, solver="dreal"), dreal._dreal_py.Box)
 
-        self.assertEqual(
-            check_unsafe([(0, 1), (0, 1)], ineq_to_constraints(["x", "y"], [Interval(2, 3), Interval(2, 3)]), silent=True,
-                         called=True, solver="dreal"), True)
-        self.assertIsInstance(
-            check_unsafe([(0, 1), (0, 2)], ineq_to_constraints(["x", "y"], [Interval(0, 1), Interval(0, 1)]), silent=True,
-                         called=True, solver="dreal"), dreal._dreal_py.Box)
+            self.assertEqual(
+                check_unsafe([(0, 1), (0, 1)], ineq_to_constraints(["x", "y"], [Interval(2, 3), Interval(2, 3)]), silent=True,
+                             called=True, solver="dreal"), True)
+            self.assertIsInstance(
+                check_unsafe([(0, 1), (0, 2)], ineq_to_constraints(["x", "y"], [Interval(0, 1), Interval(0, 1)]), silent=True,
+                             called=True, solver="dreal"), dreal._dreal_py.Box)
+        except ModuleNotFoundError:
+            pass
 
     def test_check_interval_single(self):
         print(colored("Check interval (un)safe with single properties here", 'blue'))
@@ -483,11 +490,13 @@ class MyTestCase(unittest.TestCase):
         show_space = True
 
         ## NORMAL TEST
-        from load import create_intervals, get_f, load_pickled_data
+        from load import create_intervals, get_f
         agents_quantities = [2, 3, 5, 10]
-        f = get_f("./sem*[0-9].txt", "prism", True, agents_quantities)
-        D3 = load_pickled_data("Data_two_param")
 
+        f = get_f(os.path.join(cwd, "prism_results/asyn*[0-9].txt"), "prism", True, agents_quantities)
+        D3 = pickle.load(open(os.path.join(cwd, "data/Data_two_param.p"), "rb"))
+
+        print(D3)
         coverage_thresh = 0.95
         alpha, n_samples, max_depth, min_rect_size, N, algorithm, v_p, v_q = 0.95, 100, 10, 1e-05, 2, 4, 0.028502714675268215, 0.03259111103419188
 
