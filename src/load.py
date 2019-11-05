@@ -148,28 +148,30 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
                 line = line.replace("-*", "-")
                 if line.startswith('*'):
                     line = line[1:]
+                if line[-1] is "\n":
+                    line = line[:-1]
                 if here == "r" and not f_only:
-                    # print(f"pop: {N}, formula: {i+1}", line[:-1])
+                    # print(f"pop: {N}, formula: {i+1}", line)
                     if factorize:
                         try:
-                            rewards[N].append(str(factor(line[:-1])))
+                            rewards[N].append(str(factor(line)))
                         except TypeError:
                             print("Error while factorising rewards, used not factorised instead")
-                            rewards[N].append(line[:-1])
+                            rewards[N].append(line)
                             # os.chdir(cwd)
                     else:
-                        rewards[N].append(line[:-1])
+                        rewards[N].append(line)
                 elif not here == "r" and not rewards_only:
                     # print(f"pop: {N}, formula: {i+1}", line[:-1])
                     if factorize:
                         try:
-                            f[N].append(str(factor(line[:-1])))
+                            f[N].append(str(factor(line)))
                         except TypeError:
                             print(f"Error while factorising polynomial f[{N}][{i + 1}], used not factorised instead")
-                            f[N].append(line[:-1])
+                            f[N].append(line)
                             # os.chdir(cwd)
                     else:
-                        f[N].append(line[:-1])
+                        f[N].append(line)
             line_index = line_index + 1
         file.close()
     os.chdir(default_directory)
