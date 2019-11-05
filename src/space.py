@@ -1,3 +1,4 @@
+import socket
 from collections import Iterable
 from time import localtime, strftime
 from matplotlib.collections import PatchCollection
@@ -283,9 +284,9 @@ class RefinedSpace:
                 if sat_samples or unsat_samples:
                     pretitle = pretitle + "Samples, \n red = unsat points, green = sat points"
             if (green or red) and (self.rectangles_sat or self.rectangles_unsat) and show_all:
-                pretitle = pretitle + f"\n Last refinement took {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole time"
+                pretitle = pretitle + f"\n Last refinement took {socket.gethostname()} {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole time"
             if (sat_samples or unsat_samples) and (self.sat_samples or self.unsat_samples):
-                pretitle = pretitle + f"\n Last sampling took {round(self.time_last_sampling, 2)} of {round(self.time_sampling, 2)} sec. whole sampling time"
+                pretitle = pretitle + f"\n Last sampling took {socket.gethostname()} {round(self.time_last_sampling, 2)} of {round(self.time_sampling, 2)} sec. whole sampling time"
             if pretitle:
                 pretitle = pretitle + "\n"
             if green:
@@ -715,11 +716,11 @@ class RefinedSpace:
         spam = str(f"params: {self.params}\n")
         spam = spam + str(f"region: {self.region}\n")
         spam = spam + str(f"types: {self.types}\n")
-        spam = spam + str(f"rectangles_sat: {(f'{self.rectangles_sat[:5]} ... more', self.rectangles_sat)[len(self.rectangles_sat) <= 30 or full_print]} \n")
-        spam = spam + str(f"rectangles_unsat: {(f'{self.rectangles_unsat[:5]} ... more', self.rectangles_unsat)[len(self.rectangles_unsat) <= 30 or full_print]} \n")
-        spam = spam + str(f"rectangles_unknown: {(f'{self.rectangles_unknown[:5]} ... more', self.rectangles_unknown)[len(self.rectangles_unknown) <= 30 or full_print]} \n")
-        spam = spam + str(f"sat_samples: {(f'{self.sat_samples[:5]} ... more', self.sat_samples)[len(self.sat_samples) <= 30 or full_print]} \n")
-        spam = spam + str(f"unsat_samples: {(f'{self.unsat_samples[:5]} ... more', self.unsat_samples)[len(self.unsat_samples) <= 30 or full_print]} \n")
+        spam = spam + str(f"rectangles_sat: {(f'{self.rectangles_sat[:5]} ... {len(self.rectangles_sat)-5} more', self.rectangles_sat)[len(self.rectangles_sat) <= 30 or full_print]} \n")
+        spam = spam + str(f"rectangles_unsat: {(f'{self.rectangles_unsat[:5]} ... {len(self.rectangles_unsat)-5} more', self.rectangles_unsat)[len(self.rectangles_unsat) <= 30 or full_print]} \n")
+        spam = spam + str(f"rectangles_unknown: {(f'{self.rectangles_unknown[:5]} ... {len(self.rectangles_unknown)-5} more', self.rectangles_unknown)[len(self.rectangles_unknown) <= 30 or full_print]} \n")
+        spam = spam + str(f"sat_samples: {(f'{self.sat_samples[:5]} ... {len(self.sat_samples)-5} more', self.sat_samples)[len(self.sat_samples) <= 30 or full_print]} \n")
+        spam = spam + str(f"unsat_samples: {(f'{self.unsat_samples[:5]} ... {len(self.unsat_samples)-5} more', self.unsat_samples)[len(self.unsat_samples) <= 30 or full_print]} \n")
         spam = spam + str(f"true_point: {self.true_point}\n")
         return spam
 
