@@ -596,6 +596,7 @@ class MyTestCase(unittest.TestCase):
     def test_presampled(self):
         print(colored("Presampled refinement here", 'blue'))
 
+        show_space = False
         parameters = ["x", "y"]
         region = [(0, 1), (2, 3)]
         space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])

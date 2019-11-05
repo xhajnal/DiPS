@@ -593,14 +593,14 @@ def check_safe(region, constraints, silent=False, called=False, solver="z3", del
             return result
 
 
-def check_deeper(region, constraints, n, epsilon, coverage, silent, version, size_q=False, debug=False, save=False, title="", where=False, show_space=True, solver="z3", delta=0.001, gui=False):
+def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent, version, size_q=False, debug=False, save=False, title="", where=False, show_space=True, solver="z3", delta=0.001, gui=False):
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
 
     Args
     ----------
     region: (list of intervals/space) array of pairs, low and high bound, defining the parameter space to be refined
     constraints:  (list of strings): array of properties
-    n: (Int): max number of recursions to do
+    recursion_depth: (Int): max number of recursions to do
     epsilon: (Float): minimal size of rectangle to be checked
     coverage: (Float): coverage threshold to stop computation
     silent: (Bool): if silent printed output is set to minimum
@@ -738,7 +738,7 @@ def check_deeper(region, constraints, n, epsilon, coverage, silent, version, siz
         if debug and save:
             print("I am showing sampling_sat_"+str(save))
         if not where:
-            space.show(red=False, green=False, sat_samples=True, unsat_samples=False, save=save, where=where, all=not gui)
+            space.show(red=False, green=False, sat_samples=True, unsat_samples=False, save=save, where=where, show_all=not gui)
 
         ## COMPUTING THE ORTHOGONAL HULL OF SAT POINTS
         ## Initializing the min point and max point as the first point
@@ -882,19 +882,19 @@ def check_deeper(region, constraints, n, epsilon, coverage, silent, version, siz
     if len(white_space) is 1:
         if version == 1:
             print(f"Using DFS method with {('dreal', 'z3')[solver=='z3']} solver")
-            private_check_deeper(region, constraints, n, epsilon, coverage, silent, solver=solver, delta=delta, debug=debug)
+            private_check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent, solver=solver, delta=delta, debug=debug)
         elif version == 2:
             print(f"Using BFS method with {('dreal', 'z3')[solver=='z3']} solver")
             globals()["que"] = Queue()
-            private_check_deeper_queue(region, constraints, n, epsilon, coverage, silent, solver=solver, delta=delta, debug=debug)
+            private_check_deeper_queue(region, constraints, recursion_depth, epsilon, coverage, silent, solver=solver, delta=delta, debug=debug)
         elif version == 3:
             print(f"Using BFS method with passing examples with {('dreal', 'z3')[solver=='z3']} solver")
             globals()["que"] = Queue()
-            private_check_deeper_queue_checking(region, constraints, n, epsilon, coverage, silent, model=None, solver=solver, delta=delta, debug=debug)
+            private_check_deeper_queue_checking(region, constraints, recursion_depth, epsilon, coverage, silent, model=None, solver=solver, delta=delta, debug=debug)
         elif version == 4:
             print(f"Using BFS method with passing examples and counterexamples with {('dreal', 'z3')[solver=='z3']} solver")
             globals()["que"] = Queue()
-            private_check_deeper_queue_checking_both(region, constraints, n, epsilon, coverage, silent, model=None, solver=solver, delta=delta, debug=debug)
+            private_check_deeper_queue_checking_both(region, constraints, recursion_depth, epsilon, coverage, silent, model=None, solver=solver, delta=delta, debug=debug)
         elif version == 5:
             print("Using interval arithmetic")
             globals()["que"] = Queue()
@@ -906,7 +906,7 @@ def check_deeper(region, constraints, n, epsilon, coverage, silent, version, siz
                 print("constraints", constraints)
                 print("converted_intervals", egg)
 
-            private_check_deeper_interval(region, egg[0], egg[1], n, epsilon, coverage, silent, debug=debug)
+            private_check_deeper_interval(region, egg[0], egg[1], recursion_depth, epsilon, coverage, silent, debug=debug)
         else:
             print(colored("Chosen version not found", "red"))
     else:
@@ -914,7 +914,7 @@ def check_deeper(region, constraints, n, epsilon, coverage, silent, version, siz
             single_rectangle_start_time = time()
             ## To get more similar result substituting the number of splits from the max_depth
             if debug:
-                print("max_depth = ", max(1, n-(int(log(len(white_space), 2)))))
+                print("max_depth = ", max(1, recursion_depth - (int(log(len(white_space), 2)))))
                 print("refining", rectangle)
 
             ## THE PROBLEM IS THAT COVERAGE IS COMPUTED FOR THE WHOLE SPACE NOT ONLY FOR THE GIVEN REGION
@@ -935,23 +935,23 @@ def check_deeper(region, constraints, n, epsilon, coverage, silent, version, siz
 
             if version == 1:
                 print(f"Using DFS method with {('dreal', 'z3')[solver=='z3']} solver to solve spliced rectangle number {white_space.index(rectangle)+1} of {len(white_space)}")
-                private_check_deeper(rectangle, constraints, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, solver=solver, delta=delta, debug=debug)
+                private_check_deeper(rectangle, constraints, max(1, recursion_depth - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, solver=solver, delta=delta, debug=debug)
             elif version == 2:
                 print(f"Using BFS method with {('dreal', 'z3')[solver=='z3']} solver to solve spliced rectangle number {white_space.index(rectangle)+1}")
-                private_check_deeper_queue(rectangle, constraints, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, solver=solver, delta=delta, debug=debug)
+                private_check_deeper_queue(rectangle, constraints, max(1, recursion_depth - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, solver=solver, delta=delta, debug=debug)
             elif version == 3:
                 print(f"Using BFS method with passing examples with {('dreal', 'z3')[solver=='z3']} solver to solve spliced rectangle number {white_space.index(rectangle)+1} of {len(white_space)}")
-                private_check_deeper_queue_checking(rectangle, constraints, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, model=None, solver=solver, delta=delta, debug=debug)
+                private_check_deeper_queue_checking(rectangle, constraints, max(1, recursion_depth - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, model=None, solver=solver, delta=delta, debug=debug)
             elif version == 4:
                 print(f"Using BFS method with passing examples and counterexamples with {('dreal', 'z3')[solver=='z3']} solver to solve spliced rectangle number {white_space.index(rectangle)+1} of {len(white_space)}")
-                private_check_deeper_queue_checking_both(rectangle, constraints, max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, model=None, solver=solver, delta=delta, debug=debug)
+                private_check_deeper_queue_checking_both(rectangle, constraints, max(1, recursion_depth - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, model=None, solver=solver, delta=delta, debug=debug)
             elif version == 5:
                 print(f"Using interval method to solve spliced rectangle number {white_space.index(rectangle)+1} of {len(white_space)}.")
 
                 egg = constraints_to_ineq(constraints, debug=False)
                 if not egg:
                     return space
-                private_check_deeper_interval(rectangle, egg[0], egg[1], max(1, n - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, debug=debug)
+                private_check_deeper_interval(rectangle, egg[0], egg[1], max(1, recursion_depth - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, debug=debug)
             else:
                 print(colored("Chosen version not found", "red"))
                 return space
@@ -959,7 +959,7 @@ def check_deeper(region, constraints, n, epsilon, coverage, silent, version, siz
             ## Showing the step refinements of respective rectangles from the white space
             ## If the visualisation of the space did not succeed space_shown = (None, error message)
             if not where:
-                space_shown = space.show(f"max_recursion_depth:{n}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n Refinement took {socket.gethostname()} {round(time() - single_rectangle_start_time)} second(s)", save=save, where=where, show_all=not gui)
+                space_shown = space.show(f"max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n Refinement took {socket.gethostname()} {round(time() - single_rectangle_start_time)} second(s)", save=save, where=where, show_all=not gui)
             print()
             if space.get_coverage() >= coverage:
                 break
@@ -984,7 +984,7 @@ def check_deeper(region, constraints, n, epsilon, coverage, silent, version, siz
         ## If the visualisation of the space did not succeed space_shown = (None, error message)
         if show_space:
             space.refinement_took(time() - start_time)
-            space_shown = space.show(f"max_recursion_depth:{n}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n Refinement took {socket.gethostname()} {round(time() - start_time, 2)} of {round(space.time_refinement,2)} second(s)", sat_samples=gui, unsat_samples=gui, save=save, where=where, show_all=not gui)
+            space_shown = space.show(f"max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n Refinement took {socket.gethostname()} {round(time() - start_time, 2)} of {round(space.time_refinement, 2)} second(s)", sat_samples=gui, unsat_samples=gui, save=save, where=where, show_all=not gui)
     print("result coverage is: ", space.get_coverage())
     if where:
         if space_shown[0] is None:

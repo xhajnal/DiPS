@@ -97,6 +97,12 @@ class RefinedSpace:
                 self.region[interval_index] = [self.region[interval_index][0], self.region[interval_index][1]]
 
         ## PARAMS
+        for param in params:
+            if param in ["region", "params", "types", "rectangles_sat", "rectangles_unsat", "rectangles_unknown", "sat_samples", "unsat_samples", "true_point"]:
+                raise Exception(f"Parameter name {param} is not allowed as it is one of the variables")
+            ## TODO add "delta"
+            if param in ["funcs", "intervals", "silent", "debug", "constraints", "points", "solver", "recursion_depth",  "epsilon", "coverage", "silent", "version", "size_q", "debug", "save", "title", "where", "show_space", "solver", "gui"]:
+                raise Exception(f"Parameter name {param} is not allowed as it is one of the variables")
         self.params = params
 
         if not len(self.params) == len(self.region):

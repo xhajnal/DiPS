@@ -378,8 +378,8 @@ class Gui(Tk):
         self.alpha_entry.grid(row=4, column=1)
         self.n_samples_entry.grid(row=5, column=1)
 
-        self.alpha_entry.insert(END, '0.95')
-        self.n_samples_entry.insert(END, '100')
+        self.alpha_entry.insert(END, '0.90')
+        self.n_samples_entry.insert(END, '60')
 
         Button(page4, text='Create intervals', command=self.create_intervals).grid(row=6, column=0, sticky=W, padx=4, pady=4)
 
@@ -2341,4 +2341,5 @@ else:
     gui.attributes('-zoomed', True)
 
 gui.protocol('WM_DELETE_WINDOW', gui.ask_quit)
+sys.setrecursionlimit(20000)
 gui.mainloop()
