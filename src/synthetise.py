@@ -427,15 +427,18 @@ def check_unsafe(region, constraints, silent=False, called=False, solver="z3", d
                 print(f"constraints[{i}] {constraints[i]}")
             s.add(eval(constraints[i]))
 
-        if s.check() == sat:
-            if debug:
-                print(f"Counterexample of unsafety: {s.model()}")
-            return s.model()
-        else:
+        check = s.check()
+        if check == unsat:
             if debug:
                 print(f"The region {region} is " + colored("unsafe", "red"))
             space.add_red(region)
             return True
+        elif check == unknown:
+            return False
+        else:
+            if debug:
+                print(f"Counterexample of unsafety: {s.model()}")
+            return s.model()
 
     elif solver == "dreal":
         ## Adding regional restrictions to dreal solver
@@ -550,15 +553,18 @@ def check_safe(region, constraints, silent=False, called=False, solver="z3", del
 
         # print(s.check_unsafe())
         # return s.check_unsafe()
-        if s.check() == unsat:
+        check = s.check()
+        if check == sat:
+            if debug:
+                print(f"Counterexample of safety: {s.model()}")
+            return s.model()
+        elif check == unknown:
+            return False
+        else:
             if debug:
                 print(f"The region {region} is " + colored("safe", "green"))
             space.add_green(region)
             return True
-        else:
-            if debug:
-                print(f"Counterexample of safety: {s.model()}")
-            return s.model()
 
     elif solver == "dreal":
         ## Adding regional restrictions to solver
@@ -984,7 +990,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         ## If the visualisation of the space did not succeed space_shown = (None, error message)
         if show_space:
             space.refinement_took(time() - start_time)
-            space_shown = space.show(f"max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n Refinement took {socket.gethostname()} {round(time() - start_time, 2)} of {round(space.time_refinement, 2)} second(s)", sat_samples=gui, unsat_samples=gui, save=save, where=where, show_all=not gui)
+            space_shown = space.show(f"max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n Last refinement took {socket.gethostname()} {round(time() - start_time, 2)} of {round(space.time_refinement, 2)} second(s)", sat_samples=gui, unsat_samples=gui, save=save, where=where, show_all=not gui)
     print("result coverage is: ", space.get_coverage())
     if where:
         if space_shown[0] is None:
@@ -1305,16 +1311,20 @@ def private_check_deeper_queue_checking(region, constraints, n, epsilon, coverag
 
     model_low = [9, 9]
     model_high = [9, 9]
-    if float(eval(example_points[index])) > low + (high - low) / 2:
+    if example is False:
         model_low[0] = None
-        model_high[0] = example
+        model_high[0] = None
     else:
-        model_low[0] = example
-        model_high[0] = None
-    ## Overwrite if equal
-    if float(eval(example_points[index])) == low + (high - low) / 2:
-        model_low[0] = None
-        model_high[0] = None
+        if float(eval(example_points[index])) > low + (high - low) / 2:
+            model_low[0] = None
+            model_high[0] = example
+        else:
+            model_low[0] = example
+            model_high[0] = None
+        ## Overwrite if equal
+        if float(eval(example_points[index])) == low + (high - low) / 2:
+            model_low[0] = None
+            model_high[0] = None
 
     ## Add calls to the Queue
     globals()["que"].enqueue(
@@ -1441,25 +1451,37 @@ def private_check_deeper_queue_checking_both(region, constraints, n, epsilon, co
 
     model_low = [9, 9]
     model_high = [9, 9]
-    if float(eval(example_points[index])) > low + (high - low) / 2:
-        model_low[0] = None
-        model_high[0] = example
-    else:
-        model_low[0] = example
-        model_high[0] = None
-    if float(eval(counterexample_points[index])) > low + (high - low) / 2:
-        model_low[1] = None
-        model_high[1] = counterexample
-    else:
-        model_low[1] = counterexample
-        model_high[1] = None
-    ## Overwrite if equal
-    if float(eval(example_points[index])) == low + (high - low) / 2:
+
+    if example is False:
         model_low[0] = None
         model_high[0] = None
-    if float(eval(counterexample_points[index])) == low + (high - low) / 2:
+    else:
+        if float(eval(example_points[index])) > low + (high - low) / 2:
+            model_low[0] = None
+            model_high[0] = example
+        else:
+            model_low[0] = example
+            model_high[0] = None
+        ## Overwrite if equal
+        if float(eval(example_points[index])) == low + (high - low) / 2:
+            model_low[0] = None
+            model_high[0] = None
+
+    if counterexample is False:
         model_low[1] = None
         model_high[1] = None
+    else:
+        if float(eval(counterexample_points[index])) > low + (high - low) / 2:
+            model_low[1] = None
+            model_high[1] = counterexample
+        else:
+            model_low[1] = counterexample
+            model_high[1] = None
+
+        ## Overwrite if equal
+        if float(eval(counterexample_points[index])) == low + (high - low) / 2:
+            model_low[1] = None
+            model_high[1] = None
 
     ## Check if the que created (if alg1 used before it wont)
     try:

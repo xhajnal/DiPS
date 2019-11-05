@@ -137,6 +137,8 @@ class MyTestCase(unittest.TestCase):
         self.assertIsInstance(check_unsafe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 2)]), silent=True, called=True), z3.z3.ModelRef)
         self.assertEqual(check_unsafe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(4, 5)]), silent=True, called=True), True)
 
+        ## TODO nonlinear tests
+
     def test_check_single_dreal(self):
         print(colored("Checking (un)safe with single properties using dreal here", 'blue'))
         try:
@@ -173,7 +175,7 @@ class MyTestCase(unittest.TestCase):
 
             # check_deeper([(0, 1), (0, 1)], ["x+y"], [Interval(0, 1)], 0, 0.1, 1, True, 4)
             self.assertIsInstance(check_safe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), silent=True,
-                                             called=True, solver = "dreal"), dreal._dreal_py.Box)  ## has an counter example
+                                             called=True, solver="dreal"), dreal._dreal_py.Box)  ## has an counter example
 
             ## IS OUT
             ## def check_unsafe(region, constraints, silent=False, called=False, solver="z3", delta=0.001)
@@ -384,104 +386,121 @@ class MyTestCase(unittest.TestCase):
             for version in [1, 2, 3, 4, 5]:
                 # Bad dimensions
                 with self.assertRaises(Exception) as context:
-                    check_deeper([(1, 1)], ineq_to_constraints(["x"], [Interval(0, 2)]), silent=True, n=n, epsilon=epsilon,
+                    check_deeper([(1, 1)], ineq_to_constraints(["x"], [Interval(0, 2)]), silent=True, recursion_depth=n, epsilon=epsilon,
                                  coverage=coverage, version=version, solver=solver, show_space=show_space)
                 self.assertTrue('Some dime' in str(context.exception))
 
                 with self.assertRaises(Exception) as context:
-                    check_deeper([(2, 1)], ineq_to_constraints(["x"], [Interval(0, 2)]), silent=True, n=n, epsilon=epsilon,
+                    check_deeper([(2, 1)], ineq_to_constraints(["x"], [Interval(0, 2)]), silent=True, recursion_depth=n, epsilon=epsilon,
                                  coverage=coverage, version=version, solver=solver, show_space=show_space)
                 self.assertTrue('Some dime' in str(context.exception))
 
                 ## Normal check_deeper
-                spam = check_deeper([(0, 1)], ineq_to_constraints(["x"], [Interval(0, 1)]), silent=True, n=n, epsilon=epsilon,
+                spam = check_deeper([(0, 1)], ineq_to_constraints(["x"], [Interval(0, 1)]), silent=True, recursion_depth=n, epsilon=epsilon,
                                     coverage=coverage, version=version, solver=solver, show_space=show_space)
                 self.assertEqual(spam.get_coverage(), 1.0)
 
-                space = check_deeper([(0, 1)], ineq_to_constraints(["x"], [Interval(0.5, 3)]), silent=True, n=n,
-                                     epsilon=epsilon,
-                                     coverage=coverage, version=version, solver=solver, show_space=show_space)
-                self.assertEqual(space.get_coverage(), 0.5)
+                spacee = check_deeper([(0, 1)], ineq_to_constraints(["x"], [Interval(0.5, 3)]), silent=True,
+                                      recursion_depth=n,
+                                      epsilon=epsilon,
+                                      coverage=coverage, version=version, solver=solver, show_space=show_space)
+                self.assertEqual(spacee.get_coverage(), 0.5)
 
-                space = check_deeper([(0, 1)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, n=n,
-                                     epsilon=epsilon,
-                                     coverage=coverage, version=version, solver=solver, show_space=show_space)
-                self.assertEqual(space.get_coverage(), 1.0)
+                spacee = check_deeper([(0, 1)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True,
+                                      recursion_depth=n,
+                                      epsilon=epsilon,
+                                      coverage=coverage, version=version, solver=solver, show_space=show_space)
+                self.assertEqual(spacee.get_coverage(), 1.0)
 
-                space = check_deeper([(1, 4)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, n=n,
-                                     epsilon=epsilon,
-                                     coverage=coverage, version=version, solver=solver, show_space=show_space)
-                self.assertEqual(space.get_coverage(), 0.0)
+                spacee = check_deeper([(1, 4)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True,
+                                      recursion_depth=n,
+                                      epsilon=epsilon,
+                                      coverage=coverage, version=version, solver=solver, show_space=show_space)
+                self.assertEqual(spacee.get_coverage(), 0.0)
 
-                space = check_deeper([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 2)]), silent=True, n=n,
-                                     epsilon=epsilon, coverage=coverage, version=version, solver=solver,
-                                     show_space=show_space)
-                self.assertEqual(space.get_coverage(), 1.0)
+                spacee = check_deeper([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 2)]), silent=True,
+                                      recursion_depth=n,
+                                      epsilon=epsilon, coverage=coverage, version=version, solver=solver,
+                                      show_space=show_space)
+                self.assertEqual(spacee.get_coverage(), 1.0)
 
-                space = check_deeper([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), silent=True, n=n,
-                                     epsilon=epsilon, coverage=coverage, version=version, solver=solver,
-                                     show_space=show_space)
-                self.assertEqual(space.get_coverage(), 0.0)
+                spacee = check_deeper([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), silent=True,
+                                      recursion_depth=n,
+                                      epsilon=epsilon, coverage=coverage, version=version, solver=solver,
+                                      show_space=show_space)
+                self.assertEqual(spacee.get_coverage(), 0.0)
 
-                space = check_deeper([(0, 1)], ineq_to_constraints(["x"], [Interval(0, 1)]), silent=True, n=n,
-                                     epsilon=epsilon,
-                                     coverage=coverage, version=version, solver=solver, show_space=show_space)
-                self.assertEqual(space.get_coverage(), 1.0)
+                spacee = check_deeper([(0, 1)], ineq_to_constraints(["x"], [Interval(0, 1)]), silent=True,
+                                      recursion_depth=n,
+                                      epsilon=epsilon,
+                                      coverage=coverage, version=version, solver=solver, show_space=show_space)
+                self.assertEqual(spacee.get_coverage(), 1.0)
 
-                space = check_deeper([(0, 1)], ineq_to_constraints(["x"], [Interval(0.5, 3)]), silent=True, n=n,
-                                     epsilon=epsilon,
-                                     coverage=coverage, version=version, solver=solver, show_space=show_space)
-                self.assertEqual(space.get_coverage(), 0.5)
+                spacee = check_deeper([(0, 1)], ineq_to_constraints(["x"], [Interval(0.5, 3)]), silent=True,
+                                      recursion_depth=n,
+                                      epsilon=epsilon,
+                                      coverage=coverage, version=version, solver=solver, show_space=show_space)
+                self.assertEqual(spacee.get_coverage(), 0.5)
 
-                space = check_deeper([(0, 1)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, n=n,
-                                     epsilon=epsilon,
-                                     coverage=coverage, version=version, solver=solver, show_space=show_space)
-                self.assertEqual(space.get_coverage(), 1.0)
+                spacee = check_deeper([(0, 1)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True,
+                                      recursion_depth=n,
+                                      epsilon=epsilon,
+                                      coverage=coverage, version=version, solver=solver, show_space=show_space)
+                self.assertEqual(spacee.get_coverage(), 1.0)
 
-                space = check_deeper([(1, 4)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, n=n,
-                                     epsilon=epsilon,
-                                     coverage=coverage, version=version, solver=solver, show_space=show_space)
-                self.assertEqual(space.get_coverage(), 0.0)
+                spacee = check_deeper([(1, 4)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True,
+                                      recursion_depth=n,
+                                      epsilon=epsilon,
+                                      coverage=coverage, version=version, solver=solver, show_space=show_space)
+                self.assertEqual(spacee.get_coverage(), 0.0)
 
-                space = check_deeper([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 2)]), silent=True, n=n,
-                                     epsilon=epsilon, coverage=coverage, version=version, solver=solver,
-                                     show_space=show_space)
-                self.assertEqual(space.get_coverage(), 1.0)
+                spacee = check_deeper([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 2)]), silent=True,
+                                      recursion_depth=n,
+                                      epsilon=epsilon, coverage=coverage, version=version, solver=solver,
+                                      show_space=show_space)
+                self.assertEqual(spacee.get_coverage(), 1.0)
 
-                space = check_deeper([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), silent=True, n=n,
-                                     epsilon=epsilon,
-                                     coverage=coverage, version=version, solver=solver, show_space=show_space)
-                self.assertEqual(space.get_coverage(), 0.0)
+                spacee = check_deeper([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), silent=True,
+                                      recursion_depth=n,
+                                      epsilon=epsilon,
+                                      coverage=coverage, version=version, solver=solver, show_space=show_space)
+                self.assertEqual(spacee.get_coverage(), 0.0)
 
-                space = check_deeper([(0, 1)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, n=n,
-                                     epsilon=epsilon,
-                                     coverage=coverage, version=version, solver=solver, show_space=show_space)
-                self.assertEqual(space.get_coverage(), 1)
+                spacee = check_deeper([(0, 1)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True,
+                                      recursion_depth=n,
+                                      epsilon=epsilon,
+                                      coverage=coverage, version=version, solver=solver, show_space=show_space)
+                self.assertEqual(spacee.get_coverage(), 1)
 
-                space = check_deeper([(0, 1)], ineq_to_constraints(["x"], [Interval(1, 3)]), silent=True, n=n,
-                                     epsilon=epsilon,
-                                     coverage=coverage, version=version, solver=solver, show_space=show_space)
-                self.assertEqual(space.get_coverage(), 0.5)
+                spacee = check_deeper([(0, 1)], ineq_to_constraints(["x"], [Interval(1, 3)]), silent=True,
+                                      recursion_depth=n,
+                                      epsilon=epsilon,
+                                      coverage=coverage, version=version, solver=solver, show_space=show_space)
+                self.assertEqual(spacee.get_coverage(), 0.5)
 
-                space = check_deeper([(0, 3)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, n=n,
-                                     epsilon=epsilon,
-                                     coverage=coverage, version=version, solver=solver, show_space=show_space)
-                self.assertEqual(space.get_coverage(), 0.5)
+                spacee = check_deeper([(0, 3)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True,
+                                      recursion_depth=n,
+                                      epsilon=epsilon,
+                                      coverage=coverage, version=version, solver=solver, show_space=show_space)
+                self.assertEqual(spacee.get_coverage(), 0.5)
 
-                space = check_deeper([(1, 4)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True, n=n,
-                                     epsilon=epsilon,
-                                     coverage=coverage, version=version, solver=solver, show_space=show_space)
-                self.assertEqual(space.get_coverage(), 0.0)
+                spacee = check_deeper([(1, 4)], ineq_to_constraints(["x"], [Interval(2, 3)]), silent=True,
+                                      recursion_depth=n,
+                                      epsilon=epsilon,
+                                      coverage=coverage, version=version, solver=solver, show_space=show_space)
+                self.assertEqual(spacee.get_coverage(), 0.0)
 
-                space = check_deeper([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 2)]), silent=True, n=n,
-                                     epsilon=epsilon, coverage=coverage, version=version, solver=solver,
-                                     show_space=show_space)
-                self.assertEqual(space.get_coverage(), 1.0)
+                spacee = check_deeper([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 2)]), silent=True,
+                                      recursion_depth=n,
+                                      epsilon=epsilon, coverage=coverage, version=version, solver=solver,
+                                      show_space=show_space)
+                self.assertEqual(spacee.get_coverage(), 1.0)
 
-                space = check_deeper([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(4, 5)]), silent=True, n=n,
-                                     epsilon=epsilon, coverage=coverage, version=version, solver=solver,
-                                     show_space=show_space)
-                self.assertEqual(space.get_coverage(), 1.0)
+                spacee = check_deeper([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(4, 5)]), silent=True,
+                                      recursion_depth=n,
+                                      epsilon=epsilon, coverage=coverage, version=version, solver=solver,
+                                      show_space=show_space)
+                self.assertEqual(spacee.get_coverage(), 1.0)
 
     def test_refine_two_param(self):
         print(colored("Two-param refinement here", 'blue'))
@@ -501,19 +520,19 @@ class MyTestCase(unittest.TestCase):
         alpha, n_samples, max_depth, min_rect_size, N, algorithm, v_p, v_q = 0.95, 100, 10, 1e-05, 2, 4, 0.028502714675268215, 0.03259111103419188
 
         ## Z3
-        space = check_deeper([(0, 1), (0, 0.9)], ineq_to_constraints(f[N],
+        spacee = check_deeper([(0, 1), (0, 0.9)], ineq_to_constraints(f[N],
                              create_intervals(alpha, n_samples, D3[("synchronous_", N, n_samples, v_p, v_q)])),
                              max_depth, min_rect_size, coverage_thresh, False, algorithm, show_space=show_space)
         ## Dreal
         solver = "z3"
         delta = 0.001
-        space = check_deeper([(0, 1), (0, 0.9)], ineq_to_constraints(f[N],
+        spacee = check_deeper([(0, 1), (0, 0.9)], ineq_to_constraints(f[N],
                              create_intervals(alpha, n_samples, D3[("synchronous_", N, n_samples, v_p, v_q)])),
                              max_depth, min_rect_size, coverage_thresh, False, algorithm, solver=solver, delta=delta, show_space=show_space)
 
         ## Interval algorithmic
         algorithm = 5
-        space = check_deeper([(0, 1), (0, 0.9)], ineq_to_constraints(f[N], create_intervals(alpha, n_samples, D3[("synchronous_", N, n_samples, v_p, v_q)])), max_depth, min_rect_size, coverage_thresh, False, algorithm, show_space=show_space)
+        spacee = check_deeper([(0, 1), (0, 0.9)], ineq_to_constraints(f[N], create_intervals(alpha, n_samples, D3[("synchronous_", N, n_samples, v_p, v_q)])), max_depth, min_rect_size, coverage_thresh, False, algorithm, show_space=show_space)
 
         ## UNCOMMENT FOLLOWING to run this test
         # check_deeper([(0, 4)], ineq_to_constraints(["x"], [Interval(0, 3)]), 5, 0, 0.95, silent=False, version=5, show_space=show_space)
