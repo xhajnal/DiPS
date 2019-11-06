@@ -1769,8 +1769,8 @@ class Gui(Tk):
 
         result = optimize(self.functions, self.parameters, self.parameter_intervals, self.data)
         self.optimised_param_point = result[0]
-        self.optimised_function_value = result[0]
-        self.optimised_distance = result[0]
+        self.optimised_function_value = result[1]
+        self.optimised_distance = result[2]
 
         window = Toplevel(self)
         window.title('Result of optimisation')
@@ -1813,6 +1813,7 @@ class Gui(Tk):
                                                             filetypes=(("text file", "*.txt"), ("all files", "*.*")))
         if "." not in save_opt_result_file:
             save_opt_result_file = save_opt_result_file + ".txt"
+
         with open(save_opt_result_file, "w") as file:
             file.write(f"parameter point {self.optimised_param_point} \n")
             file.write(f"function values {self.optimised_function_value} \n")
