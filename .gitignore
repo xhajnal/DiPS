@@ -138,5 +138,9 @@ refinement_results/figure_to_title.txt
 data/*
 !data/*.p
 
+optimisation_results/*
+test/_trial_*
+figures/*
+
 # storm calls
 *.cmd

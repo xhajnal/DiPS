@@ -176,6 +176,7 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
         # print("y=", globals()["y"])
         # print(eval("x+y"))
         temp = eval(functions[data_point])
+
         # print(temp)
         # print(np.log(temp))
 
@@ -220,7 +221,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
 
     if observations:
         ## Checking the type of observations (experiment/data)
-        if sum(observations) > 1:
+        if len(observations) > len(functions):
             ## Already given observations
             N = len(observations)
         else:
