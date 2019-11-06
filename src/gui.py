@@ -148,7 +148,7 @@ class Gui(Tk):
         ## Settings
         self.version = "1.7.6"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
-        self.debug = True  ## Sets the command line output to maximum
+        self.debug = BooleanVar()  ## Sets the command line output to maximum
 
         ## Settings/data
         # self.alpha = ""  ## Confidence
@@ -210,7 +210,7 @@ class Gui(Tk):
 
         show_print_checkbutton = Checkbutton(frame, text="Hide print in command line", variable=self.silent)
         show_print_checkbutton.grid(row=5, column=9, sticky=E, padx=4)
-        debug_checkbutton = Checkbutton(frame, text="Debug mode", variable=self.debug)
+        debug_checkbutton = Checkbutton(frame, text="Extensive command line print", variable=self.debug)
         debug_checkbutton.grid(row=5, column=10, sticky=E, padx=4)
         # print("self.silent", self.silent.get())
 
@@ -1552,7 +1552,7 @@ class Gui(Tk):
             self.cursor_toggle_busy(True)
             self.sampled_functions = sample_list_funs(self.functions, int(self.fun_size_q_entry.get()),
                                                       parameters=self.parameters, intervals=self.parameter_intervals,
-                                                      debug=self.debug, silent=self.silent.get())
+                                                      debug=self.debug.get(), silent=self.silent.get())
         finally:
             self.cursor_toggle_busy(False)
         self.sampled_functions_text.configure(state='normal')
@@ -1631,7 +1631,7 @@ class Gui(Tk):
         #     self.page3_a = self.page3_figure.add_subplot(111)
         # print("self.parameter_values", self.parameter_values)
         spam, egg = eval_and_show(self.functions, self.parameter_values, data=self.data, intervals=self.data_intervals,
-                                  debug=self.debug, where=[self.page3_figure, self.page3_a])
+                                  debug=self.debug.get(), where=[self.page3_figure, self.page3_a])
 
         if spam is None:
             messagebox.showinfo("Plots rational functions in a given point.", egg)
@@ -1680,7 +1680,7 @@ class Gui(Tk):
             # print("parameter_point", parameter_point)
             self.page3_a.cla()
             spam, egg = eval_and_show(self.functions, parameter_point, data=self.data, intervals=self.intervals,
-                                      debug=self.debug, where=[self.page3_figure, self.page3_a])
+                                      debug=self.debug.get(), where=[self.page3_figure, self.page3_a])
 
             if spam is None:
                 messagebox.showinfo("Plots rational functions in a given point.", egg)
@@ -1970,7 +1970,7 @@ class Gui(Tk):
             self.cursor_toggle_busy(True)
             ## RETURNS TUPLE -- (SPACE,(NONE, ERROR TEXT)) or (SPACE, )
             spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
-                                silent=self.silent.get(), version=int(self.alg.get()), size_q=False, debug=self.debug,
+                                silent=self.silent.get(), version=int(self.alg.get()), size_q=False, debug=self.debug.get(),
                                 save=False, title="", where=[self.page6_figure, self.page6_a],
                                 solver=str(self.solver.get()), delta=self.delta, gui=True)
         finally:
