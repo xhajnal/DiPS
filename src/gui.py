@@ -139,6 +139,9 @@ class Gui(Tk):
 
         ## Results
         self.sampled_functions = []
+        self.optimised_param_point = ""  ## List of parameter values with least distance
+        self.optimised_function_value = ""  ## List of functions values with least distance
+        self.optimised_distance = ""  ## The actual distance between functions and data
 
         ## Space visualisation settings
         self.show_samples = None
@@ -1765,9 +1768,12 @@ class Gui(Tk):
         print("self.parameter_intervals", self.parameter_intervals)
 
         result = optimize(self.functions, self.parameters, self.parameter_intervals, self.data)
+        self.optimised_param_point = result[0]
+        self.optimised_function_value = result[0]
+        self.optimised_distance = result[0]
 
         window = Toplevel(self)
-        window.title('Results of optimisation')
+        window.title('Result of optimisation')
         window.state('normal')
         width = max(len(str(result[0])), len(str(result[1])), len(str(result[2])))
 
@@ -1776,7 +1782,6 @@ class Gui(Tk):
         Label(window, text=f"Parameter point: ").grid(row=1)
         Label(window, text=f"Function values: ").grid(row=2)
         Label(window, text=f"Distance: ").grid(row=3)
-
 
         var = StringVar()
         var.set(result[0])
@@ -1793,9 +1798,25 @@ class Gui(Tk):
         ent = Entry(window, state='readonly', textvariable=var, width=width, relief='flat', readonlybackground='white', fg='black')
         ent.grid(row=3, column=1)
 
-        print("parameter point", result[0])
-        print("function values", result[1])
-        print("distance", result[2])
+        save_optimisation_button = Button(window, text="Save Result", command=self.save_optimisation_result)
+        save_optimisation_button.grid(row=4, column=1)
+
+        print("parameter point", self.optimised_param_point)
+        print("function values", self.optimised_function_value)
+        print("distance", self.optimised_distance)
+
+    def save_optimisation_result(self):
+        self.status_set("Please select folder to store the optimisation result.")
+
+        save_opt_result_file = filedialog.asksaveasfilename(initialdir=self.data_dir,
+                                                            title="optimisation result saving - Select file",
+                                                            filetypes=(("text file", "*.txt"), ("all files", "*.*")))
+        if "." not in save_opt_result_file:
+            save_opt_result_file = save_opt_result_file + ".txt"
+        with open(save_opt_result_file, "w") as file:
+            file.write(f"parameter point {self.optimised_param_point} \n")
+            file.write(f"function values {self.optimised_function_value} \n")
+            file.write(f"distance {self.optimised_distance} \n")
 
     def create_intervals(self):
         """ Creates intervals from data. """
