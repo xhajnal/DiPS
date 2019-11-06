@@ -1,6 +1,5 @@
-import os
 import random
-import sys
+from mpmath import mpi
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -97,7 +96,7 @@ def eval_and_show(fun_list, parameter_value, parameters=False, data=False, inter
         expression = eval(polynome)
         try:
             expression = z3.simplify(expression).as_decimal(30)
-        except:
+        except Z3Exception:
             pass
         expression = float(expression)
         if debug:
@@ -114,10 +113,10 @@ def eval_and_show(fun_list, parameter_value, parameters=False, data=False, inter
             title = f"{title} {expression} ,"
     title = title[:-2]
     if data:
+        title = f"{title}\n Comparing with the data: \n{data}"
         if cumulative:
             for index in range(1, len(data)):
                 data[index] = data[index] + data[index - 1]
-        title = f"{title}\n Comparing with the data: \n{data}"
 
     if where:
         fig = where[0]
@@ -127,17 +126,17 @@ def eval_and_show(fun_list, parameter_value, parameters=False, data=False, inter
     else:
         fig, ax = plt.subplots()
     width = 0.2
-    ax.set_ylabel('Value')
+    ax.set_ylabel(f'{("Value", "Cumulative value")[cumulative]}')
     if data:
         ax.set_xlabel('Rational function indices (blue), Data point indices (red)')
         if intervals:
             functions_inside_of_intervals = []
             for index in range(len(data)):
-                if values[index] in intervals[index]:
+                if values[index] in mpi(intervals[index]):
                     functions_inside_of_intervals.append(True)
                 else:
                     functions_inside_of_intervals.append(False)
-            title = f"{title} \n Function value within the respective interval:\n {functions_inside_of_intervals}"
+            title = f"{title} \n Function value within the respective interval:\n {functions_inside_of_intervals} \n Intervals: {intervals}"
     else:
         ax.set_xlabel('Rational function indices')
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
@@ -153,11 +152,10 @@ def eval_and_show(fun_list, parameter_value, parameters=False, data=False, inter
     if data:
         ax.bar(list(map(lambda x: x + width, range(1, len(data) + 1))), data, width, color='r')
 
-
-
     if where:
         return fig, ax
-    plt.show()
+    else:
+        plt.show()
     return values
 
 
@@ -253,7 +251,7 @@ def sample_list_funs(list_fun, size_q, parameters=False, intervals=False, silent
             expression = eval(polynome)
             try:
                 expression = z3.simplify(expression).as_decimal(30)
-            except:
+            except Z3Exception:
                 pass
             if debug:
                 print("Eval ", polynome, expression)
@@ -317,7 +315,7 @@ def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug=False,
                 expression = eval(polynome)
                 try:
                     expression = z3.simplify(expression).as_decimal(30)
-                except:
+                except Z3Exception:
                     pass
                 expression = float(expression)
 
@@ -376,6 +374,7 @@ def visualise_by_param(hyper_rectangles, title="", where=False):
 
         ax.set_xlabel('Parameter indices')
         ax.set_ylabel('Parameter values')
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         if title:
             ax.set_title(wraper.fill(title))
         else:
@@ -387,6 +386,8 @@ def visualise_by_param(hyper_rectangles, title="", where=False):
         print("Intervals: ", intervals)
         if where:
             return fig, ax
+        else:
+            plt.show()
     else:
         print(colored("Given space is empty, no intervals to be visualised", "red"))
         if where:
@@ -435,26 +436,28 @@ def heatmap(fun, region, sampling_sizes, posttitle="", where=False, parameters=F
             expression = eval(fun)
             try:
                 expression = z3.simplify(expression).as_decimal(30)
-            except:
+            except Z3Exception:
                 pass
             expression = float(expression)
             arr[jj, 2] = expression
     # print(arr)
     # d = pd.DataFrame(arr, columns=["p","q","E"])
-    d = pd.DataFrame(arr, columns=[parameters[0], parameters[1], "E"])
+    heatmap_data = pd.DataFrame(arr, columns=[parameters[0], parameters[1], "E"])
     # d = d.pivot("p", "q", "E")
-    d = d.pivot(parameters[0], parameters[1], "E")
+    heatmap_data = heatmap_data.pivot(parameters[0], parameters[1], "E")
 
     if where:
         f, ax = plt.subplots()
-        ax = sns.heatmap(d)
+        ax = sns.heatmap(heatmap_data)
         title = f"Heatmap \n{posttitle}"
         ax.set_title(wraper.fill(title))
+        ax.invert_yaxis()
         return f
     else:
-        ax = sns.heatmap(d)
-        title = "Heatmap of the parameter space"
+        ax = sns.heatmap(heatmap_data)
+        title = f"Heatmap of the parameter space \n function: {fun}"
         ax.set_title(wraper.fill(title))
+        ax.invert_yaxis()
         plt.show()
 
 
@@ -490,6 +493,7 @@ def visualise_sampled_by_param(hyper_rectangles, sample_size):
         ax.set_xlabel("Parameter indices")
         ax.set_ylabel("Parameter values")
         ax.set_title("Sample points of the given hyperspace")
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         ax.autoscale()
         ax.margins(0.1)
         plt.show()
