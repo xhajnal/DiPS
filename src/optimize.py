@@ -1,6 +1,7 @@
 import scipy
 import numpy as np
 from scipy.optimize import least_squares
+from z3 import *
 
 
 def dist(x):
@@ -12,11 +13,18 @@ def dist(x):
     # global functions
     # global data_point
     for index, param in enumerate(globals()["params"]):
-        globals()[str(param)] = x[index]
+        globals()[str(param)] = float(x[index])
     result = []
     for i in range(len(globals()["functions"])):
-        point = globals()["data_point"][i]
-        result.append(eval(globals()["functions"][i]+"-point"))
+        point = float(globals()["data_point"][i])
+        value = eval(globals()["functions"][i]+"-point")
+        try:
+            value = str(z3.simplify(value).as_decimal(30))
+            if value[-1] == "?":
+                value = value[:-1]
+        except Z3Exception:
+            pass
+        result.append(float(value))
     # print("semiresult", result)
     return np.array(result)
 
@@ -52,7 +60,14 @@ def optimize(functions: [list], params: [list], param_intervals: [list], data_po
 
     function_values = []
     for polynome in functions:
-        function_values.append(eval(polynome))
+        polynome = eval(polynome)
+        try:
+            polynome = str(z3.simplify(polynome).as_decimal(30))
+            if polynome[-1] == "?":
+                polynome = polynome[:-1]
+        except Z3Exception:
+            pass
+        function_values.append(float(polynome))
 
     ## VALUES OF PARAMS, VALUES OF FUNCTIONS, DISTANCE
     return res.x, function_values,  sum([abs(x - y) for x, y in zip(function_values, data_point)])
