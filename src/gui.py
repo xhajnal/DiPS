@@ -105,6 +105,7 @@ class Gui(Tk):
         self.storm_results = ""  ## Path to Storm results
         self.refinement_results = ""  ## Path to refinement results
         self.figures_dir = ""  ## Path to saved figures
+        self.optimisation_results_dir = ""  ## Path to saved optimisation results
         self.load_config()  ## Load the config file
 
         ## Files
@@ -662,7 +663,11 @@ class Gui(Tk):
         self.figures_dir = config.get("paths", "figures")
         if not os.path.exists(self.figures_dir):
             os.makedirs(self.figures_dir)
-
+        
+        self.optimisation_results_dir = config.get("paths", "optimisation")
+        if not os.path.exists(self.optimisation_results_dir):
+            os.makedirs(self.optimisation_results_dir)
+            
         os.chdir(cwd)
 
     ## LOGIC
@@ -1808,7 +1813,7 @@ class Gui(Tk):
     def save_optimisation_result(self):
         self.status_set("Please select folder to store the optimisation result.")
 
-        save_opt_result_file = filedialog.asksaveasfilename(initialdir=self.data_dir,
+        save_opt_result_file = filedialog.asksaveasfilename(initialdir=self.optimisation_results_dir,
                                                             title="optimisation result saving - Select file",
                                                             filetypes=(("text file", "*.txt"), ("all files", "*.*")))
         if "." not in save_opt_result_file:
