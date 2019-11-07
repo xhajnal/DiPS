@@ -13,22 +13,10 @@ workspace = os.path.dirname(__file__)
 sys.path.append(os.path.join(workspace, '../src/'))
 # sys.path.append(os.path.dirname(__file__))
 from load import find_param
-from miscellaneous import DocumentWrapper
-
+from common.document_wrapper import DocumentWrapper
+from common.math import cartesian_product
 
 wraper = DocumentWrapper(width=60)
-
-
-def cartesian_product(*arrays):
-    """ Returns a product of given list of arrays
-    """
-
-    la = len(arrays)
-    dtype = np.result_type(*arrays)
-    arr = np.empty([len(a) for a in arrays] + [la], dtype=dtype)
-    for i, a in enumerate(np.ix_(*arrays)):
-        arr[..., i] = a
-    return arr.reshape(-1, la)
 
 
 def get_param_values(parameters, size_q, intervals=False, debug=False):

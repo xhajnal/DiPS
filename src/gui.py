@@ -10,6 +10,9 @@ from tkinter.messagebox import askyesno
 
 import matplotlib.pyplot as pyplt
 import matplotlib
+
+from common.convert import ineq_to_constraints
+
 matplotlib.use("TKAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
@@ -20,9 +23,10 @@ workspace = os.path.dirname(__file__)
 sys.path.append(workspace)
 
 from mc_informed import general_create_data_informed_properties
-from load import create_intervals, load_all_functions, find_param, load_data
+from load import load_all_functions, find_param, load_data
+from common.math import create_intervals
 import space
-from synthetise import ineq_to_constraints, check_deeper
+from synthetise import check_deeper
 from mc_prism import call_prism_files, call_storm_files
 from sample_n_visualise import sample_list_funs, eval_and_show, get_param_values, heatmap
 from optimize import optimize
@@ -816,6 +820,7 @@ class Gui(Tk):
         self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
         # self.functions_text.configure(state='disabled')
         ## Resetting parsed intervals
+        self.parameters = []
         self.parameter_intervals = []
 
     def unfold_functions(self):
@@ -923,6 +928,7 @@ class Gui(Tk):
             # self.functions_parsed_text.configure(state='disabled')
 
             ## Resetting parsed intervals
+            self.parameters = []
             self.parameter_intervals = []
             self.status_set("Parsed rational functions loaded.")
 
@@ -1088,6 +1094,7 @@ class Gui(Tk):
             # self.constraints_text.configure(state='disabled')
 
             ## Resetting parsed intervals
+            self.parameters = []
             self.parameter_intervals = []
             self.status_set("constraints loaded.")
 
@@ -1538,6 +1545,7 @@ class Gui(Tk):
             self.model_changed = False
             self.property_changed = False
             ## Resetting parsed intervals
+            self.parameters = []
             self.parameter_intervals = []
             self.cursor_toggle_busy(False)
 
@@ -1945,13 +1953,16 @@ class Gui(Tk):
 
         from metropolis_hastings import initialise_sampling
 
-        try:
-            self.cursor_toggle_busy(True)
-            initialise_sampling(self.space, self.data, self.functions, int(self.n_samples_entry.get()), int(self.N_obs_entry.get()), int(self.MH_samples_entry.get()), float(self.eps_entry.get()), where=[self.page6_figure2, self.page6_b])
-        except:
-            messagebox.showerror(sys.exc_info()[1], "Try to check whether the data, functions, and computed constraints are aligned.")
-        finally:
-            self.cursor_toggle_busy(False)
+        initialise_sampling(self.space, self.data, self.functions, int(self.n_samples_entry.get()),
+                            int(self.N_obs_entry.get()), int(self.MH_samples_entry.get()), float(self.eps_entry.get()),
+                            where=[self.page6_figure2, self.page6_b])
+        # try:
+        #     self.cursor_toggle_busy(True)
+        #     initialise_sampling(self.space, self.data, self.functions, int(self.n_samples_entry.get()), int(self.N_obs_entry.get()), int(self.MH_samples_entry.get()), float(self.eps_entry.get()), where=[self.page6_figure2, self.page6_b])
+        # except:
+        #     messagebox.showerror(sys.exc_info()[1], "Try to check whether the data, functions, and computed constraints are aligned.")
+        # finally:
+        #     self.cursor_toggle_busy(False)
         self.page6_figure2.tight_layout()
         self.page6_figure2.canvas.draw()
         self.page6_figure2.canvas.flush_events()

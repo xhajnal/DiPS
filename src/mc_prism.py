@@ -581,7 +581,7 @@ def call_storm(args, silent=False, model_path=model_path, properties_path=proper
         if output_file_path is not "":
             args.append(">>")
             args.append(output_file_path)
-            args.append("2>&1")
+            args.append("2>&1 \n")
 
         if time:
             spam = "(time "
@@ -622,7 +622,7 @@ def call_storm_files(model_prefix, agents_quantities, model_path=model_path, pro
     time: (Bool) if True time measurement is added
 
     """
-    root = str(output_path).split("/")[1]
+    root = output_path
 
     # print("output_path ", output_path)
     # print("type(output_path) ", type(output_path))
@@ -637,7 +637,7 @@ def call_storm_files(model_prefix, agents_quantities, model_path=model_path, pro
         # print("I was here")
         agents_quantities = [""]
 
-    output_file = f"{(os.path.join(Path(output_path)))}{strftime('%d-%b-%Y-%H-%M-%S', localtime())}.cmd"
+    output_file = f"{os.path.join(output_path, str(strftime('%d-%b-%Y-%H-%M-%S', localtime())+'.cmd'))}"
 
     # print(output_file)
     with open(output_file, "w") as output_filee:
@@ -672,6 +672,12 @@ def call_storm_files(model_prefix, agents_quantities, model_path=model_path, pro
                 # print("file", file)
                 # print("file stem", file.resolve().stem)
                 # print("{}_{}.txt".format(str(file.stem).split(".")[0], property_file.split(".")[0]))
-                call_storm("{} {}".format(file, property_file), model_path=model_path, properties_path=properties_path, std_output_path=output_path, std_output_file="{}_{}.txt".format(str(file.stem).split(".")[0], str(Path(property_file).stem).split(".")[0]))
+                call_storm("{} {}".format(file, property_file), model_path=model_path, properties_path=properties_path, std_output_path=output_path, std_output_file=output_file)
             else:
-                call_storm("{} prop_{}.pctl".format(file, N), model_path=model_path, properties_path=properties_path, std_output_path=output_path)
+                call_storm("{} prop_{}.pctl".format(file, N), model_path=model_path, properties_path=properties_path, std_output_path=output_path, std_output_file=output_file)
+
+
+cwd = "D:\Git\mpm\\test"
+agents_quantities = [2, 3]
+print(os.path.join(cwd, "storm_results"))
+call_storm_files("asyn*_", agents_quantities, model_path=os.path.join(cwd, "models"), properties_path=f"{os.path.join(cwd,'properties')}", output_path=os.path.join(cwd, "storm_results"))

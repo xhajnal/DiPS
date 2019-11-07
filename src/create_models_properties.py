@@ -1,8 +1,8 @@
 import configparser
-import math
 import os
 from pathlib import Path
 from typing import Any, Union
+import common.math as mymath
 
 config = configparser.ConfigParser()
 # print(os.getcwd())
@@ -22,19 +22,6 @@ if not os.path.exists(properties_path):
     os.makedirs(properties_path)
 
 os.chdir(cwd)
-
-
-def nCr(n, k):
-    """ Return combinatorial number n take k
-
-    Args
-    ----------
-    n: (int)
-    k: (int)
-    """
-
-    f = math.factorial
-    return f(n) / f(k) / f(n - k)
 
 
 def create_synchronous_model(file, N):
@@ -69,7 +56,7 @@ def create_synchronous_model(file, N):
             coefficient = coefficient + "*p"
         for j in range(N - i, N):
             coefficient = coefficient + "*(1-p)"
-        coefficient = str(nCr(N, i)) + coefficient
+        coefficient = str(mymath.nCr(N, i)) + coefficient
         first_attempt.append(coefficient)
         coefficient = ""
     # print(first_attempt)
@@ -138,7 +125,7 @@ def create_synchronous_model(file, N):
         # file.write(f"twos: {}".format(twos))
 
         for successes in range(0, twos + 1):
-            file.write(str(nCr(twos, successes)))
+            file.write(str(mymath.nCr(twos, successes)))
             for ok in range(successes):
                 file.write(f"*q")
             for nok in range(twos - successes):
@@ -228,7 +215,7 @@ def create_semisynchronous_model(file, N):
             coefficient = coefficient + "*p"
         for j in range(N - i, N):
             coefficient = coefficient + "*(1-p)"
-        coefficient = str(nCr(N, i)) + coefficient
+        coefficient = str(mymath.nCr(N, i)) + coefficient
         first_attempt.append(coefficient)
         coefficient = ""
     # print(first_attempt)
@@ -684,7 +671,7 @@ def create_multiparam_synchronous_model(file, N):
             coefficient = coefficient + "*p"
         for j in range(N - i, N):
             coefficient = coefficient + "*(1-p)"
-        coefficient = str(nCr(N, i)) + coefficient
+        coefficient = str(mymath.nCr(N, i)) + coefficient
         first_attempt.append(coefficient)
         coefficient = ""
     # print(first_attempt)
@@ -754,7 +741,7 @@ def create_multiparam_synchronous_model(file, N):
         twos = N - ones
         # file.write(f"twos: {}".format(twos))
         for successes in range(0, twos + 1):
-            file.write(str(nCr(twos, successes)))
+            file.write(str(mymath.nCr(twos, successes)))
             for ok in range(successes):
                 file.write(f"*q{ones:0{decimals}d}")
             for nok in range(twos - successes):
@@ -845,7 +832,7 @@ def create_multiparam_semisynchronous_model(file, N):
             coefficient = coefficient + "*p"
         for j in range(N - i, N):
             coefficient = coefficient + "*(1-p)"
-        coefficient = str(nCr(N, i)) + coefficient
+        coefficient = str(mymath.nCr(N, i)) + coefficient
         first_attempt.append(coefficient)
         coefficient = ""
     # print(first_attempt)
@@ -1028,7 +1015,7 @@ def create_multiparam_asynchronous_model(file, N):
             coefficient = coefficient + "*p"
         for j in range(N - i, N):
             coefficient = coefficient + "*(1-p)"
-        coefficient = str(nCr(N, i)) + coefficient
+        coefficient = str(mymath.nCr(N, i)) + coefficient
         first_attempt.append(coefficient)
         coefficient = ""
     # print(first_attempt)
@@ -1316,7 +1303,7 @@ def create_bee_multiparam_synchronous_model(file, N):
             coefficient = coefficient + f"*r_{0:0{decimals}d}"
         for j in range(N - i, N):
             coefficient = coefficient + f"*(1-r_{0:0{decimals}d})"
-        coefficient = str(nCr(N, i)) + coefficient
+        coefficient = str(mymath.nCr(N, i)) + coefficient
         first_attempt.append(coefficient)
         coefficient = ""
     # print(first_attempt)
@@ -1389,7 +1376,7 @@ def create_bee_multiparam_synchronous_model(file, N):
             twos = N - ones
             # file.write(f"twos: {}".format(twos))
             for successes in range(0, twos + 1):
-                file.write(str(nCr(twos, successes)))
+                file.write(str(mymath.nCr(twos, successes)))
                 for ok in range(successes):
                     file.write(f"* ((r_{ones:0{decimals}d} - r_{fails:0{decimals}d})/(1 - r_{fails:0{decimals}d}))")
                 for nok in range(twos - successes):

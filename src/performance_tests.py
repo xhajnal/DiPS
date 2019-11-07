@@ -6,7 +6,8 @@ import pickle
 import socket
 
 from synthetise import check_deeper
-from load import get_f, create_intervals, load_pickled_data
+from load import get_f, load_pickled_data
+from common.math import create_intervals
 
 ## LOAD DATA
 start_time = time.time()
@@ -15,7 +16,7 @@ print(f"  It took {socket.gethostname()} {time.time() - start_time} seconds to l
 
 ## LOAD POLYNOMIALS
 start_time = time.time()
-f = get_f("./sem*[0-9].txt", True)
+functions = get_f("./sem*[0-9].txt", True)
 print(f"  It took {socket.gethostname()} {time.time() - start_time} seconds to load polynomials")
 
 ## GET TO THE RIGHT DIRECTORY
@@ -120,7 +121,7 @@ for alpha in alphas:
                                     print("Now computing, current time is: ", datetime.datetime.now())
                                     for run in range(0, sample_size):
                                         start_time = time.time()
-                                        space = check_deeper([(0, 1), (0, 1)], f[N], create_intervals(alpha, n_samples, D3[("synchronous_parallel_", N, n_samples, v_p, v_q)]), depth, epsilon, coverage_thresh, True, method)
+                                        space = check_deeper([(0, 1), (0, 1)], functions[N], create_intervals(alpha, n_samples, D3[("synchronous_parallel_", N, n_samples, v_p, v_q)]), depth, epsilon, coverage_thresh, True, method)
                                         time_foo = round(time.time() - start_time, 2)
                                         runs.append(time_foo)
 
@@ -140,4 +141,4 @@ for alpha in alphas:
                                     pickle.dump(averages_and_deviations, open("averages_and_deviations.p", 'wb'))
 
 ## IF ALL PERFORMANCE TEST RUN SAVE THE RESULTS:
-## TBD
+## TODO

@@ -1,16 +1,12 @@
 import configparser
 import glob
-import math
 import os
 import pickle
 import copy
 import re
 from pathlib import Path
-from collections.abc import Iterable
 from termcolor import colored
-
-import scipy.stats as st
-from sympy import factor, Interval
+from sympy import factor
 
 config = configparser.ConfigParser()
 print(os.getcwd())
@@ -333,81 +329,6 @@ def load_pickled_data(file):
     
     """
     return pickle.load(open(os.path.join(data_path, file + ".p"), "rb"))
-
-
-def catch_data_error(data, minimum, maximum):
-    """ Corrects all data value to be in range min,max
-    
-    Args
-    ----------
-    data: (dictionary) structure of data
-    minimum: (float) minimal value in data to be set to
-    maximum: (float) maximal value in data to be set to
-
-    """
-    for n in data.keys():
-        for i in range(len(data[n])):
-            if data[n][i] < minimum:
-                data[n][i] = minimum
-            if data[n][i] > maximum:
-                data[n][i] = maximum
-
-
-def create_intervals(alpha, n_samples, data):
-    """ Returns intervals of data_point +- margin
-
-    Args
-    ----------
-    alpha: (float) confidence interval to compute margin
-    n_samples: (int) number of samples to compute margin
-    data: (list of floats), values to be margined
-    """
-    intervals = []
-    if not isinstance(data, Iterable):
-        return [create_interval(alpha, n_samples, data)]
-    for data_point in data:
-        intervals.append(create_interval(alpha, n_samples, data_point))
-    return intervals
-
-
-def create_interval(alpha, n_samples, data_point):
-    """ Returns interval of data_point +- margin
-
-    Args
-    ----------
-    alpha: (float) confidence interval to compute margin
-    n_samples: (int) number of samples to compute margin
-    data_point: (float), the value to be margined
-    """
-    delta = margin(alpha, n_samples, data_point)
-    return Interval(data_point - delta, data_point + delta)
-
-
-def margin(alpha, n_samples, data_point):
-    """ Estimates expected interval with respect to parameters
-    TBA shortly describe this type of margin
-
-    Args
-    ----------
-    alpha: (float) confidence interval to compute margin
-    n_samples: (int) number of samples to compute margin
-    data_point: (float), the value to be margined
-    """
-    return st.norm.ppf(1 - (1 - alpha) / 2) * math.sqrt(data_point * (1 - data_point) / n_samples) + 0.5 / n_samples
-
-
-def margin_experimental(alpha, n_samples, data_point):
-    """ Estimates expected interval with respect to parameters
-    This margin was used to produce the visual outputs for hsb19 
-
-    Args
-    ----------
-    alpha: (float) confidence interval to compute margin
-    n_samples: (int) number of samples to compute margin
-    data_point: (float), the value to be margined
-    """
-    return st.norm.ppf(1 - (1 - alpha) / 2) * math.sqrt(
-        data_point * (1 - data_point) / n_samples) + 0.5 / n_samples + 0.005
 
 
 #######################

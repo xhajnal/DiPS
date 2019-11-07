@@ -11,7 +11,7 @@ cwd = os.getcwd()
 os.chdir(workspace)
 
 sys.path.append(os.path.join(workspace, '../src/'))
-from load import margin
+from common.math import margin
 
 config = configparser.ConfigParser()
 # print(os.getcwd())

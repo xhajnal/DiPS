@@ -83,24 +83,6 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(my_interval.mid, (5+0)/2)
         self.assertEqual(my_interval.delta, abs(0-5))
 
-    def test_sympy_intervals(self):
-        print(colored('Sympy Interval sanity check', 'blue'))
-        ## Check more here https://docs.sympy.org/latest/modules/sets.html
-        ## Sanity check test
-        my_interval = Interval(0, 5)
-        self.assertEqual(my_interval.inf, 0)
-        self.assertEqual(my_interval.sup, 5)
-        self.assertEqual(my_interval.boundary, {0, 5})
-        self.assertEqual(my_interval.contains(2), True)
-        self.assertEqual(my_interval.contains(6), False)
-        self.assertEqual(my_interval.intersect(Interval(1, 7)), Interval(1, 5))
-
-        self.assertEqual(my_interval.is_disjoint(Interval(1, 2)), False)
-        self.assertEqual(my_interval.is_disjoint(Interval(6, 7)), True)
-
-        self.assertEqual(my_interval.is_subset(Interval(0, 1)), False)
-        self.assertEqual(my_interval.is_subset(Interval(0, 10)), True)
-
 
 if __name__ == '__main__':
     unittest.main()

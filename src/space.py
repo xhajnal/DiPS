@@ -7,14 +7,14 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from numpy import prod
 import copy
-from termcolor import colored ## Colored output
+from termcolor import colored  ## Colored output
 
 ## ONLY FOR SAVING FILES
 import os
 import sys
 
-from sample_n_visualise import visualise_by_param  ## Multidensional refinement proxy
-from miscellaneous import DocumentWrapper  ## Text wrapper for figure tight layout
+from sample_n_visualise import visualise_by_param  ## Multidimensional refinement proxy
+from common.document_wrapper import DocumentWrapper  ## Text wrapper for figure tight layout
 
 workspace = os.path.dirname(__file__)
 sys.path.append(workspace)

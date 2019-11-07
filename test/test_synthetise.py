@@ -1,76 +1,13 @@
 import unittest
+
+from sympy import Interval
+
+from common.convert import ineq_to_constraints
 from src.synthetise import *
 cwd = os.getcwd()
 
 
 class MyTestCase(unittest.TestCase):
-    def test_Interval(self):
-        print()
-        print(colored("Interval test here", 'blue'))
-        self.assertEqual(1.0 in mpi(1, 1), True)
-        self.assertEqual(1.0 in mpi(1, 2), True)
-        self.assertEqual(1.0 in mpi(0, 1), True)
-        self.assertEqual(1.0 in mpi(0, 2), True)
-
-        self.assertEqual(5.0 not in mpi(1, 1), True)
-        self.assertEqual(5.0 not in mpi(1, 2), True)
-        self.assertEqual(5.0 not in mpi(0, 1), True)
-        self.assertEqual(5.0 not in mpi(0, 2), True)
-
-        self.assertEqual(mpi(1, 1) in mpi(1, 1), True)
-        self.assertEqual(mpi(1, 1) in mpi(1, 2), True)
-        self.assertEqual(mpi(1, 1) in mpi(0, 1), True)
-        self.assertEqual(mpi(1, 1) in mpi(0, 2), True)
-
-        self.assertEqual(mpi(1, 2) in mpi(1, 3), True)
-        self.assertEqual(mpi(1, 2) in mpi(0, 2), True)
-        self.assertEqual(mpi(1, 2) in mpi(0, 3), True)
-        self.assertEqual(mpi(1, 2) not in mpi(0, 1), True)
-        self.assertEqual(mpi(1, 2) not in mpi(2, 3), True)
-        self.assertEqual(mpi(1, 2) not in mpi(1.5, 2), True)
-
-    def test_to_interval(self):
-        print(colored("Checking transformation of a set of points into a set of intervals here", 'blue'))
-        self.assertEqual(to_interval([(0, 2), (1, 3)]), [[0, 1], [2, 3]])
-        self.assertEqual(to_interval([(0, 0, 0), (1, 0, 0), (1, 2, 0), (0, 2, 0), (0, 2, 3), (0, 0, 3), (1, 0, 3), (1, 2, 3)]), [[0, 1], [0, 2], [0, 3]])
-
-    def test_is_in(self):
-        print(colored("Checking if the first region is within the second one here", 'blue'))
-        self.assertEqual(is_in([(1, 4)], [(1, 4)]), True)
-        self.assertEqual(is_in([(1, 4)], [(0, 5)]), True)
-        self.assertEqual(is_in([(1, 4)], [(0, 3)]), False)
-        self.assertEqual(is_in([(1, 4)], [(2, 5)]), False)
-
-        self.assertEqual(is_in([(0, 2), (1, 3)], [(0, 2), (1, 3)]), True)
-        self.assertEqual(is_in([(0, 2), (1, 3)], [(0, 3), (1, 4)]), True)
-        self.assertEqual(is_in([(0, 2), (1, 3)], [(0, 1), (1, 4)]), False)
-        self.assertEqual(is_in([(0, 2), (1, 3)], [(0, 2), (1, 2)]), False)
-
-    def test_ineq_to_constraints(self):
-        print(colored("Checking conversion from a list of inequalities to list of properties", 'blue'))
-        self.assertEqual(ineq_to_constraints(["x+3"], [[0, 1]]), ["x+3>=0", "x+3<=1"])
-        self.assertEqual(ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 2)]), ['x>=0', 'x<=1', '2*x>=0', '2*x<=2'])
-
-        self.assertEqual(ineq_to_constraints(["x+3"], []), False)
-
-        ## Bad intervals
-        with self.assertRaises(Exception) as context:
-            ineq_to_constraints(["x"], [Interval(3, 2)])
-        self.assertTrue('Some intervals are incorrect' in str(context.exception))
-
-        with self.assertRaises(Exception) as context:
-            ineq_to_constraints(["x"], [Interval(2, 2)])
-        self.assertTrue('Some intervals are incorrect' in str(context.exception))
-
-    def test_constraints_to_ineq(self):
-        print(colored("Checking conversion from a list properties to a list of inequalities", 'blue'))
-        self.assertEqual(constraints_to_ineq(["x+3>=0", "x+3<=1"]), (["x+3"], [Interval(0, 1)]))
-        self.assertEqual(constraints_to_ineq(['x>=0', 'x<=1', '2*x>=0', '2*x<=2']), (["x", "2*x"], [Interval(0, 1), Interval(0, 2)]))
-
-        ## Properties not in a form of inequalities
-        self.assertEqual(constraints_to_ineq(["x+3>=0", "x+4<=1"]), False)
-        self.assertEqual(constraints_to_ineq(["x+3"]), False)
-
     def test_check_single_z3(self):
         print(colored("Checking (un)safe with single properties using z3 here", 'blue'))
         ## IS IN
@@ -509,7 +446,9 @@ class MyTestCase(unittest.TestCase):
         show_space = True
 
         ## NORMAL TEST
-        from load import create_intervals, get_f
+        from common.math import create_intervals
+        from load import get_f
+
         agents_quantities = [2, 3, 5, 10]
 
         f = get_f(os.path.join(cwd, "prism_results/asyn*[0-9].txt"), "prism", True, agents_quantities)
@@ -546,7 +485,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_refine_multi_param(self):
         print(colored("Multi-param refinement here", 'blue'))
-        from load import create_intervals
+        from common.math import create_intervals
         show_space = True
 
         ## MULTIPARAM TEST
@@ -675,7 +614,7 @@ class MyTestCase(unittest.TestCase):
 
 if __name__ == "__main__":
     # from load import get_f, get_rewards
-    # from load import create_intervals
+    # from common.math import create_intervals
     # from load import load_all_data
     #
     # p = 0.0

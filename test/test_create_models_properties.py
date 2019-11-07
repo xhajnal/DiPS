@@ -1,7 +1,6 @@
 import unittest
 
 from termcolor import colored
-
 from src.create_models_properties import *
 
 
