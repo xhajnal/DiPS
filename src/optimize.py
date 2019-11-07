@@ -1,7 +1,8 @@
 import scipy
 import numpy as np
 from scipy.optimize import least_squares
-from z3 import *
+
+from common.z3 import is_this_z3_function, translate_z3_function
 
 
 def dist(x):
@@ -17,14 +18,7 @@ def dist(x):
     result = []
     for i in range(len(globals()["functions"])):
         point = float(globals()["data_point"][i])
-        value = eval(globals()["functions"][i]+"-point")
-        try:
-            value = str(z3.simplify(value).as_decimal(30))
-            if value[-1] == "?":
-                value = value[:-1]
-        except Z3Exception:
-            pass
-        result.append(float(value))
+        result.append(eval(globals()["functions"][i]+"-point"))
     # print("semiresult", result)
     return np.array(result)
 
@@ -38,6 +32,10 @@ def optimize(functions: [list], params: [list], param_intervals: [list], data_po
     :param data_point: (list) of values of functions to be optimized
     :return: (list) [point of parameter space with the least distance, values of functions in the point, the distance between the data and functions values]
     """
+
+    for index, function in enumerate(functions):
+        if is_this_z3_function(function):
+            functions[index] = translate_z3_function(function)
 
     ## Get the average value of parameter intervals
     x0 = np.array(list(map(lambda lst: (lst[0]+lst[1])/2, param_intervals)))
@@ -60,13 +58,6 @@ def optimize(functions: [list], params: [list], param_intervals: [list], data_po
 
     function_values = []
     for polynome in functions:
-        polynome = eval(polynome)
-        try:
-            polynome = str(z3.simplify(polynome).as_decimal(30))
-            if polynome[-1] == "?":
-                polynome = polynome[:-1]
-        except Z3Exception:
-            pass
         function_values.append(float(polynome))
 
     ## VALUES OF PARAMS, VALUES OF FUNCTIONS, DISTANCE
