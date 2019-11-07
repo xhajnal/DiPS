@@ -53,30 +53,8 @@ if "prism" not in os.environ["PATH"]:
         os.environ["PATH"] = os.environ["PATH"] + ":" + prism_path
 
 from load import parse_params_from_model
+from common.files import write_to_file
 os.chdir(cwd)
-
-
-def write_to_file(std_output_path, output_file_path, output, silent, append=False):
-    """  Generic writing to a file
-
-    Args
-    ----------
-    std_output_path: (string) path to write the output
-    output_file_path: (string) path of the output file
-    output: (string) text to be written into the file
-    silent: (Bool) if silent command line output is set to minimum
-    append: (Bool) if True appending instead of writing from the start
-    """
-    if std_output_path is not None:
-        if not silent:
-            print("output here: " + str(output_file_path))
-        if append:
-            with open(output_file_path, 'a') as output_file:
-                output_file.write(output)
-        else:
-            with open(output_file_path, 'w') as output_file:
-                output_file.write(output)
-                output_file.close()
 
 
 def set_javaheap_win(size):
@@ -119,6 +97,7 @@ def set_javaheap_win(size):
     return previous_size
 
 
+## TODO rewrite this without the paths, just files
 def call_prism(args, seq=False, silent=False, model_path=model_path, properties_path=properties_path,
                prism_output_path=prism_results, std_output_path=prism_results, std_output_file=False):
     """  Solves problem of calling prism from another directory.
@@ -238,20 +217,20 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
                             output = subprocess.run(args, stdout=subprocess.PIPE,
                                                     stderr=subprocess.STDOUT).stdout.decode("utf-8")
                             if 'OutOfMemoryError' in output:
-                                write_to_file(std_output_path, output_file_path, output, silent, append=True)
+                                write_to_file(output_file_path, output, silent, append=True)
                                 print(colored(f"A memory error occurred while seq even after increasing the memory, close some programs and try again", "red"))
                                 if sys.platform.startswith("win"):
                                     set_javaheap_win(previous_memory)
                                 return "memory_fail", "A memory error occurred while seq even after increasing the memory, close some programs and try again"
                         else:
-                            write_to_file(std_output_path, output_file_path, output, silent, append=True)
+                            write_to_file(output_file_path, output, silent, append=True)
                             print(colored(f"A memory error occurred while seq with given amount of memory", "red"))
                             ## Changing the memory setting back
                             if sys.platform.startswith("win"):
                                 set_javaheap_win(previous_memory)
                             return "memory", "A memory error occurred while seq with given amount of memory"
 
-                    write_to_file(std_output_path, output_file_path, output, silent, append=True)
+                    write_to_file(output_file_path, output, silent, append=True)
 
                     ## Check for errors
                     ## 'OutOfMemoryError', "Cannot allocate memory", 'Type error', 'Syntax error', 'NullPointerException', 'use -noprobchecks'
@@ -270,7 +249,7 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
             if not silent:
                 print("calling \"", " ".join(args))
             output = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8")
-            write_to_file(std_output_path, output_file_path, output, silent, append=False)
+            write_to_file(output_file_path, output, silent, append=False)
 
             ## Check for errors
             ## 'OutOfMemoryError', "Cannot allocate memory", 'Type error', 'Syntax error', 'NullPointerException', 'use -noprobchecks'
@@ -289,6 +268,7 @@ def call_prism(args, seq=False, silent=False, model_path=model_path, properties_
         os.chdir(curr_dir)
 
 
+## TODO rewrite this without the paths, just files
 def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq=False, noprobchecks=False, memory="",
                      model_path=model_path, properties_path=properties_path, property_file=False, output_path=prism_results, gui=False, silent=False):
     """  Calls prism for each file matching the prefix
@@ -495,6 +475,7 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
             pass
 
 
+## TODO rewrite this without the paths, just files
 def call_storm(args, silent=False, model_path=model_path, properties_path=properties_path,
                storm_output_path=storm_results, std_output_path=storm_results, std_output_file=False, time=False):
     """  Prints calls for storm model checking.
@@ -607,6 +588,7 @@ def call_storm(args, silent=False, model_path=model_path, properties_path=proper
     # write_to_file(std_output_path, output_file_path, output, silent, append=False)
 
 
+## TODO rewrite this without the paths, just files
 def call_storm_files(model_prefix, agents_quantities, model_path=model_path, properties_path=properties_path, property_file=False, output_path=storm_results, time=False):
     """  Calls storm for each file matching the prefix
 
@@ -675,9 +657,3 @@ def call_storm_files(model_prefix, agents_quantities, model_path=model_path, pro
                 call_storm("{} {}".format(file, property_file), model_path=model_path, properties_path=properties_path, std_output_path=output_path, std_output_file=output_file)
             else:
                 call_storm("{} prop_{}.pctl".format(file, N), model_path=model_path, properties_path=properties_path, std_output_path=output_path, std_output_file=output_file)
-
-
-cwd = "D:\Git\mpm\\test"
-agents_quantities = [2, 3]
-print(os.path.join(cwd, "storm_results"))
-call_storm_files("asyn*_", agents_quantities, model_path=os.path.join(cwd, "models"), properties_path=f"{os.path.join(cwd,'properties')}", output_path=os.path.join(cwd, "storm_results"))
