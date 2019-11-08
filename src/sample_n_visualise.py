@@ -45,7 +45,7 @@ def get_param_values(parameters, size_q, intervals=False, debug=False):
     return parameter_values
 
 
-def eval_and_show(fun_list, parameter_value, parameters=False, data=False, intervals=False, cumulative=False, debug=False, where=False):
+def eval_and_show(fun_list, parameter_value, parameters=False, data=False, data_intervals=False, cumulative=False, debug=False, where=False):
     """ Creates bar plot of evaluation of given functions for given point in parameter space
 
     Args
@@ -54,7 +54,7 @@ def eval_and_show(fun_list, parameter_value, parameters=False, data=False, inter
     parameter_value: (list of floats) array of param values
     parameters: (list of strings) parameter names (used for faster eval)
     data: (list) Data comparison next to respective function
-    intervals: (list) intervals obtained from the data to check if the function are within the intervals
+    data_intervals: (list) intervals obtained from the data to check if the function are within the intervals
     cumulative: (Bool) if True cdf instead of pdf is visualised
     debug: (Bool) if debug extensive output is provided
     where: (Tuple/List) : output matplotlib sources to output created figure
@@ -117,14 +117,14 @@ def eval_and_show(fun_list, parameter_value, parameters=False, data=False, inter
     ax.set_ylabel(f'{("Value", "Cumulative value")[cumulative]}')
     if data:
         ax.set_xlabel('Rational function indices (blue), Data point indices (red)')
-        if intervals:
+        if data_intervals:
             functions_inside_of_intervals = []
             for index in range(len(data)):
-                if values[index] in mpi(intervals[index]):
+                if values[index] in data_intervals[index]:
                     functions_inside_of_intervals.append(True)
                 else:
                     functions_inside_of_intervals.append(False)
-            title = f"{title} \n Function value within the respective interval:\n {functions_inside_of_intervals} \n Intervals: {intervals}"
+            title = f"{title} \n Function value within the respective interval:\n {functions_inside_of_intervals} \n Intervals: {data_intervals}"
     else:
         ax.set_xlabel('Rational function indices')
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))

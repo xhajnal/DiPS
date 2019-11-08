@@ -126,7 +126,7 @@ class Gui(Tk):
         self.property_changed = False
         self.functions_changed = False
         self.data_changed = False
-        self.intervals_changed = False
+        self.data_intervals_changed = False
         self.constraints_changed = False
         self.space_changed = False
 
@@ -138,7 +138,7 @@ class Gui(Tk):
         self.functions = ""  ## Parameter synthesis results (rational functions)
         self.data_intervals = ""  ## Computed intervals
         self.parameters = ""  ##  Parsed parameters
-        self.parameter_intervals = []  ## Parameters intervals
+        self.parameter_domains = []  ## Parameters intervals
         self.constraints = ""  ## Derived properties
         self.space = ""  ## Instance of a space Class
 
@@ -389,13 +389,13 @@ class Gui(Tk):
         self.alpha_entry.insert(END, '0.90')
         self.n_samples_entry.insert(END, '60')
 
-        Button(page4, text='Create intervals', command=self.create_intervals).grid(row=6, column=0, sticky=W, padx=4, pady=4)
+        Button(page4, text='Create intervals', command=self.data_create_intervals).grid(row=6, column=0, sticky=W, padx=4, pady=4)
 
         Label(page4, text=f"Intervals:", anchor=W, justify=LEFT).grid(row=7, column=0, sticky=W, padx=4, pady=4)
 
-        self.intervals_text = Text(page4, height=11, state=DISABLED)  # height=10, width=30
-        # self.interval_text.config(state="disabled")
-        self.intervals_text.grid(row=8, column=0, rowspan=2, columnspan=16, sticky=W, padx=4, pady=4)
+        self.data_intervals_text = Text(page4, height=11, state=DISABLED)  # height=10, width=30
+        # self.data_intervals_text.config(state="disabled")
+        self.data_intervals_text.grid(row=8, column=0, rowspan=2, columnspan=16, sticky=W, padx=4, pady=4)
 
         ttk.Separator(page4, orient=VERTICAL).grid(row=0, column=17, rowspan=10, sticky='ns', padx=50, pady=10)
         Label(page4, text=f"Data informed property section.", anchor=W, justify=LEFT).grid(row=0, column=18, sticky=W, padx=5, pady=4)
@@ -821,7 +821,7 @@ class Gui(Tk):
         # self.functions_text.configure(state='disabled')
         ## Resetting parsed intervals
         self.parameters = []
-        self.parameter_intervals = []
+        self.parameter_domains = []
 
     def unfold_functions(self):
         """" Unfolds the function dictionary into a single list """
@@ -929,7 +929,7 @@ class Gui(Tk):
 
             ## Resetting parsed intervals
             self.parameters = []
-            self.parameter_intervals = []
+            self.parameter_domains = []
             self.status_set("Parsed rational functions loaded.")
 
     def load_data(self):
@@ -1095,7 +1095,7 @@ class Gui(Tk):
 
             ## Resetting parsed intervals
             self.parameters = []
-            self.parameter_intervals = []
+            self.parameter_domains = []
             self.status_set("constraints loaded.")
 
     def append_constraints(self):
@@ -1546,7 +1546,7 @@ class Gui(Tk):
             self.property_changed = False
             ## Resetting parsed intervals
             self.parameters = []
-            self.parameter_intervals = []
+            self.parameter_domains = []
             self.cursor_toggle_busy(False)
 
     def sample_fun(self):
@@ -1567,7 +1567,7 @@ class Gui(Tk):
         try:
             self.cursor_toggle_busy(True)
             self.sampled_functions = sample_list_funs(self.functions, int(self.fun_size_q_entry.get()),
-                                                      parameters=self.parameters, intervals=self.parameter_intervals,
+                                                      parameters=self.parameters, intervals=self.parameter_domains,
                                                       debug=self.debug.get(), silent=self.silent.get())
         finally:
             self.cursor_toggle_busy(False)
@@ -1646,7 +1646,7 @@ class Gui(Tk):
         #     self.page3_figure = pyplt.figure()
         #     self.page3_a = self.page3_figure.add_subplot(111)
         # print("self.parameter_values", self.parameter_values)
-        spam, egg = eval_and_show(self.functions, self.parameter_values, data=self.data, intervals=self.data_intervals,
+        spam, egg = eval_and_show(self.functions, self.parameter_values, data=self.data, data_intervals=self.data_intervals,
                                   debug=self.debug.get(), where=[self.page3_figure, self.page3_a])
 
         if spam is None:
@@ -1695,7 +1695,7 @@ class Gui(Tk):
 
             # print("parameter_point", parameter_point)
             self.page3_a.cla()
-            spam, egg = eval_and_show(self.functions, parameter_point, data=self.data, intervals=self.intervals,
+            spam, egg = eval_and_show(self.functions, parameter_point, data=self.data, data_intervals=self.data_intervals,
                                       debug=self.debug.get(), where=[self.page3_figure, self.page3_a])
 
             if spam is None:
@@ -1750,7 +1750,7 @@ class Gui(Tk):
             if self.page3_figure_in_use.get() is not "3":
                 return
             i = i + 1
-            self.page3_figure = heatmap(function, self.parameter_intervals,
+            self.page3_figure = heatmap(function, self.parameter_domains,
                                         [int(self.fun_size_q_entry.get()), int(self.fun_size_q_entry.get())],
                                         posttitle=f"Function number {i}: {function}", where=True,
                                         parameters=self.parameters)
@@ -1778,9 +1778,9 @@ class Gui(Tk):
         self.validate_parameters(where=self.functions)
 
         print("self.parameters", self.parameters)
-        print("self.parameter_intervals", self.parameter_intervals)
+        print("self.parameter_domains", self.parameter_domains)
 
-        result = optimize(self.functions, self.parameters, self.parameter_intervals, self.data)
+        result = optimize(self.functions, self.parameters, self.parameter_domains, self.data)
         self.optimised_param_point = result[0]
         self.optimised_function_value = result[1]
         self.optimised_distance = result[2]
@@ -1832,7 +1832,7 @@ class Gui(Tk):
             file.write(f"function values {self.optimised_function_value} \n")
             file.write(f"distance {self.optimised_distance} \n")
 
-    def create_intervals(self):
+    def data_create_intervals(self):
         """ Creates intervals from data. """
         print("Creating intervals ...")
         self.status_set("Create interval - checking inputs")
@@ -1864,13 +1864,13 @@ class Gui(Tk):
             intervals = f"{intervals},\n({interval.inf}, {interval.sup})"
         # print("intervals", intervals)
         intervals = intervals[2:]
-        self.intervals_text.configure(state='normal')
-        self.intervals_text.delete('1.0', END)
-        self.intervals_text.insert('end', intervals)
-        # self.intervals_text.configure(state='disabled')
+        self.data_intervals_text.configure(state='normal')
+        self.data_intervals_text.delete('1.0', END)
+        self.data_intervals_text.insert('end', intervals)
+        # self.data_intervals_text.configure(state='disabled')
         self.status_set("Intervals created.")
 
-        self.intervals_changed = True
+        self.data_intervals_changed = True
 
     def sample_space(self):
         """ Samples (Parameter) Space. Plots the results. """
@@ -2048,7 +2048,7 @@ class Gui(Tk):
             if not self.silent.get():
                 print("parameters", self.parameters)
 
-        if (not self.parameter_intervals) and intervals:
+        if (not self.parameter_domains) and intervals:
             ## TODO Maybe rewrite this as key and pass the argument to load_param_intervals
             self.key = StringVar()
             self.status_set("Choosing ranges of parameters:")
@@ -2068,7 +2068,7 @@ class Gui(Tk):
                 spam_high.grid(row=i, column=2)
                 spam_low.insert(END, '0')
                 spam_high.insert(END, '1')
-                self.parameter_intervals.append([spam_low, spam_high])
+                self.parameter_domains.append([spam_low, spam_high])
                 i = i + 1
 
             ## To be used to wait until the button is pressed
@@ -2081,8 +2081,8 @@ class Gui(Tk):
 
             load_param_intervals_button.wait_variable(self.button_pressed)
             ## print("key pressed")
-        elif (len(self.parameter_intervals) is not len(self.parameters)) and intervals:
-            self.parameter_intervals = []
+        elif (len(self.parameter_domains) is not len(self.parameters)) and intervals:
+            self.parameter_domains = []
             self.validate_parameters(where=where)
 
     def validate_constraints(self, position=False):
@@ -2100,7 +2100,7 @@ class Gui(Tk):
         if position is False:
             position = "Validating constraints"
         ## If constraints empty create constraints
-        if self.functions_changed or self.intervals_changed:
+        if self.functions_changed or self.data_intervals_changed:
             if not self.silent.get():
                 print("Functions: ", self.functions)
                 print("Intervals: ", self.data_intervals)
@@ -2118,8 +2118,8 @@ class Gui(Tk):
             if self.functions_changed:
                 self.functions_changed = False
 
-            if self.intervals_changed:
-                self.intervals_changed = False
+            if self.data_intervals_changed:
+                self.data_intervals_changed = False
 
             ## Check if the number of functions and intervals is equal
             if len(self.functions) != len(self.data_intervals):
@@ -2155,7 +2155,7 @@ class Gui(Tk):
         self.space_file.set("")
         self.space = ""
         self.parameters = ""
-        self.parameter_intervals = []
+        self.parameter_domains = []
         self.status_set("Space deleted.")
 
     def validate_space(self, position=False):
@@ -2174,7 +2174,7 @@ class Gui(Tk):
                 print("Space is empty - creating a new one.")
             ## Parse params and its intervals
             self.validate_parameters(where=self.constraints)
-            self.space = space.RefinedSpace(self.parameter_intervals, self.parameters)
+            self.space = space.RefinedSpace(self.parameter_domains, self.parameters)
         else:
             if self.constraints_changed:
                 messagebox.showwarning(position,
@@ -2274,14 +2274,14 @@ class Gui(Tk):
         region = []
         for param_index in range(len(self.parameters)):
             ## Getting the values from each entry, low = [0], high = [1]
-            region.append([float(self.parameter_intervals[param_index][0].get()),
-                           float(self.parameter_intervals[param_index][1].get())])
+            region.append([float(self.parameter_domains[param_index][0].get()),
+                           float(self.parameter_domains[param_index][1].get())])
         if not self.silent.get():
             print("Region: ", region)
         del self.key
         self.new_window.destroy()
         del self.new_window
-        self.parameter_intervals = region
+        self.parameter_domains = region
         self.button_pressed.set(True)
         if not self.silent.get():
             if self.space:

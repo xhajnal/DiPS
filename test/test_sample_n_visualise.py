@@ -27,7 +27,7 @@ class MyTestCase(unittest.TestCase):
         eval_and_show(spam, [delta, r_0], ["delta", "r_0"], data=[0.1, 0.2, 0.7], cumulative=True, debug=True)
 
         ## With data and intervals
-        eval_and_show(spam, [delta, r_0], ["delta", "r_0"], data=[0.1, 0.2, 0.7], intervals=[[0, 1], [0.1, 0.2], [0.1, 0.2]], debug=True)
+        eval_and_show(spam, [delta, r_0], ["delta", "r_0"], data=[0.1, 0.2, 0.7], data_intervals=[[0, 1], [0.1, 0.2], [0.1, 0.2]], debug=True)
 
         spam = ["r_0**2-2*r_0+1"]
 
