@@ -28,7 +28,7 @@ def is_this_general_function(function: str):
 
 def translate_z3_function(function: str):
     if "If" in function:
-        function = re.sub(r"If\((.*),(.*),(.*)\)", r"[\g<3>,\g<2>](\g<1>)", function)
+        function = re.sub(r"If\((.*),(.*),(.*)\)", r"(\g<2> if \g<1> else \g<3>)", function)
     if "And" in function:
         function = re.sub(r"And\((.*),(.*)\)", r"(\g<1>) and (\g<2>)", function)
     if "Or" in function:
@@ -40,12 +40,4 @@ def translate_z3_function(function: str):
 
 ## TODO
 def translate_to_z3_function(function: str):
-    if "If" in function:
-        function = re.sub(r"If\((.*),(.*),(.*)\)", r"[\g<3>,\g<2>](\g<1>)", function)
-    if "And" in function:
-        function = re.sub(r"And\((.*),(.*)\)", r"(\g<1>) and (\g<2>)", function)
-    if "Or" in function:
-        function = re.sub(r"Or\((.*),(.*)\)", r"(\g<1>) or (\g<2>)", function)
-    if "Not" in function:
-        function = re.sub(r"Not\((.*)\)", r" not (\g<1>)", function)
-    return function
+    pass

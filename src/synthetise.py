@@ -14,6 +14,8 @@ from mpmath import mpi
 from matplotlib.patches import Rectangle
 import numpy as np
 
+from common.z3 import is_this_z3_function, translate_z3_function
+
 if "wind" not in platform.system().lower():
     from dreal import logical_and, logical_or, logical_not, Variable, CheckSatisfiability
 # from dreal import *
@@ -1706,6 +1708,12 @@ def sample(space, constraints, size_q, compress=False, silent=True, save=False, 
     A map from point to list of Bool whether f(point) in interval[index]
 
     """
+
+    ## Convert z3 functions
+    for index, constraint in enumerate(constraints):
+        if is_this_z3_function(constraint):
+            constraints[index] = translate_z3_function(constraint)
+
     start_time = time()
     parameter_values = []
     parameter_indices = []
@@ -1763,28 +1771,19 @@ def sample(space, constraints, size_q, compress=False, silent=True, save=False, 
 
         satisfied_list = []
         ## For each constraint (inequality - interval bound)
-        for index in range(len(constraints)):
-            # print(constraints[index])
-            # print("type(constraints[index])", type(constraints[index]))
+        for index, constraint in enumerate(constraints):
+            # print(constraint)
+            # print("type(constraint[index])", type(constraint))
             # for param in range(len(space.params)):
             #     print(space.params[param], parameter_value[param])
             #     print("type(space.params[param])", type(space.params[param]))
             #     print("type(parameter_value[param])", type(parameter_value[param]))
 
             if debug:
-                print("constraints[index]", constraints[index])
-                print("eval(constraints[index])", eval(constraints[index]))
-            spam = (eval(constraints[index]))
-            if isinstance(spam, z3.z3.BoolRef):
-                if z3.simplify(spam):
-                    satisfied_list.append(True)
-                else:
-                    satisfied_list.append(False)
-            else:
-                if spam:
-                    satisfied_list.append(True)
-                else:
-                    satisfied_list.append(False)
+                print(f"constraints[{index}]", constraint)
+                print(f"eval(constraints[{index}])", eval(constraint))
+
+            satisfied_list.append(eval(constraint))
 
             ## print("cycle")
             ## print(sampling[tuple(parameter_indices[i])])

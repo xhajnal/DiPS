@@ -9,6 +9,8 @@ from matplotlib.ticker import MaxNLocator
 from termcolor import colored
 from z3 import *
 
+from common.z3 import is_this_z3_function, translate_z3_function
+
 workspace = os.path.dirname(__file__)
 sys.path.append(os.path.join(workspace, '../src/'))
 # sys.path.append(os.path.dirname(__file__))
@@ -45,12 +47,12 @@ def get_param_values(parameters, size_q, intervals=False, debug=False):
     return parameter_values
 
 
-def eval_and_show(fun_list, parameter_value, parameters=False, data=False, data_intervals=False, cumulative=False, debug=False, where=False):
+def eval_and_show(functions, parameter_value, parameters=False, data=False, data_intervals=False, cumulative=False, debug=False, where=False):
     """ Creates bar plot of evaluation of given functions for given point in parameter space
 
     Args
     ----------
-    fun_list: (list of strings) list of rational functions
+    functions: (list of strings) list of rational functions
     parameter_value: (list of floats) array of param values
     parameters: (list of strings) parameter names (used for faster eval)
     data: (list) Data comparison next to respective function
@@ -59,9 +61,15 @@ def eval_and_show(fun_list, parameter_value, parameters=False, data=False, data_
     debug: (Bool) if debug extensive output is provided
     where: (Tuple/List) : output matplotlib sources to output created figure
     """
+
+    ## Convert z3 functions
+    for index, function in enumerate(functions):
+        if is_this_z3_function(function):
+            functions[index] = translate_z3_function(function)
+
     if not parameters:
         parameters = set()
-        for polynome in fun_list:
+        for polynome in functions:
             parameters.update(find_param(polynome, debug))
         parameters = sorted(list(parameters))
     if debug:
@@ -79,14 +87,8 @@ def eval_and_show(fun_list, parameter_value, parameters=False, data=False, data_
     title = title[:-1]
 
     title = f"{title}\n values: "
-    for polynome in fun_list:
-        ## Z3 improvement
+    for polynome in functions:
         expression = eval(polynome)
-        try:
-            expression = z3.simplify(expression).as_decimal(30)
-        except Z3Exception:
-            pass
-        expression = float(expression)
         if debug:
             print(polynome)
             print("Eval ", polynome, expression)
@@ -132,7 +134,7 @@ def eval_and_show(fun_list, parameter_value, parameters=False, data=False, data_
         print("title: \n", title)
     ax.set_title(wraper.fill(title))
     if debug:
-        print("Len(fun_list): ", len(fun_list))
+        print("Len(fun_list): ", len(functions))
         print("values:", values)
         print("range:", range(1, len(values) + 1))
         print("title", title)
@@ -179,12 +181,12 @@ def sample_dictionary_funs(dictionary, size_q, keys=None, debug=False):
     return sampling
 
 
-def sample_list_funs(list_fun, size_q, parameters=False, intervals=False, silent=False, debug=False):
+def sample_list_funs(functions, size_q, parameters=False, intervals=False, silent=False, debug=False):
     """ Returns a list of function values for sampled parametrisations
 
     Args
     ----------
-    list_fun: (list of functions)
+    functions: (list of functions) to be sampled
     size_q: (int) sample size in each parameter
     parameters: (list of strings) parameter names (used for faster eval)
     intervals: (list of pairs of numbers) intervals of parameters
@@ -199,9 +201,12 @@ def sample_list_funs(list_fun, size_q, parameters=False, intervals=False, silent
     arr = []
     if debug:
         print("Inside of sample_n_visualise.sample_list_funs()")
-        print("List_fun: ", list_fun)
+        print("List_fun: ", functions)
         print("Intervals: ", intervals)
-    for polynome in list_fun:
+
+    for index, polynome in enumerate(functions):
+        if is_this_z3_function(polynome):
+            functions[index] = translate_z3_function(polynome)
         if debug:
             print("Polynome: ", polynome)
 
@@ -226,7 +231,7 @@ def sample_list_funs(list_fun, size_q, parameters=False, intervals=False, silent
         for parameter_value in parameter_values:
             if debug:
                 print("Parameter_value: ", parameter_value)
-            a = [list_fun.index(polynome)]
+            a = [functions.index(polynome)]
             for param_index in range(len(fun_parameters)):
                 a.append(parameter_value[param_index])
                 if debug:
@@ -236,14 +241,10 @@ def sample_list_funs(list_fun, size_q, parameters=False, intervals=False, silent
 
             print("polynome", polynome)
 
-            expression = eval(polynome)
-            try:
-                expression = z3.simplify(expression).as_decimal(30)
-            except Z3Exception:
-                pass
+            value = eval(polynome)
             if debug:
-                print("Eval ", polynome, expression)
-            a.append(expression)
+                print("Eval ", polynome, value)
+            a.append(value)
             arr.append(a)
     return arr
 
@@ -253,7 +254,7 @@ def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug=False,
 
     Args
     ----------
-    dic_fun: (dictionary N -> list of polynomials)
+    dic_fun: (dictionary N -> list of rational functions)
     size_q: (int) sample size in each parameter
     agents_quantities: (int) pop sizes to be used
     cumulative: (Bool) if True cdf instead of pdf is visualised
@@ -264,7 +265,10 @@ def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug=False,
 
     for N in agents_quantities:
         parameters = set()
-        for polynome in dic_fun[N]:
+        for index, polynome in enumerate(dic_fun[N]):
+            if is_this_z3_function(polynome):
+                dic_fun[N][index] = translate_z3_function(polynome)
+
             if debug:
                 print("Polynome: ", polynome)
             parameters.update(find_param(polynome, debug))
@@ -300,20 +304,14 @@ def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug=False,
             if debug:
                 print("Eval ", polynome, eval(polynome))
             for polynome in dic_fun[N]:
-                expression = eval(polynome)
-                try:
-                    expression = z3.simplify(expression).as_decimal(30)
-                except Z3Exception:
-                    pass
-                expression = float(expression)
-
+                value = eval(polynome)
                 if cumulative:
                     ## Add sum of all values
-                    add = add + expression
+                    add = add + value
                     a.append(add)
-                    del expression
+                    del value
                 else:
-                    a.append(expression)
+                    a.append(value)
 
             # print(a)
             fig, ax = plt.subplots()
@@ -382,12 +380,12 @@ def visualise_by_param(hyper_rectangles, title="", where=False):
             return None
 
 
-def heatmap(fun, region, sampling_sizes, posttitle="", where=False, parameters=False):
+def heatmap(function, region, sampling_sizes, posttitle="", where=False, parameters=False):
     """ Creates 2D heatmap plot of sampled points of given function
 
     Args
     ----------
-    fun: dictionary N -> list of polynomials
+    function: (string) function to be analysed
     region: (list of intervals) boundaries of parameter space to be sampled
     sampling_sizes: (int) tuple of sample size of respective parameter
     posttitle: (string) A string to be put after the title
@@ -398,8 +396,13 @@ def heatmap(fun, region, sampling_sizes, posttitle="", where=False, parameters=F
     ----------
     heatmap("p+q",[[0,1],[3,4]],[5,5])
     """
+
+    ## Convert z3 function
+    if is_this_z3_function(function):
+        function = translate_z3_function(function)
+
     if not parameters:
-        parameters = sorted(list(find_param(fun)))
+        parameters = sorted(list(find_param(function)))
     # print(parameters)
     if len(parameters) != 2:
         raise Exception(f"Number of parameters of given function is not equal to 2 but {len(parameters)}")
@@ -420,14 +423,7 @@ def heatmap(fun, region, sampling_sizes, posttitle="", where=False, parameters=F
             locals()[parameters[1]] = j
             arr[jj, 0] = round(i, 2)
             arr[jj, 1] = round(j, 2)
-
-            expression = eval(fun)
-            try:
-                expression = z3.simplify(expression).as_decimal(30)
-            except Z3Exception:
-                pass
-            expression = float(expression)
-            arr[jj, 2] = expression
+            arr[jj, 2] = eval(function)
     # print(arr)
     # d = pd.DataFrame(arr, columns=["p","q","E"])
     heatmap_data = pd.DataFrame(arr, columns=[parameters[0], parameters[1], "E"])
@@ -443,7 +439,7 @@ def heatmap(fun, region, sampling_sizes, posttitle="", where=False, parameters=F
         return f
     else:
         ax = sns.heatmap(heatmap_data)
-        title = f"Heatmap of the parameter space \n function: {fun}"
+        title = f"Heatmap of the parameter space \n function: {function}"
         ax.set_title(wraper.fill(title))
         ax.invert_yaxis()
         plt.show()

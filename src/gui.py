@@ -835,13 +835,13 @@ class Gui(Tk):
 
     def store_z3_functions(self):
         self.z3_functions = deepcopy(self.functions)
-        for function in self.functions:
-            translate_z3_function(function)
+        for index, function in enumerate(self.functions):
+            self.functions[index] = translate_z3_function(function)
 
     def store_z3_constraints(self):
         self.z3_constraints = deepcopy(self.constraints)
-        for constraint in self.constraints:
-            translate_z3_function(constraint)
+        for index, constraint in enumerate(self.constraints):
+            self.constraints[index] = translate_z3_function(constraint)
 
     def unfold_functions(self):
         """" Unfolds the function dictionary into a single list """
@@ -1114,7 +1114,7 @@ class Gui(Tk):
             ## TODO add check here
             for constraint in self.constraints:
                 if is_this_z3_function(constraint):
-                    self.store_z3_constraint()
+                    self.store_z3_constraints()
                     messagebox.showinfo("Loading constraints",
                                         "Some of the constraints contains z3 expressions, these are being stored and used only for z3 refinement, shown constraints are translated into python expressions.")
                     break
@@ -1952,13 +1952,17 @@ class Gui(Tk):
         """ Samples (Parameter) Space using Metropolis hastings"""
         print("Space Metropolis-Hastings ...")
         self.status_set("Space Metropolis-Hastings - checking inputs")
-        ## TODO transformation back to data and functions from constraints
-        if self.data == "":
-            messagebox.showwarning("Space Metropolis-Hastings", "Load data before Metropolis-Hastings.")
-            return
 
+        if self.constraints:
+            messagebox.showwarning("Metropolis Hastings", "Data and functions are being used to run Metropolis Hasting, make sure they are in accordance with computed constrains.")
+
+        ## TODO transformation back to data and functions from constraints #Hard_task
         if self.functions == "":
             messagebox.showwarning("Space Metropolis-Hastings", "Load functions before Metropolis-Hastings.")
+            return
+
+        if self.data == "":
+            messagebox.showwarning("Space Metropolis-Hastings", "Load data before Metropolis-Hastings.")
             return
 
         ## Check functions / Get function parameters
@@ -1989,9 +1993,12 @@ class Gui(Tk):
 
         from metropolis_hastings import initialise_sampling
 
-        initialise_sampling(self.space, self.data, self.functions, int(self.n_samples_entry.get()),
-                            int(self.N_obs_entry.get()), int(self.MH_samples_entry.get()), float(self.eps_entry.get()),
-                            where=[self.page6_figure2, self.page6_b])
+        self.page6_figure2, self.page6_b = initialise_sampling(self.space, self.data, self.functions,
+                                                               int(self.n_samples_entry.get()),
+                                                               int(self.N_obs_entry.get()),
+                                                               int(self.MH_samples_entry.get()),
+                                                               float(self.eps_entry.get()),
+                                                               where=[self.page6_figure2, self.page6_b])
         # try:
         #     self.cursor_toggle_busy(True)
         #     initialise_sampling(self.space, self.data, self.functions, int(self.n_samples_entry.get()), int(self.N_obs_entry.get()), int(self.MH_samples_entry.get()), float(self.eps_entry.get()), where=[self.page6_figure2, self.page6_b])

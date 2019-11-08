@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 
+from common.z3 import is_this_z3_function, translate_z3_function
 from space import RefinedSpace
 
 
@@ -92,8 +93,10 @@ def acceptance(x, x_new):
 
     Args
     -------
-    x: TODO
-    x_new: TODO
+    x: old parameter point
+    x_new: new parameter points
+
+    returns True if the new points is accepted
 
     @author: tpetrov
     """
@@ -112,13 +115,15 @@ def metropolis_hastings(likelihood_computer, prior, transition_model, param_init
     the main method
 
     likelihood_computer: function(x, data): returns the likelihood that these parameters generated the data
-    prior: function(x, eps): TODO
+    prior: function(x, eps): prior function
     transition_model: function(x): a function that draws a sample from a symmetric distribution and returns it
     param_init:  (pair of numbers): a starting sample
     iterations: (int): number of accepted to generated
     data: (list of numbers): the data that we wish to model
     acceptance_rule: function(x, x_new): decides whether to accept or reject the new sample
     parameter_intervals: (list of pairs) boundaries of parameters
+
+    returns tuple of accepted and rejected parameter points
 
     @author: tpetrov
     @edit: xhajnal
@@ -138,12 +143,10 @@ def metropolis_hastings(likelihood_computer, prior, transition_model, param_init
         if acceptance_rule(x_lik + np.log(prior(x, eps)), x_new_lik + np.log(prior(x_new, eps))):
             x = x_new
             accepted.append(x_new)
-            print(x_new)
-            print('acc')
+            print(f"new point: {x_new} accepted")
         else:
             rejected.append(x_new)
-            print(x_new)
-            print('rej')
+            print(f"new point: {x_new} rejected")
 
     return np.array(accepted), np.array(rejected)
 
@@ -207,6 +210,12 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
     @author: tpetrov
     @edit: xhajnal
     """
+
+    ## Convert z3 functions
+    for index, function in enumerate(functions):
+        if is_this_z3_function(function):
+            functions[index] = translate_z3_function(function)
+
     globals()[space.get_params()[0]] = space.true_point[0]
     globals()[space.get_params()[1]] = space.true_point[1]
     print(f"{space.get_params()[0]} = {globals()[space.get_params()[0]]}")
@@ -217,7 +226,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
     theta_true[0] = space.true_point[0]
     theta_true[1] = space.true_point[1]
 
-    print("Theta", theta_true)
+    print("Parameter point", theta_true)
 
     if observations:
         ## Checking the type of observations (experiment/data)
@@ -260,7 +269,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
     res = manual_log_like_normal(space, theta_true, functions, np.array(observations), eps)
 
     theta_init = [(parameter_intervals[0][0] + parameter_intervals[0][1])/2, (parameter_intervals[1][0] + parameter_intervals[1][1])/2]  ## Middle of the intervals # np.ones(10)*0.1
-    print("theta_init", theta_init)
+    print("Initial parameter point: ", theta_init)
                                          ## (likelihood_computer,    prior, transition_model,   param_init, iterations, space, data,    acceptance_rule,parameter_intervals, functions, eps):
     accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, MH_samples, space, observations, acceptance, parameter_intervals, functions, eps)
 

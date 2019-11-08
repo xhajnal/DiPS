@@ -16,9 +16,9 @@ def dist(x):
     for index, param in enumerate(globals()["params"]):
         globals()[str(param)] = float(x[index])
     result = []
-    for i in range(len(globals()["functions"])):
-        point = float(globals()["data_point"][i])
-        result.append(eval(globals()["functions"][i]+"-point"))
+    for index, function in enumerate(globals()["functions"]):
+        ## Function value - data point
+        result.append(eval(function) - float(globals()["data_point"][index]))
     # print("semiresult", result)
     return np.array(result)
 
@@ -33,6 +33,7 @@ def optimize(functions: [list], params: [list], param_intervals: [list], data_po
     :return: (list) [point of parameter space with the least distance, values of functions in the point, the distance between the data and functions values]
     """
 
+    ## Convert z3 functions
     for index, function in enumerate(functions):
         if is_this_z3_function(function):
             functions[index] = translate_z3_function(function)
@@ -58,7 +59,7 @@ def optimize(functions: [list], params: [list], param_intervals: [list], data_po
 
     function_values = []
     for polynome in functions:
-        function_values.append(float(polynome))
+        function_values.append(eval(polynome))
 
     ## VALUES OF PARAMS, VALUES OF FUNCTIONS, DISTANCE
     return res.x, function_values,  sum([abs(x - y) for x, y in zip(function_values, data_point)])
