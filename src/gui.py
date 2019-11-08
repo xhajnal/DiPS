@@ -1,4 +1,5 @@
 import platform
+from copy import deepcopy
 from tkinter import *
 from tkinter import scrolledtext, messagebox
 import webbrowser
@@ -12,6 +13,7 @@ import matplotlib.pyplot as pyplt
 import matplotlib
 
 from common.convert import ineq_to_constraints
+from common.z3 import is_this_z3_function, translate_z3_function
 
 matplotlib.use("TKAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
@@ -136,10 +138,12 @@ class Gui(Tk):
         self.data = ""
         self.data_informed_property = ""  ## Property containing the interval boundaries from the data
         self.functions = ""  ## Parameter synthesis results (rational functions)
+        self.z3_functions = ""  ## functions with z3 expressions inside
         self.data_intervals = ""  ## Computed intervals
         self.parameters = ""  ##  Parsed parameters
         self.parameter_domains = []  ## Parameters intervals
-        self.constraints = ""  ## Derived properties
+        self.constraints = ""  ## Computed or loaded constrains
+        self.z3_constraints = ""  ## Constrains with z3 expressions inside
         self.space = ""  ## Instance of a space Class
 
         ## Results
@@ -154,7 +158,7 @@ class Gui(Tk):
         self.show_true_point = None
 
         ## Settings
-        self.version = "1.7.6"  ## Version of the gui
+        self.version = "1.7.7"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -814,6 +818,12 @@ class Gui(Tk):
         if not self.silent.get():
             print("Parsed list of functions: ", self.functions)
 
+        for function in self.functions:
+            if is_this_z3_function(function):
+                self.store_z3_functions()
+                messagebox.showinfo("Loading functions", "Some of the functions contains z3 expressions, these are being stored and used only for z3 refinement, shown functions are translated into python expressions.")
+                break
+
         ## Show loaded functions
         self.functions_text.configure(state='normal')
         self.functions_text.delete('1.0', END)
@@ -822,6 +832,16 @@ class Gui(Tk):
         ## Resetting parsed intervals
         self.parameters = []
         self.parameter_domains = []
+
+    def store_z3_functions(self):
+        self.z3_functions = deepcopy(self.functions)
+        for function in self.functions:
+            translate_z3_function(function)
+
+    def store_z3_constraints(self):
+        self.z3_constraints = deepcopy(self.constraints)
+        for constraint in self.constraints:
+            translate_z3_function(constraint)
 
     def unfold_functions(self):
         """" Unfolds the function dictionary into a single list """
@@ -916,6 +936,13 @@ class Gui(Tk):
                 self.functions = pickle.load(open(self.functions_file.get(), "rb"))
 
             print("loaded functions", self.functions)
+            for function in self.functions:
+                if is_this_z3_function(function):
+                    self.store_z3_functions()
+                    messagebox.showinfo("Loading functions",
+                                        "Some of the functions contains z3 expressions, these are being stored and used only for z3 refinement, shown functions are translated into python expressions.")
+                    break
+
             functions = ""
 
             for function in self.functions:
@@ -1039,6 +1066,7 @@ class Gui(Tk):
             proceed = True
         if proceed:
             self.constraints = ""
+            self.z3_constraints = ""
             self.validate_constraints(position="constraints")
         self.status_set("constraints recalculated and shown.")
 
@@ -1082,6 +1110,14 @@ class Gui(Tk):
                 #         self.constraints.append(line[:-1])
             if not self.silent.get():
                 print("self.constraints", self.constraints)
+
+            ## TODO add check here
+            for constraint in self.constraints:
+                if is_this_z3_function(constraint):
+                    self.store_z3_constraint()
+                    messagebox.showinfo("Loading constraints",
+                                        "Some of the constraints contains z3 expressions, these are being stored and used only for z3 refinement, shown constraints are translated into python expressions.")
+                    break
 
             constraints = ""
             for prop in self.constraints:
@@ -2007,10 +2043,17 @@ class Gui(Tk):
         try:
             self.cursor_toggle_busy(True)
             ## RETURNS TUPLE -- (SPACE,(NONE, ERROR TEXT)) or (SPACE, )
-            spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
-                                silent=self.silent.get(), version=int(self.alg.get()), size_q=False, debug=self.debug.get(),
-                                save=False, title="", where=[self.page6_figure, self.page6_a],
-                                solver=str(self.solver.get()), delta=self.delta, gui=True)
+            ## feeding z3 solver with z3 expressions, python expressions otherwise
+            if str(self.solver.get()) == "z3" and self.z3_constraints:
+                spam = check_deeper(self.space, self.z3_constraints, self.max_depth, self.epsilon, self.coverage,
+                                    silent=self.silent.get(), version=int(self.alg.get()), size_q=False,
+                                    debug=self.debug.get(), save=False, title="", where=[self.page6_figure, self.page6_a],
+                                    solver=str(self.solver.get()), delta=self.delta, gui=True)
+            else:
+                spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
+                                    silent=self.silent.get(), version=int(self.alg.get()), size_q=False, debug=self.debug.get(),
+                                    save=False, title="", where=[self.page6_figure, self.page6_a],
+                                    solver=str(self.solver.get()), delta=self.delta, gui=True)
         finally:
             self.cursor_toggle_busy(False)
         ## If the visualisation of the space did not succeed
@@ -2129,6 +2172,8 @@ class Gui(Tk):
 
             ## Create constraints
             self.constraints = ineq_to_constraints(self.functions, self.data_intervals, silent=self.silent.get())
+            if self.z3_functions:
+                self.z3_constraints = ineq_to_constraints(self.z3_functions, self.data_intervals, silent=self.silent.get())
             self.constraints_changed = True
             self.constraints_file.set("")
 
