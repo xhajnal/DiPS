@@ -6,12 +6,6 @@ curr_dir = os.path.dirname(__file__)
 
 
 class MyTestCase(unittest.TestCase):
-    def test_get_rectangle_volume(self):
-        print(colored("get_rectangle_volume tests", 'blue'))
-        self.assertEqual(round(get_rectangle_volume([[0.0, 0]]), 1), 0)
-        self.assertEqual(round(get_rectangle_volume([[0.0, 0.5]]), 1), 0.5)
-        self.assertEqual(round(get_rectangle_volume([[0.0, 0.2], [0, 0.2]]), 2), 0.04)
-
     def test_init_space(self):
         print(colored("Space init tests", 'blue'))
         ## RefinedSpace(region, params, types=None, rectangles_sat=False, rectangles_unsat=False, rectangles_unknown=None, sat_samples=None, unsat_samples=None, true_point=False, title=False):

@@ -13,6 +13,7 @@ from termcolor import colored  ## Colored output
 import os
 import sys
 
+from common.math import get_rectangle_volume
 from sample_n_visualise import visualise_by_param  ## Multidimensional refinement proxy
 from common.document_wrapper import DocumentWrapper  ## Text wrapper for figure tight layout
 
@@ -32,22 +33,6 @@ if not os.path.exists(refinement_results):
     os.makedirs(refinement_results)
 
 os.chdir(cwd)
-
-
-def get_rectangle_volume(rectangle):
-    """Computes the volume of the given (hyper)rectangle
-
-    Args
-    ------
-    rectangle:  (list of intervals) defining the (hyper)rectangle
-    """
-    intervals = []
-    ## If there is empty rectangle
-    if not rectangle:
-        raise Exception("empty rectangle has no volume")
-    for interval in rectangle:
-        intervals.append(interval[1] - interval[0])
-    return prod(intervals)
 
 
 class RefinedSpace:

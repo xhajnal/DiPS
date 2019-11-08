@@ -4,7 +4,7 @@ import scipy.stats as st
 from sympy import Interval
 import numpy as np
 from mpmath import mpi
-
+from numpy import prod
 
 def nCr(n, k):
     """ Return combinatorial number n take k
@@ -122,4 +122,20 @@ def is_in(region1, region2):
         if mpi(region1[dimension]) not in mpi(region2[dimension]):
             return False
     return True
+
+
+def get_rectangle_volume(rectangle):
+    """Computes the volume of the given (hyper)rectangle
+
+    Args
+    ------
+    rectangle:  (list of intervals) defining the (hyper)rectangle
+    """
+    intervals = []
+    ## If there is empty rectangle
+    if not rectangle:
+        raise Exception("empty rectangle has no volume")
+    for interval in rectangle:
+        intervals.append(interval[1] - interval[0])
+    return prod(intervals)
 

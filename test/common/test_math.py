@@ -86,6 +86,12 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(is_in([(0, 2), (1, 3)], [(0, 1), (1, 4)]), False)
         self.assertEqual(is_in([(0, 2), (1, 3)], [(0, 2), (1, 2)]), False)
 
+    def test_get_rectangle_volume(self):
+        print(colored("get_rectangle_volume tests", 'blue'))
+        self.assertEqual(round(get_rectangle_volume([[0.0, 0]]), 1), 0)
+        self.assertEqual(round(get_rectangle_volume([[0.0, 0.5]]), 1), 0.5)
+        self.assertEqual(round(get_rectangle_volume([[0.0, 0.2], [0, 0.2]]), 2), 0.04)
+
 
 if __name__ == '__main__':
     unittest.main()
