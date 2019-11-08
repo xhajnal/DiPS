@@ -124,7 +124,7 @@ except NameError:
     raise Exception("z3 not loaded properly")
 
 
-def refine_by(region1, region2, debug=False):
+def refine_by(region1, region2, debug: bool = False):
     """ Returns the first (hyper)space refined/spliced by the second (hyperspace) into orthogonal subspaces
 
     Args
@@ -168,7 +168,7 @@ def refine_by(region1, region2, debug=False):
     return regions
 
 
-def check_unsafe(region, constraints, silent=False, called=False, solver="z3", delta=0.001, debug=False):
+def check_unsafe(region, constraints, silent: bool = False, called=False, solver="z3", delta=0.001, debug: bool = False):
     """ Check if the given region is unsafe or not using z3 or dreal.
 
     It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given
@@ -284,7 +284,7 @@ def check_unsafe(region, constraints, silent=False, called=False, solver="z3", d
             return True
 
 
-def check_safe(region, constraints, silent=False, called=False, solver="z3", delta=0.001, debug=False):
+def check_safe(region, constraints, silent: bool = False, called=False, solver="z3", delta=0.001, debug: bool = False):
     """ Check if the given region is safe or not using z3 or dreal.
 
     It means whether for all parametrisations in **region** every property(prop) is evaluated within the given
@@ -780,7 +780,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                 break
 
             ## OLD REFINEMENT HERE
-            ## to_be_searched = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y", "0"], [Interval(0, 1), Interval(0, 1)], , compress=True, silent=False)
+            ## to_be_searched = sample(RefinedSpace([(0, 1), (0, 1)], ["x", "y"]), ["x+y", "0"], [Interval(0, 1), Interval(0, 1)], , compress=True, silent: bool = False)
 
             # to_be_searched = refine_into_rectangles(to_be_searched, silent=False)
 
@@ -810,7 +810,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         return space
 
 
-def private_check_deeper(region, constraints, n, epsilon, coverage, silent, solver="z3", delta=0.01, debug=False):
+def private_check_deeper(region, constraints, n, epsilon, coverage, silent, solver="z3", delta=0.01, debug: bool = False):
     """ Refining the parameter space into safe and unsafe regions
 
     Args
@@ -910,7 +910,7 @@ def private_check_deeper(region, constraints, n, epsilon, coverage, silent, solv
     return result
 
 
-def private_check_deeper_queue(region, constraints, n, epsilon, coverage, silent, solver="z3", delta=0.01, debug=False):
+def private_check_deeper_queue(region, constraints, n, epsilon, coverage, silent, solver="z3", delta=0.01, debug: bool = False):
     """ Refining the parameter space into safe and unsafe regions
 
     Args
@@ -1018,7 +1018,7 @@ def private_check_deeper_queue(region, constraints, n, epsilon, coverage, silent
         private_check_deeper_queue(*globals()["que"].dequeue())
 
 
-def private_check_deeper_queue_checking(region, constraints, n, epsilon, coverage, silent, model=None, solver="z3", delta=0.01, debug=False):
+def private_check_deeper_queue_checking(region, constraints, n, epsilon, coverage, silent, model=None, solver="z3", delta=0.01, debug: bool = False):
     """ THIS IS OBSOLETE METHOD, HERE JUST TO BE COMPARED WITH THE NEW ONE
 
     Refining the parameter space into safe and unsafe regions
@@ -1147,7 +1147,7 @@ def private_check_deeper_queue_checking(region, constraints, n, epsilon, coverag
         private_check_deeper_queue_checking(*globals()["que"].dequeue())
 
 
-def private_check_deeper_queue_checking_both(region, constraints, n, epsilon, coverage, silent, model=None, solver="z3", delta=0.01, debug=False):
+def private_check_deeper_queue_checking_both(region, constraints, n, epsilon, coverage, silent, model=None, solver="z3", delta=0.01, debug: bool = False):
     """ Refining the parameter space into safe and unsafe regions
 
     Args
@@ -1365,7 +1365,7 @@ def color_margins(greater, smaller):
     # pic.add_collection(pc)
 
 
-def check_deeper_iter(region, constraints, n, epsilon, coverage, silent, solver="z3", delta=0.01, debug=False):
+def check_deeper_iter(region, constraints, n, epsilon, coverage, silent, solver="z3", delta=0.01, debug: bool = False):
     """ New Refining the parameter space into safe and unsafe regions with iterative method using alg1
 
     Args
@@ -1414,7 +1414,7 @@ def check_deeper_iter(region, constraints, n, epsilon, coverage, silent, solver=
     check_deeper(new_tresh, constraints, n, epsilon, coverage, True, 1, solver=solver, delta=delta)
 
 
-def check_interval_in(region, constraints, intervals, silent=False, called=False, debug=False):
+def check_interval_in(region, constraints, intervals, silent: bool = False, called=False, debug: bool = False):
     """ Check if the given region is unsafe or not.
 
     It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given
@@ -1479,7 +1479,7 @@ def check_interval_in(region, constraints, intervals, silent=False, called=False
     return True
 
 
-def check_interval_out(region, constraints, intervals, silent=False, called=False, debug=False):
+def check_interval_out(region, constraints, intervals, silent: bool = False, called=False, debug: bool = False):
     """ Check if the given region is unsafe or not.
 
     It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given
@@ -1553,7 +1553,7 @@ def check_interval_out(region, constraints, intervals, silent=False, called=Fals
     return False
 
 
-def private_check_deeper_interval(region, constraints, intervals, n, epsilon, coverage, silent, debug=False):
+def private_check_deeper_interval(region, constraints, intervals, n, epsilon, coverage, silent, debug: bool = False):
     """ Refining the parameter space into safe and unsafe regions
 
     Args
@@ -1689,7 +1689,7 @@ def private_create_matrix(size_q, dim, n_param):
     return [private_create_matrix(size_q, dim - 1, n_param) for _ in range(size_q)]
 
 
-def sample(space, constraints, size_q, compress=False, silent=True, save=False, debug=False):
+def sample(space, constraints, size_q, compress=False, silent=True, save=False, debug: bool = False):
     """ Samples the space in **size_q** samples in each dimension and saves if the point is in respective interval
 
     Args

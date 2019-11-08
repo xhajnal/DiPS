@@ -28,7 +28,7 @@ if not os.path.exists(tmp):
     os.makedirs(tmp)
 
 sys.path.append(workspace)
-from mc_prism import call_prism
+from mc import call_prism
 from load import find_param, parse_params_from_model
 
 os.chdir(cwd)

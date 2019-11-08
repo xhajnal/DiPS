@@ -2,33 +2,35 @@ from termcolor import colored
 from sympy import Interval
 
 
-def ineq_to_constraints(funcs, intervals, silent=True):
+def ineq_to_constraints(functions: list, intervals: list, silent: bool = True):
     """ Converts inequalities of the function given by the interval to properties
 
     Example: ["x+3"],[[0,1]] ->  ["x+3>=0","x+3<=1"]
 
     Args
     ----------
-    funcs:  (list of strings) array of functions
+    functions:  (list of strings) array of functions
     intervals: (list of intervals) array of pairs, low and high bound
     silent: (Bool): if silent printed output is set to minimum
+
+    :returns list of constraints
     """
 
-    if len(funcs) is not len(intervals):
+    if len(functions) is not len(intervals):
         if not silent:
-            print(colored(f"len of functions {len(funcs)} and intervals {len(intervals)} does not correspond", "red"))
+            print(colored(f"len of functions {len(functions)} and intervals {len(intervals)} does not correspond", "red"))
         return False
 
     ## Catching wrong interval errors
     try:
         spam = []
-        for index in range(len(funcs)):
+        for index in range(len(functions)):
             if isinstance(intervals[index], Interval):
-                spam.append(funcs[index] + ">=" + str(intervals[index].start))
-                spam.append(funcs[index] + "<=" + str(intervals[index].end))
+                spam.append(functions[index] + ">=" + str(intervals[index].start))
+                spam.append(functions[index] + "<=" + str(intervals[index].end))
             else:
-                spam.append(funcs[index] + ">=" + str(intervals[index][0]))
-                spam.append(funcs[index] + "<=" + str(intervals[index][1]))
+                spam.append(functions[index] + ">=" + str(intervals[index][0]))
+                spam.append(functions[index] + "<=" + str(intervals[index][1]))
         return spam
     except Exception as error:
         if "'EmptySet' object does not support indexing" in str(error):
@@ -39,7 +41,7 @@ def ineq_to_constraints(funcs, intervals, silent=True):
             raise error
 
 
-def constraints_to_ineq(constraints, silent=True, debug=False):
+def constraints_to_ineq(constraints: list, silent: bool = True, debug: bool = False):
     """ Converts properties to functions and inequalities if possible
 
     Example: ["x+3>=0","x+3<=1"] -> ["x+3"],[[0,1]]
@@ -131,7 +133,7 @@ def constraints_to_ineq(constraints, silent=True, debug=False):
     return funcs, intervals
 
 
-def to_interval(points):
+def to_interval(points: list):
     """ Transforms the set of points into set of intervals
 
     Args

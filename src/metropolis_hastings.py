@@ -28,6 +28,8 @@ os.chdir(cwd)
 def sample(functions, data_means):
     """ Will sample according to the pdf as given by the polynomials
 
+    :returns ## TODO
+
     @author: tpetrov
     """
     x = np.random.uniform(0, 1)
@@ -45,6 +47,8 @@ def transition_model_a(theta, parameter_intervals):
     ---------
     theta: (list) parameter values
     parameter_intervals: (list of tuples) parameter intervals
+
+    :returns new parameter space point
 
     @author: tpetrov
     @edit: xhajnal, denis
@@ -96,7 +100,7 @@ def acceptance(x, x_new):
     x: old parameter point
     x_new: new parameter points
 
-    returns True if the new points is accepted
+    :returns True if the new points is accepted
 
     @author: tpetrov
     """
@@ -123,7 +127,7 @@ def metropolis_hastings(likelihood_computer, prior, transition_model, param_init
     acceptance_rule: function(x, x_new): decides whether to accept or reject the new sample
     parameter_intervals: (list of pairs) boundaries of parameters
 
-    returns tuple of accepted and rejected parameter points
+    :returns tuple of accepted and rejected parameter points
 
     @author: tpetrov
     @edit: xhajnal
@@ -161,6 +165,8 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
     functions: (list of strings)
     observations: (list of numbers)
     eps: (number) very small value used as probability of non-feasible values in prior
+
+    :returns ## TODO
 
     @author: tpetrov
     @edit: xhajnal
