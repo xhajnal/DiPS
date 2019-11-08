@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 from tkinter import filedialog, ttk
 from tkinter.messagebox import askyesno
+from tkinter.ttk import Progressbar
 
 import matplotlib.pyplot as pyplt
 import matplotlib
@@ -158,7 +159,7 @@ class Gui(Tk):
         self.show_true_point = None
 
         ## Settings
-        self.version = "1.7.7"  ## Version of the gui
+        self.version = "1.7.8"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -1936,8 +1937,17 @@ class Gui(Tk):
 
         try:
             self.cursor_toggle_busy(True)
-            self.space.sample(self.constraints, self.size_q, silent=self.silent.get(), save=False)
+
+            self.new_window = Toplevel(self)
+
+            Label(self.new_window, text="Sampling progress", anchor=W, justify=LEFT).pack()
+            self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
+            self.progress_bar.pack()
+
+            self.space.sample(self.constraints, self.size_q, silent=self.silent.get(), save=False, progress=self.progress_bar)
         finally:
+            self.new_window.destroy()
+            del self.new_window
             self.cursor_toggle_busy(False)
 
         self.print_space()

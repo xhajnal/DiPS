@@ -1689,7 +1689,7 @@ def private_create_matrix(size_q, dim, n_param):
     return [private_create_matrix(size_q, dim - 1, n_param) for _ in range(size_q)]
 
 
-def sample(space, constraints, size_q, compress=False, silent=True, save=False, debug=False):
+def sample(space, constraints, size_q, compress=False, silent=True, save=False, debug=False, progress=False):
     """ Samples the space in **size_q** samples in each dimension and saves if the point is in respective interval
 
     Args
@@ -1702,6 +1702,7 @@ def sample(space, constraints, size_q, compress=False, silent=True, save=False, 
     debug: (Bool) if True extensive print will be used
     save: (Bool): if True output is pickled
     debug: (Bool): if True extensive print will be used
+    progress: (Tkinter element) progress bar
 
     Returns
     --------
@@ -1742,8 +1743,10 @@ def sample(space, constraints, size_q, compress=False, silent=True, save=False, 
         # print("a sample:", sampling[0][0])
     parameter_index = 0
     ## For each parametrisation eval the constraints
-    for parameter_value in parameter_values:
+    for index, parameter_value in enumerate(parameter_values):
         ## For each parameter set the current sample point value
+        if progress:
+            progress['value'] = round(100*index/len(parameter_values))
         for param in range(len(space.params)):
             locals()[space.params[param]] = float(parameter_value[param])
             if debug:
