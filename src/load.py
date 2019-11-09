@@ -221,7 +221,7 @@ def to_variance(dic):
 ###       DATA HERE     ###
 ###########################
 
-def load_data(path, silent=False, debug=False):
+def load_data(path, silent: bool = False, debug: bool = False):
     """ Loads experimental data, returns as list "data"
 
     Args
@@ -336,7 +336,7 @@ def load_pickled_data(file):
 #######################
 
 
-def parse_params_from_model(file, silent=False):
+def parse_params_from_model(file, silent: bool = False):
     """ Parses the parameters from a given file
 
     file: (Path/String) a model file to be parsed
@@ -355,7 +355,7 @@ def parse_params_from_model(file, silent=False):
     return params
 
 
-def find_param(my_string, debug=False):
+def find_param(my_string, debug: bool = False):
     """ Finds parameters of a string (also deals with Z3 expressions)
 
     Args

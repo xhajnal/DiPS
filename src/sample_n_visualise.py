@@ -21,7 +21,7 @@ from common.math import cartesian_product
 wraper = DocumentWrapper(width=60)
 
 
-def get_param_values(parameters, size_q, intervals=False, debug=False):
+def get_param_values(parameters, size_q, intervals=False, debug: bool = False):
     """ Creates linearly sampled parameter space from the given parameter intervals and number of samples
 
     Args
@@ -47,7 +47,7 @@ def get_param_values(parameters, size_q, intervals=False, debug=False):
     return parameter_values
 
 
-def eval_and_show(functions, parameter_value, parameters=False, data=False, data_intervals=False, cumulative=False, debug=False, where=False):
+def eval_and_show(functions, parameter_value, parameters=False, data=False, data_intervals=False, cumulative=False, debug: bool = False, where=False):
     """ Creates bar plot of evaluation of given functions for given point in parameter space
 
     Args
@@ -149,7 +149,7 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
     return values
 
 
-def sample_dictionary_funs(dictionary, size_q, keys=None, debug=False):
+def sample_dictionary_funs(dictionary, size_q, keys=None, debug: bool = False):
     """ Returns a dictionary of function values for sampled parametrisations
 
     Args
@@ -181,7 +181,7 @@ def sample_dictionary_funs(dictionary, size_q, keys=None, debug=False):
     return sampling
 
 
-def sample_list_funs(functions, size_q, parameters=False, intervals=False, silent=False, debug=False):
+def sample_list_funs(functions, size_q, parameters=False, intervals=False, silent: bool = False, debug: bool = False):
     """ Returns a list of function values for sampled parametrisations
 
     Args
@@ -249,7 +249,7 @@ def sample_list_funs(functions, size_q, parameters=False, intervals=False, silen
     return arr
 
 
-def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug=False, show_all_in_one=False, where=False):
+def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug: bool = False, show_all_in_one=False, where=False):
     """ Creates bar plot of probabilities of i successes for sampled parametrisation
 
     Args

@@ -30,7 +30,7 @@ from load import load_all_functions, find_param, load_data
 from common.math import create_intervals
 import space
 from synthetise import check_deeper
-from mc_prism import call_prism_files, call_storm_files
+from mc import call_prism_files, call_storm_files
 from sample_n_visualise import sample_list_funs, eval_and_show, get_param_values, heatmap
 from optimize import optimize
 
@@ -819,6 +819,7 @@ class Gui(Tk):
         if not self.silent.get():
             print("Parsed list of functions: ", self.functions)
 
+        self.z3_functions = ""
         for function in self.functions:
             if is_this_z3_function(function):
                 self.store_z3_functions()
@@ -931,7 +932,9 @@ class Gui(Tk):
             return
         else:
             self.functions = True
+            self.functions_changed = True
             self.functions_file.set(spam)
+            self.z3_functions = ""
 
             if ".p" in self.functions_file.get():
                 self.functions = pickle.load(open(self.functions_file.get(), "rb"))
@@ -954,6 +957,7 @@ class Gui(Tk):
             self.functions_parsed_text.delete('1.0', END)
             self.functions_parsed_text.insert('end', functions)
             # self.functions_parsed_text.configure(state='disabled')
+
 
             ## Resetting parsed intervals
             self.parameters = []
@@ -1094,6 +1098,7 @@ class Gui(Tk):
         else:
             self.constraints_changed = True
             self.constraints_file.set(spam)
+            self.z3_constraints = ""
 
             if append:
                 if self.constraints == "":
@@ -2061,7 +2066,7 @@ class Gui(Tk):
             self.cursor_toggle_busy(True)
             ## RETURNS TUPLE -- (SPACE,(NONE, ERROR TEXT)) or (SPACE, )
             ## feeding z3 solver with z3 expressions, python expressions otherwise
-            if str(self.solver.get()) == "z3" and self.z3_constraints:
+            if str(self.solver.get()) == "z3" and int(self.alg.get()) < 5 and self.z3_constraints:
                 spam = check_deeper(self.space, self.z3_constraints, self.max_depth, self.epsilon, self.coverage,
                                     silent=self.silent.get(), version=int(self.alg.get()), size_q=False,
                                     debug=self.debug.get(), save=False, title="", where=[self.page6_figure, self.page6_a],
@@ -2175,28 +2180,29 @@ class Gui(Tk):
                 messagebox.showwarning(position, "Compute intervals first.")
                 return False
 
-            if self.functions_changed:
-                self.functions_changed = False
-
-            if self.data_intervals_changed:
-                self.data_intervals_changed = False
-
             ## Check if the number of functions and intervals is equal
             if len(self.functions) != len(self.data_intervals):
                 messagebox.showerror(position,
                                      "The number of rational functions and data points (or intervals) is not equal")
                 return
 
+            if self.functions_changed:
+                self.functions_changed = False
+
+            if self.data_intervals_changed:
+                self.data_intervals_changed = False
+
             ## Create constraints
             self.constraints = ineq_to_constraints(self.functions, self.data_intervals, silent=self.silent.get())
             if self.z3_functions:
                 self.z3_constraints = ineq_to_constraints(self.z3_functions, self.data_intervals, silent=self.silent.get())
+
             self.constraints_changed = True
             self.constraints_file.set("")
 
             constraints = ""
-            for prop in self.constraints:
-                constraints = f"{constraints},\n{prop}"
+            for constraint in self.constraints:
+                constraints = f"{constraints},\n{constraint}"
             constraints = constraints[2:]
             self.constraints_text.configure(state='normal')
             self.constraints_text.delete('1.0', END)

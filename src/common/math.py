@@ -7,7 +7,7 @@ from mpmath import mpi
 from numpy import prod
 
 def nCr(n, k):
-    """ Return combinatorial number n take k
+    """ Returns combinatorial number n take k
 
     Args
     ----------
@@ -35,6 +35,7 @@ def catch_data_error(data, minimum, maximum):
                 data[n][i] = minimum
             if data[n][i] > maximum:
                 data[n][i] = maximum
+    ## TODO check whether I need to return those
 
 
 def create_intervals(alpha, n_samples, data):

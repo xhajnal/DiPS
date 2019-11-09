@@ -633,7 +633,7 @@ class RefinedSpace:
         return PatchCollection(rectangles_unsat, facecolor='r', alpha=0.5)
 
     ## TODO DELETE THIS AS IT IS GRID SAMPLING
-    def sample(self, constraints, size_q, silent=False, save=False, progress=False):
+    def sample(self, constraints, size_q, silent: bool = False, save=False, progress=False):
         """ Executes grid sampling
 
             Args
@@ -648,7 +648,7 @@ class RefinedSpace:
         self.gridsampled = True
         sample(self, constraints, size_q, compress=True, silent=silent, save=save, progress=progress)
 
-    def grid_sample(self, constraints, size_q, silent=False, save=False, progress=False):
+    def grid_sample(self, constraints, size_q, silent: bool = False, save=False, progress=False):
         """ Executes grid sampling
 
             Args

@@ -1,5 +1,5 @@
 import unittest
-from src.mc_prism import *
+from src.mc import *
 import test.admin as admin
 cwd = os.getcwd()
 

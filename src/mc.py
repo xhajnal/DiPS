@@ -98,7 +98,7 @@ def set_javaheap_win(size):
 
 
 ## TODO rewrite this without the paths, just files
-def call_prism(args, seq=False, silent=False, model_path=model_path, properties_path=properties_path,
+def call_prism(args, seq=False, silent: bool = False, model_path=model_path, properties_path=properties_path,
                prism_output_path=prism_results, std_output_path=prism_results, std_output_file=False):
     """  Solves problem of calling prism from another directory.
 
@@ -476,7 +476,7 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
 
 
 ## TODO rewrite this without the paths, just files
-def call_storm(args, silent=False, model_path=model_path, properties_path=properties_path,
+def call_storm(args, silent: bool = False, model_path=model_path, properties_path=properties_path,
                storm_output_path=storm_results, std_output_path=storm_results, std_output_file=False, time=False):
     """  Prints calls for storm model checking.
 

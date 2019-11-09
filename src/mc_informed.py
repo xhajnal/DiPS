@@ -39,7 +39,7 @@ if not os.path.exists(model_folder):
 os.chdir(cwd)
 
 
-def general_create_data_informed_properties(prop_file, intervals, output_file=False, silent=False):
+def general_create_data_informed_properties(prop_file, intervals, output_file=False, silent: bool = False):
     """ Creates data informed property file from regular "profile" and intervals
     Args
     ----------
