@@ -84,10 +84,10 @@ def constraints_to_ineq(constraints: list, silent: bool = True, debug: bool = Fa
             return False
         else:
             try:
-                ## The righthandside is number
+                ## The right-hand-side is number
                 float(spam[1])
                 if debug:
-                    print("righthandside ", float(spam[1]))
+                    print("right-hand-side ", float(spam[1]))
             except ValueError:
                 spam = [f"{spam[0]} -( {spam[1]})", 0]
 

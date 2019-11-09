@@ -2069,12 +2069,12 @@ class Gui(Tk):
             if str(self.solver.get()) == "z3" and int(self.alg.get()) < 5 and self.z3_constraints:
                 spam = check_deeper(self.space, self.z3_constraints, self.max_depth, self.epsilon, self.coverage,
                                     silent=self.silent.get(), version=int(self.alg.get()), size_q=False,
-                                    debug=self.debug.get(), save=False, title="", where=[self.page6_figure, self.page6_a],
+                                    debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
                                     solver=str(self.solver.get()), delta=self.delta, gui=True)
             else:
                 spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
-                                    silent=self.silent.get(), version=int(self.alg.get()), size_q=False, debug=self.debug.get(),
-                                    save=False, title="", where=[self.page6_figure, self.page6_a],
+                                    silent=self.silent.get(), version=int(self.alg.get()), size_q=False,
+                                    debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
                                     solver=str(self.solver.get()), delta=self.delta, gui=True)
         finally:
             self.cursor_toggle_busy(False)
