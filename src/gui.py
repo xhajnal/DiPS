@@ -1179,7 +1179,7 @@ class Gui(Tk):
                 self.show_true_point = messagebox.askyesno("Loaded space", "Do you want to show the true point?")
             else:
                 self.show_true_point = False
-            self.show_space(self.show_refinement, self.show_samples, self.show_true_point)
+            self.show_space(self.show_refinement, self.show_samples, self.show_true_point, show_all=True)
 
             self.space_changed = True
             self.status_set("Space loaded.")
