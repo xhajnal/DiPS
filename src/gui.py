@@ -159,7 +159,7 @@ class Gui(Tk):
         self.show_true_point = None
 
         ## Settings
-        self.version = "1.7.9"  ## Version of the gui
+        self.version = "1.7.10"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -2085,6 +2085,15 @@ class Gui(Tk):
         # print(colored(f"self.space, {self.space.nice_print()}]", "blue"))
         try:
             self.cursor_toggle_busy(True)
+            self.update()
+
+            self.new_window = Toplevel(self)
+            Label(self.new_window, text="Refinement in progress", anchor=W, justify=LEFT).pack()
+            pb_hD = ttk.Progressbar(self.new_window, orient='horizontal', mode='indeterminate')
+            pb_hD.pack(expand=True, fill=BOTH, side=TOP)
+            pb_hD.start(50)
+            self.update()
+
             ## RETURNS TUPLE -- (SPACE,(NONE, ERROR TEXT)) or (SPACE, )
             ## feeding z3 solver with z3 expressions, python expressions otherwise
             if str(self.solver.get()) == "z3" and int(self.alg.get()) < 5 and self.z3_constraints:
@@ -2099,6 +2108,7 @@ class Gui(Tk):
                                     solver=str(self.solver.get()), delta=self.delta, gui=True)
         finally:
             self.cursor_toggle_busy(False)
+            self.new_window.destroy()
         ## If the visualisation of the space did not succeed
         if isinstance(spam, tuple):
             self.space = spam[0]

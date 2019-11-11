@@ -6,6 +6,7 @@ import numpy as np
 from mpmath import mpi
 from numpy import prod
 
+
 def nCr(n, k):
     """ Returns combinatorial number n take k
 
