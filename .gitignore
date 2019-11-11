@@ -141,6 +141,7 @@ data/*
 optimisation_results/*
 test/_trial_*
 figures/*
+tmp/*
 
 # storm calls
 *.cmd

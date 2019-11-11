@@ -5,6 +5,7 @@ from tkinter import scrolledtext, messagebox
 import webbrowser
 import pickle
 import os
+from ntpath import basename
 from pathlib import Path
 from tkinter import filedialog, ttk
 from tkinter.messagebox import askyesno
@@ -113,6 +114,7 @@ class Gui(Tk):
         self.refinement_results = ""  ## Path to refinement results
         self.figures_dir = ""  ## Path to saved figures
         self.optimisation_results_dir = ""  ## Path to saved optimisation results
+        self.tmp_dir = ""  ## Path for tmp folder
         self.load_config()  ## Load the config file
 
         ## Files
@@ -159,7 +161,7 @@ class Gui(Tk):
         self.show_true_point = None
 
         ## Settings
-        self.version = "1.7.11"  ## Version of the gui
+        self.version = "1.8.0"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -317,7 +319,7 @@ class Gui(Tk):
 
         Label(page2, text=f"Rational functions section.", anchor=W, justify=LEFT).grid(row=1, column=17, sticky=W, padx=4, pady=4)
         Button(page2, text='Open functions', command=self.load_parsed_functions).grid(row=3, column=17, sticky=W, padx=4, pady=4)
-        Button(page2, text='Save functions', command=self.save_parsed_functions).grid(row=3, column=18, sticky=W, pady=4)
+        Button(page2, text='Save functions', command=self.save_functions).grid(row=3, column=18, sticky=W, pady=4)
 
         Label(page2, text=f"Parsed function(s):", anchor=W, justify=LEFT).grid(row=4, column=17, sticky=W, padx=4, pady=4)
         self.functions_parsed_text = scrolledtext.ScrolledText(page2, height=100, state=DISABLED)
@@ -680,6 +682,10 @@ class Gui(Tk):
         self.optimisation_results_dir = config.get("paths", "optimisation")
         if not os.path.exists(self.optimisation_results_dir):
             os.makedirs(self.optimisation_results_dir)
+
+        self.tmp_dir = config.get("paths", "tmp")
+        if not os.path.exists(self.tmp_dir):
+            os.makedirs(self.tmp_dir)
             
         os.chdir(cwd)
 
@@ -711,6 +717,9 @@ class Gui(Tk):
             # self.model_text.configure(state='disabled')
             self.status_set("Model loaded.")
             # print("self.model", self.model.get())
+
+            ## Autosave
+            self.save_model(os.path.join(self.tmp_dir, "model"))
 
     def load_property(self):
         """ Loads temporal properties from a text file. """
@@ -744,6 +753,9 @@ class Gui(Tk):
             # self.property_text2.configure(state='disabled')
             self.status_set("Property loaded.")
             # print("self.property", self.property.get())
+
+            ## Autosave
+            self.save_property(os.path.join(self.tmp_dir, "properties"))
 
     def load_functions(self, file=False):
         """ Loads parameter synthesis output text file
@@ -782,12 +794,11 @@ class Gui(Tk):
             else:
                 spam = ""
 
-        # print("File selected:", spam)
         ## If no file / not a file selected
         if spam == "" or spam == ():
             self.status_set("No file selected.")
             return
-        # print("self.functions_file.get() ", self.functions_file.get())
+
         self.functions_file.set(spam)
         # print("self.functions_file.get() ", self.functions_file.get())
         if not self.functions_file.get() is "":
@@ -807,7 +818,7 @@ class Gui(Tk):
             if key in rewards.keys():
                 self.functions[key].extend(rewards[key])
 
-        if self.debug:
+        if self.debug.get():
             print("Unparsed functions: ", self.functions)
 
         self.unfold_functions()
@@ -839,12 +850,17 @@ class Gui(Tk):
         self.parameters = []
         self.parameter_domains = []
 
+        ## Autosave
+        self.save_functions(os.path.join(self.tmp_dir, "functions"))
+
     def store_z3_functions(self):
+        """ Stores a copy of functions as a self.z3_functions"""
         self.z3_functions = deepcopy(self.functions)
         for index, function in enumerate(self.functions):
             self.functions[index] = translate_z3_function(function)
 
     def store_z3_constraints(self):
+        """ Stores a copy of constraints as a self.z3_constraints"""
         self.z3_constraints = deepcopy(self.constraints)
         for index, constraint in enumerate(self.constraints):
             self.constraints[index] = translate_z3_function(constraint)
@@ -962,10 +978,13 @@ class Gui(Tk):
             self.functions_parsed_text.insert('end', functions)
             # self.functions_parsed_text.configure(state='disabled')
 
-
             ## Resetting parsed intervals
             self.parameters = []
             self.parameter_domains = []
+
+            ## Autosave
+            self.save_functions(os.path.join(self.tmp_dir, "functions"))
+
             self.status_set("Parsed rational functions loaded.")
 
     def load_data(self):
@@ -999,6 +1018,10 @@ class Gui(Tk):
                 self.unfold_data()
             if not self.silent.get():
                 print("Loaded data: ", self.data)
+
+            ## Autosave
+            self.save_data(os.path.join(self.tmp_dir, "data"))
+
             self.status_set("Data loaded.")
         # self.parse_data_from_window()
 
@@ -1077,6 +1100,8 @@ class Gui(Tk):
             self.constraints = ""
             self.z3_constraints = ""
             self.validate_constraints(position="constraints")
+            ## Autosave
+            self.save_constraints(os.path.join(self.tmp_dir, "constraints"))
         self.status_set("constraints recalculated and shown.")
 
     def load_constraints(self, append=False):
@@ -1142,6 +1167,9 @@ class Gui(Tk):
             ## Resetting parsed intervals
             self.parameters = []
             self.parameter_domains = []
+
+            ## Autosave
+            self.save_constraints(os.path.join(self.tmp_dir, "constraints"))
             self.status_set("constraints loaded.")
 
     def append_constraints(self):
@@ -1186,6 +1214,9 @@ class Gui(Tk):
             self.show_space(self.show_refinement, self.show_samples, self.show_true_point)
 
             self.space_changed = True
+
+            ## Autosave
+            self.save_space(os.path.join(self.tmp_dir, "space"))
             self.status_set("Space loaded.")
 
     def print_space(self, clear=False):
@@ -1208,6 +1239,7 @@ class Gui(Tk):
     def show_space(self, show_refinement, show_samples, show_true_point, clear=False, show_all=False):
         """ Visualises the space in the plot.
 
+        Args:
         :param show_refinement: (Bool) if True refinement is shown
         :param show_samples: (Bool) if True samples are shown
         :param show_true_point: (Bool) if True the true point is shown
@@ -1288,20 +1320,26 @@ class Gui(Tk):
         # print("parsed data as a list", data)
         self.data = data
 
-    def save_model(self):
-        """ Saves obtained model as a file. """
+    def save_model(self, file=False):
+        """ Saves obtained model as a file.
+
+        :string file: file to save the model
+        """
         ## TODO CHECK IF THE MODEL IS NON EMPTY
         # if len(self.model_text.get('1.0', END)) <= 1:
         #    self.status_set("There is no model to be saved.")
         #    return
 
-        print("Saving the model ...")
-        self.status_set("Please select folder to store the model in.")
-        save_model_file = filedialog.asksaveasfilename(initialdir=self.model_dir, title="Model saving - Select file",
-                                                       filetypes=(("pm files", "*.pm"), ("all files", "*.*")))
-        if save_model_file == "":
-            self.status_set("No file selected to store the model.")
-            return
+        if file:
+            save_model_file = file
+        else:
+            print("Saving the model ...")
+            self.status_set("Please select folder to store the model in.")
+            save_model_file = filedialog.asksaveasfilename(initialdir=self.model_dir, title="Model saving - Select file",
+                                                           filetypes=(("pm files", "*.pm"), ("all files", "*.*")))
+            if save_model_file == "":
+                self.status_set("No file selected to store the model.")
+                return
 
         if "." not in save_model_file:
             save_model_file = save_model_file + ".pm"
@@ -1310,23 +1348,30 @@ class Gui(Tk):
         with open(save_model_file, "w") as file:
             file.write(self.model_text.get(1.0, END))
 
-        self.status_set("Model saved.")
+        if not file:
+            self.status_set("Model saved.")
 
-    def save_property(self):
-        """ Saves obtained temporal properties as a file. """
+    def save_property(self, file=False):
+        """ Saves obtained temporal properties as a file.
+
+        :string file: file to save the property
+        """
         print("Saving the property ...")
         ## TODO CHECK IF THE PROPERTY IS NON EMPTY
         # if len(self.property_text.get('1.0', END)) <= 1:
         #    self.status_set("There is no property to be saved.")
         #    return
 
-        self.status_set("Please select folder to store the property in.")
-        save_property_file = filedialog.asksaveasfilename(initialdir=self.property_dir,
-                                                          title="Property saving - Select file",
-                                                          filetypes=(("pctl files", "*.pctl"), ("all files", "*.*")))
-        if save_property_file == "":
-            self.status_set("No file selected to store the property.")
-            return
+        if file:
+            save_property_file = file
+        else:
+            self.status_set("Please select folder to store the property in.")
+            save_property_file = filedialog.asksaveasfilename(initialdir=self.property_dir,
+                                                              title="Property saving - Select file",
+                                                              filetypes=(("pctl files", "*.pctl"), ("all files", "*.*")))
+            if save_property_file == "":
+                self.status_set("No file selected to store the property.")
+                return
 
         if "." not in save_property_file:
             save_property_file = save_property_file + ".pctl"
@@ -1335,7 +1380,8 @@ class Gui(Tk):
         with open(save_property_file, "w") as file:
             file.write(self.property_text.get(1.0, END))
 
-        self.status_set("Property saved.")
+        if not file:
+            self.status_set("Property saved.")
 
     def generate_data_informed_properties(self):
         """ Generates Data informed property from temporal properties and data. Prints it. """
@@ -1356,24 +1402,33 @@ class Gui(Tk):
         for item in self.data_informed_property:
             spam = spam + str(item) + ",\n"
         self.data_informed_property_text.insert('end', spam)
+
+        ## Autosave
+        self.save_data_informed_properties(os.path.join(self.tmp_dir, "data_informed_properties"))
         # self.data_informed_property_text.configure(state='disabled')
         # TODO
 
-    def save_data_informed_properties(self):
-        """ Saves computed data informed property as a text file. """
+    def save_data_informed_properties(self, file=False):
+        """ Saves computed data informed property as a text file.
+
+        :string file: file to save the data_informed_properties
+        """
         print("Saving data informed property ...")
         ## TODO CHECK IF THE PROPERTY IS NON EMPTY
         # if len(self.property_text.get('1.0', END)) <= 1:
         #    self.status_set("There is no property to be saved.")
         #    return
 
-        self.status_set("Please select folder to store data informed property in.")
-        save_data_informed_property_file = filedialog.asksaveasfilename(initialdir=self.property_dir,
-                                                                        title="Data informed property saving - Select file",
-                                                                        filetypes=(("pctl files", "*.pctl"), ("all files", "*.*")))
-        if save_data_informed_property_file == "":
-            self.status_set("No file selected to store data informed property.")
-            return
+        if file:
+            save_data_informed_property_file = file
+        else:
+            self.status_set("Please select folder to store data informed property in.")
+            save_data_informed_property_file = filedialog.asksaveasfilename(initialdir=self.property_dir,
+                                                                            title="Data informed property saving - Select file",
+                                                                            filetypes=(("pctl files", "*.pctl"), ("all files", "*.*")))
+            if save_data_informed_property_file == "":
+                self.status_set("No file selected to store data informed property.")
+                return
 
         if "." not in save_data_informed_property_file:
             save_data_informed_property_file = save_data_informed_property_file + ".pctl"
@@ -1382,94 +1437,117 @@ class Gui(Tk):
         with open(save_data_informed_property_file, "w") as file:
             file.write(self.data_informed_property_text.get('1.0', END))
 
-        self.status_set("Data informed property saved.")
+        if not file:
+            self.status_set("Data informed property saved.")
 
     ## TODO MAYBE IN THE FUTURE
-    def save_functions(self):
-        """ Saves parsed functions as a pickled file. """
+    def save_mc_output_file(self, file=False):
+        """ Saves parsed functions as a pickled file.
+
+        :string file: file to save the functions
+        """
         print("Saving the rational functions ...")
 
         if self.functions is "":
             self.status_set("There are no rational functions to be saved.")
             return
 
-            ## TODO choose to save rewards or normal functions
-
-        self.status_set("Please select folder to store the rational functions in.")
-        if self.program is "prism":
-            save_functions_file = filedialog.asksaveasfilename(initialdir=self.prism_results,
-                                                               title="Rational functions saving - Select file",
-                                                               filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
-        elif self.program is "storm":
-            save_functions_file = filedialog.asksaveasfilename(initialdir=self.storm_results,
-                                                               title="Rational functions saving - Select file",
-                                                               filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+        ## TODO choose to save rewards or normal functions
+        if file:
+            save_functions_file = file
         else:
-            self.status_set("Error - Selected program not recognised.")
-            save_functions_file = "Error - Selected program not recognised."
-        if not self.silent.get():
-            print("Saving functions in file: ", save_functions_file)
+            self.status_set("Please select folder to store the rational functions in.")
+            if self.program is "prism":
+                save_functions_file = filedialog.asksaveasfilename(initialdir=self.prism_results,
+                                                                   title="Rational functions saving - Select file",
+                                                                   filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+            elif self.program is "storm":
+                save_functions_file = filedialog.asksaveasfilename(initialdir=self.storm_results,
+                                                                   title="Rational functions saving - Select file",
+                                                                   filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+            else:
+                self.status_set("Error - Selected program not recognised.")
+                save_functions_file = "Error - Selected program not recognised."
+            if not self.silent.get():
+                print("Saving functions in file: ", save_functions_file)
 
-        if save_functions_file == "":
-            self.status_set("No file selected to store the rational functions.")
-            return
+            if save_functions_file == "":
+                self.status_set("No file selected to store the rational functions.")
+                return
+
+        if "." not in save_functions_file:
+            save_functions_file = save_functions_file + ".txt"
 
         with open(save_functions_file, "w") as file:
-            for line in self.constraints:
+            for line in self.functions:
                 file.write(line)
-        self.status_set("Rational functions saved.")
 
-    def save_parsed_functions(self):
-        """ Saves parsed rational functions as a pickled file. """
-        print("Saving the parsed functions ...")
+        if not file:
+            self.status_set("Rational functions saved.")
+
+    def save_functions(self, file=False):
+        """ Saves parsed rational functions as a pickled file.
+
+        :string file: file to save the parsed functions
+        """
+
         if self.functions is "":
             self.status_set("There is no functions to be saved.")
             return
 
-        # print("self.program.get()", self.program.get())
-        if self.program.get() == "prism":
-            initial_dir = self.prism_results
-        elif self.program.get() == "storm":
-            initial_dir = self.storm_results
+        if file:
+            save_functions_file = file
         else:
-            messagebox.showwarning("Save parsed rational functions",
-                                   "Select a program for which you want to save functions.")
-            return
+            print("Saving the parsed functions ...")
+            # print("self.program.get()", self.program.get())
+            if self.program.get() == "prism":
+                initial_dir = self.prism_results
+            elif self.program.get() == "storm":
+                initial_dir = self.storm_results
+            else:
+                messagebox.showwarning("Save parsed rational functions",
+                                       "Select a program for which you want to save functions.")
+                return
 
-        save_functions_file = filedialog.asksaveasfilename(initialdir=initial_dir,
-                                                           title="Rational functions saving - Select file",
-                                                           filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
-        if save_functions_file == "":
-            self.status_set("No file selected to store the parsed rational functions.")
-            return
+            save_functions_file = filedialog.asksaveasfilename(initialdir=initial_dir,
+                                                               title="Rational functions saving - Select file",
+                                                               filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+            if save_functions_file == "":
+                self.status_set("No file selected to store the parsed rational functions.")
+                return
 
         if "." not in save_functions_file:
             save_functions_file = save_functions_file + ".p"
 
-        if not self.silent.get():
+        if not self.silent.get() and not file:
             print("Saving parsed functions as a file:", save_functions_file)
 
         pickle.dump(self.functions, open(save_functions_file, 'wb'))
         self.status_set("Parsed functions saved.")
 
-    def save_data(self):
-        """Saves data as a pickled file. """
-        print("Saving the data ...")
+    def save_data(self, file=False):
+        """Saves data as a pickled file.
+
+        :string file: file to save the data
+        """
         self.parse_data_from_window()
 
-        print("data", self.data)
+        if file:
+            save_data_file = file
+        else:
+            print("Saving the data ...")
 
-        if not self.data:
-            messagebox.showwarning("Saving data", "There is no data to be saved.")
-            self.status_set("There is no data to be saved.")
-            return
+            if not self.data:
+                messagebox.showwarning("Saving data", "There is no data to be saved.")
+                self.status_set("There is no data to be saved.")
+                return
 
-        self.status_set("Please select folder to store the data in.")
-        save_data_file = filedialog.asksaveasfilename(initialdir=self.data_dir, title="Data saving - Select file",
-                                                      filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
-        if save_data_file == "":
-            self.status_set("No file selected to store the data.")
-            return
+            self.status_set("Please select folder to store the data in.")
+            save_data_file = filedialog.asksaveasfilename(initialdir=self.data_dir, title="Data saving - Select file",
+                                                          filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+            if save_data_file == "":
+                self.status_set("No file selected to store the data.")
+                return
 
         if "." not in save_data_file:
             save_data_file = save_data_file + ".p"
@@ -1478,21 +1556,39 @@ class Gui(Tk):
             print("Saving data as a file:", save_data_file)
 
         pickle.dump(self.data, open(save_data_file, 'wb'))
-        self.status_set("Data saved.")
 
-    def save_constraints(self):
-        """ Saves constraints as a pickled file. """
-        print("Saving the constraints ...")
-        if self.constraints is "":
-            self.status_set("There is no constraints to be saved.")
-            return
+        if not file:
+            self.status_set("Data saved.")
 
-        self.status_set("Please select folder to store the constraints in.")
-        save_constraints_file = filedialog.asksaveasfilename(initialdir=self.data_dir, title="constraints saving - Select file",
-                                                       filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
-        if save_constraints_file == "":
-            self.status_set("No file selected to store the constraints.")
-            return
+    def save_intervals(self, file=False):
+        """ Saves constraints as a pickled file.
+
+        Args:
+            file: filepath to save the constraints
+        """
+        ## TODO
+        pass
+
+    def save_constraints(self, file=False):
+        """ Saves constraints as a pickled file.
+
+        :string file: file to save the constraints
+        """
+
+        if file:
+            save_constraints_file = file
+        else:
+            print("Saving the constraints ...")
+            if self.constraints is "":
+                self.status_set("There is no constraints to be saved.")
+                return
+
+            self.status_set("Please select folder to store the constraints in.")
+            save_constraints_file = filedialog.asksaveasfilename(initialdir=self.data_dir, title="constraints saving - Select file",
+                                                                 filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+            if save_constraints_file == "":
+                self.status_set("No file selected to store the constraints.")
+                return
 
         if "." not in save_constraints_file:
             save_constraints_file = save_constraints_file + ".p"
@@ -1501,20 +1597,28 @@ class Gui(Tk):
             print("Saving constraints as a file:", save_constraints_file)
 
         pickle.dump(self.constraints, open(save_constraints_file, 'wb'))
-        self.status_set("constraints saved.")
+        if not file:
+            self.status_set("constraints saved.")
 
-    def save_space(self):
-        """ Saves space as a pickled file. """
-        print("Saving the space ...")
-        if self.space is "":
-            self.status_set("There is no space to be saved.")
-            return
-        self.status_set("Please select folder to store the space in.")
-        save_space_file = filedialog.asksaveasfilename(initialdir=self.data_dir, title="Space saving - Select file",
-                                                       filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
-        if save_space_file == "":
-            self.status_set("No file selected to store the space in.")
-            return
+    def save_space(self, file=False):
+        """ Saves space as a pickled file.
+
+        :string file: file to save the space
+        """
+
+        if file:
+            save_space_file = file
+        else:
+            print("Saving the space ...")
+            if self.space is "":
+                self.status_set("There is no space to be saved.")
+                return
+            self.status_set("Please select folder to store the space in.")
+            save_space_file = filedialog.asksaveasfilename(initialdir=self.data_dir, title="Space saving - Select file",
+                                                           filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+            if save_space_file == "":
+                self.status_set("No file selected to store the space in.")
+                return
 
         if "." not in save_space_file:
             save_space_file = save_space_file + ".p"
@@ -1523,7 +1627,8 @@ class Gui(Tk):
             print("Saving space as a file:", save_space_file)
 
         pickle.dump(self.space, open(save_space_file, 'wb'))
-        self.status_set("Space saved.")
+        if not file:
+            self.status_set("Space saved.")
 
     ## ANALYSIS
     def synth_params(self):
@@ -1593,6 +1698,8 @@ class Gui(Tk):
             ## Resetting parsed intervals
             self.parameters = []
             self.parameter_domains = []
+
+            # self.save_parsed_functions(os.path.join(self.tmp_dir, "parsed_functions"))
             self.cursor_toggle_busy(False)
 
     def sample_fun(self):
@@ -1876,16 +1983,32 @@ class Gui(Tk):
         save_optimisation_button = Button(window, text="Save Result", command=self.save_optimisation_result)
         save_optimisation_button.grid(row=4, column=1)
 
+        ## Autosave
+        self.save_optimisation_result(os.path.join(self.tmp_dir, "optimisation_results"))
+
         print("parameter point", self.optimised_param_point)
         print("function values", self.optimised_function_value)
         print("distance", self.optimised_distance)
 
-    def save_optimisation_result(self):
-        self.status_set("Please select folder to store the optimisation result.")
+    def save_optimisation_result(self, file=False):
+        """ Stores optimisation results as a file
 
-        save_opt_result_file = filedialog.asksaveasfilename(initialdir=self.optimisation_results_dir,
-                                                            title="optimisation result saving - Select file",
-                                                            filetypes=(("text file", "*.txt"), ("all files", "*.*")))
+        Args:
+            file: (String) filepath to store the optimisation results
+
+        """
+        if file:
+            save_opt_result_file = file
+        else:
+            self.status_set("Please select folder to store the optimisation result.")
+
+            save_opt_result_file = filedialog.asksaveasfilename(initialdir=self.optimisation_results_dir,
+                                                                title="optimisation result saving - Select file",
+                                                                filetypes=(("text file", "*.txt"), ("all files", "*.*")))
+            if save_opt_result_file == "":
+                self.status_set("No file selected to store the optimisation results.")
+                return
+
         if "." not in save_opt_result_file:
             save_opt_result_file = save_opt_result_file + ".txt"
 
@@ -1930,9 +2053,13 @@ class Gui(Tk):
         self.data_intervals_text.delete('1.0', END)
         self.data_intervals_text.insert('end', intervals)
         # self.data_intervals_text.configure(state='disabled')
-        self.status_set("Intervals created.")
 
         self.data_intervals_changed = True
+
+        ## Autosave
+        self.save_intervals(os.path.join(self.tmp_dir, "intervals"))
+
+        self.status_set("Intervals created.")
 
     def sample_space(self):
         """ Samples (Parameter) Space. Plots the results. """
@@ -1982,6 +2109,10 @@ class Gui(Tk):
 
         self.space_changed = False
         self.constraints_changed = False
+
+        ## Autosave
+        self.save_space(os.path.join(self.tmp_dir, "space"))
+
         self.status_set("Space sampling finished.")
 
     def hastings(self):
@@ -2141,6 +2272,10 @@ class Gui(Tk):
 
         self.constraints_changed = False
         self.space_changed = False
+
+        ## Autosave
+        self.save_space(os.path.join(self.tmp_dir, "space"))
+
         self.status_set("Space refinement finished.")
 
     ## VALIDATE VARIABLES (PARAMETERS, constraints, SPACE)
