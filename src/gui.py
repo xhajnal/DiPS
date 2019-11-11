@@ -159,7 +159,7 @@ class Gui(Tk):
         self.show_true_point = None
 
         ## Settings
-        self.version = "1.7.10"  ## Version of the gui
+        self.version = "1.7.11"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -1825,7 +1825,24 @@ class Gui(Tk):
         print("self.parameters", self.parameters)
         print("self.parameter_domains", self.parameter_domains)
 
-        result = optimize(self.functions, self.parameters, self.parameter_domains, self.data)
+        try:
+            self.cursor_toggle_busy(True)
+            ## TODO - tweak - update this to actually show the progress
+            self.new_window = Toplevel(self)
+            Label(self.new_window, text="Refinement in progress", anchor=W, justify=LEFT).pack()
+            pb_hD = ttk.Progressbar(self.new_window, orient='horizontal', mode='indeterminate')
+            pb_hD.pack(expand=True, fill=BOTH, side=TOP)
+            pb_hD.start(50)
+            self.update()
+
+            result = optimize(self.functions, self.parameters, self.parameter_domains, self.data)
+        except Exception as err:
+            messagebox.showerror("Optimize", f"Error occurred during Optimization: {err}")
+            return
+        finally:
+            self.cursor_toggle_busy(False)
+            self.new_window.destroy()
+
         self.optimised_param_point = result[0]
         self.optimised_function_value = result[1]
         self.optimised_distance = result[2]
@@ -2085,8 +2102,8 @@ class Gui(Tk):
         # print(colored(f"self.space, {self.space.nice_print()}]", "blue"))
         try:
             self.cursor_toggle_busy(True)
-            self.update()
 
+            ## TODO - tweak - update this to actually show the progress
             self.new_window = Toplevel(self)
             Label(self.new_window, text="Refinement in progress", anchor=W, justify=LEFT).pack()
             pb_hD = ttk.Progressbar(self.new_window, orient='horizontal', mode='indeterminate')
