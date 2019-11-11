@@ -79,7 +79,10 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
     no_files = True
     ## Choosing files with the given pattern
     for file in glob.glob(str(path)):
-        N = int(re.findall('\d+', file)[0])
+        try:
+            N = int(re.findall('\d+', file)[0])
+        except IndexError:
+            N = 0
         ## Parsing only selected agents quantities
         if agents_quantities:
             if N not in agents_quantities:
@@ -88,86 +91,84 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
                 no_files = False
                 print("parsing ", os.path.join(os.getcwd(), file))
         # print(os.getcwd(), file)
-        file = open(file, "r")
-        i = -1
-        here = ""
-        f[N] = []
-        rewards[N] = []
-        ## PARSING PRISM/STORM OUTPUT
-        line_index = 0
-        for line in file:
-            if line_index == 0:
-                if tool is "unknown":
-                    # print(line)
-                    if line.lower().startswith("prism"):
-                        tool = "prism"
-                    elif line.lower().startswith("storm"):
-                        tool = "storm"
-                    else:
-                        print("Tool not recognised!!")
-            if line.startswith('Parametric model checking:') or line.startswith('Model checking property'):
-                i = i + 1
-                here = ""
-                ## STORM check if rewards
-                if "R[exp]" in line:
+        with open(file, "r") as file:
+            i = -1
+            here = ""
+            f[N] = []
+            rewards[N] = []
+            ## PARSING PRISM/STORM OUTPUT
+            line_index = 0
+            if tool is "unknown":
+                # print(line)
+                if line.lower().startswith("prism"):
+                    tool = "prism"
+                elif line.lower().startswith("storm"):
+                    tool = "storm"
+                else:
+                    print("Tool not recognised!!")
+            for line in file:
+                if line.startswith('Parametric model checking:') or line.startswith('Model checking property'):
+                    i = i + 1
+                    here = ""
+                    ## STORM check if rewards
+                    if "R[exp]" in line:
+                        here = "r"
+                ## PRISM check if rewards
+                if line.startswith('Parametric model checking: R'):
                     here = "r"
-            ## PRISM check if rewards
-            if line.startswith('Parametric model checking: R'):
-                here = "r"
-            if i >= 0 and line.startswith('Result'):
-                ## PARSE THE EXPRESSION
-                # print("line:", line)
-                if tool.lower().startswith("p"):
-                    line = line.split(":")[2]
-                elif tool.lower().startswith("s"):
-                    line = line.split(":")[1]
-                ## CONVERT THE EXPRESSION TO PYTHON FORMAT
-                line = line.replace("{", "")
-                line = line.replace("}", "")
-                ## PUTS "* " BEFORE EVERY WORD (VARIABLE)
-                line = re.sub(r'([a-z|A-Z]+)', r'* \1', line)
-                # line = line.replace("p", "* p")
-                # line = line.replace("q", "* q")
-                line = line.replace("**", "*")
-                line = line.replace("* *", "*")
-                line = line.replace("*  *", "*")
-                line = line.replace("+ *", "+")
-                line = line.replace("^", "**")
-                line = line.replace(" ", "")
-                line = line.replace("*|", "|")
-                line = line.replace("|*", "|")
-                line = line.replace("|", "/")
-                line = line.replace("(*", "(")
-                line = line.replace("+*", "+")
-                line = line.replace("-*", "-")
-                if line.startswith('*'):
-                    line = line[1:]
-                if line[-1] is "\n":
-                    line = line[:-1]
-                if here == "r" and not f_only:
-                    # print(f"pop: {N}, formula: {i+1}", line)
-                    if factorize:
-                        try:
-                            rewards[N].append(str(factor(line)))
-                        except TypeError:
-                            print("Error while factorising rewards, used not factorised instead")
+                if i >= 0 and line.startswith('Result'):
+                    ## PARSE THE EXPRESSION
+                    # print("line:", line)
+                    if tool.lower().startswith("p"):
+                        line = line.split(":")[2]
+                    elif tool.lower().startswith("s"):
+                        line = line.split(":")[1]
+                    ## CONVERT THE EXPRESSION TO PYTHON FORMAT
+                    line = line.replace("{", "")
+                    line = line.replace("}", "")
+                    ## PUTS "* " BEFORE EVERY WORD (VARIABLE)
+                    line = re.sub(r'([a-z|A-Z]+)', r'* \1', line)
+                    # line = line.replace("p", "* p")
+                    # line = line.replace("q", "* q")
+                    line = line.replace("**", "*")
+                    line = line.replace("* *", "*")
+                    line = line.replace("*  *", "*")
+                    line = line.replace("+ *", "+")
+                    line = line.replace("^", "**")
+                    line = line.replace(" ", "")
+                    line = line.replace("*|", "|")
+                    line = line.replace("|*", "|")
+                    line = line.replace("|", "/")
+                    line = line.replace("(*", "(")
+                    line = line.replace("+*", "+")
+                    line = line.replace("-*", "-")
+                    if line.startswith('*'):
+                        line = line[1:]
+                    if line[-1] is "\n":
+                        line = line[:-1]
+                    if here == "r" and not f_only:
+                        # print(f"pop: {N}, formula: {i+1}", line)
+                        if factorize:
+                            try:
+                                rewards[N].append(str(factor(line)))
+                            except TypeError:
+                                print("Error while factorising rewards, used not factorised instead")
+                                rewards[N].append(line)
+                                # os.chdir(cwd)
+                        else:
                             rewards[N].append(line)
-                            # os.chdir(cwd)
-                    else:
-                        rewards[N].append(line)
-                elif not here == "r" and not rewards_only:
-                    # print(f"pop: {N}, formula: {i+1}", line[:-1])
-                    if factorize:
-                        try:
-                            f[N].append(str(factor(line)))
-                        except TypeError:
-                            print(f"Error while factorising polynomial f[{N}][{i + 1}], used not factorised instead")
+                    elif not here == "r" and not rewards_only:
+                        # print(f"pop: {N}, formula: {i+1}", line[:-1])
+                        if factorize:
+                            try:
+                                f[N].append(str(factor(line)))
+                            except TypeError:
+                                print(f"Error while factorising polynomial f[{N}][{i + 1}], used not factorised instead")
+                                f[N].append(line)
+                                # os.chdir(cwd)
+                        else:
                             f[N].append(line)
-                            # os.chdir(cwd)
-                    else:
-                        f[N].append(line)
-            line_index = line_index + 1
-        file.close()
+                line_index = line_index + 1
     os.chdir(default_directory)
     if no_files and agents_quantities:
         print("No files match the pattern " + os.path.join(new_dir, path) + " and restriction " + str(agents_quantities))

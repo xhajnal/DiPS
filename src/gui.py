@@ -647,6 +647,8 @@ class Gui(Tk):
         help_menu.add_command(label="Check for updates", command=self.check_updates)
         help_menu.add_command(label="About", command=self.print_about)
 
+        self.autoload()
+
     def load_config(self):
         """ Loads variables from the config file """
         os.chdir(workspace)
@@ -692,17 +694,26 @@ class Gui(Tk):
 
     ## LOGIC
     ## FILE - LOAD, PARSE, SHOW, AND SAVE
-    def load_model(self):
-        """ Loads model from a text file. """
-        print("Loading model ...")
-        ## If some model previously loaded
-        if len(self.model_text.get('1.0', END)) > 1:
-            if not askyesno("Loading model", "Previously obtained model will be lost. Do you want to proceed?"):
-                return
-        self.status_set("Please select the model to be loaded.")
+    def load_model(self, file=False):
+        """ Loads model from a text file.
 
-        spam = filedialog.askopenfilename(initialdir=self.model_dir, title="Model loading - Select file",
-                                          filetypes=(("pm files", "*.pm"), ("all files", "*.*")))
+        Args:
+            file (path/string): direct path to load the function file
+        """
+        if file:
+            if not os.path.isfile(file):
+                return
+            spam = file
+        else:
+            print("Loading model ...")
+            ## If some model previously loaded
+            if len(self.model_text.get('1.0', END)) > 1:
+                if not askyesno("Loading model", "Previously obtained model will be lost. Do you want to proceed?"):
+                    return
+            self.status_set("Please select the model to be loaded.")
+
+            spam = filedialog.askopenfilename(initialdir=self.model_dir, title="Model loading - Select file",
+                                              filetypes=(("pm files", "*.pm"), ("all files", "*.*")))
         ## If no file selected
         if spam == "":
             self.status_set("No file selected.")
@@ -720,20 +731,29 @@ class Gui(Tk):
             # print("self.model", self.model.get())
 
             ## Autosave
-            self.save_model(os.path.join(self.tmp_dir, "model"))
+            if not file:
+                self.save_model(os.path.join(self.tmp_dir, "model"))
 
-    def load_property(self):
-        """ Loads temporal properties from a text file. """
-        print("Loading properties ...")
-        ## If some property previously loaded
-        if len(self.property_text.get('1.0', END)) > 1:
-            if not askyesno("Loading properties",
-                            "Previously obtained properties will be lost. Do you want to proceed?"):
+    def load_property(self, file=False):
+        """ Loads temporal properties from a text file.
+        Args:
+            file (path/string): direct path to load the function file
+        """
+        if file:
+            if not os.path.isfile(file):
                 return
-        self.status_set("Please select the property to be loaded.")
+            spam = file
+        else:
+            print("Loading properties ...")
+            ## If some property previously loaded
+            if len(self.property_text.get('1.0', END)) > 1:
+                if not askyesno("Loading properties",
+                                "Previously obtained properties will be lost. Do you want to proceed?"):
+                    return
+            self.status_set("Please select the property to be loaded.")
 
-        spam = filedialog.askopenfilename(initialdir=self.property_dir, title="Property loading - Select file",
-                                          filetypes=(("property files", "*.pctl"), ("all files", "*.*")))
+            spam = filedialog.askopenfilename(initialdir=self.property_dir, title="Property loading - Select file",
+                                              filetypes=(("property files", "*.pctl"), ("all files", "*.*")))
         ## If no file selected
         if spam == "":
             self.status_set("No file selected.")
@@ -756,43 +776,48 @@ class Gui(Tk):
             # print("self.property", self.property.get())
 
             ## Autosave
-            self.save_property(os.path.join(self.tmp_dir, "properties"))
+            if not file:
+                self.save_property(os.path.join(self.tmp_dir, "properties"))
 
     def load_functions(self, file=False):
         """ Loads parameter synthesis output text file
 
-        Args:-
-        file ((path/string)): direct path to load the function file
+        Args:
+            file (path/string): direct path to load the function file
         """
-        print("Loading functions ...")
+        if file:
+            if not os.path.isfile(file):
+                return
+            spam = file
+            if "prism" in str(file):
+                self.program.set("prism")
+            elif "storm" in str(file):
+                self.program.set("storm")
+            else:
+                print(f"Error while loading file {file}")
+                return
+        else:
+            print("Loading functions ...")
 
-        if self.functions_changed:
-            if not askyesno("Loading functions", "Previously obtained functions will be lost. Do you want to proceed?"):
+            if self.functions_changed:
+                if not askyesno("Loading functions", "Previously obtained functions will be lost. Do you want to proceed?"):
+                    return
+
+            self.status_set("Loading functions - checking inputs")
+
+            if not self.silent.get():
+                print("Used program: ", self.program.get())
+            if self.program.get() == "prism":
+                initial_dir = self.prism_results
+            elif self.program.get() == "storm":
+                initial_dir = self.storm_results
+            else:
+                messagebox.showwarning("Load functions", "Select a program for which you want to load data.")
                 return
 
-        self.status_set("Loading functions - checking inputs")
-
-        if not self.silent.get():
-            print("Used program: " , self.program.get())
-        if self.program.get() == "prism":
-            initial_dir = self.prism_results
-        elif self.program.get() == "storm":
-            initial_dir = self.storm_results
-        else:
-            messagebox.showwarning("Load functions", "Select a program for which you want to load data.")
-            return
-
-        ## If file to load is NOT preselected
-        # print(file)
-        if not file:
             self.status_set("Please select the prism/storm symbolic results to be loaded.")
             spam = filedialog.askopenfilename(initialdir=initial_dir, title="Rational functions loading - Select file",
                                               filetypes=(("text files", "*.txt"), ("all files", "*.*")))
-        else:
-            if os.path.isfile(file):
-                spam = str(file)
-            else:
-                spam = ""
 
         ## If no file / not a file selected
         if spam == "" or spam == ():
@@ -851,7 +876,9 @@ class Gui(Tk):
         self.parameter_domains = []
 
         ## Autosave
-        self.save_functions(os.path.join(self.tmp_dir, "functions"))
+        ## TODO
+        # if not file:
+        #   self.save_functions(os.path.join(self.tmp_dir, f"functions_{self.program.get()}"))
 
     def store_z3_functions(self):
         """ Stores a copy of functions as a self.z3_functions """
@@ -922,29 +949,37 @@ class Gui(Tk):
         self.functions_window.destroy()
         self.unfold_functions()
 
-    def load_parsed_functions(self):
-        """ Loads parsed rational functions from a pickled file. """
-        print("Loading parsed rational functions ...")
-        if self.data_changed:
-            if not askyesno("Loading parsed rational functions",
-                            "Previously obtained functions will be lost. Do you want to proceed?"):
+    def load_parsed_functions(self, file=False):
+        """ Loads parsed rational functions from a pickled file.
+        Args:
+            file (path/string): direct path to load the function file
+        """
+        if file:
+            if not os.path.isfile(file):
+                return
+            spam = file
+        else:
+            print("Loading parsed rational functions ...")
+            if self.data_changed:
+                if not askyesno("Loading parsed rational functions",
+                                "Previously obtained functions will be lost. Do you want to proceed?"):
+                    return
+
+            self.status_set("Please select the parsed rational functions to be loaded.")
+
+            if not self.silent.get():
+                print("self.program.get()", self.program.get())
+            if self.program.get() == "prism":
+                initial_dir = self.prism_results
+            elif self.program.get() == "storm":
+                initial_dir = self.storm_results
+            else:
+                messagebox.showwarning("Load functions", "Select a program for which you want to load data.")
                 return
 
-        self.status_set("Please select the parsed rational functions to be loaded.")
-
-        if not self.silent.get():
-            print("self.program.get()", self.program.get())
-        if self.program.get() == "prism":
-            initial_dir = self.prism_results
-        elif self.program.get() == "storm":
-            initial_dir = self.storm_results
-        else:
-            messagebox.showwarning("Load functions", "Select a program for which you want to load data.")
-            return
-
-        spam = filedialog.askopenfilename(initialdir=initial_dir,
-                                          title="Rational functions saving - Select file",
-                                          filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+            spam = filedialog.askopenfilename(initialdir=initial_dir,
+                                              title="Rational functions saving - Select file",
+                                              filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
 
         ## If no file selected
         if spam == "":
@@ -983,21 +1018,30 @@ class Gui(Tk):
             self.parameter_domains = []
 
             ## Autosave
-            self.save_functions(os.path.join(self.tmp_dir, "functions"))
+            if not file:
+                self.save_functions(os.path.join(self.tmp_dir, f"functions.p"))
 
             self.status_set("Parsed rational functions loaded.")
 
-    def load_data(self):
-        """ Loads data from a file. Either pickled list or comma separated values in one line """
-        print("Loading data ...")
-        if self.data_changed:
-            if not askyesno("Loading data", "Previously obtained data will be lost. Do you want to proceed?"):
+    def load_data(self, file=False):
+        """ Loads data from a file. Either pickled list or comma separated values in one line
+        Args:
+            file (path/string): direct path to load the data file
+        """
+        if file:
+            if not os.path.isfile(file):
                 return
+            spam = file
+        else:
+            print("Loading data ...")
+            if self.data_changed:
+                if not askyesno("Loading data", "Previously obtained data will be lost. Do you want to proceed?"):
+                    return
 
-        self.status_set("Please select the data to be loaded.")
+            self.status_set("Please select the data to be loaded.")
 
-        spam = filedialog.askopenfilename(initialdir=self.data_dir, title="Data loading - Select file",
-                                          filetypes=(("pickled files", "*.p"), ("all files", "*.*")))
+            spam = filedialog.askopenfilename(initialdir=self.data_dir, title="Data loading - Select file",
+                                              filetypes=(("pickled files", "*.p"), ("all files", "*.*")))
         ## If no file selected
         if spam == "":
             self.status_set("No file selected.")
@@ -1020,7 +1064,8 @@ class Gui(Tk):
                 print("Loaded data: ", self.data)
 
             ## Autosave
-            self.save_data(os.path.join(self.tmp_dir, "data"))
+            if not file:
+                self.save_data(os.path.join(self.tmp_dir, "data"))
 
             self.status_set("Data loaded.")
         # self.parse_data_from_window()
@@ -1088,6 +1133,14 @@ class Gui(Tk):
         self.new_window.destroy()
         self.unfold_data()
 
+    def load_data_intervals(self, file=False):
+        """ Loads intervals from a given file
+        Args:
+            file (path/string): direct path to load the intervals file
+        """
+        ## TODO
+        pass
+
     def recalculate_constraints(self):
         """ Merges rational functions and intervals into constraints. Shows it afterwards. """
         ## If there is some constraints
@@ -1104,18 +1157,27 @@ class Gui(Tk):
             self.save_constraints(os.path.join(self.tmp_dir, "constraints"))
         self.status_set("constraints recalculated and shown.")
 
-    def load_constraints(self, append=False):
-        """ Loads constraints from a pickled file. """
-        print("Loading constraints ...")
-
-        if self.constraints_changed and not append:
-            if not askyesno("Loading constraints", "Previously obtained constraints will be lost. Do you want to proceed?"):
+    def load_constraints(self, append=False, file=False):
+        """ Loads constraints from a pickled file.
+        Args:
+            append (bool): if True, loaded constraints are appended to previous
+            file (path/string): direct path to load the constraint file
+        """
+        if file:
+            if not os.path.isfile(file):
                 return
-        self.status_set("Please select the constraints to be loaded.")
-        spam = filedialog.askopenfilename(initialdir=self.data_dir, title="constraints loading - Select file",
-                                          filetypes=(("text files", "*.p"), ("all files", "*.*")))
+            spam = file
+        else:
+            print("Loading constraints ...")
 
-        if not self.silent.get():
+            if self.constraints_changed and not append:
+                if not askyesno("Loading constraints", "Previously obtained constraints will be lost. Do you want to proceed?"):
+                    return
+            self.status_set("Please select the constraints to be loaded.")
+            spam = filedialog.askopenfilename(initialdir=self.data_dir, title="constraints loading - Select file",
+                                              filetypes=(("text files", "*.p"), ("all files", "*.*")))
+
+        if self.debug.get():
             print("old constraints", self.constraints)
             print("old constraints type", type(self.constraints))
             print("loaded constraints file", spam)
@@ -1143,7 +1205,7 @@ class Gui(Tk):
                 #     for line in file:
                 #         print(line[:-1])
                 #         self.constraints.append(line[:-1])
-            if not self.silent.get():
+            if self.debug.get():
                 print("self.constraints", self.constraints)
 
             ## TODO add check here
@@ -1169,27 +1231,36 @@ class Gui(Tk):
             self.parameter_domains = []
 
             ## Autosave
-            self.save_constraints(os.path.join(self.tmp_dir, "constraints"))
-            self.status_set("constraints loaded.")
+            if not file:
+                self.save_constraints(os.path.join(self.tmp_dir, "constraints"))
+            self.status_set("Constraints loaded.")
 
     def append_constraints(self):
         """ Appends loaded constraints from a pickled file to previously obtained constraints. """
         self.load_constraints(append=True)
         self.status_set("constraints appended.")
 
-    def load_space(self):
-        """ Loads space from a pickled file. """
-        print("Loading space ...")
-
-        if self.space:
-            if not askyesno("Loading space", "Previously obtained space will be lost. Do you want to proceed?"):
+    def load_space(self, file=False):
+        """ Loads space from a pickled file.
+        Args:
+            file (path/string): direct path to load the space file
+        """
+        if file:
+            if not os.path.isfile(file):
                 return
-        ## Delete previous space
-        self.refresh_space()
+            spam = file
+        else:
+            print("Loading space ...")
 
-        self.status_set("Please select the space to be loaded.")
-        spam = filedialog.askopenfilename(initialdir=self.data_dir, title="Space loading - Select file",
-                                          filetypes=(("pickled files", "*.p"), ("all files", "*.*")))
+            if self.space:
+                if not askyesno("Loading space", "Previously obtained space will be lost. Do you want to proceed?"):
+                    return
+            ## Delete previous space
+            self.refresh_space()
+
+            self.status_set("Please select the space to be loaded.")
+            spam = filedialog.askopenfilename(initialdir=self.data_dir, title="Space loading - Select file",
+                                              filetypes=(("pickled files", "*.p"), ("all files", "*.*")))
 
         ## If no file selected
         if spam == "":
@@ -1216,7 +1287,8 @@ class Gui(Tk):
             self.space_changed = True
 
             ## Autosave
-            self.save_space(os.path.join(self.tmp_dir, "space"))
+            if not file:
+                self.save_space(os.path.join(self.tmp_dir, "space"))
             self.status_set("Space loaded.")
 
     def print_space(self, clear=False):
@@ -1570,7 +1642,7 @@ class Gui(Tk):
         """ Saves constraints as a pickled file.
 
         Args:
-            file (string):  filepath to save the constraints
+            file (string):  file to save the constraints
         """
         ## TODO
         pass
@@ -2002,7 +2074,7 @@ class Gui(Tk):
         """ Stores optimisation results as a file
 
         Args:
-            file (string):  filepath to store the optimisation results
+            file (string):  file to store the optimisation results
         """
         if file:
             save_opt_result_file = file
@@ -2633,6 +2705,18 @@ class Gui(Tk):
         """ x button handler """
         if askyesno("Quit", "Do you want to quit the application?"):
             self.quit()
+
+    def autoload(self):
+        if askyesno("Autoload from tmp folder", "Would you like to load autosaved files from tmp folder?"):
+            self.load_model(file=os.path.join(self.tmp_dir, "model.pm"))
+            self.load_property(file=os.path.join(self.tmp_dir, "properties.pctl"))
+            self.load_parsed_functions(file=os.path.join(self.tmp_dir, "functions.p"))
+            # self.load_functions(file=os.path.join(self.tmp_dir, "functions_prism.txt"))
+            # self.load_functions(file=os.path.join(self.tmp_dir, "functions_storm.txt"))
+            self.load_data_intervals(file=os.path.join(self.tmp_dir, "intervals.p"))
+            self.load_data(file=os.path.join(self.tmp_dir, "data.p"))
+            self.load_constraints(file=os.path.join(self.tmp_dir, "constraints.p"))
+            self.load_space(file=os.path.join(self.tmp_dir, "space.p"))
 
 
 gui = Gui()
