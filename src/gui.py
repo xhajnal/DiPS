@@ -159,7 +159,7 @@ class Gui(Tk):
         self.show_true_point = None
 
         ## Settings
-        self.version = "1.7.8"  ## Version of the gui
+        self.version = "1.7.9"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -1947,7 +1947,6 @@ class Gui(Tk):
             self.cursor_toggle_busy(True)
 
             self.new_window = Toplevel(self)
-
             Label(self.new_window, text="Sampling progress", anchor=W, justify=LEFT).pack()
             self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
             self.progress_bar.pack()
@@ -2013,12 +2012,29 @@ class Gui(Tk):
 
         from metropolis_hastings import initialise_sampling
 
-        self.page6_figure2, self.page6_b = initialise_sampling(self.space, self.data, self.functions,
-                                                               int(self.n_samples_entry.get()),
-                                                               int(self.N_obs_entry.get()),
-                                                               int(self.MH_samples_entry.get()),
-                                                               float(self.eps_entry.get()),
-                                                               where=[self.page6_figure2, self.page6_b])
+        try:
+            self.cursor_toggle_busy(True)
+
+            self.new_window = Toplevel(self)
+            Label(self.new_window, text="Metropolis hastings progress", anchor=W, justify=LEFT).pack()
+            self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
+            self.progress_bar.pack()
+            self.update()
+
+            ## This progress is passed as whole to update the thing inside the called function
+            self.page6_figure2, self.page6_b = initialise_sampling(self.space, self.data, self.functions,
+                                                                   int(self.n_samples_entry.get()),
+                                                                   int(self.N_obs_entry.get()),
+                                                                   int(self.MH_samples_entry.get()),
+                                                                   float(self.eps_entry.get()),
+                                                                   where=[self.page6_figure2, self.page6_b],
+                                                                   progress=self.update_progress_bar)
+        finally:
+            self.new_window.destroy()
+            del self.new_window
+            self.cursor_toggle_busy(False)
+
+
         # try:
         #     self.cursor_toggle_busy(True)
         #     initialise_sampling(self.space, self.data, self.functions, int(self.n_samples_entry.get()), int(self.N_obs_entry.get()), int(self.MH_samples_entry.get()), float(self.eps_entry.get()), where=[self.page6_figure2, self.page6_b])
@@ -2439,7 +2455,7 @@ class Gui(Tk):
         self.page3_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
 
     def update_progress_bar(self, change):
-        self.progress_bar['value'] = round(change)
+        self.progress_bar['value'] = round(100*change)
         self.update()
 
     def ask_quit(self):

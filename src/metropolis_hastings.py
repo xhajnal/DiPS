@@ -114,7 +114,7 @@ def acceptance(x, x_new):
 
 
 def metropolis_hastings(likelihood_computer, prior, transition_model, param_init, iterations, space, data, acceptance_rule,
-                        parameter_intervals, functions, eps):
+                        parameter_intervals, functions, eps, progress=False):
     """ TODO
     the main method
 
@@ -126,6 +126,7 @@ def metropolis_hastings(likelihood_computer, prior, transition_model, param_init
     data: (list of numbers): the data that we wish to model
     acceptance_rule: function(x, x_new): decides whether to accept or reject the new sample
     parameter_intervals: (list of pairs) boundaries of parameters
+    progress: (Tkinter element) progress bar
 
     :returns tuple of accepted and rejected parameter points
 
@@ -151,6 +152,8 @@ def metropolis_hastings(likelihood_computer, prior, transition_model, param_init
         else:
             rejected.append(x_new)
             print(f"new point: {x_new} rejected")
+        if progress:
+            progress(iteration/iterations)
 
     return np.array(accepted), np.array(rejected)
 
@@ -200,7 +203,7 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
     return res
 
 
-def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_obs: int, MH_samples: int, eps, where=False):
+def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_obs: int, MH_samples: int, eps, where=False, progress=False):
     """ Initialisation method for Metropolis Hastings
     Args
     -----------------
@@ -212,6 +215,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
     MH_samples: (number) number of iterations
     eps: (number) very small value used as probability of non-feasible values in prior
     where: (Tuple/List) : output matplotlib sources to output created figure
+    progress: (Tkinter element) progress bar
 
     @author: tpetrov
     @edit: xhajnal
@@ -277,7 +281,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
     theta_init = [(parameter_intervals[0][0] + parameter_intervals[0][1])/2, (parameter_intervals[1][0] + parameter_intervals[1][1])/2]  ## Middle of the intervals # np.ones(10)*0.1
     print("Initial parameter point: ", theta_init)
                                          ## (likelihood_computer,    prior, transition_model,   param_init, iterations, space, data,    acceptance_rule,parameter_intervals, functions, eps):
-    accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, MH_samples, space, observations, acceptance, parameter_intervals, functions, eps)
+    accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, MH_samples, space, observations, acceptance, parameter_intervals, functions, eps, progress=progress)
 
     pickle.dump(accepted, open(os.path.join(data_path, f"accepted_{N_obs}.p"), 'wb'))
     pickle.dump(rejected, open(os.path.join(data_path, f"rejected_{N_obs}.p"), 'wb'))
