@@ -1746,7 +1746,7 @@ def sample(space, constraints, size_q, compress=False, silent=True, save=False, 
     for index, parameter_value in enumerate(parameter_values):
         ## For each parameter set the current sample point value
         if progress:
-            progress['value'] = round(100*index/len(parameter_values))
+            progress(100 * index / len(parameter_values))
         for param in range(len(space.params)):
             locals()[space.params[param]] = float(parameter_value[param])
             if debug:

@@ -187,6 +187,10 @@ class Gui(Tk):
         self.title('Mpm')
         self.minsize(1000, 300)
 
+        ## Temporal gui features
+        self.progress_bar = None
+        self.new_window = None
+
         ## DESIGN
 
         ## STATUS BAR
@@ -1649,8 +1653,7 @@ class Gui(Tk):
         self.key = StringVar()
         self.status_set("Choosing parameters value:")
         self.new_window = Toplevel(self)
-        label = Label(self.new_window,
-                      text="Please choose value of respective parameter of the synthesised function(s):")
+        label = Label(self.new_window, text="Please choose value of respective parameter of the synthesised function(s):")
         label.grid(row=0)
         self.key.set(" ")
 
@@ -1948,8 +1951,10 @@ class Gui(Tk):
             Label(self.new_window, text="Sampling progress", anchor=W, justify=LEFT).pack()
             self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
             self.progress_bar.pack()
+            self.update()
 
-            self.space.sample(self.constraints, self.size_q, silent=self.silent.get(), save=False, progress=self.progress_bar)
+            ## This progress is passed as whole to update the thing inside the called function
+            self.space.sample(self.constraints, self.size_q, silent=self.silent.get(), save=False, progress=self.update_progress_bar)
         finally:
             self.new_window.destroy()
             del self.new_window
@@ -2432,6 +2437,10 @@ class Gui(Tk):
         self.page3_toolbar = NavigationToolbar2Tk(self.page3_canvas, self.page3_plotframe)
         self.page3_toolbar.update()
         self.page3_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+
+    def update_progress_bar(self, change):
+        self.progress_bar['value'] = round(change)
+        self.update()
 
     def ask_quit(self):
         """ x button handler """
