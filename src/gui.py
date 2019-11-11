@@ -400,7 +400,7 @@ class Gui(Tk):
         self.alpha_entry.insert(END, '0.90')
         self.n_samples_entry.insert(END, '60')
 
-        Button(page4, text='Create intervals', command=self.data_create_intervals).grid(row=6, column=0, sticky=W, padx=4, pady=4)
+        Button(page4, text='Create intervals', command=self.create_data_intervals).grid(row=6, column=0, sticky=W, padx=4, pady=4)
 
         Label(page4, text=f"Intervals:", anchor=W, justify=LEFT).grid(row=7, column=0, sticky=W, padx=4, pady=4)
 
@@ -648,6 +648,7 @@ class Gui(Tk):
         help_menu.add_command(label="About", command=self.print_about)
 
     def load_config(self):
+        """ Loads variables from the config file """
         os.chdir(workspace)
         config.read(os.path.join(workspace, "../config.ini"))
 
@@ -760,9 +761,8 @@ class Gui(Tk):
     def load_functions(self, file=False):
         """ Loads parameter synthesis output text file
 
-        Args
-        -------------
-        file (Path/String): direct path to load the function file
+        Args:-
+        file ((path/string)): direct path to load the function file
         """
         print("Loading functions ...")
 
@@ -854,13 +854,13 @@ class Gui(Tk):
         self.save_functions(os.path.join(self.tmp_dir, "functions"))
 
     def store_z3_functions(self):
-        """ Stores a copy of functions as a self.z3_functions"""
+        """ Stores a copy of functions as a self.z3_functions """
         self.z3_functions = deepcopy(self.functions)
         for index, function in enumerate(self.functions):
             self.functions[index] = translate_z3_function(function)
 
     def store_z3_constraints(self):
-        """ Stores a copy of constraints as a self.z3_constraints"""
+        """ Stores a copy of constraints as a self.z3_constraints """
         self.z3_constraints = deepcopy(self.constraints)
         for index, constraint in enumerate(self.constraints):
             self.constraints[index] = translate_z3_function(constraint)
@@ -988,7 +988,7 @@ class Gui(Tk):
             self.status_set("Parsed rational functions loaded.")
 
     def load_data(self):
-        """ Loads data from a file. Either pickled list or comma separated values in one line"""
+        """ Loads data from a file. Either pickled list or comma separated values in one line """
         print("Loading data ...")
         if self.data_changed:
             if not askyesno("Loading data", "Previously obtained data will be lost. Do you want to proceed?"):
@@ -1222,7 +1222,8 @@ class Gui(Tk):
     def print_space(self, clear=False):
         """ Print the niceprint of the space into space text window.
 
-        :param clear: (Bool) if True the text is cleared
+        Args:
+            clear (bool): if True the text is cleared
         """
         if not self.space == "":
             if not self.silent.get() and not clear:
@@ -1240,11 +1241,11 @@ class Gui(Tk):
         """ Visualises the space in the plot.
 
         Args:
-        :param show_refinement: (Bool) if True refinement is shown
-        :param show_samples: (Bool) if True samples are shown
-        :param show_true_point: (Bool) if True the true point is shown
-        :param clear: (Bool) if True the plot is cleared
-        :param show_all: (Bool)  if True, not only newly added rectangles are shown
+            show_refinement (bool): if True refinement is shown
+            show_samples (bool): if True samples are shown
+            show_true_point (bool): if True the true point is shown
+            clear (bool): if True the plot is cleared
+            show_all (bool):  if True, not only newly added rectangles are shown
         """
         if not self.space == "":
             if not clear:
@@ -1322,8 +1323,8 @@ class Gui(Tk):
 
     def save_model(self, file=False):
         """ Saves obtained model as a file.
-
-        :string file: file to save the model
+        Args:
+            file: file to save the model
         """
         ## TODO CHECK IF THE MODEL IS NON EMPTY
         # if len(self.model_text.get('1.0', END)) <= 1:
@@ -1354,7 +1355,8 @@ class Gui(Tk):
     def save_property(self, file=False):
         """ Saves obtained temporal properties as a file.
 
-        :string file: file to save the property
+        Args:
+            file: file to save the property
         """
         print("Saving the property ...")
         ## TODO CHECK IF THE PROPERTY IS NON EMPTY
@@ -1411,7 +1413,8 @@ class Gui(Tk):
     def save_data_informed_properties(self, file=False):
         """ Saves computed data informed property as a text file.
 
-        :string file: file to save the data_informed_properties
+        Args:
+            file: file to save the data_informed_properties
         """
         print("Saving data informed property ...")
         ## TODO CHECK IF THE PROPERTY IS NON EMPTY
@@ -1444,7 +1447,8 @@ class Gui(Tk):
     def save_mc_output_file(self, file=False):
         """ Saves parsed functions as a pickled file.
 
-        :string file: file to save the functions
+        Args:
+            file: file to save the functions
         """
         print("Saving the rational functions ...")
 
@@ -1488,7 +1492,8 @@ class Gui(Tk):
     def save_functions(self, file=False):
         """ Saves parsed rational functions as a pickled file.
 
-        :string file: file to save the parsed functions
+        Args:
+            file: file to save the parsed functions
         """
 
         if self.functions is "":
@@ -1526,9 +1531,10 @@ class Gui(Tk):
         self.status_set("Parsed functions saved.")
 
     def save_data(self, file=False):
-        """Saves data as a pickled file.
+        """ Saves data as a pickled file.
 
-        :string file: file to save the data
+        Args:
+            file (string):  file to save the data
         """
         self.parse_data_from_window()
 
@@ -1564,7 +1570,7 @@ class Gui(Tk):
         """ Saves constraints as a pickled file.
 
         Args:
-            file: filepath to save the constraints
+            file (string):  filepath to save the constraints
         """
         ## TODO
         pass
@@ -1572,7 +1578,8 @@ class Gui(Tk):
     def save_constraints(self, file=False):
         """ Saves constraints as a pickled file.
 
-        :string file: file to save the constraints
+        Args:
+            file (string):  file to save the constraints
         """
 
         if file:
@@ -1603,7 +1610,8 @@ class Gui(Tk):
     def save_space(self, file=False):
         """ Saves space as a pickled file.
 
-        :string file: file to save the space
+        Args:
+            file (string):  file to save the space
         """
 
         if file:
@@ -1994,8 +2002,7 @@ class Gui(Tk):
         """ Stores optimisation results as a file
 
         Args:
-            file: (String) filepath to store the optimisation results
-
+            file (string):  filepath to store the optimisation results
         """
         if file:
             save_opt_result_file = file
@@ -2017,7 +2024,7 @@ class Gui(Tk):
             file.write(f"function values {self.optimised_function_value} \n")
             file.write(f"distance {self.optimised_distance} \n")
 
-    def data_create_intervals(self):
+    def create_data_intervals(self):
         """ Creates intervals from data. """
         print("Creating intervals ...")
         self.status_set("Create interval - checking inputs")
@@ -2116,7 +2123,7 @@ class Gui(Tk):
         self.status_set("Space sampling finished.")
 
     def hastings(self):
-        """ Samples (Parameter) Space using Metropolis hastings"""
+        """ Samples (Parameter) Space using Metropolis hastings """
         print("Space Metropolis-Hastings ...")
         self.status_set("Space Metropolis-Hastings - checking inputs")
 
@@ -2282,10 +2289,9 @@ class Gui(Tk):
     def validate_parameters(self, where, intervals=True):
         """ Validates (functions, constraints, and space) parameters.
 
-        Args
-        ------
-        where (struct): a structure pars parameters from (e.g. self.functions)
-        intervals (Bool): whether to check also parameter intervals
+        Args:
+            where (struct): a structure pars parameters from (e.g. self.functions)
+            intervals (bool): whether to check also parameter intervals
         """
         if not self.parameters:
             globals()["parameters"] = set()
@@ -2337,8 +2343,7 @@ class Gui(Tk):
         """ Validates created properties.
 
         Args:
-        ------
-        position: (String) Name of the place from which is being called e.g. "Refine Space"/"Sample space"
+            position (string): Name of the place from which is being called e.g. "Refine Space"/"Sample space"
         """
         print("Validating constraints ...")
         ## MAYBE an error here
@@ -2413,8 +2418,7 @@ class Gui(Tk):
         """ Validates space.
 
         Args:
-        ------
-        position: (String) Name of the place from which is being called e.g. "Refine Space"/"Sample space"
+            position (string): Name of the place from which is being called e.g. "Refine Space"/"Sample space"
         """
         print("Checking space ...")
         if position is False:
@@ -2555,7 +2559,7 @@ class Gui(Tk):
         self.button_pressed.set(True)
 
     def load_param_values_from_window(self):
-        """ Inner function to parse the param values from created window"""
+        """ Inner function to parse the param values from created window """
         for param_index in range(len(self.parameter_values)):
             ## Getting the values from each entry, low = [0], high = [1]
             self.parameter_values[param_index] = float(self.parameter_values[param_index].get())
@@ -2617,6 +2621,11 @@ class Gui(Tk):
         self.page3_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
 
     def update_progress_bar(self, change):
+        """ Updates progress bar
+
+        Args:
+            change (number): value to set the progress
+        """
         self.progress_bar['value'] = round(100*change)
         self.update()
 

@@ -41,17 +41,15 @@ os.chdir(cwd)
 def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewards_only=False, f_only=False):
     """ Loads all results of parameter synthesis from *path* folder into two maps - f list of rational functions for each property, and rewards list of rational functions for each reward
     
-    Args
-    ----------
-    path: (string) - file name regex
-    factorize: (Bool) if true it will factorise polynomial results
-    rewards_only: (Bool) if true it compute only rewards
-    f_only: if true it will compute only standard properties
-    agents_quantities: (list) of population sizes to be used
-    tool: (string) a tool of which is the output from (PRISM/STORM)
+    Args:
+        path (string): file name regex
+        factorize (bool): if true it will factorise polynomial results
+        rewards_only (bool): if true it compute only rewards
+        f_only (bool): if true it will compute only standard properties
+        agents_quantities (list): of population sizes to be used
+        tool (string): a tool of which is the output from (PRISM/STORM)
 
-    Returns
-    ----------
+    Returns:
     (f,reward), where
     f: dictionary N -> list of rational functions for each property
     rewards: dictionary N -> list of rational functions for each reward
@@ -177,22 +175,21 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
 
 
 def get_f(path, tool, factorize, agents_quantities=False):
-    """ Loads all nonreward results of parameter synthesis from *path* folder"""
+    """ Loads all nonreward results of parameter synthesis from *path* folder """
     return load_all_functions(path, tool, factorize, agents_quantities=agents_quantities, rewards_only=False, f_only=True)[0]
 
 
 def get_rewards(path, tool, factorize, agents_quantities=False):
-    """ Loads all reward results of parameter synthesis from *path* folder"""
+    """ Loads all reward results of parameter synthesis from *path* folder """
     return load_all_functions(path, tool, factorize, agents_quantities=agents_quantities, rewards_only=True, f_only=False)[1]
 
 
 def save_functions(dic, name):
     """ Exports the dic in a compact but readable manner
 
-    Args
-    ----------
-    dic: (map) to be exported
-    name: (string) name of the dictionary (used for the file name)
+    Args:
+        dic (dictionary): to be exported
+        name (string): name of the dictionary (used for the file name)
     """
 
     for key in dic.keys():
@@ -207,9 +204,9 @@ def save_functions(dic, name):
 
 def to_variance(dic):
     """ Computes variance specifically for the dictionary in a form dic[key][0] = EX, dic[key][1] = E(X^2)
-    Args
-    ----------
-    dic: (map) for which the variance is computed
+
+    Args:
+        dic (dictionary): for which the variance is computed
     """
 
     for key in dic.keys():
@@ -224,14 +221,12 @@ def to_variance(dic):
 def load_data(path, silent: bool = False, debug: bool = False):
     """ Loads experimental data, returns as list "data"
 
-    Args
-    ----------
-    path: (string) - file name
-    silent: (Bool): if silent printed output is set to minimum
-    debug: (Bool) if debug extensive print will be used
+    Args:
+        path (string): file name
+        silent (bool): if silent printed output is set to minimum
+        debug (bool): if debug extensive print will be used
 
-    Returns
-    ----------
+    Returns:
     D: dictionary N -> list of probabilities for respective property
     """
     cwd = os.getcwd()
@@ -271,13 +266,11 @@ def load_data(path, silent: bool = False, debug: bool = False):
 def load_all_data(path):
     """ loads all experimental data for respective property, returns as dictionary "data"
     
-    Args
-    ----------
-    path: (string) - file name regex
+    Args:
+        path (string): file name regex
     
-    Returns
-    ----------
-    D: dictionary N -> list of probabilities for respective property
+    Returns:
+        D: dictionary N -> list of probabilities for respective property
     """
     cwd = os.getcwd()
     if not Path(path).is_absolute():
@@ -323,10 +316,8 @@ def load_all_data(path):
 def load_pickled_data(file):
     """ returns pickled data
     
-    Args
-    ----------
-    file: (string) filename of the data to be loaded
-    
+    Args:
+        file (string): filename of the data to be loaded
     """
     return pickle.load(open(os.path.join(data_path, file + ".p"), "rb"))
 
@@ -339,8 +330,9 @@ def load_pickled_data(file):
 def parse_params_from_model(file, silent: bool = False):
     """ Parses the parameters from a given file
 
-    file: (Path/String) a model file to be parsed
-    silent: (Bool) if silent command line output is set to minimum
+    Args:
+        file: ((path/string)) a model file to be parsed
+        silent (bool): if silent command line output is set to minimum
     """
     params = []
     # print("file", file)
@@ -358,12 +350,12 @@ def parse_params_from_model(file, silent: bool = False):
 def find_param(my_string, debug: bool = False):
     """ Finds parameters of a string (also deals with Z3 expressions)
 
-    Args
-    ----------
-    my_string : input string
-    debug: (Bool) if debug extensive output is provided
+    Args:
+        my_string : input string
+        debug (bool): if debug extensive output is provided
 
-    Returns set of strings - parameters
+    Returns:
+         set of strings - parameters
     """
     my_string = copy.copy(my_string)
     if debug:
@@ -429,11 +421,11 @@ def find_param(my_string, debug: bool = False):
 def find_param_old(polynomial):
     """ Finds parameters of a polynomials (also deals with Z3 expressions)
 
-    Args
-    ----------
-    polynomial : polynomial as string
+    Args:
+        polynomial : polynomial as string
 
-    Returns set of strings - parameters
+    Returns:
+        set of strings - parameters
     """
 
     ## Get the e-/e+ notation away
@@ -453,11 +445,11 @@ def find_param_old(polynomial):
 def find_param_older(polynomial):
     """ Finds parameters of a polynomials
 
-    Args
-    ----------
-    polynomial : polynomial as string
+    Args:
+        polynomial : polynomial as string
     
-    Returns set of strings - parameters
+    Returns:
+         set of strings - parameters
     """
     parameters = polynomial.replace('(', '').replace(')', '').replace('**', '*').replace(' ', '')
     parameters = re.split('\+|\*|\-|/', parameters)

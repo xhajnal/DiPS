@@ -37,12 +37,11 @@ os.chdir(cwd)
 def generate_all_data_two_param(agents_quantities, dic_fun, p_v=None, q_v=None):
     """ Generates data for all agents_quantities in the current as .csv files
 
-    Args
-    ----
-    agents_quantities: (list of ints) list of population sized to be used
-    dic_fun: (dictionary) dictionary population size to list of rational functions
-    p_v: (float/None) value of the first parameter - p
-    q_v: (float/None) value of the second parameter - q
+    Args:
+        agents_quantities (list of ints): list of population sized to be used
+        dic_fun (dictionary): dictionary population size to list of rational functions
+        p_v (float/None): value of the first parameter - p
+        q_v (float/None): value of the second parameter - q
     """
     # create distribution data, by Tanja, 14.1.2019
     # edited, by xhajnal, 18.1.2019, still name 'a' is not defined
@@ -88,18 +87,17 @@ def generate_all_data_two_param(agents_quantities, dic_fun, p_v=None, q_v=None):
 
 def generate_experiments_and_data(model_types, n_samples, populations, dimension_sample_size,
                                   sim_length=False, modular_param_space=None, silent=False, debug=False):
-    """Generate experiment data for given settings
+    """ Generate experiment data for given settings
 
-    Args
-    ------
-    model_types: (list of strings) list of model types
-    n_samples: (list of ints) list of sample sizes
-    populations: (list of ints) list of agent populations
-    dimension_sample_size: (list of ints) number of samples of in each parameter dimension to be used
-    sim_length: (Int) length of the simulation
-    modular_param_space: (numpy array) parameter space to be used
-    silent: (Bool): if silent printed output is set to minimum
-    debug: (Bool): if True extensive print will be used
+    Args:
+        model_types (list of strings): list of model types
+        n_samples (list of ints): list of sample sizes
+        populations (list of ints): list of agent populations
+        dimension_sample_size (list of ints): number of samples of in each parameter dimension to be used
+        sim_length (Int): length of the simulation
+        modular_param_space (numpy array): parameter space to be used
+        silent (bool): if silent printed output is set to minimum
+        debug (bool): if True extensive print will be used
     """
     max_sample = max(n_samples)
     start_time = time.time()
@@ -219,18 +217,17 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
 
 def generate_experiments(model_types, n_samples, populations, dimension_sample_size,
                          sim_length=False, modular_param_space=None, silent=False, debug=False):
-    """Generate experiment data for given settings
+    """ Generate experiment data for given settings
 
-    Args
-    ------
-    model_types: (list of strings) list of model types
-    n_samples: (list of ints) list of sample sizes
-    populations: (list of ints) list of agent populations
-    dimension_sample_size: (list of ints) number of samples of in each parameter dimension to be used
-    sim_length: (Int) length of the simulation
-    modular_param_space: (numpy array) parameter space to be used
-    silent: (Bool): if silent printed output is set to minimum
-    debug: (Bool): if True extensive print will be used
+    Args:
+        model_types (list of strings): list of model types
+        n_samples (list of ints): list of sample sizes
+        populations (list of ints): list of agent populations
+        dimension_sample_size (list of ints): number of samples of in each parameter dimension to be used
+        sim_length (Int): length of the simulation
+        modular_param_space (numpy array): parameter space to be used
+        silent (bool): if silent printed output is set to minimum
+        debug (bool): if True extensive print will be used
     """
     return generate_experiments_and_data(model_types, n_samples, populations, dimension_sample_size,
                                          sim_length=sim_length, modular_param_space=modular_param_space, silent=silent, debug=debug)[0]
@@ -238,18 +235,17 @@ def generate_experiments(model_types, n_samples, populations, dimension_sample_s
 
 def generate_data(model_types, n_samples, populations, dimension_sample_size,
                   sim_length=False, modular_param_space=None, silent=False, debug=False):
-    """Generate experiment data for given settings
+    """ Generate experiment data for given settings
 
-    Args
-    ------
-    model_types: (list of strings) list of model types
-    n_samples: (list of ints) list of sample sizes
-    populations: (list of ints) list of agent populations
-    dimension_sample_size: (list of ints) number of samples of in each parameter dimension to be used
-    sim_length: (Int) length of the simulation
-    modular_param_space: (numpy array) parameter space to be used
-    silent: (Bool): if silent printed output is set to minimum
-    debug: (Bool): if True extensive print will be used
+    Args:
+        model_types (list of strings): list of model types
+        n_samples (list of ints): list of sample sizes
+        populations (list of ints): list of agent populations
+        dimension_sample_size (list of ints): number of samples of in each parameter dimension to be used
+        sim_length (Int): length of the simulation
+        modular_param_space (numpy array): parameter space to be used
+        silent (bool): if silent printed output is set to minimum
+        debug (bool): if True extensive print will be used
     """
     return generate_experiments_and_data(model_types, n_samples, populations, dimension_sample_size,
                                          sim_length=sim_length, modular_param_space=modular_param_space, silent=silent, debug=debug)[1]

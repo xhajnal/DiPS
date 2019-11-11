@@ -43,10 +43,9 @@ def sample(functions, data_means):
 def transition_model_a(theta, parameter_intervals):
     """" Defines how to walk around the parameter space
 
-    Args
-    ---------
-    theta: (list) parameter values
-    parameter_intervals: (list of tuples) parameter intervals
+    Args:---
+    theta (list): parameter values
+    parameter_intervals (list of tuples) parameter intervals
 
     :returns new parameter space point
 
@@ -72,10 +71,9 @@ def transition_model_a(theta, parameter_intervals):
 
 def prior(x, eps):
     """ TODO
-    Args
-    ------
+    Args:
     x: (tuple) Distribution parameters: x[0] = mu, x[1] = sigma (new or current)
-    eps: (number) very small value used as probability of non-feasible values in prior
+    eps (number): very small value used as probability of non-feasible values in prior
 
 
     :returns
@@ -95,8 +93,7 @@ def prior(x, eps):
 def acceptance(x, x_new):
     """ Decides whether to accept new sample or not
 
-    Args
-    -------
+    Args:-
     x: old parameter point
     x_new: new parameter points
 
@@ -122,11 +119,11 @@ def metropolis_hastings(likelihood_computer, prior, transition_model, param_init
     prior: function(x, eps): prior function
     transition_model: function(x): a function that draws a sample from a symmetric distribution and returns it
     param_init:  (pair of numbers): a starting sample
-    iterations: (int): number of accepted to generated
-    data: (list of numbers): the data that we wish to model
+    iterations (int): number of accepted to generated
+    data (list of numbers):: the data that we wish to model
     acceptance_rule: function(x, x_new): decides whether to accept or reject the new sample
-    parameter_intervals: (list of pairs) boundaries of parameters
-    progress: (Tkinter element) progress bar
+    parameter_intervals (list of pairs): boundaries of parameters
+    progress (Tkinter element): progress bar
 
     :returns tuple of accepted and rejected parameter points
 
@@ -161,13 +158,12 @@ def metropolis_hastings(likelihood_computer, prior, transition_model, param_init
 def manual_log_like_normal(space, theta, functions, observations, eps):
     """ TODO
 
-    Args
-    -----------
+    Args:-
     space: (Refined space)
-    theta: (list) parameter values
-    functions: (list of strings)
-    observations: (list of numbers)
-    eps: (number) very small value used as probability of non-feasible values in prior
+    theta (list): parameter values
+    functions (list of strings):
+    observations (list of numbers):
+    eps (number): very small value used as probability of non-feasible values in prior
 
     :returns ## TODO
 
@@ -205,17 +201,16 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
 
 def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_obs: int, MH_samples: int, eps, where=False, progress=False):
     """ Initialisation method for Metropolis Hastings
-    Args
-    -----------------
-    space:(Refined space)
-    observations: (list of numbers) either experiment or data(experiment result frequency)
-    functions: (list of strings)
-    N:(number) total data amount
-    N_obs: (number) number of samples
-    MH_samples: (number) number of iterations
-    eps: (number) very small value used as probability of non-feasible values in prior
-    where: (Tuple/List) : output matplotlib sources to output created figure
-    progress: (Tkinter element) progress bar
+    Args:
+        space (RefinedSpace):
+        observations (list of numbers): either experiment or data(experiment result frequency)
+        functions (list of strings):
+        N (number): total data amount
+        N_obs (number): number of samples
+        MH_samples (number): number of iterations
+        eps (number): very small value used as probability of non-feasible values in prior
+        where (tuple/list): output matplotlib sources to output created figure
+        progress (Tkinter element): progress bar
 
     @author: tpetrov
     @edit: xhajnal

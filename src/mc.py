@@ -60,13 +60,11 @@ os.chdir(cwd)
 def set_javaheap_win(size):
     """  Changing the java heap size for the PRISM on Windows
 
-    Args
-    ----------
-    size: (str) sets maximum memory, see https://www.prismmodelchecker.org/manual/ConfiguringPRISM/OtherOptions
+    Args:
+        size (string): sets maximum memory, see https://www.prismmodelchecker.org/manual/ConfiguringPRISM/OtherOptions
 
-    Returns
-    ----------
-    previous value of memory
+    Returns:
+        previous value of memory
     """
     previous_size = -5
     output = ""
@@ -102,16 +100,15 @@ def call_prism(args, seq=False, silent: bool = False, model_path=model_path, pro
                prism_output_path=prism_results, std_output_path=prism_results, std_output_file=False):
     """  Solves problem of calling prism from another directory.
 
-    Args
-    ----------
-    args: (string) args for executing prism
-    seq: (Bool) if true it will take properties one by one and append the results (helps to deal with memory)
-    silent: (Bool) if silent command line output is set to minimum
-    model_path: (string) path to load  models from
-    properties_path: (string) path to load properties from
-    prism_output_path: (string) path to save the files inside the command
-    std_output_path: (string) path to save the results of the command
-    std_output_file: (string) file name to save the output
+    Args:
+        args (string): args for executing prism
+        seq (bool): if true it will take properties one by one and append the results (helps to deal with memory)
+        silent (bool): if silent command line output is set to minimum
+        model_path (string): path to load  models from
+        properties_path (string): path to load properties from
+        prism_output_path (string): path to save the files inside the command
+        std_output_path (string): path to save the results of the command
+        std_output_file (string): file name to save the output
     """
     # print("prism_results", prism_results)
     # print("std_output_path", std_output_path)
@@ -273,22 +270,20 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
                      model_path=model_path, properties_path=properties_path, property_file=False, output_path=prism_results, gui=False, silent=False):
     """  Calls prism for each file matching the prefix
 
-    Args
-    ----------
-    model_prefix: (string) file prefix to be matched
-    agents_quantities: (int) pop_sizes to be used
-    param_intervals (list of pairs): list of intervals to be used for respective parameter (default all intervals are from 0 to 1)
-    seq: (Bool) if true it will take properties one by one and append the results (helps to deal with memory)
-    noprobchecks: (Bool) True if no noprobchecks option is to be used for prism
-    model_path: (string) path to load  models from
-    properties_path: (string) path to load properties from
-    param_intervals: (list of pairs) parameter intervals
-    property_file: (string) file name of single property files to be used for all models
-    output_path: (string) path for the output
-    memory: (int) sets maximum memory in GB, see https://www.prismmodelchecker.org/manual/ConfiguringPRISM/OtherOptions
-    gui: (Bool) callback function to be used
-    silent: (Bool) if True the output is put to minimum
-
+    Args:
+        model_prefix (string): file prefix to be matched
+        agents_quantities (int): pop_sizes to be used
+        param_intervals (list of pairs): list of intervals to be used for respective parameter (default all intervals are from 0 to 1)
+        seq (bool): if true it will take properties one by one and append the results (helps to deal with memory)
+        noprobchecks (bool): True if no noprobchecks option is to be used for prism
+        model_path (string): path to load  models from
+        properties_path (string): path to load properties from
+        param_intervals (list of pairs): parameter intervals
+        property_file (string): file name of single property files to be used for all models
+        output_path (string): path for the output
+        memory (int): sets maximum memory in GB, see https://www.prismmodelchecker.org/manual/ConfiguringPRISM/OtherOptions
+        gui (bool): callback function to be used
+        silent (bool): if True the output is put to minimum
     """
     # print("model_path ", model_path)
     # print("model_prefix ", model_prefix)
@@ -480,16 +475,15 @@ def call_storm(args, silent: bool = False, model_path=model_path, properties_pat
                storm_output_path=storm_results, std_output_path=storm_results, std_output_file=False, time=False):
     """  Prints calls for storm model checking.
 
-    Args
-    ----------
-    args: (string) args for executing storm
-    silent: (Bool) if silent command line output is set to minimum
-    model_path: (string) path to load  models from
-    properties_path: (string) path to load properties from
-    storm_output_path: (string) path to save the files inside the command
-    std_output_path: (string) path to save the results of the command
-    std_output_file: (string) file name to save the output
-    time: (Bool) if True time measurement is added
+    Args:
+        args (string): args for executing storm
+        silent (bool): if silent command line output is set to minimum
+        model_path (string): path to load  models from
+        properties_path (string): path to load properties from
+        storm_output_path (string): path to save the files inside the command
+        std_output_path (string): path to save the results of the command
+        std_output_file (string): file name to save the output
+        time (bool): if True time measurement is added
     """
     # print("std_output_path", std_output_path)
     # print("storm_results", storm_results)
@@ -589,20 +583,18 @@ def call_storm(args, silent: bool = False, model_path=model_path, properties_pat
 
 
 ## TODO rewrite this without the paths, just files
-def call_storm_files(model_prefix, agents_quantities, model_path=model_path, properties_path=properties_path, property_file=False, output_path=storm_results, time=False):
+def call_storm_files(model_prefix, agents_quantities, param_intervals=False, model_path=model_path, properties_path=properties_path, property_file=False, output_path=storm_results, time=False):
     """  Calls storm for each file matching the prefix
 
-    Args
-    ----------
-    model_prefix: file prefix to be matched
-    agents_quantities: (int) pop_sizes to be used
-    model_path: (string) path to load  models from
-    param_intervals (list of pairs): list of intervals to be used for respective parameter (default all intervals are from 0 to 1)
-    properties_path: (string) path to load properties from
-    property_file: (string) file name of single property files to be used for all models
-    output_path: (string) path for the output
-    time: (Bool) if True time measurement is added
-
+    Args:
+        model_prefix: file prefix to be matched
+        agents_quantities (int): pop_sizes to be used
+        model_path (string): path to load  models from
+        param_intervals (list of pairs): list of intervals to be used for respective parameter (default all intervals are from 0 to 1)
+        properties_path (string): path to load properties from
+        property_file (string): file name of single property files to be used for all models
+        output_path (string): path for the output
+        time (bool): if True time measurement is added
     """
     root = output_path
 

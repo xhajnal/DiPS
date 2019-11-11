@@ -24,12 +24,11 @@ wraper = DocumentWrapper(width=60)
 def get_param_values(parameters, size_q, intervals=False, debug: bool = False):
     """ Creates linearly sampled parameter space from the given parameter intervals and number of samples
 
-    Args
-    ----------
-    parameters: (list) of parameters to sample
-    size_q: (int) sample size in each parameter
-    intervals: (Bool) if False (0,1) interval is used
-    debug: (Bool) if debug extensive output is provided
+    Args:
+        parameters (list): of parameters to sample
+        size_q (int): sample size in each parameter
+        intervals (bool): if False (0,1) interval is used
+        debug (bool): if debug extensive output is provided
     """
     parameter_values = []
     for param in range(len(parameters)):
@@ -50,16 +49,15 @@ def get_param_values(parameters, size_q, intervals=False, debug: bool = False):
 def eval_and_show(functions, parameter_value, parameters=False, data=False, data_intervals=False, cumulative=False, debug: bool = False, where=False):
     """ Creates bar plot of evaluation of given functions for given point in parameter space
 
-    Args
-    ----------
-    functions: (list of strings) list of rational functions
-    parameter_value: (list of floats) array of param values
-    parameters: (list of strings) parameter names (used for faster eval)
-    data: (list) Data comparison next to respective function
-    data_intervals: (list) intervals obtained from the data to check if the function are within the intervals
-    cumulative: (Bool) if True cdf instead of pdf is visualised
-    debug: (Bool) if debug extensive output is provided
-    where: (Tuple/List) : output matplotlib sources to output created figure
+    Args:
+        functions (list of strings): list of rational functions
+        parameter_value: (list of floats) array of param values
+        parameters (list of strings): parameter names (used for faster eval)
+        data (list): Data comparison next to respective function
+        data_intervals (list): intervals obtained from the data to check if the function are within the intervals
+        cumulative (bool): if True cdf instead of pdf is visualised
+        debug (bool): if debug extensive output is provided
+        where (tuple/list): output matplotlib sources to output created figure
     """
 
     ## Convert z3 functions
@@ -152,16 +150,14 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
 def sample_dictionary_funs(dictionary, size_q, keys=None, debug: bool = False):
     """ Returns a dictionary of function values for sampled parametrisations
 
-    Args
-    ----------
-    dictionary: dictionary of list of functions
-    size_q: (int) sample size in each parameter
-    keys: (list) dictionary keys to be used
-    debug: (Bool) if debug extensive output is provided
+    Args:
+        dictionary: dictionary of list of functions
+        size_q (int): sample size in each parameter
+        keys (list): dictionary keys to be used
+        debug (bool): if debug extensive output is provided
 
-    Returns
-    ----------
-    Array of [agents_quantity, function index, [parameter values], function value]
+    Returns:
+        (array): [agents_quantity, function index, [parameter values], function value]
 
     """
     arr = []
@@ -184,18 +180,16 @@ def sample_dictionary_funs(dictionary, size_q, keys=None, debug: bool = False):
 def sample_list_funs(functions, size_q, parameters=False, intervals=False, silent: bool = False, debug: bool = False):
     """ Returns a list of function values for sampled parametrisations
 
-    Args
-    ----------
-    functions: (list of functions) to be sampled
-    size_q: (int) sample size in each parameter
-    parameters: (list of strings) parameter names (used for faster eval)
-    intervals: (list of pairs of numbers) intervals of parameters
-    silent: (Bool) if silent command line output is set to minimum
-    debug: (Bool) if debug extensive output is provided
+    Args:
+        functions: (list of functions) to be sampled
+        size_q (int): sample size in each parameter
+        parameters (list of strings): parameter names (used for faster eval)
+        intervals (list of pairs of numbers): intervals of parameters
+        silent (bool): if silent command line output is set to minimum
+        debug (bool): if debug extensive output is provided
 
-    Returns
-    ----------
-    Array of [function index, [parameter values], function value]
+    Returns:
+        (array): [function index, [parameter values], function value]
 
     """
     arr = []
@@ -252,15 +246,14 @@ def sample_list_funs(functions, size_q, parameters=False, intervals=False, silen
 def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug: bool = False, show_all_in_one=False, where=False):
     """ Creates bar plot of probabilities of i successes for sampled parametrisation
 
-    Args
-    ----------
-    dic_fun: (dictionary N -> list of rational functions)
-    size_q: (int) sample size in each parameter
-    agents_quantities: (int) pop sizes to be used
-    cumulative: (Bool) if True cdf instead of pdf is visualised
-    debug: (Bool) if debug extensive output is provided
-    show_all_in_one: (Bool) if True all plots are put into one window
-    where: (Tuple/List) : output matplotlib sources to output created figure
+    Args:
+        dic_fun (dictionary N -> list of rational functions)
+        size_q (int): sample size in each parameter
+        agents_quantities (int): pop sizes to be used
+        cumulative (bool): if True cdf instead of pdf is visualised
+        debug (bool): if debug extensive output is provided
+        show_all_in_one (bool): if True all plots are put into one window
+        where (tuple/list): output matplotlib sources to output created figure
     """
 
     for N in agents_quantities:
@@ -329,11 +322,10 @@ def visualise_by_param(hyper_rectangles, title="", where=False):
     """
     Visualises domain intervals of each dimension in a plot.
 
-    Args
-    ----------
-    hyper_rectangles: list of (hyper)rectangles
-    title: (String) title used for the Figure
-    where: (Tuple/List) : output matplotlib sources to output created figure
+    Args:
+        hyper_rectangles (list of (hyper)rectangles)
+        title (string):  title used for the Figure
+        where (tuple/list): output matplotlib sources to output created figure
     """
     from sympy import Interval
 
@@ -383,18 +375,16 @@ def visualise_by_param(hyper_rectangles, title="", where=False):
 def heatmap(function, region, sampling_sizes, posttitle="", where=False, parameters=False):
     """ Creates 2D heatmap plot of sampled points of given function
 
-    Args
-    ----------
-    function: (string) function to be analysed
-    region: (list of intervals) boundaries of parameter space to be sampled
-    sampling_sizes: (int) tuple of sample size of respective parameter
-    posttitle: (string) A string to be put after the title
-    where: (Tuple/List) : output matplotlib sources to output created figure
-    parameters: (list): list of parameters
+    Args:
+        function (string): function to be analysed
+        region (list of intervals): boundaries of parameter space to be sampled
+        sampling_sizes (int): tuple of sample size of respective parameter
+        posttitle (string): A string to be put after the title
+        where (tuple/list): output matplotlib sources to output created figure
+        parameters (list):: list of parameters
 
-    Example
-    ----------
-    heatmap("p+q",[[0,1],[3,4]],[5,5])
+    Example:
+        heatmap("p+q",[[0,1],[3,4]],[5,5])
     """
 
     ## Convert z3 function
@@ -449,10 +439,9 @@ def visualise_sampled_by_param(hyper_rectangles, sample_size):
     """
     Visualises sampled hyperspace by connecting the values in each dimension.
 
-    Args
-    ----------
-    hyper_rectangles: (list of hyperrectangles)
-    sample_size: (int): number of points to be sampled
+    Args:
+        hyper_rectangles (list of hyperrectangles):
+        sample_size (int): number of points to be sampled
     """
     if hyper_rectangles:
         fig, ax = plt.subplots()

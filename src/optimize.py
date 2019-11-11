@@ -8,8 +8,11 @@ from common.z3 import is_this_z3_function, translate_z3_function
 def dist(x):
     """ Computes the distance between functions and data point.
 
-    :param x: (list) point in parameter space
-    :return: (list) of distances of the function from the data point
+    Args:
+        x (list): point in parameter space
+
+    Returns:
+        (list): of distances of the function from the data point
     """
     # global functions
     # global data_point
@@ -26,11 +29,14 @@ def dist(x):
 def optimize(functions: [list], params: [list], param_intervals: [list], data_point: [list]):
     """ Search for parameter values minimizing the distance of function to data.
 
-    :param functions: (list) of functions to be optimized
-    :param params: (list) of functions parameters
-    :param param_intervals: (list) of intervals of functions parameters
-    :param data_point: (list) of values of functions to be optimized
-    :return: (list) [point of parameter space with the least distance, values of functions in the point, the distance between the data and functions values]
+    Args:
+        functions (list): of functions to be optimized
+        params (list): of functions parameters
+        param_intervals (list): of intervals of functions parameters
+        data_point (list): of values of functions to be optimized
+
+    Returns:
+        (list): [point of parameter space with the least distance, values of functions in the point, the distance between the data and functions values]
     """
 
     ## Convert z3 functions

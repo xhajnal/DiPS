@@ -5,15 +5,17 @@ from sympy import Interval
 def ineq_to_constraints(functions: list, intervals: list, silent: bool = True):
     """ Converts inequalities of the function given by the interval to properties
 
-    Example: ["x+3"],[[0,1]] ->  ["x+3>=0","x+3<=1"]
 
-    Args
-    ----------
-    functions:  (list of strings) array of functions
-    intervals: (list of intervals) array of pairs, low and high bound
-    silent: (Bool): if silent printed output is set to minimum
+    Args:
+        functions:  (list of strings) array of functions
+        intervals (list of intervals): array of pairs, low and high bound
+        silent (bool): if silent printed output is set to minimum
 
-    :returns list of constraints
+    Example:
+        ["x+3"],[[0,1]] ->  ["x+3>=0","x+3<=1"]
+
+    Returns:
+        (list) of constraints
     """
 
     if len(functions) is not len(intervals):
@@ -44,13 +46,13 @@ def ineq_to_constraints(functions: list, intervals: list, silent: bool = True):
 def constraints_to_ineq(constraints: list, silent: bool = True, debug: bool = False):
     """ Converts properties to functions and inequalities if possible
 
-    Example: ["x+3>=0","x+3<=1"] -> ["x+3"],[[0,1]]
+    Args:
+        constraints  (list of strings): properties to be converted
+        silent (bool): if silent printed output is set to minimum
+        debug (bool): if True extensive print will be used
 
-    Args
-    ----------
-    constraints:  (list of strings) properties to be converted
-    silent: (Bool): if silent printed output is set to minimum
-    debug: (Bool) if True extensive print will be used
+    Example:
+        ["x+3>=0","x+3<=1"] -> ["x+3"],[[0,1]]
     """
     if debug:
         silent = False
@@ -136,9 +138,8 @@ def constraints_to_ineq(constraints: list, silent: bool = True, debug: bool = Fa
 def to_interval(points: list):
     """ Transforms the set of points into set of intervals
 
-    Args
-    ----------
-    points: (list of pairs) which are the points
+    Args:
+        points (list of pairs): which are the points
     """
     intervals = []
     for dimension in range(len(points[0])):
