@@ -2214,10 +2214,10 @@ class Gui(Tk):
         ## Check functions / Get function parameters
         self.validate_parameters(where=self.functions)
 
-        if len(self.parameters) > 2:
-            # TODO multi dim MH
-            messagebox.showwarning("Space Metropolis-Hastings", "Multidimensional MH not implemented yet")
-            return
+        # if len(self.parameters) > 2:
+        #     # TODO multi dim MH
+        #     messagebox.showwarning("Space Metropolis-Hastings", "Multidimensional MH not implemented yet")
+        #     return
 
         self.status_set("Space sampling using Metropolis Hastings is running ...")
         if not self.silent.get():
