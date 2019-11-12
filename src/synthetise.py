@@ -127,11 +127,10 @@ except NameError:
 def refine_by(region1, region2, debug: bool = False):
     """ Returns the first (hyper)space refined/spliced by the second (hyperspace) into orthogonal subspaces
 
-    Args
-    ----------
-    region1: (list of pairs) (hyper)space defined by the regions
-    region2: (list of pairs) (hyper)space defined by the regions
-    debug: (Bool): if True extensive print will be used
+    Args:
+        region1 (list of pairs): (hyper)space defined by the regions
+        region2 (list of pairs): (hyper)space defined by the regions
+        debug (bool): if True extensive print will be used
     """
 
     if not is_in(region2, region1):
@@ -174,15 +173,14 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
     It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given
     **interval** (called a model in SMT), otherwise it is unsafe.
 
-    Args
-    ----------
-    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
-    constraints:  (list of strings): array of functions (rational functions in the case of Markov Chains)
-    silent: (Bool): if silent printed output is set to minimum
-    called: (Bool): if called updates the global variables (use when calling it directly)
-    solver: (string): specified solver, allowed: z3, dreal
-    delta: (number): used for delta solving using dreal
-    debug: (Bool): if True extensive print will be used
+    Args:
+        region (list of pairs of numbers): list of intervals, low and high bound, defining the parameter space to be refined
+        constraints  (list of strings): array of functions (rational functions in the case of Markov Chains)
+        silent (bool): if silent printed output is set to minimum
+        called (bool): if called updates the global variables (use when calling it directly)
+        solver (string):: specified solver, allowed: z3, dreal
+        delta (number):: used for delta solving using dreal
+        debug (bool): if True extensive print will be used
     """
     ## Initialisation
     if debug:
@@ -290,15 +288,14 @@ def check_safe(region, constraints, silent: bool = False, called=False, solver="
     It means whether for all parametrisations in **region** every property(prop) is evaluated within the given
     **interval**, otherwise it is not safe and counterexample is returned.
 
-    Args
-    ----------
-    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
-    constraints:  (list of strings): array of properties
-    silent: (Bool): if silent printed output is set to minimum
-    called: (Bool): if called updates the global variables (use when calling it directly)
-    solver: (string): specified solver, allowed: z3, dreal
-    delta: (number): used for delta solving using dreal
-    debug: (Bool): if True extensive print will be used
+    Args:
+        region (list of pairs of numbers): list of intervals, low and high bound, defining the parameter space to be refined
+        constraints  (list of strings): array of properties
+        silent (bool): if silent printed output is set to minimum
+        called (bool): if called updates the global variables (use when calling it directly)
+        solver (string):: specified solver, allowed: z3, dreal
+        delta (number):: used for delta solving using dreal
+        debug (bool): if True extensive print will be used
     """
     ## Initialisation
     if debug:
@@ -411,24 +408,23 @@ def check_safe(region, constraints, silent: bool = False, called=False, solver="
 def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent, version, size_q=False, debug=False, save=False, title="", where=False, show_space=True, solver="z3", delta=0.001, gui=False):
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
 
-    Args
-    ----------
-    region: (list of intervals/space) array of pairs, low and high bound, defining the parameter space to be refined
-    constraints:  (list of strings): array of properties
-    recursion_depth: (Int): max number of recursions to do
-    epsilon: (Float): minimal size of rectangle to be checked
-    coverage: (Float): coverage threshold to stop computation
-    silent: (Bool): if silent printed output is set to minimum
-    version: (Int): version of the algorithm to be used
-    size_q: (Int): number of samples in dimension used for presampling
-    debug: (Bool): if True extensive print will be used
-    save: (Bool): if True output is stored
-    title: (string): text to be added in Figure titles
-    where: (Tuple/List) : output matplotlib sources to output created figure
-    show_space: (Bool): if show_space the refined space will be visualised
-    solver: (string): specified solver, allowed: z3, dreal
-    delta: (number): used for delta solving using dreal
-    gui: (Bool) called from the graphical user interface
+    Args:
+        region: (list of intervals/space) array of pairs, low and high bound, defining the parameter space to be refined
+        constraints  (list of strings): array of properties
+        recursion_depth (Int): max number of recursions to do
+        epsilon (float): minimal size of rectangle to be checked
+        coverage (float): coverage threshold to stop computation
+        silent (bool): if silent printed output is set to minimum
+        version (Int): version of the algorithm to be used
+        size_q (Int): number of samples in dimension used for presampling
+        debug (bool): if True extensive print will be used
+        save (bool): if True output is stored
+        title (string):: text to be added in Figure titles
+        where (tuple/list): output matplotlib sources to output created figure
+        show_space (bool): if show_space the refined space will be visualised
+        solver (string):: specified solver, allowed: z3, dreal
+        delta (number):: used for delta solving using dreal
+        gui (bool): called from the graphical user interface
     """
 
     ## INITIALISATION
@@ -799,7 +795,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         ## If the visualisation of the space did not succeed space_shown = (None, error message)
         if show_space:
             space.refinement_took(time() - start_time)
-            space_shown = space.show(f"max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n Last refinement took {socket.gethostname()} {round(time() - start_time, 2)} of {round(space.time_refinement, 2)} second(s)", sat_samples=gui, unsat_samples=gui, save=save, where=where, show_all=not gui)
+            space_shown = space.show(f"max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n Last refinement took {socket.gethostname()} {round(time() - start_time, 2)} of {round(space.time_refinement, 2)} second(s)", sat_samples=gui and len(space.params) <= 2, unsat_samples=gui and len(space.params) <= 2, save=save, where=where, show_all=not gui)
     print("result coverage is: ", space.get_coverage())
     if where:
         if space_shown[0] is None:
@@ -813,17 +809,16 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
 def private_check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent, solver="z3", delta=0.01, debug: bool = False):
     """ Refining the parameter space into safe and unsafe regions
 
-    Args
-    ----------
-    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
-    constraints:  (list of strings): array of properties
-    recursion_depth: (Int): max number of recursions to do
-    epsilon: (Float): minimal size of rectangle to be checked
-    coverage: (Float): coverage threshold to stop computation
-    silent: (Bool): if silent printed output is set to minimum
-    solver: (string): specified solver, allowed: z3, dreal
-    delta: (number): used for delta solving using dreal
-    debug: (Bool): if True extensive print will be used
+    Args:
+        region (list of pairs of numbers): list of intervals, low and high bound, defining the parameter space to be refined
+        constraints  (list of strings): array of properties
+        n (Int): max number of recursions to do
+        epsilon (float): minimal size of rectangle to be checked
+        coverage (float): coverage threshold to stop computation
+        silent (bool): if silent printed output is set to minimum
+        solver (string):: specified solver, allowed: z3, dreal
+        delta (number):: used for delta solving using dreal
+        debug (bool): if True extensive print will be used
     """
     if debug:
         silent = False
@@ -919,17 +914,16 @@ def private_check_deeper(region, constraints, recursion_depth, epsilon, coverage
 def private_check_deeper_queue(region, constraints, recursion_depth, epsilon, coverage, silent, solver="z3", delta=0.01, debug: bool = False):
     """ Refining the parameter space into safe and unsafe regions
 
-    Args
-    ----------
-    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
-    constraints:  (list of strings): array of properties
-    recursion_depth: (Int): max number of recursions to do
-    epsilon: (Float): minimal size of rectangle to be checked
-    coverage: (Float): coverage threshold to stop computation
-    silent: (Bool): if silent printed output is set to minimum
-    solver: (string): specified solver, allowed: z3, dreal
-    delta: (number): used for delta solving using dreal
-    debug: (Bool): if True extensive print will be used
+    Args:
+        region (list of pairs of numbers): list of intervals, low and high bound, defining the parameter space to be refined
+        constraints  (list of strings): array of properties
+        n (Int): max number of recursions to do
+        epsilon (float): minimal size of rectangle to be checked
+        coverage (float): coverage threshold to stop computation
+        silent (bool): if silent printed output is set to minimum
+        solver (string):: specified solver, allowed: z3, dreal
+        delta (number):: used for delta solving using dreal
+        debug (bool): if True extensive print will be used
     """
     if debug:
         silent = False
@@ -1026,18 +1020,17 @@ def private_check_deeper_queue_checking(region, constraints, recursion_depth, ep
 
     Refining the parameter space into safe and unsafe regions
 
-    Args
-    ----------
-    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
-    constraints:  (list of strings): array of properties
-    recursion_depth: (Int): max number of recursions to do
-    epsilon: (Float): minimal size of rectangle to be checked
-    coverage: (Float): coverage threshold to stop computation
-    silent: (Bool): if silent printed output is set to minimum
-    model: (example,counterexample) of the satisfaction in the given region
-    solver: (string): specified solver, allowed: z3, dreal
-    delta: (number): used for delta solving using dreal
-    debug: (Bool): if True extensive print will be used
+    Args:
+        region (list of pairs of numbers): list of intervals, low and high bound, defining the parameter space to be refined
+        constraints  (list of strings): array of properties
+        n (Int): max number of recursions to do
+        epsilon (float): minimal size of rectangle to be checked
+        coverage (float): coverage threshold to stop computation
+        silent (bool): if silent printed output is set to minimum
+        model (pair of example, counterexample): of the satisfaction in the given region
+        solver (string):: specified solver, allowed: z3, dreal
+        delta (number):: used for delta solving using dreal
+        debug (bool): if True extensive print will be used
     """
     if debug:
         silent = False
@@ -1154,18 +1147,17 @@ def private_check_deeper_queue_checking(region, constraints, recursion_depth, ep
 def private_check_deeper_queue_checking_both(region, constraints, recursion_depth, epsilon, coverage, silent, model=None, solver="z3", delta=0.01, debug: bool = False):
     """ Refining the parameter space into safe and unsafe regions
 
-    Args
-    ----------
-    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
-    constraints:  (list of strings): array of properties
-    recursion_depth: (Int): max number of recursions to do
-    epsilon: (Float): minimal size of rectangle to be checked
-    coverage: (Float): coverage threshold to stop computation
-    silent: (Bool): if silent printed output is set to minimum
-    model: (example, counterexample) of the satisfaction in the given region
-    solver: (string): specified solver, allowed: z3, dreal
-    delta: (number): used for delta solving using dreal
-    debug: (Bool): if True extensive print will be used
+    Args:
+        region (list of pairs of numbers): list of intervals, low and high bound, defining the parameter space to be refined
+        constraints (list of strings): array of properties
+        n (Int): max number of recursions to do
+        epsilon (float): minimal size of rectangle to be checked
+        coverage (float): coverage threshold to stop computation
+        silent (bool): if silent printed output is set to minimum
+        model (pair of example, counterexample): of the satisfaction in the given region
+        solver (string):: specified solver, allowed: z3, dreal
+        delta (number):: used for delta solving using dreal
+        debug (bool): if True extensive print will be used
     """
 
     ## TODO check consistency
@@ -1316,10 +1308,9 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
 def color_margins(greater, smaller):
     """ Colors outside of the smaller region in the greater region as previously unsat
 
-    Args
-    ----------
-    greater: (list of intervals) region in which the smaller region is located
-    smaller: (list of intervals) smaller region which is not to be colored
+    Args:
+        greater (list of intervals): region in which the smaller region is located
+        smaller (list of intervals): smaller region which is not to be colored
     """
     # rectangles_sat.append(Rectangle((low_x,low_y), width, height, fc='g'))
     # print("greater ",greater)
@@ -1373,17 +1364,16 @@ def color_margins(greater, smaller):
 def check_deeper_iter(region, constraints, recursion_depth, epsilon, coverage, silent, solver="z3", delta=0.01, debug: bool = False):
     """ New Refining the parameter space into safe and unsafe regions with iterative method using alg1
 
-    Args
-    ----------
-    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
-    constraints:  (list of strings): array of properties
-    recursion_depth: (Int): max number of recursions to do
-    epsilon: (Float): minimal size of rectangle to be checked
-    coverage: (Float): coverage threshold to stop computation
-    silent: (Bool): if silent printed output is set to minimum
-    solver: (string): specified solver, allowed: z3, dreal
-    delta: (number): used for delta solving using dreal
-    debug: (Bool): if True extensive print will be used
+    Args:
+        region (list of pairs of numbers): list of intervals, low and high bound, defining the parameter space to be refined
+        constraints  (list of strings): array of properties
+        n (Int): max number of recursions to do
+        epsilon (float): minimal size of rectangle to be checked
+        coverage (float): coverage threshold to stop computation
+        silent (bool): if silent printed output is set to minimum
+        solver (string):: specified solver, allowed: z3, dreal
+        delta (number):: used for delta solving using dreal
+        debug (bool): if True extensive print will be used
     """
     new_tresh = copy.deepcopy(region)
 
@@ -1425,14 +1415,13 @@ def check_interval_in(region, constraints, intervals, silent: bool = False, call
     It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given
     **interval** (called a model in SMT), otherwise it is unsafe.
 
-    Args
-    ----------
-    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
-    constraints:  (list of strings): array of properties
-    intervals: (list of pairs/ sympy.Intervals): array of interval to constrain constraints
-    silent: (Bool): if silent printed output is set to minimum
-    called: (Bool): if called updates the global variables (use when calling it directly)
-    debug: (Bool): if True extensive print will be used
+    Args:
+        region (list of pairs of numbers): list of intervals, low and high bound, defining the parameter space to be refined
+        constraints  (list of strings): array of properties
+        intervals (list of pairs/ sympy.Intervals): array of interval to constrain constraints
+        silent (bool): if silent printed output is set to minimum
+        called (bool): if called updates the global variables (use when calling it directly)
+        debug (bool): if True extensive print will be used
     """
     if debug:
         silent = False
@@ -1492,14 +1481,13 @@ def check_interval_out(region, constraints, intervals, silent: bool = False, cal
     It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given
     **interval** (called a model in SMT), otherwise it is unsafe.
 
-    Args
-    ----------
-    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
-    constraints:  (list of strings): of functions
-    intervals: (list of pairs/ sympy.Intervals): array of interval to constrain constraints
-    silent: (Bool): if silent printed output is set to minimum
-    called: (Bool): if called updates the global variables (use when calling it directly)
-    debug: (Bool): if True extensive print will be used
+    Args:
+        region (list of pairs of numbers): list of intervals, low and high bound, defining the parameter space to be refined
+        constraints  (list of strings): of functions
+        intervals (list of pairs/ sympy.Intervals): array of interval to constrain constraints
+        silent (bool): if silent printed output is set to minimum
+        called (bool): if called updates the global variables (use when calling it directly)
+        debug (bool): if True extensive print will be used
     """
     if debug:
         silent = False
@@ -1565,16 +1553,15 @@ def check_interval_out(region, constraints, intervals, silent: bool = False, cal
 def private_check_deeper_interval(region, constraints, intervals, recursion_depth, epsilon, coverage, silent, debug: bool = False):
     """ Refining the parameter space into safe and unsafe regions
 
-    Args
-    ----------
-    region: (list of pairs of numbers) list of intervals, low and high bound, defining the parameter space to be refined
-    constraints:  (list of strings): array of properties
-    intervals: (list of pairs/ sympy.Intervals): array of interval to constrain constraints
-    recursion_depth: (Int): max number of recursions to do
-    epsilon: (Float): minimal size of rectangle to be checked
-    coverage: (Float): coverage threshold to stop computation
-    silent: (Bool): if silent printed output is set to minimum
-    debug: (Bool): if True extensive print will be used
+    Args:
+        region (list of pairs of numbers): list of intervals, low and high bound, defining the parameter space to be refined
+        constraints  (list of strings): array of properties
+        intervals (list of pairs/ sympy.Intervals): array of interval to constrain constraints
+        n (Int): max number of recursions to do
+        epsilon (float): minimal size of rectangle to be checked
+        coverage (float): coverage threshold to stop computation
+        silent (bool): if silent printed output is set to minimum
+        debug (bool): if True extensive print will be used
     """
     if debug:
         silent = False
@@ -1679,10 +1666,9 @@ def private_check_deeper_interval(region, constraints, intervals, recursion_dept
 def create_matrix(size_q, dim):
     """ Return **dim** dimensional array of length **size_q** in each dimension
 
-    Args
-    -------
-    size_q: (int): number of samples in dimension
-    dim: (int): number of dimensions
+    Args:
+        size_q (int): number of samples in dimension
+        dim (int): number of dimensions
 
     """
     return np.array(private_create_matrix(size_q, dim, dim))
@@ -1691,11 +1677,10 @@ def create_matrix(size_q, dim):
 def private_create_matrix(size_q, dim, n_param):
     """ Return **dim** dimensional array of length **size_q** in each dimension
 
-    Args
-    -------
-    size_q: (int): number of samples in dimension
-    dim: (int): number of dimensions
-    n_param: (int): dummy parameter
+    Args:
+        size_q (int): number of samples in dimension
+        dim (int): number of dimensions
+        n_param (int): dummy parameter
 
     @author: xtrojak, xhajnal
     """
@@ -1710,22 +1695,19 @@ def private_create_matrix(size_q, dim, n_param):
 def sample(space, constraints, size_q, compress=False, silent=True, save=False, debug: bool = False, progress=False):
     """ Samples the space in **size_q** samples in each dimension and saves if the point is in respective interval
 
-    Args
-    -------
-    space: (space.RefinedSpace): space
-    constraints:  (list of strings): array of properties
-    size_q: (int): number of samples in dimension
-    compress: (Bool): if True, only a conjunction of the values (prop in the interval) is used
-    silent: (Bool): if silent printed output is set to minimum
-    debug: (Bool) if True extensive print will be used
-    save: (Bool): if True output is pickled
-    debug: (Bool): if True extensive print will be used
-    progress: (Tkinter element) progress bar
+    Args:
+        space: (space.RefinedSpace): space
+        constraints  (list of strings): array of properties
+        size_q (int): number of samples in dimension
+        compress (bool): if True, only a conjunction of the values (prop in the interval) is used
+        silent (bool): if silent printed output is set to minimum
+        debug (bool): if True extensive print will be used
+        save (bool): if True output is pickled
+        debug (bool): if True extensive print will be used
+        progress (Tkinter element): progress bar
 
-    Returns
-    --------
-    A map from point to list of Bool whether f(point) in interval[index]
-
+    Returns:
+        (dictionary) of point to list of Bools whether f(point) in interval[index]
     """
     if debug:
         silent = False
@@ -1766,7 +1748,7 @@ def sample(space, constraints, size_q, compress=False, silent=True, save=False, 
     for index, parameter_value in enumerate(parameter_values):
         ## For each parameter set the current sample point value
         if progress:
-            progress['value'] = round(100*index/len(parameter_values))
+            progress(index / len(parameter_values))
         for param in range(len(space.params)):
             locals()[space.params[param]] = float(parameter_value[param])
             if debug:
@@ -1843,14 +1825,12 @@ def sample(space, constraints, size_q, compress=False, silent=True, save=False, 
 def refine_into_rectangles(sampled_space, silent=True):
     """ Refines the sampled space into hyperrectangles such that rectangle is all sat or all unsat
 
-    Args
-    -------
-    sampled_space: (space.RefinedSpace): space
-    silent: (Bool): if silent printed output is set to minimum
+    Args:
+        sampled_space: (space.RefinedSpace): space
+        silent (bool): if silent printed output is set to minimum
 
-    Yields
-    --------
-    Hyperectangles of length at least 2 (in each dimension)
+    Returns:
+        Hyperectangles of length at least 2 (in each dimension)
     """
     size_q = len(sampled_space[0])
     dimensions = len(sampled_space.shape) - 1
@@ -1886,15 +1866,13 @@ def refine_into_rectangles(sampled_space, silent=True):
 def find_max_rectangle(sampled_space, starting_point, silent=True):
     """ Finds the largest hyperrectangles such that rectangle is all sat or all unsat from starting point in positive direction
 
-    Args
-    -------
-    sampled_space: (space.RefinedSpace): space
-    starting_point: (list of floats): a point in the space to start search in
-    silent: (Bool): if silent printed output is set to minimum
+    Args:
+        sampled_space (space.RefinedSpace): space
+        starting_point (list of floats): a point in the space to start search in
+        silent (bool): if silent printed output is set to minimum
 
-    Returns
-    --------
-    triple(starting point, end point, is_sat)
+    Returns:
+        (triple) : (starting point, end point, is_sat)
     """
     size_q = len(sampled_space[0])
     dimensions = len(sampled_space.shape) - 1
