@@ -5,7 +5,6 @@ from tkinter import scrolledtext, messagebox
 import webbrowser
 import pickle
 import os
-from ntpath import basename
 from pathlib import Path
 from tkinter import filedialog, ttk
 from tkinter.messagebox import askyesno
@@ -27,7 +26,7 @@ workspace = os.path.dirname(__file__)
 sys.path.append(workspace)
 
 from mc_informed import general_create_data_informed_properties
-from load import load_all_functions, find_param, load_data
+from load import load_functions, find_param, load_data
 from common.math import create_intervals
 import space
 from synthetise import check_deeper
@@ -833,17 +832,15 @@ class Gui(Tk):
         # print("self.functions_changed", self.functions_changed)
 
         # print("self.factor", self.factor.get())
-        self.functions, rewards = load_all_functions(self.functions_file.get(), tool=self.program.get(),
-                                                     factorize=self.factor.get(), agents_quantities=False,
-                                                     rewards_only=False, f_only=False)
+        self.functions, rewards = load_functions(self.functions_file.get(), tool=self.program.get(),
+                                                 factorize=self.factor.get(), rewards_only=False, f_only=False)
         ## Merge functions and rewards
         # print("self.functions", self.functions)
         # print("rewards", rewards)
-        for key in self.functions.keys():
-            if key in rewards.keys():
-                self.functions[key].extend(rewards[key])
+        for expression in rewards:
+            self.functions.append(expression)
 
-        if self.debug.get():
+        if not self.silent.get():
             print("Unparsed functions: ", self.functions)
 
         self.unfold_functions()
@@ -875,10 +872,15 @@ class Gui(Tk):
         self.parameters = []
         self.parameter_domains = []
 
-        ## Autosave
-        ## TODO
-        # if not file:
-        #   self.save_functions(os.path.join(self.tmp_dir, f"functions_{self.program.get()}"))
+        ## Check whether loaded
+        if not self.functions:
+            messagebox.showwarning("Loading functions", "No functions loaded. Please check input file.")
+        else:
+            pass
+            ## Autosave
+            ## TODO
+            # if not file:
+            #   self.save_functions(os.path.join(self.tmp_dir, f"functions_{self.program.get()}"))
 
     def store_z3_functions(self):
         """ Stores a copy of functions as a self.z3_functions """
@@ -986,7 +988,7 @@ class Gui(Tk):
             self.status_set("No file selected.")
             return
         else:
-            self.functions = True
+            self.functions = False
             self.functions_changed = True
             self.functions_file.set(spam)
             self.z3_functions = ""
@@ -995,6 +997,11 @@ class Gui(Tk):
                 self.functions = pickle.load(open(self.functions_file.get(), "rb"))
 
             print("loaded functions", self.functions)
+            if not self.functions:
+                messagebox.showwarning("Loading functions", "No functions loaded. Please check input file.")
+                self.status_set("No rational functions loaded.")
+                return
+
             for function in self.functions:
                 if is_this_z3_function(function):
                     self.store_z3_functions()
@@ -1047,6 +1054,7 @@ class Gui(Tk):
             self.status_set("No file selected.")
             return
         else:
+            self.data = False
             self.data_changed = True
             self.data_file.set(spam)
 
@@ -1068,7 +1076,7 @@ class Gui(Tk):
                 self.save_data(os.path.join(self.tmp_dir, "data"))
 
             self.status_set("Data loaded.")
-        # self.parse_data_from_window()
+            # self.parse_data_from_window()
 
     def unfold_data(self):
         """" Unfolds the data dictionary into a single list """
@@ -1197,8 +1205,11 @@ class Gui(Tk):
                 spam = pickle.load(open(self.constraints_file.get(), "rb"))
                 self.constraints.extend(spam)
             else:
-                self.constraints = pickle.load(open(self.constraints_file.get(), "rb"))
-
+                try:
+                    self.constraints = pickle.load(open(self.constraints_file.get(), "rb"))
+                except pickle.UnpicklingError:
+                    messagebox.showerror("Loading constraints", "Error, no constraints loaded")
+                    return
                 # self.constraints = []
                 #
                 # with open(self.constraints_file.get(), 'r') as file:
@@ -1230,10 +1241,14 @@ class Gui(Tk):
             self.parameters = []
             self.parameter_domains = []
 
-            ## Autosave
-            if not file:
-                self.save_constraints(os.path.join(self.tmp_dir, "constraints"))
-            self.status_set("Constraints loaded.")
+            if not self.constraints:
+                messagebox.showwarning("Loading constraints", "No constraints loaded. Please check input file.")
+                self.status_set("No constraints loaded.")
+            else:
+                ## Autosave
+                if not file:
+                    self.save_constraints(os.path.join(self.tmp_dir, "constraints"))
+                self.status_set("Constraints loaded.")
 
     def append_constraints(self):
         """ Appends loaded constraints from a pickled file to previously obtained constraints. """
@@ -1286,10 +1301,14 @@ class Gui(Tk):
 
             self.space_changed = True
 
-            ## Autosave
-            if not file:
-                self.save_space(os.path.join(self.tmp_dir, "space"))
-            self.status_set("Space loaded.")
+            if not self.space:
+                messagebox.showwarning("Loading space", "No space loaded. Please check input file.")
+                self.status_set("No space loaded.")
+            else:
+                ## Autosave
+                if not file:
+                    self.save_space(os.path.join(self.tmp_dir, "space"))
+                self.status_set("Space loaded.")
 
     def print_space(self, clear=False):
         """ Print the niceprint of the space into space text window.
@@ -2260,7 +2279,6 @@ class Gui(Tk):
             self.new_window.destroy()
             del self.new_window
             self.cursor_toggle_busy(False)
-
 
         # try:
         #     self.cursor_toggle_busy(True)

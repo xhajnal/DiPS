@@ -25,10 +25,10 @@ class MyTestCase(unittest.TestCase):
         print(colored('Parse functions from a given file', 'blue'))
         ## THIS WILL PASS ONLY AFTER CREATING THE STORM RESULTS
         agents_quantities = [2]
-        f_storm = get_f("./asyn*[0-9]_moments.txt", "storm", True, agents_quantities)
+        f_storm = get_all_f("./asyn*[0-9]_moments.txt", "storm", True, agents_quantities)
         # print(f_storm)
         self.assertFalse(f_storm[2])
-        rewards_storm = get_rewards("./asyn*[0-9]_moments.txt", "storm", True, agents_quantities)
+        rewards_storm = get_all_rewards("./asyn*[0-9]_moments.txt", "storm", True, agents_quantities)
         # print(rewards_storm)
         self.assertTrue(rewards_storm[2])
 

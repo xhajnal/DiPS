@@ -38,6 +38,129 @@ os.chdir(cwd)
 ###############################
 
 
+def load_functions(file_path, tool="unknown", factorize=True, rewards_only=False, f_only=False):
+    """ Loads all results of parameter synthesis from *path* folder into two maps - f list of rational functions for each property, and rewards list of rational functions for each reward
+
+    Args:
+        file_path (string): file name
+        factorize (bool): if true it will factorise polynomial results
+        rewards_only (bool): if true it compute only rewards
+        f_only (bool): if true it will compute only standard properties
+        tool (string): a tool of which is the output from (PRISM/STORM)
+
+    Returns:
+        (f,reward), where
+        f (list of strings): rational functions for each property
+        rewards (list of strings): rational functions for each reward
+    """
+
+    ## Setting the current directory
+    if not Path(file_path).is_absolute():
+        if tool.lower().startswith("p"):
+            file_path = os.path.join(prism_results, file_path)
+        elif tool.lower().startswith("s"):
+            file_path = os.path.join(storm_results, file_path)
+        else:
+            print("Selected tool unsupported.")
+            return False, False
+    f = []
+    rewards = []
+
+    with open(file_path, "r") as file:
+        i = -1
+        here = ""
+        ## PARSING PRISM/STORM OUTPUT
+        ## Getting the tool
+        for line in file:
+            if tool is "unknown":
+                # print(line)
+                if line.lower().startswith("prism"):
+                    tool = "prism"
+                elif line.lower().startswith("storm"):
+                    tool = "storm"
+            else:
+                break
+        if tool is "unknown":
+            print("Tool not recognised")
+            return False, False
+
+        ## Parsing Rational functions
+        line_index = 0
+        for line in file:
+            if line.startswith('Parametric model checking:') or line.startswith('Model checking property'):
+                i = i + 1
+                here = ""
+                ## STORM check if rewards
+                if "R[exp]" in line:
+                    here = "r"
+            ## PRISM check if rewards
+            if line.startswith('Parametric model checking: R'):
+                here = "r"
+            if i >= 0 and line.startswith('Result'):
+                ## PARSE THE EXPRESSION
+                # print("line:", line)
+                if tool.lower().startswith("p"):
+                    line = line.split(":")[2]
+                elif tool.lower().startswith("s"):
+                    line = line.split(":")[1]
+                ## CONVERT THE EXPRESSION TO PYTHON FORMAT
+                line = line.replace("{", "")
+                line = line.replace("}", "")
+                ## PUTS "* " BEFORE EVERY WORD (VARIABLE)
+                line = re.sub(r'([a-z|A-Z]+)', r'* \1', line)
+                # line = line.replace("p", "* p")
+                # line = line.replace("q", "* q")
+                line = line.replace("**", "*")
+                line = line.replace("* *", "*")
+                line = line.replace("*  *", "*")
+                line = line.replace("+ *", "+")
+                line = line.replace("^", "**")
+                line = line.replace(" ", "")
+                line = line.replace("*|", "|")
+                line = line.replace("|*", "|")
+                line = line.replace("|", "/")
+                line = line.replace("(*", "(")
+                line = line.replace("+*", "+")
+                line = line.replace("-*", "-")
+                if line.startswith('*'):
+                    line = line[1:]
+                if line[-1] is "\n":
+                    line = line[:-1]
+                if here == "r" and not f_only:
+                    # print(f"formula: {i+1}", line)
+                    if factorize:
+                        try:
+                            rewards.append(str(factor(line)))
+                        except TypeError:
+                            print("Error while factorising rewards, used not factorised instead")
+                            rewards.append(line)
+                            # os.chdir(cwd)
+                    else:
+                        rewards.append(line)
+                elif not here == "r" and not rewards_only:
+                    # print(f"formula: {i+1}", line[:-1])
+                    if factorize:
+                        try:
+                            f.append(str(factor(line)))
+                        except TypeError:
+                            print(f"Error while factorising polynomial f[{i + 1}], used not factorised instead")
+                            f.append(line)
+                    else:
+                        f.append(line)
+            line_index = line_index + 1
+    return f, rewards
+
+
+def get_f(path, tool, factorize):
+    """ Loads all nonreward results of parameter synthesis from *path* folder """
+    return load_functions(path, tool, factorize, rewards_only=False, f_only=True)[0]
+
+
+def get_rewards(path, tool, factorize):
+    """ Loads all reward results of parameter synthesis from *path* folder """
+    return load_functions(path, tool, factorize, rewards_only=True, f_only=False)[1]
+
+
 def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewards_only=False, f_only=False):
     """ Loads all results of parameter synthesis from *path* folder into two maps - f list of rational functions for each property, and rewards list of rational functions for each reward
     
@@ -175,12 +298,12 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
     return (f, rewards)
 
 
-def get_f(path, tool, factorize, agents_quantities=False):
+def get_all_f(path, tool, factorize, agents_quantities=False):
     """ Loads all nonreward results of parameter synthesis from *path* folder """
     return load_all_functions(path, tool, factorize, agents_quantities=agents_quantities, rewards_only=False, f_only=True)[0]
 
 
-def get_rewards(path, tool, factorize, agents_quantities=False):
+def get_all_rewards(path, tool, factorize, agents_quantities=False):
     """ Loads all reward results of parameter synthesis from *path* folder """
     return load_all_functions(path, tool, factorize, agents_quantities=agents_quantities, rewards_only=True, f_only=False)[1]
 

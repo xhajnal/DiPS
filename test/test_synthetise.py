@@ -447,11 +447,11 @@ class MyTestCase(unittest.TestCase):
 
         ## NORMAL TEST
         from common.math import create_intervals
-        from load import get_f
+        from load import get_all_f
 
         agents_quantities = [2, 3, 5, 10]
 
-        f = get_f(os.path.join(cwd, "prism_results/asyn*[0-9].txt"), "prism", True, agents_quantities)
+        f = get_all_f(os.path.join(cwd, "prism_results/asyn*[0-9].txt"), "prism", True, agents_quantities)
         D3 = pickle.load(open(os.path.join(cwd, "data/Data_two_param.p"), "rb"))
 
         print(D3)
@@ -613,7 +613,7 @@ class MyTestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    # from load import get_f, get_rewards
+    # from load import get_all_f, get_all_rewards
     # from common.math import create_intervals
     # from load import load_all_data
     #
@@ -627,9 +627,9 @@ if __name__ == "__main__":
     # agents_quantities = [2, 3, 5]
     # D = load_all_data("data/data*.csv")
     #
-    # f_multiparam_syn = get_f("./multiparam_syn*_[0-9].txt", "prism", True, agents_quantities)
-    # f_multiparam_semisyn = get_f("./multiparam_se*_[0-9].txt", "prism", True, agents_quantities)
-    # f_multiparam_asyn = get_f("./multiparam_asyn*_[0-9].txt", "prism", True, agents_quantities)
+    # f_multiparam_syn = get_all_f("./multiparam_syn*_[0-9].txt", "prism", True, agents_quantities)
+    # f_multiparam_semisyn = get_all_f("./multiparam_se*_[0-9].txt", "prism", True, agents_quantities)
+    # f_multiparam_asyn = get_all_f("./multiparam_asyn*_[0-9].txt", "prism", True, agents_quantities)
     #
     # f_low_high_low_syn = copy.deepcopy(f_multiparam_syn)
     # f_low_high_low_semisyn = copy.deepcopy(f_multiparam_semisyn)

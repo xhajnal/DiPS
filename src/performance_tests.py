@@ -6,7 +6,7 @@ import pickle
 import socket
 
 from synthetise import check_deeper
-from load import get_f, load_pickled_data
+from load import get_all_f, load_pickled_data
 from common.math import create_intervals
 
 ## LOAD DATA
@@ -16,7 +16,7 @@ print(f"  It took {socket.gethostname()} {time.time() - start_time} seconds to l
 
 ## LOAD POLYNOMIALS
 start_time = time.time()
-functions = get_f("./sem*[0-9].txt", True)
+functions = get_all_f("./sem*[0-9].txt", True)
 print(f"  It took {socket.gethostname()} {time.time() - start_time} seconds to load polynomials")
 
 ## GET TO THE RIGHT DIRECTORY
