@@ -1291,13 +1291,16 @@ class Gui(Tk):
             self.print_space()
 
             ## Ask if you want to visualise the space
-            self.show_samples = messagebox.askyesno("Loaded space", "Do you want to visualise samples?")
-            self.show_refinement = messagebox.askyesno("Loaded space", "Do you want to visualise refinement (safe & unsafe regions)?")
+            # self.show_samples = messagebox.askyesno("Loaded space", "Do you want to visualise samples?")
+            self.show_samples = True
+            # self.show_refinement = messagebox.askyesno("Loaded space", "Do you want to visualise refinement (safe & unsafe regions)?")
+            self.show_refinement = True
             if self.space.true_point is not None:
-                self.show_true_point = messagebox.askyesno("Loaded space", "Do you want to show the true point?")
+                self.show_true_point = True
+                # self.show_true_point = messagebox.askyesno("Loaded space", "Do you want to show the true point?")
             else:
                 self.show_true_point = False
-            self.show_space(self.show_refinement, self.show_samples, self.show_true_point)
+            self.show_space(self.show_refinement, self.show_samples, self.show_true_point, show_all=True)
 
             self.space_changed = True
 
@@ -2344,12 +2347,12 @@ class Gui(Tk):
             if str(self.solver.get()) == "z3" and int(self.alg.get()) < 5 and self.z3_constraints:
                 spam = check_deeper(self.space, self.z3_constraints, self.max_depth, self.epsilon, self.coverage,
                                     silent=self.silent.get(), version=int(self.alg.get()), size_q=False,
-                                    debug=self.debug.get(), save=False, title="", where=[self.page6_figure, self.page6_a],
+                                    debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
                                     solver=str(self.solver.get()), delta=self.delta, gui=True)
             else:
                 spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
-                                    silent=self.silent.get(), version=int(self.alg.get()), size_q=False, debug=self.debug.get(),
-                                    save=False, title="", where=[self.page6_figure, self.page6_a],
+                                    silent=self.silent.get(), version=int(self.alg.get()), size_q=False,
+                                    debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
                                     solver=str(self.solver.get()), delta=self.delta, gui=True)
         finally:
             self.cursor_toggle_busy(False)
