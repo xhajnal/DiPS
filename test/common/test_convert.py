@@ -31,6 +31,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_to_interval(self):
         print(colored("Checking transformation of a set of points into a set of intervals here", 'blue'))
+        self.assertEqual(to_interval([[0, 5]]), [[0, 0], [5, 5]])
         self.assertEqual(to_interval([(0, 2), (1, 3)]), [[0, 1], [2, 3]])
         self.assertEqual(to_interval([(0, 0, 0), (1, 0, 0), (1, 2, 0), (0, 2, 0), (0, 2, 3), (0, 0, 3), (1, 0, 3), (1, 2, 3)]), [[0, 1], [0, 2], [0, 3]])
 

@@ -3,8 +3,8 @@ from sympy import Interval
 
 
 def ineq_to_constraints(functions: list, intervals: list, silent: bool = True):
-    """ Converts inequalities of the function given by the interval to properties
-
+    """ Converts expressions and intervals into constraints
+        list of expressions, list of intervals -> constraints
 
     Args:
         functions:  (list of strings) array of functions
@@ -44,7 +44,8 @@ def ineq_to_constraints(functions: list, intervals: list, silent: bool = True):
 
 
 def constraints_to_ineq(constraints: list, silent: bool = True, debug: bool = False):
-    """ Converts properties to functions and inequalities if possible
+    """ Converts constraints to inequalities if possible
+        constraints ->  list of expressions, list of intervals
 
     Args:
         constraints  (list of strings): properties to be converted
@@ -140,6 +141,9 @@ def to_interval(points: list):
 
     Args:
         points (list of pairs): which are the points
+
+    Example:
+        [(0, 2), (1, 3)] --> [[0, 1], [2, 3]]
     """
     intervals = []
     for dimension in range(len(points[0])):

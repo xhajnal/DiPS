@@ -37,6 +37,15 @@ def is_this_python_function(function: str):
     return "if" in function or "and" in function or "or" in function or "not" in function
 
 
+def is_this_exponential_function(function: str):
+    """ Checks whether the expression contains exponential function
+
+    Args:
+        function (string): expression to be checked
+    """
+    return "**" in function
+
+
 def is_this_general_function(function: str):
     """ Checks whether this is general (not z3 nor python) expression
 

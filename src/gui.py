@@ -14,7 +14,7 @@ import matplotlib.pyplot as pyplt
 import matplotlib
 
 from common.convert import ineq_to_constraints
-from common.z3 import is_this_z3_function, translate_z3_function
+from common.z3 import is_this_z3_function, translate_z3_function, is_this_exponential_function
 
 matplotlib.use("TKAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
@@ -2319,6 +2319,13 @@ class Gui(Tk):
 
         if not self.validate_space("Refine Space"):
             return
+
+        if int(self.alg.get()) <= 4:
+            for constraint in self.constraints:
+                if is_this_exponential_function(constraint):
+                    if not askyesno("Refinement", "Some constraints contain exponential function, we recommend using interval algorithmic (algorithm 5). Do you want to proceed anyway?"):
+                        return
+                    break
 
         self.status_set("Space refinement is running ...")
         # print(colored(f"self.space, {self.space.nice_print()}]", "blue"))
