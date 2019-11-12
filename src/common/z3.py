@@ -43,7 +43,10 @@ def is_this_exponential_function(function: str):
     Args:
         function (string): expression to be checked
     """
-    return "**" in function
+    if re.findall("\*\* *[a-z|A-Z]", function):
+        return True
+    else:
+        return False
 
 
 def is_this_general_function(function: str):

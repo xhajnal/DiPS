@@ -17,8 +17,10 @@ class MyTestCase(unittest.TestCase):
         pass
 
     def test_is_this_exponential_function(self):
-        self.assertEqual(is_this_exponential_function("((1/10)**n "), True)
-        self.assertEqual(is_this_exponential_function("((1/10)*n + 6*6 "), False)
+        self.assertEqual(is_this_exponential_function("((1/10)**n"), True)
+        self.assertEqual(is_this_exponential_function("6 ** r"), True)
+        self.assertEqual(is_this_exponential_function("((1/10)*n + 6*6"), False)
+        self.assertEqual(is_this_exponential_function("2**2"), False)
 
     def test_is_this_general_function(self):
         ## TODO
