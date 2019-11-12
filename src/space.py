@@ -389,7 +389,7 @@ class RefinedSpace:
                         ax.plot(x_axis, sample)
                     ax.set_xlabel("param indices")
                     ax.set_ylabel("parameter value")
-                    whole_title = f"Unsat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}, \n{self.title} \n {title}"
+                    whole_title = "\n".join(self.wrapper.wrap(f"Unsat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}, \n{self.title} \n{title}"))
                     ax.set_title(whole_title)
                     ax.autoscale()
                     ax.margins(0.1)
@@ -415,18 +415,20 @@ class RefinedSpace:
                     return None, "Since no sat samples, the whole grid of points are unsat, not visualising this trivial case."
 
             if red or green:
-                if where:
-                    fig = where[0]
-                    ax = where[1]
-                    plt.autoscale()
-                    ax.autoscale()
-                    if self.rectangles_sat:
-                        fig, ax = visualise_by_param(self.rectangles_sat, title="Refinement,\n Domains of respective parameter of safe subspace.", where=[fig, ax])
+                if where:  ## Return the plot
+                    if self.rectangles_sat:  ## If any rectangles to be visualised
+                        fig = where[0]
+                        ax = where[1]
+                        plt.autoscale()
+                        ax.autoscale()
+                        title = "\n".join(self.wrapper.wrap(f"Refinement,\n Domains of respective parameter of safe subspace.\nLast refinement took {socket.gethostname()} {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole time."))
+                        fig, ax = visualise_by_param(self.rectangles_sat, title=title, where=[fig, ax])
                         return fig, ax
                     else:
                         return None, "While refining multidimensional space no green area found, no reasonable plot to be shown."
                 else:
                     if self.rectangles_sat:
+                        ## TODO maybe add the title
                         fig = visualise_by_param(self.rectangles_sat)
                         plt.show()
                     else:
