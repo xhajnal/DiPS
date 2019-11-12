@@ -139,6 +139,3 @@ for alpha in alphas:
                                     pickle.dump(results, open("results.p", 'wb'))
                                     pickle.dump(coverages, open("coverages.p", 'wb'))
                                     pickle.dump(averages_and_deviations, open("averages_and_deviations.p", 'wb'))
-
-## IF ALL PERFORMANCE TEST RUN SAVE THE RESULTS:
-## TODO

@@ -225,7 +225,7 @@ def call_storm(population, parameters, data, alpha, n_samples, multiparam):
     
     Args:
         population (int): number of agents
-        data (dictionary): map of data
+        data (dict): map of data
         alpha (float): confidence interval to compute margin
         n_samples (int): number of samples to compute margin
         multiparam (bool): if True multiparam model is used

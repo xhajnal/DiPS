@@ -309,7 +309,7 @@ class Gui(Tk):
         Radiobutton(page2, text="Factorised", variable=self.factor, value=True).grid(row=2, column=2, sticky=W, pady=4)
 
         Button(page2, text='Run parameter synthesis', command=self.synth_params).grid(row=3, column=0, sticky=W, padx=4, pady=4)
-        Button(page2, text='Open Prism/Storm output file', command=self.load_functions).grid(row=3, column=1, sticky=W, pady=4)
+        Button(page2, text='Open Prism/Storm output file', command=self.load_mc_output_file).grid(row=3, column=1, sticky=W, pady=4)
 
         Label(page2, text=f"Loaded Prism/Storm output file:", anchor=W, justify=LEFT).grid(row=4, column=0, sticky=W, padx=4, pady=4)
 
@@ -778,7 +778,7 @@ class Gui(Tk):
             if not file:
                 self.save_property(os.path.join(self.tmp_dir, "properties"))
 
-    def load_functions(self, file=False):
+    def load_mc_output_file(self, file=False):
         """ Loads parameter synthesis output text file
 
         Args:
@@ -1219,7 +1219,6 @@ class Gui(Tk):
             if self.debug.get():
                 print("self.constraints", self.constraints)
 
-            ## TODO add check here
             for constraint in self.constraints:
                 if is_this_z3_function(constraint):
                     self.store_z3_constraints()
@@ -1502,7 +1501,6 @@ class Gui(Tk):
         ## Autosave
         self.save_data_informed_properties(os.path.join(self.tmp_dir, "data_informed_properties"))
         # self.data_informed_property_text.configure(state='disabled')
-        # TODO
 
     def save_data_informed_properties(self, file=False):
         """ Saves computed data informed property as a text file.
@@ -1774,7 +1772,7 @@ class Gui(Tk):
                                                              str(Path(self.model_file.get()).stem) + "_" + str(
                                                                  Path(self.property_file.get()).stem) + ".txt")))
                     self.status_set("Parameter synthesised finished. Output here: {}", self.functions_file.get())
-                    self.load_functions(self.functions_file.get())
+                    self.load_mc_output_file(self.functions_file.get())
 
                 elif self.program.get().lower() == "storm":
                     self.cursor_toggle_busy(True)
@@ -1786,7 +1784,7 @@ class Gui(Tk):
                                                              str(Path(self.model_file.get()).stem) + "_" + str(
                                                                  Path(self.property_file.get()).stem) + ".cmd")))
                     self.status_set("Command to run the parameter synthesis saved here: {}", self.functions_file.get())
-                    self.load_functions(self.functions_file.get())
+                    self.load_mc_output_file(self.functions_file.get())
                 else:
                     ## Show window to inform to select the program
                     self.status_set("Program for parameter synthesis not selected")
@@ -1818,7 +1816,6 @@ class Gui(Tk):
         self.status_set("Sampling rational functions.")
         self.validate_parameters(where=self.functions)
 
-        ## TODO If self.functions got more than one entry
         try:
             self.cursor_toggle_busy(True)
             self.sampled_functions = sample_list_funs(self.functions, int(self.fun_size_q_entry.get()),
@@ -1891,7 +1888,6 @@ class Gui(Tk):
 
         self.reinitialise_plot()
 
-        ## TODO If self.functions got more than one entry
         ## Getting the plot values instead of the plot itself
 
         #     self.initialise_plot(what=self.page3_figure, where=self.page3_plotframe)
@@ -2198,7 +2194,7 @@ class Gui(Tk):
             self.update()
 
             ## This progress is passed as whole to update the thing inside the called function
-            self.space.sample(self.constraints, self.size_q, silent=self.silent.get(), save=False, progress=self.update_progress_bar)
+            self.space.grid_sample(self.constraints, self.size_q, silent=self.silent.get(), save=False, progress=self.update_progress_bar)
         finally:
             self.new_window.destroy()
             del self.new_window
@@ -2235,11 +2231,6 @@ class Gui(Tk):
 
         ## Check functions / Get function parameters
         self.validate_parameters(where=self.functions)
-
-        # if len(self.parameters) > 2:
-        #     # TODO multi dim MH
-        #     messagebox.showwarning("Space Metropolis-Hastings", "Multidimensional MH not implemented yet")
-        #     return
 
         self.status_set("Space sampling using Metropolis Hastings is running ...")
         if not self.silent.get():
@@ -2547,7 +2538,6 @@ class Gui(Tk):
         """ Opens config file in editor """
         print("Editing config ...")
         if "wind" in platform.system().lower():
-            ## TODO TEST THIS ON WINDOWS
             os.startfile(f'{os.path.join(workspace, "../config.ini")}')
         else:
             os.system(f'gedit {os.path.join(workspace, "../config.ini")}')

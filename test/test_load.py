@@ -1,13 +1,15 @@
 import unittest
 from src.load import *
+cwd = os.getcwd()
+model_dir = os.path.join(cwd, "models")
+prism_results = os.path.join(cwd, "prism_results")
+storm_results = os.path.join(cwd, "storm_results")
 
 
 class MyTestCase(unittest.TestCase):
-    def parse_params_from_model(self):
+    def test_parse_params_from_model(self):
         print(colored('Parse parameters from a given model', 'blue'))
-        model_path = Path(config.get("paths", "models"))
-        if os.path.isfile(os.path.join(model_path, "asynchronous_2.pm")):
-            self.assertEqual(parse_params_from_model(os.path.join(model_path, "asynchronous_2.pm")), ["p", "q"])
+        self.assertEqual(parse_params_from_model(os.path.join(model_dir, "asynchronous_2.pm")), ["p", "q"])
 
     def test_find_param(self):
         print(colored('Parse parameters from a string', 'blue'))
@@ -21,16 +23,45 @@ class MyTestCase(unittest.TestCase):
         for polynome in ['p**2-2*p+1>=0.255810035160231', 'p**2-2*p+1<=0.453332821982626', '2*q*p**2-2*p**2-2*q*p+2*p>=0.339105082511199', '2*q*p**2-2*p**2-2*q*p+2*p<=0.543752060345944', '(-2)*q*p**2+p**2+2*q*>=0.120019530949760', '(-2)*q*p**2+p**2+2*q*<=0.287980469050240']:
             print(find_param(polynome))
 
-    def test_load_expressions(self):
+    def test_get_f(self):
+        print(colored('Parse nonrewards from a given file', 'blue'))
+
+        self.assertEqual(get_f(os.path.join(prism_results, "asynchronous_2.txt"), "prism", False),
+                         ['p**2-2*p+1', '2*q*p**2-2*p**2-2*q*p+2*p', '(-2)*q*p**2+p**2+2*q*p'])
+        self.assertEqual(get_f(os.path.join(prism_results, "asynchronous_2.txt"), "prism", True),
+                         ['(p - 1)**2', '2*p*(p - 1)*(q - 1)', '-p*(2*p*q - p - 2*q)'])
+
+        self.assertEqual(get_f(os.path.join(storm_results, "asynchronous_3_moments.txt"), "storm", False), [])
+        self.assertEqual(get_f(os.path.join(storm_results, "asynchronous_3_moments.txt"), "storm", True), [])
+
+    def test_get_rewards(self):
+        print(colored('Parse rewards from a given file', 'blue'))
+
+        self.assertEqual(get_rewards(os.path.join(prism_results, "asynchronous_2.txt"), "prism", False), [])
+        self.assertEqual(get_rewards(os.path.join(prism_results, "asynchronous_2.txt"), "prism", True), [])
+
+        self.assertEqual(get_rewards(os.path.join(storm_results, "asynchronous_3_moments.txt"), "storm", False),
+                         ['(3*((p)*(p**2*q+2*q+(-3)*p*q+1)))/(1)', '(3*((p)*(2*p**2*q**2+6*q+(-4)*p*q**2+p**2*q+2*q**2+(-7)*p*q+2*p+1)))/(1)'])
+        self.assertEqual(get_rewards(os.path.join(storm_results, "asynchronous_3_moments.txt"), "storm", True),
+                         ['3*p*(p**2*q - 3*p*q + 2*q + 1)', '3*p*(2*p**2*q**2 + p**2*q - 4*p*q**2 - 7*p*q + 2*p + 2*q**2 + 6*q + 1)'])
+
+    def test_load_functions(self):
         print(colored('Parse functions from a given file', 'blue'))
-        ## THIS WILL PASS ONLY AFTER CREATING THE STORM RESULTS
-        agents_quantities = [2]
-        f_storm = get_all_f("./asyn*[0-9]_moments.txt", "storm", True, agents_quantities)
-        # print(f_storm)
-        self.assertFalse(f_storm[2])
-        rewards_storm = get_all_rewards("./asyn*[0-9]_moments.txt", "storm", True, agents_quantities)
-        # print(rewards_storm)
-        self.assertTrue(rewards_storm[2])
+
+        self.assertEqual(load_functions(os.path.join(prism_results, "asynchronous_2.txt"), "prism", False),
+                         (['p**2-2*p+1', '2*q*p**2-2*p**2-2*q*p+2*p', '(-2)*q*p**2+p**2+2*q*p'], []))
+        self.assertEqual(load_functions(os.path.join(prism_results, "asynchronous_2.txt"), "prism", True),
+                         (['(p - 1)**2', '2*p*(p - 1)*(q - 1)', '-p*(2*p*q - p - 2*q)'], []))
+
+        self.assertEqual(load_functions(os.path.join(storm_results, "asynchronous_3_moments.txt"), "storm", False),
+                         ([], ['(3*((p)*(p**2*q+2*q+(-3)*p*q+1)))/(1)', '(3*((p)*(2*p**2*q**2+6*q+(-4)*p*q**2+p**2*q+2*q**2+(-7)*p*q+2*p+1)))/(1)']))
+        self.assertEqual(load_functions(os.path.join(storm_results, "asynchronous_3_moments.txt"), "storm", True),
+                         ([], ['3*p*(p**2*q - 3*p*q + 2*q + 1)', '3*p*(2*p**2*q**2 + p**2*q - 4*p*q**2 - 7*p*q + 2*p + 2*q**2 + 6*q + 1)']))
+
+    def test_load_all_functions(self):
+        print(colored('Parse functions from multiple files', 'blue'))
+        agents_quantities = [3, 5]
+        self.assertEqual(load_all_functions(os.path.join(storm_results, "asynchronous_*.txt"), "storm", False, agents_quantities), (get_all_f(os.path.join(storm_results, "asynchronous_*.txt"), "storm", False, agents_quantities), get_all_rewards(os.path.join(storm_results, "asynchronous_*.txt"), "storm", False, agents_quantities)))
 
     def test_margins(self):
         print(colored('Margin/delta computing', 'blue'))
@@ -64,11 +95,6 @@ class MyTestCase(unittest.TestCase):
 
     def test_to_variance(self):
         print(colored('Computing variance from rewards', 'blue'))
-        ## TODO
-        pass
-
-    def test_load_all_functions(self):
-        print(colored('Parsing single functions file', 'blue'))
         ## TODO
         pass
 

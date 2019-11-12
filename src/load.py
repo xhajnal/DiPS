@@ -39,10 +39,10 @@ os.chdir(cwd)
 
 
 def load_functions(file_path, tool="unknown", factorize=True, rewards_only=False, f_only=False):
-    """ Loads all results of parameter synthesis from *path* folder into two maps - f list of rational functions for each property, and rewards list of rational functions for each reward
+    """ Loads parameter synthesis from file into two maps - f list of rational functions for each property, and rewards list of rational functions for each reward
 
     Args:
-        file_path (string): file name
+        file_path (string):
         factorize (bool): if true it will factorise polynomial results
         rewards_only (bool): if true it compute only rewards
         f_only (bool): if true it will compute only standard properties
@@ -161,6 +161,7 @@ def get_rewards(path, tool, factorize):
     return load_functions(path, tool, factorize, rewards_only=True, f_only=False)[1]
 
 
+## TODO rewrite this using load_functions
 def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewards_only=False, f_only=False):
     """ Loads all results of parameter synthesis from *path* folder into two maps - f list of rational functions for each property, and rewards list of rational functions for each reward
     
@@ -312,7 +313,7 @@ def save_functions(dic, name):
     """ Exports the dic in a compact but readable manner
 
     Args:
-        dic (dictionary): to be exported
+        dic (dict): to be exported
         name (string): name of the dictionary (used for the file name)
     """
 
@@ -330,7 +331,7 @@ def to_variance(dic):
     """ Computes variance specifically for the dictionary in a form dic[key][0] = EX, dic[key][1] = E(X^2)
 
     Args:
-        dic (dictionary): for which the variance is computed
+        dic (dict): for which the variance is computed
     """
 
     for key in dic.keys():

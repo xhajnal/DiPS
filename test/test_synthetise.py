@@ -74,7 +74,8 @@ class MyTestCase(unittest.TestCase):
         self.assertIsInstance(check_unsafe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(0, 2)]), silent=True, called=True), z3.z3.ModelRef)
         self.assertEqual(check_unsafe([(0, 1), (0, 1)], ineq_to_constraints(["x+y"], [Interval(4, 5)]), silent=True, called=True), True)
 
-        ## TODO nonlinear tests
+        ## TODO - test nonlinear input
+        ## TODO - test exponential input
 
     def test_check_single_dreal(self):
         print(colored("Checking (un)safe with single properties using dreal here", 'blue'))

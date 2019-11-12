@@ -626,8 +626,7 @@ class RefinedSpace:
         self.rectangles_unsat_to_show = []
         return PatchCollection(rectangles_unsat, facecolor='r', alpha=0.5)
 
-    ## TODO DELETE THIS AS IT IS GRID SAMPLING
-    def sample(self, constraints, size_q, silent: bool = False, save=False, progress=False):
+    def grid_sample(self, constraints, size_q, silent: bool = False, save=False, progress=False):
         """ Executes grid sampling
 
         Args:
@@ -640,19 +639,6 @@ class RefinedSpace:
         from synthetise import sample
         self.gridsampled = True
         sample(self, constraints, size_q, compress=True, silent=silent, save=save, progress=progress)
-
-    def grid_sample(self, constraints, size_q, silent: bool = False, save=False, progress=False):
-        """ Executes grid sampling
-
-        Args:
-            constraints  (list of strings): array of properties
-            size_q (int): number of samples in dimension
-            silent (bool): if silent printed output is set to minimum
-            save (bool): if True output is pickled
-            progress (Tkinter element): progress bar
-        """
-        self.gridsampled = True
-        self.sample(self, constraints, size_q, save=save, progress=progress)
 
     def show_samples(self, which):
         """ Visualises samples in 2D """

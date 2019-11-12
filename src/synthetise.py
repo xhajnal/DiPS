@@ -1707,7 +1707,7 @@ def sample(space, constraints, size_q, compress=False, silent=True, save=False, 
         progress (Tkinter element): progress bar
 
     Returns:
-        (dictionary) of point to list of Bools whether f(point) in interval[index]
+        (dict) of point to list of Bools whether f(point) in interval[index]
     """
     if debug:
         silent = False

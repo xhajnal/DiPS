@@ -22,17 +22,23 @@ def catch_data_error(data, minimum, maximum):
     """ Corrects all data value to be in range min,max
 
     Args:
-        data (dictionary): structure of data
+        data (dict): structure of data
         minimum (float): minimal value in data to be set to
         maximum (float): maximal value in data to be set to
     """
-    for n in data.keys():
-        for i in range(len(data[n])):
-            if data[n][i] < minimum:
-                data[n][i] = minimum
-            if data[n][i] > maximum:
-                data[n][i] = maximum
-    ## TODO check whether I need to return those
+    if isinstance(data, dict):
+        for n in data.keys():
+            for i in range(len(data[n])):
+                if data[n][i] < minimum:
+                    data[n][i] = minimum
+                if data[n][i] > maximum:
+                    data[n][i] = maximum
+    else:
+        for i in range(len(data)):
+            if data[i] < minimum:
+                data[i] = minimum
+            if data[i] > maximum:
+                data[i] = maximum
 
 
 def create_intervals(alpha, n_samples, data):
@@ -130,4 +136,3 @@ def get_rectangle_volume(rectangle):
     for interval in rectangle:
         intervals.append(interval[1] - interval[0])
     return prod(intervals)
-

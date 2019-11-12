@@ -31,7 +31,7 @@ class MyTestCase(unittest.TestCase):
 
         spam = ["r_0**2-2*r_0+1"]
 
-        ## TODO fix this (a single function makes different bar)
+        ## TODO tweak fix this (a single function makes different bar)
         eval_and_show(spam, [delta, r_0], ["delta", "r_0"], debug=True)
 
     def test_heatmap(self):

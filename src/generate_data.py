@@ -39,7 +39,7 @@ def generate_all_data_two_param(agents_quantities, dic_fun, p_v=None, q_v=None):
 
     Args:
         agents_quantities (list of ints): list of population sized to be used
-        dic_fun (dictionary): dictionary population size to list of rational functions
+        dic_fun (dict): dictionary population size to list of rational functions
         p_v (float/None): value of the first parameter - p
         q_v (float/None): value of the second parameter - q
     """
