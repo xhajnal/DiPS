@@ -18,9 +18,9 @@ os.chdir(workspace)
 
 
 config.read(os.path.join(workspace, "../config.ini"))
-data_path = config.get("paths", "data")
-if not os.path.exists(data_path):
-    raise OSError("Directory does not exist: " + str(data_path))
+tmp_dir = config.get("paths", "tmp")
+if not os.path.exists(tmp_dir):
+    raise OSError("Directory does not exist: " + str(tmp_dir))
 
 os.chdir(cwd)
 
@@ -28,7 +28,8 @@ os.chdir(cwd)
 def sample(functions, data_means):
     """ Will sample according to the pdf as given by the polynomials
 
-    :returns ## TODO
+    Returns:
+         ## TODO
 
     @author: tpetrov
     """
@@ -43,12 +44,12 @@ def sample(functions, data_means):
 def transition_model_a(theta, parameter_intervals):
     """" Defines how to walk around the parameter space
 
-    Args
-    ---------
-    theta: (list) parameter values
-    parameter_intervals: (list of tuples) parameter intervals
+    Args:
+        theta (list): parameter values
+        parameter_intervals (list of tuples) parameter intervals
 
-    :returns new parameter space point
+    Returns:
+         new parameter space point
 
     @author: tpetrov
     @edit: xhajnal, denis
@@ -72,16 +73,15 @@ def transition_model_a(theta, parameter_intervals):
 
 def prior(x, eps):
     """ TODO
-    Args
-    ------
-    x: (tuple) Distribution parameters: x[0] = mu, x[1] = sigma (new or current)
-    eps: (number) very small value used as probability of non-feasible values in prior
+    Args:
+        x: (tuple) Distribution parameters: x[0] = mu, x[1] = sigma (new or current)
+        eps (number): very small value used as probability of non-feasible values in prior
 
 
-    :returns
-    1 for all valid values of sigma. Log(1) = 0, so it does not affect the summation.
-    0 for all invalid values of sigma (<= 0). Log(0) = -infinity, and Log(negative number) is undefined.
-    It makes the new sigma infinitely unlikely.
+    Returns:
+        1 for all valid values of sigma. Log(1) = 0, so it does not affect the summation.
+        0 for all invalid values of sigma (<= 0). Log(0) = -infinity, and Log(negative number) is undefined.
+        It makes the new sigma infinitely unlikely.
 
     @author: tpetrov
     """
@@ -95,12 +95,12 @@ def prior(x, eps):
 def acceptance(x, x_new):
     """ Decides whether to accept new sample or not
 
-    Args
-    -------
-    x: old parameter point
-    x_new: new parameter points
+    Args:
+        x: old parameter point
+        x_new: new parameter points
 
-    :returns True if the new points is accepted
+    Returns:
+         True if the new points is accepted
 
     @author: tpetrov
     """
@@ -114,20 +114,22 @@ def acceptance(x, x_new):
 
 
 def metropolis_hastings(likelihood_computer, prior, transition_model, param_init, iterations, space, data, acceptance_rule,
-                        parameter_intervals, functions, eps):
+                        parameter_intervals, functions, eps, progress=False):
     """ TODO
     the main method
 
-    likelihood_computer: function(x, data): returns the likelihood that these parameters generated the data
-    prior: function(x, eps): prior function
-    transition_model: function(x): a function that draws a sample from a symmetric distribution and returns it
-    param_init:  (pair of numbers): a starting sample
-    iterations: (int): number of accepted to generated
-    data: (list of numbers): the data that we wish to model
-    acceptance_rule: function(x, x_new): decides whether to accept or reject the new sample
-    parameter_intervals: (list of pairs) boundaries of parameters
+        likelihood_computer (function(x, data)): returns the likelihood that these parameters generated the data
+        prior (function(x, eps)): prior function
+        transition_model (function(x)): a function that draws a sample from a symmetric distribution and returns it
+        param_init  (pair of numbers): a starting sample
+        iterations (int): number of accepted to generated
+        data (list of numbers):: the data that we wish to model
+        acceptance_rule (function(x, x_new)): decides whether to accept or reject the new sample
+        parameter_intervals (list of pairs): boundaries of parameters
+        progress (Tkinter element): progress bar
 
-    :returns tuple of accepted and rejected parameter points
+    Returns:
+         tuple of accepted and rejected parameter points
 
     @author: tpetrov
     @edit: xhajnal
@@ -151,6 +153,8 @@ def metropolis_hastings(likelihood_computer, prior, transition_model, param_init
         else:
             rejected.append(x_new)
             print(f"new point: {x_new} rejected")
+        if progress:
+            progress(iteration/iterations)
 
     return np.array(accepted), np.array(rejected)
 
@@ -158,15 +162,15 @@ def metropolis_hastings(likelihood_computer, prior, transition_model, param_init
 def manual_log_like_normal(space, theta, functions, observations, eps):
     """ TODO
 
-    Args
-    -----------
-    space: (Refined space)
-    theta: (list) parameter values
-    functions: (list of strings)
-    observations: (list of numbers)
-    eps: (number) very small value used as probability of non-feasible values in prior
+    Args:
+        space (Refined space):
+        theta (list): parameter values
+        functions (list of strings):
+        observations (list of numbers):
+        eps (number): very small value used as probability of non-feasible values in prior
 
-    :returns ## TODO
+    Returns:
+         ## TODO
 
     @author: tpetrov
     @edit: xhajnal
@@ -200,18 +204,18 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
     return res
 
 
-def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_obs: int, MH_samples: int, eps, where=False):
+def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_obs: int, MH_samples: int, eps, where=False, progress=False):
     """ Initialisation method for Metropolis Hastings
-    Args
-    -----------------
-    space:(Refined space)
-    observations: (list of numbers) either experiment or data(experiment result frequency)
-    functions: (list of strings)
-    N:(number) total data amount
-    N_obs: (number) number of samples
-    MH_samples: (number) number of iterations
-    eps: (number) very small value used as probability of non-feasible values in prior
-    where: (Tuple/List) : output matplotlib sources to output created figure
+    Args:
+        space (RefinedSpace):
+        observations (list of numbers): either experiment or data(experiment result frequency)
+        functions (list of strings):
+        N (number): total data amount
+        N_obs (number): number of samples
+        MH_samples (number): number of iterations
+        eps (number): very small value used as probability of non-feasible values in prior
+        where (tuple/list): output matplotlib sources to output created figure
+        progress (Tkinter element): progress bar
 
     @author: tpetrov
     @edit: xhajnal
@@ -222,15 +226,22 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
         if is_this_z3_function(function):
             functions[index] = translate_z3_function(function)
 
-    globals()[space.get_params()[0]] = space.true_point[0]
-    globals()[space.get_params()[1]] = space.true_point[1]
-    print(f"{space.get_params()[0]} = {globals()[space.get_params()[0]]}")
-    print(f"{space.get_params()[1]} = {globals()[space.get_params()[1]]}")
+    for index, param in enumerate(space.get_params()):
+        globals()[param] = space.true_point[index]
+        print(f"{param} = {space.true_point[index]}")
+    # globals()[space.get_params()[0]] = space.true_point[0]
+    # globals()[space.get_params()[1]] = space.true_point[1]
+    # print(f"{space.get_params()[0]} = {globals()[space.get_params()[0]]}")
+    # print(f"{space.get_params()[1]} = {globals()[space.get_params()[1]]}")
 
     parameter_intervals = space.get_region()
-    theta_true = np.zeros(2)
-    theta_true[0] = space.true_point[0]
-    theta_true[1] = space.true_point[1]
+
+    theta_true = np.zeros(len(space.get_params()))
+    for index, param in enumerate(space.true_point):
+        theta_true[index] = param
+    # theta_true = np.zeros(2)
+    # theta_true[0] = space.true_point[0]
+    # theta_true[1] = space.true_point[1]
 
     print("Parameter point", theta_true)
 
@@ -277,13 +288,14 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
     theta_init = [(parameter_intervals[0][0] + parameter_intervals[0][1])/2, (parameter_intervals[1][0] + parameter_intervals[1][1])/2]  ## Middle of the intervals # np.ones(10)*0.1
     print("Initial parameter point: ", theta_init)
                                          ## (likelihood_computer,    prior, transition_model,   param_init, iterations, space, data,    acceptance_rule,parameter_intervals, functions, eps):
-    accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, MH_samples, space, observations, acceptance, parameter_intervals, functions, eps)
+    accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, MH_samples, space, observations, acceptance, parameter_intervals, functions, eps, progress=progress)
 
-    pickle.dump(accepted, open(os.path.join(data_path, f"accepted_{N_obs}.p"), 'wb'))
-    pickle.dump(rejected, open(os.path.join(data_path, f"rejected_{N_obs}.p"), 'wb'))
+    print(f"Set of accepted and rejected points is stored here: {tmp_dir}")
+    pickle.dump(accepted, open(os.path.join(tmp_dir, f"accepted_{N_obs}.p"), 'wb'))
+    pickle.dump(rejected, open(os.path.join(tmp_dir, f"rejected_{N_obs}.p"), 'wb'))
 
-    accepted = pickle.load(open(os.path.join(data_path, f"accepted_{N_obs}.p"), "rb"))
-    rejected = pickle.load(open(os.path.join(data_path, f"rejected_{N_obs}.p"), "rb"))
+    # accepted = pickle.load(open(os.path.join(tmp_dir, f"accepted_{N_obs}.p"), "rb"))
+    # rejected = pickle.load(open(os.path.join(tmp_dir, f"rejected_{N_obs}.p"), "rb"))
 
     # print("accepted", accepted)
     # to_show = accepted.shape[0]
@@ -318,7 +330,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
         ax.set_title(f"Fig.5: Histogram of ${space.get_params()[0]}$")
         fig.tight_layout()
 
-    # to elaborate the heat map
+    ## Create the heat map
     if where:
         plt.hist2d(accepted[show:, 0], accepted[show:, 1], bins=20)
         plt.xlabel(space.get_params()[0])

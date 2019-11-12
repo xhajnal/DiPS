@@ -41,12 +41,11 @@ os.chdir(cwd)
 
 def general_create_data_informed_properties(prop_file, intervals, output_file=False, silent: bool = False):
     """ Creates data informed property file from regular "profile" and intervals
-    Args
-    ----------
-    prop_file: (File/string) regular prop file which contains lines in the form P=? (...)
-    intervals: (list of pairs of numbers) list of intervals to assign for the properties
-    output_file: (File/string/False) output prop file, if False or not given data_informed_properties as a list of strings is returned
-    silent: (Bool) if silent command line output is set to minimum
+    Args:
+        prop_file (File/String):  regular prop file which contains lines in the form P=? (...)
+        intervals (list of pairs of numbers): list of intervals to assign for the properties
+        output_file (File/String): output prop file, if False or not given data_informed_properties as a list of strings is returned
+        silent (bool): if silent command line output is set to minimum
     """
     if isinstance(prop_file, str):
         prop_file = Path(prop_file)
@@ -101,14 +100,13 @@ def create_data_informed_properties(population, data, alpha, n_samples, multipar
     """ Creates property file of reaching each BSCC of the model of *N* agents as prop_<N>.pctl file.
     For more information see the HSB19 paper..
     
-    Args
-    ----------
-    population: (int) number of agents
-    data: map of data    
-    alpha: (float) confidence interval to compute margin
-    n_samples: (int) number of samples to compute margin
-    multiparam: (Bool) if True multiparam model is used
-    seq: (Bool) if seq the property will be written for sequential usage
+    Args:
+        population (int): number of agents
+        data: map of data
+        alpha (float): confidence interval to compute margin
+        n_samples (int): number of samples to compute margin
+        multiparam (bool): if True multiparam model is used
+        seq (bool): if seq the property will be written for sequential usage
     """
 
     if multiparam:
@@ -156,15 +154,14 @@ def call_data_informed_prism(population, parameters, data, alpha, n_samples, mul
     """
     Creates data informed properties.
     
-    Args
-    ----------
-    population: (int) number of agents
-    data: map of data    
-    alpha: (float) confidence interval to compute margin
-    n_samples: (int) number of samples to compute margin
-    multiparam: (Bool) if True multiparam model is used
-    parameters: (string)  set of parameters
-    seq: (Bool) if seq the property will be written for sequential usage
+    Args:
+        population (int): number of agents
+        data: map of data
+        alpha (float): confidence interval to compute margin
+        n_samples (int): number of samples to compute margin
+        multiparam (bool): if True multiparam model is used
+        parameters (string):  set of parameters
+        seq (bool): if seq the property will be written for sequential usage
     """
 
     if multiparam:
@@ -226,14 +223,13 @@ def call_storm(population, parameters, data, alpha, n_samples, multiparam):
     """
     Returns command to call storm with given model and data informed properties
     
-    Args
-    ----------
-    population: (int) number of agents
-    data: map of data    
-    alpha: (float) confidence interval to compute margin
-    n_samples: (int) number of samples to compute margin
-    multiparam: (Bool) if True multiparam model is used
-    parameters: (list of string) list of parameters
+    Args:
+        population (int): number of agents
+        data (dictionary): map of data
+        alpha (float): confidence interval to compute margin
+        n_samples (int): number of samples to compute margin
+        multiparam (bool): if True multiparam model is used
+        parameters (list of string): list of parameters
     """
 
     storm_models = model_folder.replace("\\\\", "/").replace("\\", "/").split("/")[-1]

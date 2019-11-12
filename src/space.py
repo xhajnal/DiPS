@@ -38,34 +38,32 @@ os.chdir(cwd)
 class RefinedSpace:
     """ Class to represent space. The space can be sampled or refined into sat(green), unsat(red), and unknown(white) regions
 
-    Attributes
-    ------
-    region: (list of intervals): whole space
-    params: (list of strings): parameter names
-    types: (list of string): parameter types (Real, Int, Bool, ...)
-    rectangles_sat: (list of intervals): sat (green) space
-    rectangles_unsat: (list of intervals): unsat (red) space
-    rectangles_unknown: (list of intervals): unknown (white) space
-    sat_samples: (list of points): satisfying points
-    unsat_samples: (list of points): unsatisfying points
-    true_point: (list of numbers): The true value in the parameter space 
-    title: (string): text to be added in the end of the Figure titles
+    Args:
+        region (list of intervals): whole space
+        params (list of strings):: parameter names
+        types (list of string):: parameter types (Real, Int, Bool, ...)
+        rectangles_sat (list of intervals): sat (green) space
+        rectangles_unsat (list of intervals): unsat (red) space
+        rectangles_unknown (list of intervals): unknown (white) space
+        sat_samples: (list of points): satisfying points
+        unsat_samples: (list of points): unsatisfying points
+        true_point (list of numbers):: The true value in the parameter space
+        title (string):: text to be added in the end of the Figure titles
     """
 
     def __init__(self, region, params, types=None, rectangles_sat=False, rectangles_unsat=False, rectangles_unknown=None, sat_samples=None, unsat_samples=None, true_point=False, title=False):
         """
-        Args
-        ------
-        region: (list of intervals): whole space
-        params: (list of strings): parameter names
-        types: (list of string): parameter types (Real, Int, Bool, ...)
-        rectangles_sat: (list of intervals): sat (green) space
-        rectangles_unsat: (list of intervals): unsat (red) space
-        rectangles_unknown: (list of intervals): unknown (white) space
-        sat_samples: (list of points): satisfying points
-        unsat_samples: (list of points): unsatisfying points
-        true_point: (list of numbers): The true value in the parameter space 
-        title: (string): text to added in the end of the Figure titles, CASE STUDY STANDARD: f"model: {model_type}, population = {population}, size_q = {size_q},  \n Dataset = {dataset}, alpha={alpha}, #samples={n_samples}"
+        Args:
+            region (list of intervals): whole space
+            params (list of strings):: parameter names
+            types (list of string):: parameter types (Real, Int, Bool, ...)
+            rectangles_sat (list of intervals): sat (green) space
+            rectangles_unsat (list of intervals): unsat (red) space
+            rectangles_unknown (list of intervals): unknown (white) space
+            sat_samples: (list of points): satisfying points
+            unsat_samples: (list of points): unsatisfying points
+            true_point (list of numbers):: The true value in the parameter space
+            title (string):: text to added in the end of the Figure titles, CASE STUDY STANDARD: f"model: {model_type}, population = {population}, size_q = {size_q},  \n Dataset = {dataset}, alpha={alpha}, #samples={n_samples}"
         """
 
         ## REGION
@@ -210,20 +208,18 @@ class RefinedSpace:
         self.wrapper = DocumentWrapper(width=70)
 
     def show(self, title="", green=True, red=True, sat_samples=False, unsat_samples=False, true_point=True, save=False, where=False, show_all=True):
-        """
-        Visualises the space
+        """ Visualises the space
 
-        Args
-        ----------
-        title: (String) title of the figure
-        green: (Bool) if True showing safe space
-        red: (Bool) if True showing unsafe space
-        sat_samples: (Bool) if True showing sat samples
-        unsat_samples: (Bool) if True showing unsat samples
-        true_point: (Bool) if True showing true point
-        save: (Bool) if True, the output is saved
-        where: (Tuple/List) : output matplotlib sources to output created figure
-        show_all: (Bool) if True, not only newly added rectangles are shown
+        Args:
+            title (string):  title of the figure
+            green (bool): if True showing safe space
+            red (bool): if True showing unsafe space
+            sat_samples (bool): if True showing sat samples
+            unsat_samples (bool): if True showing unsat samples
+            true_point (bool): if True showing true point
+            save (bool): if True, the output is saved
+            where (tuple/list): output matplotlib sources to output created figure
+            show_all (bool): if True, not only newly added rectangles are shown
         """
 
         # print("self.true_point", self.true_point)
@@ -393,7 +389,7 @@ class RefinedSpace:
                         ax.plot(x_axis, sample)
                     ax.set_xlabel("param indices")
                     ax.set_ylabel("parameter value")
-                    whole_title = f"Unsat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}, \n{self.title} \n {title}"
+                    whole_title = "\n".join(self.wrapper.wrap(f"Unsat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}, \n{self.title} \n{title}"))
                     ax.set_title(whole_title)
                     ax.autoscale()
                     ax.margins(0.1)
@@ -419,56 +415,58 @@ class RefinedSpace:
                     return None, "Since no sat samples, the whole grid of points are unsat, not visualising this trivial case."
 
             if red or green:
-                if where:
-                    fig = where[0]
-                    ax = where[1]
-                    plt.autoscale()
-                    ax.autoscale()
-                    if self.rectangles_sat:
-                        fig, ax = visualise_by_param(self.rectangles_sat, title="Refinement,\n Domains of respective parameter of safe subspace.", where=[fig, ax])
+                if where:  ## Return the plot
+                    if self.rectangles_sat:  ## If any rectangles to be visualised
+                        fig = where[0]
+                        ax = where[1]
+                        plt.autoscale()
+                        ax.autoscale()
+                        title = "\n".join(self.wrapper.wrap(f"Refinement,\n Domains of respective parameter of safe subspace.\nLast refinement took {socket.gethostname()} {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole time."))
+                        fig, ax = visualise_by_param(self.rectangles_sat, title=title, where=[fig, ax])
                         return fig, ax
                     else:
                         return None, "While refining multidimensional space no green area found, no reasonable plot to be shown."
                 else:
                     if self.rectangles_sat:
+                        ## TODO maybe add the title
                         fig = visualise_by_param(self.rectangles_sat)
                         plt.show()
                     else:
                         print("No sat rectangles so far, nothing to show")
 
     def get_region(self):
-        """Returns whole domain"""
+        """ Returns whole domain """
         return self.region
 
     def get_params(self):
-        """Returns parameters"""
+        """ Returns parameters """
         return self.params
 
     def get_green(self):
-        """Returns green (hyper)rectangles"""
+        """ Returns green (hyper)rectangles """
         return self.rectangles_sat
 
     def get_red(self):
-        """Returns red (hyper)rectangles"""
+        """ Returns red (hyper)rectangles """
         return self.rectangles_unsat
 
     def get_white(self):
-        """Returns white (hyper)rectangles"""
+        """ Returns white (hyper)rectangles """
         return self.rectangles_unknown
 
     def get_nonwhite(self):
-        """Returns nonwhite (hyper)rectangles"""
+        """ Returns nonwhite (hyper)rectangles """
         return self.rectangles_sat + self.rectangles_unsat
 
     def get_volume(self):
-        """Returns the volume of the space"""
+        """ Returns the volume of the space """
         intervals = []
         for interval in self.region:
             intervals.append(interval[1] - interval[0])
         return prod(intervals)
 
     def get_green_volume(self):
-        """Returns volume of green subspace"""
+        """ Returns volume of green subspace """
         cumulative_volume = 0
 
         ## If there is no hyperrectangle in the sat space
@@ -480,7 +478,7 @@ class RefinedSpace:
         return cumulative_volume
 
     def get_red_volume(self):
-        """Returns volume of red subspace"""
+        """ Returns volume of red subspace """
         cumulative_volume = 0
 
         ## If there is no hyperrectangle in the unsat space
@@ -492,15 +490,15 @@ class RefinedSpace:
         return cumulative_volume
 
     def get_white_volume(self):
-        """Returns volume of white subspace"""
+        """ Returns volume of white subspace """
         return self.get_volume() - self.get_nonwhite_volume()
 
     def get_nonwhite_volume(self):
-        """Returns volume of nonwhite subspace"""
+        """ Returns volume of nonwhite subspace """
         return self.get_green_volume() + self.get_red_volume()
 
     def get_coverage(self):
-        """Returns proportion of nonwhite subspace (coverage)"""
+        """ Returns proportion of nonwhite subspace (coverage) """
         # print("self.get_nonwhite_volume()", self.get_nonwhite_volume())
         # print("self.get_volume()", self.get_volume())
         if self.get_nonwhite_volume() == 0:
@@ -509,57 +507,55 @@ class RefinedSpace:
             return self.get_nonwhite_volume() / self.get_volume()
 
     def get_sat_samples(self):
-        """Returns green (sat) samples"""
+        """ Returns green (sat) samples """
         return self.sat_samples
 
     def get_unsat_samples(self):
-        """Returns red (unsat) samples"""
+        """ Returns red (unsat) samples """
         return self.unsat_samples
 
     def get_all_samples(self):
-        """Returns all (sat and unsat) samples"""
+        """ Returns all (sat and unsat) samples """
         return self.sat_samples + self.unsat_samples
 
     def get_true_point(self):
-        """Returns the true point"""
+        """ Returns the true point """
         return self.true_point
 
     def add_green(self, green):
-        """Adds green (hyper)rectangle"""
+        """ Adds green (hyper)rectangle """
         self.rectangles_sat.append(green)
         self.rectangles_sat_to_show.append(green)
 
     def add_red(self, red):
-        """Adds red (hyper)rectangle"""
+        """ Adds red (hyper)rectangle """
         self.rectangles_unsat.append(red)
         self.rectangles_unsat_to_show.append(red)
 
     def add_white(self, white):
-        """Adds white (hyper)rectangle"""
+        """ Adds white (hyper)rectangle """
         self.rectangles_unknown.append(white)
 
     def add_sat_samples(self, sat_samples):
-        """Adds sat samples
+        """ Adds sat samples
 
-        Args
-        -------
-        sat_samples: (list) of sat points
+        Args:
+            sat_samples (list): of sat points
         """
         # print("sat_samples", sat_samples)
         self.sat_samples.extend(sat_samples)
 
     def add_unsat_samples(self, unsat_samples):
-        """Adds unsat samples
+        """ Adds unsat samples
 
-        Args
-        -------
-        unsat_samples: (list) of unsat points
+        Args:
+            unsat_samples (list): of unsat points
         """
         # print("unsat_samples", unsat_samples)
         self.unsat_samples.extend(unsat_samples)
 
     def remove_green(self, green):
-        """Removes green (hyper)rectangle"""
+        """ Removes green (hyper)rectangle """
         self.rectangles_sat.remove(green)
         try:
             self.rectangles_sat_to_show.remove(green)
@@ -567,7 +563,7 @@ class RefinedSpace:
             pass
 
     def remove_red(self, red):
-        """Removes red (hyper)rectangle"""
+        """ Removes red (hyper)rectangle """
         self.rectangles_unsat.remove(red)
         try:
             self.rectangles_unsat_to_show.remove(red)
@@ -575,7 +571,7 @@ class RefinedSpace:
             pass
 
     def remove_white(self, white):
-        """Removes white (hyper)rectangle"""
+        """ Removes white (hyper)rectangle """
         try:
             self.rectangles_unknown.remove(white)
         except:
@@ -585,11 +581,10 @@ class RefinedSpace:
 
     ## TODO generalise so that the code is not copied
     def show_green(self, show_all=True):
-        """Adds green (hyper)rectangles to be visualised
+        """ Adds green (hyper)rectangles to be visualised
 
-        Args
-        -------
-        show_all: (Bool) if all, not only newly added rectangles are shown
+        Args:
+            show_all (bool): if all, not only newly added rectangles are shown
         """
         rectangles_sat = []
         if len(self.region) > 2:
@@ -609,11 +604,10 @@ class RefinedSpace:
         return PatchCollection(rectangles_sat, facecolor='g', alpha=0.5)
 
     def show_red(self, show_all=True):
-        """Adds red (hyper)rectangles to be visualised
+        """ Adds red (hyper)rectangles to be visualised
 
-        Args
-        -------
-        show_all: (Bool) if all, not only newly added rectangles are shown
+        Args:
+            show_all (bool): if all, not only newly added rectangles are shown
         """
         rectangles_unsat = []
         if len(self.region) > 2:
@@ -636,13 +630,12 @@ class RefinedSpace:
     def sample(self, constraints, size_q, silent: bool = False, save=False, progress=False):
         """ Executes grid sampling
 
-            Args
-            -------
-            constraints:  (list of strings): array of properties
-            size_q: (int): number of samples in dimension
-            silent: (Bool): if silent printed output is set to minimum
-            save: (Bool): if True output is pickled
-            progress: (Tkinter element) progress bar
+        Args:
+            constraints  (list of strings): array of properties
+            size_q (int): number of samples in dimension
+            silent (bool): if silent printed output is set to minimum
+            save (bool): if True output is pickled
+            progress (Tkinter element): progress bar
         """
         from synthetise import sample
         self.gridsampled = True
@@ -651,19 +644,18 @@ class RefinedSpace:
     def grid_sample(self, constraints, size_q, silent: bool = False, save=False, progress=False):
         """ Executes grid sampling
 
-            Args
-            -------
-            constraints:  (list of strings): array of properties
-            size_q: (int): number of samples in dimension
-            silent: (Bool): if silent printed output is set to minimum
-            save: (Bool): if True output is pickled
-            progress: (Tkinter element) progress bar
+        Args:
+            constraints  (list of strings): array of properties
+            size_q (int): number of samples in dimension
+            silent (bool): if silent printed output is set to minimum
+            save (bool): if True output is pickled
+            progress (Tkinter element): progress bar
         """
         self.gridsampled = True
         self.sample(self, constraints, size_q, save=save, progress=progress)
 
     def show_samples(self, which):
-        """ Visualises samples in 2D"""
+        """ Visualises samples in 2D """
         if not (self.sat_samples or self.unsat_samples):
             return None
 
@@ -699,7 +691,11 @@ class RefinedSpace:
                 return PatchCollection(samples, facecolor='r', alpha=0.5)
 
     def nice_print(self, full_print=False):
-        """ Returns the class in a human readable format """
+        """ Returns the class in a human readable format
+
+        Args:
+            full_print (bool): if True not truncated print is used
+        """
         spam = str(f"params: {self.params}\n")
         spam = spam + str(f"region: {self.region}\n")
         spam = spam + str(f"types: {self.types}\n")
@@ -712,12 +708,20 @@ class RefinedSpace:
         return spam
 
     def sampling_took(self, time):
-        """ Manages the time the sampling took """
+        """ Manages the time the sampling took
+
+        Args:
+            time (number): adds the time of the last sampling
+        """
         self.time_last_sampling = time
         self.time_sampling = self.time_sampling + self.time_last_sampling
 
     def refinement_took(self, time):
-        """ Manages the time the refinement took """
+        """ Manages the time the refinement took
+
+        Args:
+            time (number): adds the time of the last refinement
+        """
         self.time_last_refinement = time
         self.time_refinement = self.time_refinement + self.time_last_refinement
 

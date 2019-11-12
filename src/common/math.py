@@ -6,15 +6,14 @@ import numpy as np
 from mpmath import mpi
 from numpy import prod
 
+
 def nCr(n, k):
     """ Returns combinatorial number n take k
 
-    Args
-    ----------
-    n: (int)
-    k: (int)
+    Args:
+        n (int):
+        k (int):
     """
-
     f = math.factorial
     return f(n) / f(k) / f(n - k)
 
@@ -22,12 +21,10 @@ def nCr(n, k):
 def catch_data_error(data, minimum, maximum):
     """ Corrects all data value to be in range min,max
 
-    Args
-    ----------
-    data: (dictionary) structure of data
-    minimum: (float) minimal value in data to be set to
-    maximum: (float) maximal value in data to be set to
-
+    Args:
+        data (dictionary): structure of data
+        minimum (float): minimal value in data to be set to
+        maximum (float): maximal value in data to be set to
     """
     for n in data.keys():
         for i in range(len(data[n])):
@@ -41,11 +38,10 @@ def catch_data_error(data, minimum, maximum):
 def create_intervals(alpha, n_samples, data):
     """ Returns intervals of data_point +- margin
 
-    Args
-    ----------
-    alpha: (float) confidence interval to compute margin
-    n_samples: (int) number of samples to compute margin
-    data: (list of floats), values to be margined
+    Args:
+        alpha (float): confidence interval to compute margin
+        n_samples (int): number of samples to compute margin
+        data (list of floats): values to be margined
     """
     intervals = []
     if not isinstance(data, Iterable):
@@ -58,25 +54,23 @@ def create_intervals(alpha, n_samples, data):
 def create_interval(alpha, n_samples, data_point):
     """ Returns interval of data_point +- margin
 
-    Args
-    ----------
-    alpha: (float) confidence interval to compute margin
-    n_samples: (int) number of samples to compute margin
-    data_point: (float), the value to be margined
+    Args:
+        alpha (float): confidence interval to compute margin
+        n_samples (int): number of samples to compute margin
+        data_point (float): the value to be margined
     """
     delta = margin(alpha, n_samples, data_point)
     return Interval(data_point - delta, data_point + delta)
 
 
+## TODO shortly describe this type of margin
 def margin(alpha, n_samples, data_point):
     """ Estimates expected interval with respect to parameters
-    TBA shortly describe this type of margin
 
-    Args
-    ----------
-    alpha: (float) confidence interval to compute margin
-    n_samples: (int) number of samples to compute margin
-    data_point: (float), the value to be margined
+    Args:
+        alpha (float): confidence interval to compute margin
+        n_samples (int): number of samples to compute margin
+        data_point (float): the value to be margined
     """
     return st.norm.ppf(1 - (1 - alpha) / 2) * math.sqrt(data_point * (1 - data_point) / n_samples) + 0.5 / n_samples
 
@@ -85,11 +79,10 @@ def margin_experimental(alpha, n_samples, data_point):
     """ Estimates expected interval with respect to parameters
     This margin was used to produce the visual outputs for hsb19
 
-    Args
-    ----------
-    alpha: (float) confidence interval to compute margin
-    n_samples: (int) number of samples to compute margin
-    data_point: (float), the value to be margined
+    Args:
+        alpha (float): confidence interval to compute margin
+        n_samples (int): number of samples to compute margin
+        data_point (float):, the value to be margined
     """
     return st.norm.ppf(1 - (1 - alpha) / 2) * math.sqrt(
         data_point * (1 - data_point) / n_samples) + 0.5 / n_samples + 0.005
@@ -110,10 +103,9 @@ def cartesian_product(*arrays):
 def is_in(region1, region2):
     """ Returns True if the region1 is in the region2, returns False otherwise
 
-    Args
-    ----------
-    region1: (list of pairs) (hyper)space defined by the regions
-    region2: (list of pairs) (hyper)space defined by the regions
+    Args:
+        region1 (list of pairs): (hyper)space defined by the regions
+        region2 (list of pairs): (hyper)space defined by the regions
     """
     if len(region1) is not len(region2):
         print("The intervals does not have the same size")
@@ -126,11 +118,10 @@ def is_in(region1, region2):
 
 
 def get_rectangle_volume(rectangle):
-    """Computes the volume of the given (hyper)rectangle
+    """ Computes the volume of the given (hyper)rectangle
 
-    Args
-    ------
-    rectangle:  (list of intervals) defining the (hyper)rectangle
+    Args:
+        rectangle:  (list of intervals) defining the (hyper)rectangle
     """
     intervals = []
     ## If there is empty rectangle

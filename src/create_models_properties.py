@@ -28,17 +28,16 @@ def create_synchronous_model(file, N):
     """ Creates synchronous model of *N* agents to a *file* with probabilities p and q in [0,1].
     For more information see the HSB19 paper.
 
-    Args
-    ----------
-    file: (string) - filename with extension
-    N: (int) - agent quantity
+    Args:
+        file (string): filename with extension
+        N (int): agent quantity
 
     Model meaning
     ----------
     Params:
-    N: (int) - number of agents (agents quantity)
-    p: (float) - probability to succeed in the first attempt
-    q: (float) - probability to succeed in the second attempt
+    N (int):  number of agents (agents quantity)
+    p (float): - probability to succeed in the first attempt
+    q (float): - probability to succeed in the second attempt
     ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
     """
     filename = model_path / Path(file.split(".")[0] + ".pm")
@@ -187,17 +186,16 @@ def create_synchronous_model(file, N):
 def create_semisynchronous_model(file, N):
     """ Creates semisynchronous model of *N* agents to a *file* with probabilities p and q in [0,1]. For more information see the HSB19 paper.
 
-    Args
-    ----------
-    file: (string) - filename with extension
-    N: (int) - agent quantity
+    Args:
+        file (string): filename with extension
+        N (int):  agent quantity
 
     Model meaning
     ----------
     Params:
-    N: (int) - number of agents (agents quantity)
-    p: (float) - probability to succeed in the first attempt
-    q: (float) - probability to succeed in the second attempt
+    N (int):  number of agents (agents quantity)
+    p (float): - probability to succeed in the first attempt
+    q (float): - probability to succeed in the second attempt
     ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
     """
     filename = model_path / Path(file.split(".")[0] + ".pm")
@@ -365,18 +363,17 @@ def create_semisynchronous_model(file, N):
 def create_asynchronous_model(file, N):
     """ Creates asynchronous model of *N* agents to a *file* with probabilities p and q in [0,1]. For more information see the HSB19 paper.
 
-    Args
-    ----------
-    file: (string) - filename with extension
-    N: (int) - agent quantity
+    Args:
+        file (string): filename with extension
+        N (int):  agent quantity
 
 
     Model meaning
     ----------
     Params:
-    N: (int) - number of agents (agents quantity)
-    p: (float) - probability to succeed in the first attempt
-    q: (float) - probability to succeed in the second attempt
+    N (int):  number of agents (agents quantity)
+    p (float): - probability to succeed in the first attempt
+    q (float): - probability to succeed in the second attempt
     ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
     """
     filename = model_path / Path(file.split(".")[0] + ".pm")
@@ -644,16 +641,15 @@ def create_multiparam_synchronous_model(file, N):
     For more information see the HSB19 paper.
     
     Args:
-    ----------
-    file: (string) - filename with extension
-    N: (int) - agent quantity
+        file (string): filename with extension
+        N (int):  agent quantity
 
     Model meaning
     ----------
     Params:
-    N: (int) - number of agents (agents quantity)
-    p: (float) - probability to succeed in the first attempt
-    q: (float) - probability to succeed in the second attempt
+    N (int):  number of agents (agents quantity)
+    p (float): - probability to succeed in the first attempt
+    q (float): - probability to succeed in the second attempt
     ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
     """
     filename = model_path / Path(file.split(".")[0] + ".pm")
@@ -804,17 +800,16 @@ def create_multiparam_semisynchronous_model(file, N):
     """ Creates semisynchronous model of *N* agents to a *file* with probabilities p and q1, q2, ... q(N-1) in [0,1].
     For more information see the HSB19 paper.
 
-    Args
-    ----------
-    file: (string) - filename with extension
-    N: (int) - agent quantity
+    Args:
+        file (string): filename with extension
+        N (int):  agent quantity
 
     Model meaning
     ----------
     Params:
-    N: (int) - number of agents (agents quantity)
-    p: (float) - probability to succeed in the first attempt
-    q: (float) - probability to succeed in the second attempt
+    N (int):  number of agents (agents quantity)
+    p (float): - probability to succeed in the first attempt
+    q (float): - probability to succeed in the second attempt
     ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
     """
     filename = model_path / Path(file.split(".")[0] + ".pm")
@@ -987,17 +982,16 @@ def create_multiparam_asynchronous_model(file, N):
     """ Creates semisynchronous model of *N* agents to a *file* with probabilities p and q1, q2, ... q(N-1) in [0,1].
     For more information see the HSB19 paper.
 
-    Args
-    ----------
-    file: (string) - filename with extension
-    N: (int) - agent quantity
+    Args:
+        file (string): filename with extension
+        N (int):  agent quantity
 
     Model meaning
     ----------
     Params:
-    N: (int) - number of agents (agents quantity)
-    p: (float) - probability to succeed in the first attempt
-    q: (float) - probability to succeed in the second attempt
+    N (int):  number of agents (agents quantity)
+    p (float): - probability to succeed in the first attempt
+    q (float): - probability to succeed in the second attempt
     ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
     """
     filename = model_path / Path(file.split(".")[0] + ".pm")
@@ -1278,15 +1272,14 @@ def create_bee_multiparam_synchronous_model(file, N):
     """ Creates synchronous model of *N* agents to a *file* with probabilities r_i in [0,1].
 
     Args:
-    ----------
-    file: (string) - filename with extension
-    N: (int) - agent quantity
+        file (string): filename with extension
+        N (int):  agent quantity
 
     Model meaning
     ----------
     Params:
-    N: (int) - number of agents (agents quantity)
-    r_i: (float) - probability of success of an agent when i amount of pheromone is present
+    N (int):  number of agents (agents quantity)
+    r_i (float): - probability of success of an agent when i amount of pheromone is present
     """
     filename = model_path / Path(file.split(".")[0] + ".pm")
     file = open(filename, "w")
@@ -1437,9 +1430,8 @@ def create_properties(N):
     """ Creates property file of reaching respective BSCC of the model of *N* agents as prop_<N>.pctl file.
     For more information see the HSB19 paper.
 
-    Args
-    ----------
-    N: (int) - agent quantity
+    Args:
+        N (int):  agent quantity
     """
 
     filename = properties_path / Path(f"prop_{N}.pctl")
