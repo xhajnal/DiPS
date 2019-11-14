@@ -253,6 +253,14 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
 
     # print("Parameter point", theta_true)
 
+    ## If no starting point given
+    if not theta_init:
+        theta_init = [(parameter_intervals[0][0] + parameter_intervals[0][1])/2, (parameter_intervals[1][0] + parameter_intervals[1][1])/2]  ## Middle of the intervals # np.ones(10)*0.1
+
+    for index, param in enumerate(space.get_params()):
+        globals()[param] = theta_init[index]
+        print(f"{param} = {theta_init[index]}")
+
     ## Maintaining observations
     if observations:
         ## Checking the type of observations (experiment/data)
@@ -294,9 +302,6 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
     # np.log(r)  ## another print call
     # res = manual_log_like_normal(space, theta_true, functions, np.array(observations), eps)
 
-    ## If no starting point given
-    if not theta_init:
-        theta_init = [(parameter_intervals[0][0] + parameter_intervals[0][1])/2, (parameter_intervals[1][0] + parameter_intervals[1][1])/2]  ## Middle of the intervals # np.ones(10)*0.1
     print("Initial parameter point: ", theta_init)
 
     ##                                      (likelihood_computer,    prior, transition_model,   param_init, iterations, space, data,    acceptance_rule,parameter_intervals, functions, eps):
