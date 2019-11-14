@@ -543,7 +543,7 @@ def find_param(my_string, debug: bool = False):
     return parameters
 
 
-def find_param_old(polynomial):
+def find_param_old(polynomial, debug: bool = False):
     """ Finds parameters of a polynomials (also deals with Z3 expressions)
 
     Args:
@@ -555,9 +555,14 @@ def find_param_old(polynomial):
 
     ## Get the e-/e+ notation away
     parameters = re.sub('[0-9]e[+|-][0-9]', '0', polynomial)
+
     parameters = parameters.replace('(', '').replace(')', '').replace('**', '*').replace(' ', '')
-    parameters = parameters.replace("Not", " ").replace("Or", " ").replace("And", " ").replace("Implies", " ").replace(
-        "If", " ").replace(',', ' ')
+    ## replace python expressions
+    parameters = parameters.replace("if", " ").replace("else", " ").replace("elif", " ")
+    parameters = parameters.replace("not", " ").replace("or", " ").replace("and", " ")
+    ## Replace z3 expression
+    parameters = parameters.replace("Not", " ").replace("Or", " ").replace("And", " ").replace("Implies", " ")
+    parameters = parameters.replace("If", " ").replace(',', ' ')
     parameters = parameters.replace("<", " ").replace(">", " ").replace("=", " ")
     parameters = re.split('\+|\*|\-|/| ', parameters)
     parameters = [i for i in parameters if not i.replace('.', '', 1).isdigit()]
@@ -567,7 +572,7 @@ def find_param_old(polynomial):
     return set(parameters)
 
 
-def find_param_older(polynomial):
+def find_param_older(polynomial, debug: bool = False):
     """ Finds parameters of a polynomials
 
     Args:
