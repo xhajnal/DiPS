@@ -1364,13 +1364,8 @@ class Gui(Tk):
                 self.page6_figure.canvas.draw()
                 self.page6_figure.canvas.flush_events()
 
-    def edit_true_point(self, is_edit_true_point=True):
-        """ Sets the true point of the space
-
-        Args:
-            is_edit_true_point (bool): if True Edit True point is called, else metropolis hasting initial value is parsed
-        """
-        self.is_edit_true_point = is_edit_true_point
+    def edit_true_point(self):
+        """ Sets the true point of the space """
 
         if self.space is "":
             print("No space loaded. Cannot set the true_point.")
@@ -1378,35 +1373,13 @@ class Gui(Tk):
             return
         else:
             print(self.space.nice_print())
-            self.new_window = Toplevel(self)
-            label = Label(self.new_window,
-                          text="Please choose values of the parameters to be used:")
-            label.grid(row=0)
+            self.create_window_to_load_param_point(parameters=self.space.params)
+            self.space.true_point = self.parameter_values
+            print(self.space.nice_print())
 
-            i = 1
-            ## For each param create an entry
-            self.parameter_values = []
-            for param in self.space.params:
-                Label(self.new_window, text=param, anchor=W, justify=LEFT).grid(row=i, column=0)
-                spam = Entry(self.new_window)
-                spam.grid(row=i, column=1)
-                spam.insert(END, '0')
-                self.parameter_values.append(spam)
-                i = i + 1
-
-            ## To be used to wait until the button is pressed
-            self.button_pressed.set(False)
-            load_true_point_button = Button(self.new_window, text="OK", command=self.load_point_from_window)
-            load_true_point_button.grid(row=i)
-            load_true_point_button.focus()
-            load_true_point_button.bind('<Return>', self.load_point_from_window)
-
-            load_true_point_button.wait_variable(self.button_pressed)
-
-            if not self.is_edit_true_point:
-                self.print_space()
-                self.page6_a.cla()
-                self.show_space(self.show_refinement, self.show_samples, True, show_all=True)
+            self.print_space()
+            self.page6_a.cla()
+            self.show_space(self.show_refinement, self.show_samples, True, show_all=True)
 
     def parse_data_from_window(self):
         """ Parses data from the window. """
@@ -1864,36 +1837,8 @@ class Gui(Tk):
 
         self.validate_parameters(where=self.functions, intervals=False)
 
-        ## TODO Maybe rewrite this as key and pass the argument to load_param_intervals
-        self.key = StringVar()
         self.status_set("Choosing parameters value:")
-        self.new_window = Toplevel(self)
-        label = Label(self.new_window, text="Please choose value of respective parameter of the synthesised function(s):")
-        label.grid(row=0)
-        self.key.set(" ")
-
-        ## Parse parameters values
-        self.parameter_values = []
-        i = 1
-        ## For each param create an entry
-        for param in self.parameters:
-            Label(self.new_window, text=param, anchor=W, justify=LEFT).grid(row=i, column=0)
-            spam = Entry(self.new_window)
-            spam.grid(row=i, column=1)
-            spam.insert(END, '0')
-            self.parameter_values.append(spam)
-            i = i + 1
-
-        ## To be used to wait until the button is pressed
-        self.button_pressed.set(False)
-        load_param_values_button = Button(self.new_window, text="OK", command=self.load_param_values_from_window)
-        load_param_values_button.focus()
-        load_param_values_button.bind('<Return>', self.load_param_values_from_window)
-        load_param_values_button.grid(row=i)
-
-        ## Waiting for the pop-up window closing
-        load_param_values_button.wait_variable(self.button_pressed)
-        ## print("key pressed")
+        self.create_window_to_load_param_point(parameters=self.parameters)
 
         self.reinitialise_plot()
 
@@ -2250,8 +2195,7 @@ class Gui(Tk):
         if not self.validate_space("Space Metropolis-Hastings"):
             return
 
-        ## self.mh_init_point is edited here
-        self.edit_true_point(is_edit_true_point=False)
+        self.create_window_to_load_param_point(parameters=self.space.params)
 
         self.page6_figure2.clf()
         self.page6_b = self.page6_figure2.add_subplot(111)
@@ -2276,7 +2220,7 @@ class Gui(Tk):
                                                                    int(self.N_obs_entry.get()),
                                                                    int(self.MH_samples_entry.get()),
                                                                    float(self.eps_entry.get()),
-                                                                   theta_init=self.mh_init_point,
+                                                                   theta_init=self.parameter_values,
                                                                    where=[self.page6_figure2, self.page6_b],
                                                                    progress=self.update_progress_bar)
         finally:
@@ -2625,6 +2569,32 @@ class Gui(Tk):
             sys.setrecursionlimit(self.python_recursion_depth)
 
     ## INNER FUNCTIONS
+    def create_window_to_load_param_point(self, parameters):
+        """ Creates a window a functionality to load values of parameters"""
+        self.new_window = Toplevel(self)
+        label = Label(self.new_window, text="Please choose values of the parameters to be used:")
+        label.grid(row=0)
+
+        i = 1
+        ## For each param create an entry
+        self.parameter_values = []
+        for param in parameters:
+            Label(self.new_window, text=param, anchor=W, justify=LEFT).grid(row=i, column=0)
+            spam = Entry(self.new_window)
+            spam.grid(row=i, column=1)
+            spam.insert(END, '0')
+            self.parameter_values.append(spam)
+            i = i + 1
+
+        ## To be used to wait until the button is pressed
+        self.button_pressed.set(False)
+        load_true_point_button = Button(self.new_window, text="OK", command=self.load_param_values_from_window)
+        load_true_point_button.grid(row=i)
+        load_true_point_button.focus()
+        load_true_point_button.bind('<Return>', self.load_param_values_from_window)
+
+        load_true_point_button.wait_variable(self.button_pressed)
+
     def load_param_intervals_from_window(self):
         """ Inner function to parse the param intervals from created window """
         region = []
@@ -2643,36 +2613,13 @@ class Gui(Tk):
             if self.space:
                 print("Space: ", self.space)
 
-    def load_point_from_window(self):
-        """ Inner function to parse the true point from created window """
-        point = []
-        for param_index in range(len(self.space.params)):
-            ## Getting the values from each entry
-            point.append(float(self.parameter_values[param_index].get()))
-        if not self.silent.get():
-            print("True point set to: ", point)
-        # del self.key
-        self.new_window.destroy()
-        del self.new_window
-
-        if self.is_edit_true_point:
-            self.space.true_point = point
-            print(self.space.nice_print())
-        else:
-            self.mh_init_point = point
-
-        self.button_pressed.set(True)
-
     def load_param_values_from_window(self):
         """ Inner function to parse the param values from created window """
-        for param_index in range(len(self.parameter_values)):
-            ## Getting the values from each entry, low = [0], high = [1]
-            self.parameter_values[param_index] = float(self.parameter_values[param_index].get())
-        del self.key
+        for index, param in enumerate(self.parameter_values):
+            self.parameter_values[index] = float(self.parameter_values[index].get())
         self.new_window.destroy()
         del self.new_window
         self.button_pressed.set(True)
-        ## print("self.parameter_values", self.parameter_values)
 
     def reinitialise_plot(self, set_onclick=False):
         """ Inner function, reinitialising the page3 plot """
