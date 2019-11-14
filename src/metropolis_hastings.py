@@ -1,9 +1,13 @@
 import os
 import configparser
+from time import time
+from socket import gethostname
+
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 
+from common.document_wrapper import DocumentWrapper
 from common.z3 import is_this_z3_function, translate_z3_function
 from space import RefinedSpace
 
@@ -23,6 +27,7 @@ if not os.path.exists(tmp_dir):
     raise OSError("Directory does not exist: " + str(tmp_dir))
 
 os.chdir(cwd)
+wrapper = DocumentWrapper(width=75)
 
 
 def sample(functions, data_means):
@@ -204,7 +209,7 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
     return res
 
 
-def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_obs: int, MH_samples: int, eps, where=False, progress=False):
+def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_obs: int, MH_samples: int, eps, theta_init=False, where=False, progress=False):
     """ Initialisation method for Metropolis Hastings
     Args:
         space (RefinedSpace):
@@ -214,21 +219,24 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
         N_obs (number): number of samples
         MH_samples (number): number of iterations
         eps (number): very small value used as probability of non-feasible values in prior
+        theta_init (list of numbers): initial point in parameter space
         where (tuple/list): output matplotlib sources to output created figure
         progress (Tkinter element): progress bar
 
     @author: tpetrov
     @edit: xhajnal
     """
+    ## Internal settings
+    start_time = time()
 
-    ## Convert z3 functions
-    for index, function in enumerate(functions):
-        if is_this_z3_function(function):
-            functions[index] = translate_z3_function(function)
+    # ## Convert z3 functions
+    # for index, function in enumerate(functions):
+    #     if is_this_z3_function(function):
+    #         functions[index] = translate_z3_function(function)
 
-    for index, param in enumerate(space.get_params()):
-        globals()[param] = space.true_point[index]
-        print(f"{param} = {space.true_point[index]}")
+    # for index, param in enumerate(space.get_params()):
+    #     globals()[param] = space.true_point[index]
+    #     print(f"{param} = {space.true_point[index]}")
     # globals()[space.get_params()[0]] = space.true_point[0]
     # globals()[space.get_params()[1]] = space.true_point[1]
     # print(f"{space.get_params()[0]} = {globals()[space.get_params()[0]]}")
@@ -236,15 +244,16 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
 
     parameter_intervals = space.get_region()
 
-    theta_true = np.zeros(len(space.get_params()))
-    for index, param in enumerate(space.true_point):
-        theta_true[index] = param
+    # theta_true = np.zeros(len(space.get_params()))
+    # for index, param in enumerate(space.true_point):
+    #     theta_true[index] = param
     # theta_true = np.zeros(2)
     # theta_true[0] = space.true_point[0]
     # theta_true[1] = space.true_point[1]
 
-    print("Parameter point", theta_true)
+    # print("Parameter point", theta_true)
 
+    ## Maintaining observations
     if observations:
         ## Checking the type of observations (experiment/data)
         if len(observations) > len(functions):
@@ -280,14 +289,17 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
         ax.set_title(f"Figure 1: Distribution of {N_obs} observations (from full sample= {N})")
         plt.show()
 
-    theta_new = transition_model_a(theta_true, parameter_intervals)     ## apparently just a print call
-    r = prior(theta_true, eps)
-    np.log(r)  ## another print call
-    res = manual_log_like_normal(space, theta_true, functions, np.array(observations), eps)
+    # theta_new = transition_model_a(theta_true, parameter_intervals)     ## apparently just a print call
+    # r = prior(theta_true, eps)
+    # np.log(r)  ## another print call
+    # res = manual_log_like_normal(space, theta_true, functions, np.array(observations), eps)
 
-    theta_init = [(parameter_intervals[0][0] + parameter_intervals[0][1])/2, (parameter_intervals[1][0] + parameter_intervals[1][1])/2]  ## Middle of the intervals # np.ones(10)*0.1
+    ## If no starting point given
+    if not theta_init:
+        theta_init = [(parameter_intervals[0][0] + parameter_intervals[0][1])/2, (parameter_intervals[1][0] + parameter_intervals[1][1])/2]  ## Middle of the intervals # np.ones(10)*0.1
     print("Initial parameter point: ", theta_init)
-                                         ## (likelihood_computer,    prior, transition_model,   param_init, iterations, space, data,    acceptance_rule,parameter_intervals, functions, eps):
+
+    ##                                      (likelihood_computer,    prior, transition_model,   param_init, iterations, space, data,    acceptance_rule,parameter_intervals, functions, eps):
     accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, MH_samples, space, observations, acceptance, parameter_intervals, functions, eps, progress=progress)
 
     print(f"Set of accepted and rejected points is stored here: {tmp_dir}")
@@ -331,11 +343,12 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
         fig.tight_layout()
 
     ## Create the heat map
+    heatmap_title = f'{space.get_params()[0]}, {space.get_params()[1]} estimate with MH algorithm, {MH_samples} iterations, sample size = {N_obs} \n It took {gethostname()} {round(time() - start_time)} second(s)'
     if where:
         plt.hist2d(accepted[show:, 0], accepted[show:, 1], bins=20)
         plt.xlabel(space.get_params()[0])
         plt.ylabel(space.get_params()[1])
-        plt.title(f'{space.get_params()[0]},{space.get_params()[1]} estimate with MH algorithm, {MH_samples} iterations, sample size = {N_obs}')
+        plt.title("\n".join(wrapper.wrap(heatmap_title)))
         where[1] = plt.colorbar()
         return where[0], where[1]
     else:
@@ -344,6 +357,5 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
         plt.colorbar()
         plt.xlabel(space.get_params()[0])
         plt.ylabel(space.get_params()[1])
-        plt.title(
-            f'{space.get_params()[0]},{space.get_params()[1]} estimate with MH algorithm, {MH_samples} iterations, sample size = {N_obs}')
+        plt.title(heatmap_title)
         plt.show()

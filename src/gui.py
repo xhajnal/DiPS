@@ -160,7 +160,7 @@ class Gui(Tk):
         self.show_true_point = None
 
         ## Settings
-        self.version = "1.8.1"  ## Version of the gui
+        self.version = "1.8.2"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -1364,8 +1364,14 @@ class Gui(Tk):
                 self.page6_figure.canvas.draw()
                 self.page6_figure.canvas.flush_events()
 
-    def edit_true_point(self):
-        """ Sets the true point of the space """
+    def edit_true_point(self, is_edit_true_point=True):
+        """ Sets the true point of the space
+
+        Args:
+            is_edit_true_point (bool): if True Edit True point is called, else metropolis hasting initial value is parsed
+        """
+        self.is_edit_true_point = is_edit_true_point
+
         if self.space is "":
             print("No space loaded. Cannot set the true_point.")
             messagebox.showwarning("Edit True point", "Load space first.")
@@ -1390,16 +1396,17 @@ class Gui(Tk):
 
             ## To be used to wait until the button is pressed
             self.button_pressed.set(False)
-            load_true_point_button = Button(self.new_window, text="OK", command=self.load_true_point_from_window)
+            load_true_point_button = Button(self.new_window, text="OK", command=self.load_point_from_window)
             load_true_point_button.grid(row=i)
             load_true_point_button.focus()
-            load_true_point_button.bind('<Return>', self.load_true_point_from_window)
+            load_true_point_button.bind('<Return>', self.load_point_from_window)
 
             load_true_point_button.wait_variable(self.button_pressed)
 
-            self.print_space()
-            self.page6_a.cla()
-            self.show_space(self.show_refinement, self.show_samples, True, show_all=True)
+            if not self.is_edit_true_point:
+                self.print_space()
+                self.page6_a.cla()
+                self.show_space(self.show_refinement, self.show_samples, True, show_all=True)
 
     def parse_data_from_window(self):
         """ Parses data from the window. """
@@ -2243,8 +2250,8 @@ class Gui(Tk):
         if not self.validate_space("Space Metropolis-Hastings"):
             return
 
-        if self.space.get_true_point() is None:
-            self.edit_true_point()
+        ## self.mh_init_point is edited here
+        self.edit_true_point(is_edit_true_point=False)
 
         self.page6_figure2.clf()
         self.page6_b = self.page6_figure2.add_subplot(111)
@@ -2269,6 +2276,7 @@ class Gui(Tk):
                                                                    int(self.N_obs_entry.get()),
                                                                    int(self.MH_samples_entry.get()),
                                                                    float(self.eps_entry.get()),
+                                                                   theta_init=self.mh_init_point,
                                                                    where=[self.page6_figure2, self.page6_b],
                                                                    progress=self.update_progress_bar)
         finally:
@@ -2635,20 +2643,24 @@ class Gui(Tk):
             if self.space:
                 print("Space: ", self.space)
 
-    def load_true_point_from_window(self):
+    def load_point_from_window(self):
         """ Inner function to parse the true point from created window """
-        true_point = []
+        point = []
         for param_index in range(len(self.space.params)):
             ## Getting the values from each entry
-            true_point.append(float(self.parameter_values[param_index].get()))
+            point.append(float(self.parameter_values[param_index].get()))
         if not self.silent.get():
-            print("True point set to: ", true_point)
+            print("True point set to: ", point)
         # del self.key
         self.new_window.destroy()
         del self.new_window
-        self.space.true_point = true_point
 
-        print(self.space.nice_print())
+        if self.is_edit_true_point:
+            self.space.true_point = point
+            print(self.space.nice_print())
+        else:
+            self.mh_init_point = point
+
         self.button_pressed.set(True)
 
     def load_param_values_from_window(self):
