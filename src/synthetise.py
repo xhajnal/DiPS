@@ -738,31 +738,36 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
 
             ## Setting the coverage as lower value between desired coverage and the proportional expected coverage
             next_coverage = min(coverage, (space.get_coverage() + (rectangle_size / space.get_volume())*coverage))
-            # print("next coverage", next_coverage)
+            print(colored(f"Using proportional coverage: {next_coverage}", "blue"))
 
             if debug:
                 print("region", rectangle)
                 print("constraints", constraints)
 
             if version == 1:
-                print(f"Using DFS method with {('dreal', 'z3')[solver=='z3']} solver to solve spliced rectangle number {white_space.index(rectangle)+1} of {len(white_space)}")
-                private_check_deeper(rectangle, constraints, max(1, recursion_depth - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, solver=solver, delta=delta, debug=debug)
+                if not silent:
+                    print(f"Using DFS method with {('dreal', 'z3')[solver=='z3']} solver to solve spliced rectangle number {white_space.index(rectangle)+1} of {len(white_space)}")
+                private_check_deeper(rectangle, constraints, max(0, recursion_depth - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, solver=solver, delta=delta, debug=debug)
             elif version == 2:
-                print(f"Using BFS method with {('dreal', 'z3')[solver=='z3']} solver to solve spliced rectangle number {white_space.index(rectangle)+1}")
-                private_check_deeper_queue(rectangle, constraints, max(1, recursion_depth - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, solver=solver, delta=delta, debug=debug)
+                if not silent:
+                    print(f"Using BFS method with {('dreal', 'z3')[solver=='z3']} solver to solve spliced rectangle number {white_space.index(rectangle)+1}")
+                private_check_deeper_queue(rectangle, constraints, max(0, recursion_depth - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, solver=solver, delta=delta, debug=debug)
             elif version == 3:
-                print(f"Using BFS method with passing examples with {('dreal', 'z3')[solver=='z3']} solver to solve spliced rectangle number {white_space.index(rectangle)+1} of {len(white_space)}")
-                private_check_deeper_queue_checking(rectangle, constraints, max(1, recursion_depth - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, model=None, solver=solver, delta=delta, debug=debug)
+                if not silent:
+                    print(f"Using BFS method with passing examples with {('dreal', 'z3')[solver=='z3']} solver to solve spliced rectangle number {white_space.index(rectangle)+1} of {len(white_space)}")
+                private_check_deeper_queue_checking(rectangle, constraints, max(0, recursion_depth - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, model=None, solver=solver, delta=delta, debug=debug)
             elif version == 4:
-                print(f"Using BFS method with passing examples and counterexamples with {('dreal', 'z3')[solver=='z3']} solver to solve spliced rectangle number {white_space.index(rectangle)+1} of {len(white_space)}")
-                private_check_deeper_queue_checking_both(rectangle, constraints, max(1, recursion_depth - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, model=None, solver=solver, delta=delta, debug=debug)
+                if not silent:
+                    print(f"Using BFS method with passing examples and counterexamples with {('dreal', 'z3')[solver=='z3']} solver to solve spliced rectangle number {white_space.index(rectangle)+1} of {len(white_space)}")
+                private_check_deeper_queue_checking_both(rectangle, constraints, max(0, recursion_depth - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, model=None, solver=solver, delta=delta, debug=debug)
             elif version == 5:
-                print(f"Using interval method to solve spliced rectangle number {white_space.index(rectangle)+1} of {len(white_space)}.")
+                if not silent:
+                    print(f"Using interval method to solve spliced rectangle number {white_space.index(rectangle)+1} of {len(white_space)}.")
 
                 egg = constraints_to_ineq(constraints, debug=debug)
                 if not egg:
                     return space
-                private_check_deeper_interval(rectangle, egg[0], egg[1], max(1, recursion_depth - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, debug=debug)
+                private_check_deeper_interval(rectangle, egg[0], egg[1], max(0, recursion_depth - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, debug=debug)
             else:
                 print(colored("Chosen version not found", "red"))
                 return space
@@ -796,7 +801,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         if show_space:
             space.refinement_took(time() - start_time)
             space_shown = space.show(f"max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n Last refinement took {socket.gethostname()} {round(time() - start_time, 2)} of {round(space.time_refinement, 2)} second(s)", sat_samples=gui and len(space.params) <= 2, unsat_samples=gui and len(space.params) <= 2, save=save, where=where, show_all=not gui)
-    print("result coverage is: ", space.get_coverage())
+    print(colored(f"result coverage is: {space.get_coverage()}", "blue"))
     if where:
         if space_shown[0] is None:
             return space, space_shown[1]
