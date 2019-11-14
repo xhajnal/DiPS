@@ -64,14 +64,15 @@ def translate_z3_function(function: str):
     Args:
         function (string): expression to be translated
     """
+    ## ? is non greedy flag
     if "If" in function:
-        function = re.sub(r"If\((.*),(.*),(.*)\)", r"(\g<2> if \g<1> else \g<3>)", function)
+        function = re.sub(r"If\((.*?),(.*?),(.*?)\)", r"(\g<2> if \g<1> else \g<3>)", function)
     if "And" in function:
-        function = re.sub(r"And\((.*),(.*)\)", r"(\g<1>) and (\g<2>)", function)
+        function = re.sub(r"And\((.*?),(.*?)\)", r"(\g<1>) and (\g<2>)", function)
     if "Or" in function:
-        function = re.sub(r"Or\((.*),(.*)\)", r"(\g<1>) or (\g<2>)", function)
+        function = re.sub(r"Or\((.*?),(.*?)\)", r"(\g<1>) or (\g<2>)", function)
     if "Not" in function:
-        function = re.sub(r"Not\((.*)\)", r" not (\g<1>)", function)
+        function = re.sub(r"Not\((.*?)\)", r" not (\g<1>)", function)
     return function
 
 
