@@ -160,7 +160,7 @@ class Gui(Tk):
         self.show_true_point = None
 
         ## Settings
-        self.version = "1.8.0"  ## Version of the gui
+        self.version = "1.8.1"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -441,11 +441,11 @@ class Gui(Tk):
 
 
         ## TAB SAMPLE AND REFINEMENT
-        page6 = ttk.Frame(nb, width=400, height=200, name="refine")
+        page6 = ttk.Frame(nb, width=1000, height=400, name="refine")
         nb.add(page6, text='Sample & Refine space')
 
-        frame_left = Frame(page6, width=200, height=200)
-        frame_left.pack(side=LEFT)
+        frame_left = Frame(page6, width=500, height=200)
+        frame_left.pack(side=LEFT, expand=False)
 
         # Button(frame_left, text='Create space', command=self.validate_space).grid(row=0, column=0, sticky=W, padx=4, pady=4)
 
@@ -546,15 +546,21 @@ class Gui(Tk):
         frame_left.rowconfigure(13, weight=1)
         frame_left.columnconfigure(15, weight=1)
 
-        frame_right = Frame(page6, width=200, height=200)
-        frame_right.pack(side=TOP)
+        Button(frame_left, text='Open space', command=self.load_space).grid(row=14, column=2, sticky=S, padx=4, pady=4)
+        Button(frame_left, text='Save space', command=self.save_space).grid(row=14, column=3, sticky=S, padx=4, pady=4)
+        Button(frame_left, text='Delete space', command=self.refresh_space).grid(row=14, column=4, sticky=S, padx=4, pady=4)
 
-        Button(frame_right, text='Edit True point', command=self.edit_true_point).pack(pady=10)
+        frame_right = Frame(page6, width=500, height=200)
+        frame_right.pack(side=TOP, fill=BOTH, expand=True)
+
+        Button(frame_right, text='Edit True point', command=self.edit_true_point).pack(side=TOP)
 
         Label(frame_right, text=f"Space Visualisation", anchor=W, justify=CENTER).pack(side=TOP)
+
+        ##################################################### UPPER PLOT ###############################################
         self.page6_plotframe = Frame(frame_right)
-        self.page6_plotframe.pack(fill=BOTH, pady=10)
-        self.page6_figure = pyplt.figure()
+        self.page6_plotframe.pack(side=TOP, fill=Y, expand=True)
+        self.page6_figure = pyplt.figure(figsize=(8, 2))
         self.page6_figure.tight_layout()  ## By huypn
 
         self.page6_canvas = FigureCanvasTkAgg(self.page6_figure, master=self.page6_plotframe)  # A tk.DrawingArea.
@@ -566,10 +572,10 @@ class Gui(Tk):
         self.page6_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
         self.page6_a = self.page6_figure.add_subplot(111)
 
-        ##################################################### NEW PLOT ################################################
+        ##################################################### LOWER PLOT ###############################################
         self.page6_plotframe2 = Frame(frame_right)
-        self.page6_plotframe2.pack(fill=BOTH, pady=10)
-        self.page6_figure2 = pyplt.figure()
+        self.page6_plotframe2.pack(side=TOP, fill=Y, expand=True)
+        self.page6_figure2 = pyplt.figure(figsize=(8, 2))
         self.page6_figure2.tight_layout()  ## By huypn
 
         self.page6_canvas2 = FigureCanvasTkAgg(self.page6_figure2, master=self.page6_plotframe2)  # A tk.DrawingArea.
@@ -580,11 +586,7 @@ class Gui(Tk):
         self.page6_toolbar2.update()
         self.page6_canvas2.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
         self.page6_b = self.page6_figure2.add_subplot(111)
-        #################################################### /NEW PLOT ################################################
-
-        Button(frame_left, text='Open space', command=self.load_space).grid(row=14, column=2, sticky=S, padx=4, pady=4)
-        Button(frame_left, text='Save space', command=self.save_space).grid(row=14, column=3, sticky=S, padx=4, pady=4)
-        Button(frame_left, text='Delete space', command=self.refresh_space).grid(row=14, column=4, sticky=S, padx=4, pady=4)
+        #################################################### /PLOTS ####################################################
 
         ## MENU
         main_menu = Menu(self)
@@ -2284,6 +2286,7 @@ class Gui(Tk):
         self.page6_figure2.tight_layout()
         self.page6_figure2.canvas.draw()
         self.page6_figure2.canvas.flush_events()
+        self.update()
 
     def refine_space(self):
         """ Refines (Parameter) Space. Plots the results. """
