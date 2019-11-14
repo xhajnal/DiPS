@@ -329,8 +329,7 @@ class Gui(Tk):
         self.page3 = ttk.Frame(nb, width=400, height=200, name="sampling")
         nb.add(self.page3, text='Sample functions')
 
-        self.page3.rowconfigure(5, weight=1)
-        self.page3.columnconfigure(6, weight=1)
+
 
         Label(self.page3, text="Set number of samples per variable (grid size):", anchor=W, justify=LEFT).grid(row=1, column=0, padx=4, pady=4)
         self.fun_size_q_entry = Entry(self.page3)
@@ -341,20 +340,23 @@ class Gui(Tk):
         Label(self.page3, text=f"Values of sampled points:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, padx=4, pady=4)
 
         self.sampled_functions_text = scrolledtext.ScrolledText(self.page3, height=100, state=DISABLED)
-        self.sampled_functions_text.grid(row=4, column=0, columnspan=16, rowspan=2, sticky=W, padx=4, pady=4)
+        self.sampled_functions_text.grid(row=4, column=0, columnspan=8, rowspan=2, sticky=W, padx=4, pady=4)
 
-        Label(self.page3, text=f"Rational functions visualisation", anchor=W, justify=CENTER).grid(row=1, column=17, columnspan=3, pady=4)
-        Button(self.page3, text='Plot functions in a given point', command=self.show_funs_in_single_point).grid(row=2, column=17, sticky=W, padx=4, pady=4)
-        Button(self.page3, text='Plot all sampled points', command=self.show_funs_in_all_points).grid(row=2, column=18, sticky=W, padx=4, pady=4)
-        Button(self.page3, text='Heatmap', command=self.show_heatmap).grid(row=2, column=19, sticky=W, padx=4, pady=4)
+        Label(self.page3, text=f"Rational functions visualisation", anchor=W, justify=CENTER).grid(row=1, column=14, columnspan=3, pady=4)
+        Button(self.page3, text='Plot functions in a given point', command=self.show_funs_in_single_point).grid(row=2, column=14, padx=4, pady=4)
+        Button(self.page3, text='Plot all sampled points', command=self.show_funs_in_all_points).grid(row=2, column=15, padx=4, pady=4)
+        Button(self.page3, text='Heatmap', command=self.show_heatmap).grid(row=2, column=16, padx=4, pady=4)
         self.Next_sample_button = Button(self.page3, text="Next plot", state="disabled",
                                          command=lambda: self.button_pressed.set(True))
-        self.Next_sample_button.grid(row=3, column=18, sticky=W, padx=4, pady=4)
+        self.Next_sample_button.grid(row=3, column=15, padx=4, pady=4)
 
         self.page3_figure = None
         # self.page3_figure = pyplt.figure()
         # self.page3_a = self.page3_figure.add_subplot(111)
         # print("type a", type(self.a))
+
+        self.page3.rowconfigure(5, weight=1)
+        self.page3.columnconfigure(18, weight=1)
 
         self.page3_figure_in_use = StringVar()
         self.page3_figure_in_use.set("")
@@ -1997,6 +1999,7 @@ class Gui(Tk):
             result = optimize(self.functions, self.parameters, self.parameter_domains, self.data)
         except Exception as err:
             messagebox.showerror("Optimize", f"Error occurred during Optimization: {err}")
+            raise err
             return
         finally:
             self.cursor_toggle_busy(False)
@@ -2646,7 +2649,7 @@ class Gui(Tk):
             self.page3_a.get_tk_widget().destroy()
         except AttributeError:
             pass
-        self.page3_figure = pyplt.figure()
+        self.page3_figure = pyplt.figure(figsize=(8, 4))
         self.page3_a = self.page3_figure.add_subplot(111)
         if set_onclick:
             def onclick(event):
@@ -2663,7 +2666,7 @@ class Gui(Tk):
         # except AttributeError:
         #     pass
         self.page3_plotframe = Frame(self.page3)
-        self.page3_plotframe.grid(row=5, column=17, columnspan=3, sticky=W, padx=4, pady=4)
+        self.page3_plotframe.grid(row=5, column=9, columnspan=10, padx=50, pady=4, sticky=N+S+E+W)
 
         self.page3_canvas = FigureCanvasTkAgg(what, master=self.page3_plotframe)
         self.page3_canvas.draw()
