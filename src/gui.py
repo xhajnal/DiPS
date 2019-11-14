@@ -26,7 +26,7 @@ workspace = os.path.dirname(__file__)
 sys.path.append(workspace)
 
 from mc_informed import general_create_data_informed_properties
-from load import load_functions, find_param, load_data
+from load import load_functions, find_param, load_data, find_param_old
 from common.math import create_intervals
 import space
 from synthetise import check_deeper
@@ -2275,7 +2275,7 @@ class Gui(Tk):
         if not self.validate_space("Refine Space"):
             return
 
-        if int(self.alg.get()) <= 4:
+        if int(self.alg.get()) <= 4 and not self.z3_constraints:
             for constraint in self.constraints:
                 if is_this_exponential_function(constraint):
                     if not askyesno("Refinement", "Some constraints contain exponential function, we recommend using interval algorithmic (algorithm 5). Do you want to proceed anyway?"):
@@ -2340,9 +2340,10 @@ class Gui(Tk):
             intervals (bool): whether to check also parameter intervals
         """
         if not self.parameters:
+            print("Parsing parameters ...")
             globals()["parameters"] = set()
             for polynome in where:
-                globals()["parameters"].update(find_param(polynome))
+                globals()["parameters"].update(find_param_old(polynome, debug=self.debug.get()))
             globals()["parameters"] = sorted(list(globals()["parameters"]))
             self.parameters = globals()["parameters"]
             if not self.silent.get():
