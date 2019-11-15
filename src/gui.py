@@ -1852,7 +1852,8 @@ class Gui(Tk):
         #     self.page3_figure = pyplt.figure()
         #     self.page3_a = self.page3_figure.add_subplot(111)
         # print("self.parameter_values", self.parameter_values)
-        spam, egg = eval_and_show(self.functions, self.parameter_values, data=self.data, data_intervals=self.data_intervals,
+        spam, egg = eval_and_show(self.functions, self.parameter_values, parameters=self.parameters,
+                                  data=self.data, data_intervals=self.data_intervals,
                                   debug=self.debug.get(), where=[self.page3_figure, self.page3_a])
 
         if spam is None:
@@ -1901,7 +1902,8 @@ class Gui(Tk):
 
             # print("parameter_point", parameter_point)
             self.page3_a.cla()
-            spam, egg = eval_and_show(self.functions, parameter_point, data=self.data, data_intervals=self.data_intervals,
+            spam, egg = eval_and_show(self.functions, parameter_point, parameters=self.parameters,
+                                      data=self.data, data_intervals=self.data_intervals,
                                       debug=self.debug.get(), where=[self.page3_figure, self.page3_a])
 
             if spam is None:
