@@ -24,7 +24,7 @@ os.chdir(workspace)
 config.read(os.path.join(workspace, "../config.ini"))
 tmp_dir = config.get("paths", "tmp")
 if not os.path.exists(tmp_dir):
-    raise OSError("Directory does not exist: " + str(tmp_dir))
+    os.makedirs(tmp_dir)
 
 os.chdir(cwd)
 wrapper = DocumentWrapper(width=75)
