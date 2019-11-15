@@ -120,6 +120,7 @@ ipython/*
 !ipython/*.ipynb
 !ipython/*.md
 
+./config.ini
 models/*
 properties/*
 prism_results/*

@@ -23,7 +23,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 
 import configparser
 
-config = configparser.ConfigParser()
+config = configparser.RawConfigParser()
 workspace = os.path.dirname(__file__)
 sys.path.append(workspace)
 
@@ -33,10 +33,16 @@ def load_config():
     config.read(os.path.join(workspace, "../config.ini"))
 
     for it in ["models", "properties", "data", "prism_results", "storm_results", "refinement_results", "figures", "optimisation", "tmp"]:
-        subdir = config.get("paths", it)
+        try:
+            subdir = config.get("paths", it)
+        except:
+            config.set("paths", it, f"{os.path.join(workspace, '..', it)}")
+            subdir = config.get("paths", it)
+            with open(os.path.join(workspace, "..", 'config.ini'), 'w') as configfile:
+                config.write(configfile)
         if subdir == "":
-            print(colored(f"{os.path.join(os.path.join(workspace,'..'), it) }", "blue"))
-            config.set(f"{os.path.join(os.path.join(workspace,'..'), it) }")
+            print(colored(f"{'paths', {it}, os.path.join(os.path.join(workspace,'..'), it) }", "blue"))
+            config.set("paths", it, f"{os.path.join(os.path.join(workspace,'..'), it) }")
             # return False
         if not os.path.exists(subdir):
             os.makedirs(subdir)
@@ -46,9 +52,9 @@ try:
     if not load_config():
         print("failed at loading folder, user edit")
 
-except Exception as err:
-    print(colored(f"An error occurred during loading config file: {err}", "red"))
-    error_occurred = err
+except Exception as error:
+    print(colored(f"An error occurred during loading config file: {error}", "red"))
+    error_occurred = error
 
 try:
     from mc_informed import general_create_data_informed_properties
@@ -59,9 +65,9 @@ try:
     from mc import call_prism_files, call_storm_files
     from sample_n_visualise import sample_list_funs, eval_and_show, get_param_values, heatmap
     from optimize import optimize
-except Exception as err:
-    print(colored(f"An error occurred during importing module: {err}", "red"))
-    error_occurred = err
+except Exception as error:
+    print(colored(f"An error occurred during importing module: {error}", "red"))
+    error_occurred = error
 
 
 ## class copied from https://stackoverflow.com/questions/20399243/display-message-when-hovering-over-something-with-mouse-cursor-in-python/20399283
@@ -129,6 +135,7 @@ class Gui(Tk):
 
             print(colored(error_occurred, "red"))
             messagebox.showerror("Loading modules", error_occurred)
+            raise error_occurred
             sys.exit()
 
         ## Trying to configure pyplot
@@ -2032,9 +2039,9 @@ class Gui(Tk):
             self.update()
 
             result = optimize(self.functions, self.parameters, self.parameter_domains, self.data)
-        except Exception as err:
-            messagebox.showerror("Optimize", f"Error occurred during Optimization: {err}")
-            raise err
+        except Exception as error:
+            messagebox.showerror("Optimize", f"Error occurred during Optimization: {error}")
+            raise error
             return
         finally:
             self.cursor_toggle_busy(False)

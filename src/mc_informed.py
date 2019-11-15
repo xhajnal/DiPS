@@ -37,8 +37,8 @@ try:
     if not os.path.exists(storm_results):
         os.makedirs(storm_results)
 
-except Exception as ex:
-    raise ex
+except Exception as error:
+    raise error
 finally:
     os.chdir(cwd)
 

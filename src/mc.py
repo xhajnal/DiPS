@@ -26,15 +26,15 @@ config.read(os.path.join(workspace, "../config.ini"))
 
 prism_path = config.get("mandatory_paths", "prism_path")
 if not os.path.exists(prism_path):
-    raise OSError("Directory does not exist: " + str(prism_path))
+    raise OSError(__file__ + ":Directory does not exist: " + str(prism_path))
 
 model_path = config.get("paths", "models")
 if not os.path.exists(model_path):
-    raise OSError("Directory does not exist: " + str(model_path))
+    raise OSError(__file__ + ":Directory does not exist: " + str(model_path))
 
 properties_path = config.get("paths", "properties")
 if not os.path.exists(properties_path):
-    raise OSError("Directory does not exist: " + str(properties_path))
+    raise OSError(__file__ + ":Directory does not exist: " + str(properties_path))
 
 prism_results = config.get("paths", "prism_results")
 if not os.path.exists(prism_results):
