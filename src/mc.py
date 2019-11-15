@@ -24,15 +24,15 @@ config.read(os.path.join(workspace, "../config.ini"))
 # config.sections()
 # prism_path = config.paths['prism_path']
 
-prism_path = config.get("paths", "prism_path")
+prism_path = config.get("mandatory_paths", "prism_path")
 if not os.path.exists(prism_path):
     raise OSError("Directory does not exist: " + str(prism_path))
 
-model_path = Path(config.get("paths", "models"))
+model_path = config.get("paths", "models")
 if not os.path.exists(model_path):
     raise OSError("Directory does not exist: " + str(model_path))
 
-properties_path = Path(config.get("paths", "properties"))
+properties_path = config.get("paths", "properties")
 if not os.path.exists(properties_path):
     raise OSError("Directory does not exist: " + str(properties_path))
 
@@ -129,7 +129,7 @@ def call_prism(args, seq=False, silent: bool = False, model_path=model_path, pro
 
     # print("output_file_path", output_file_path)
 
-    # os.chdir(config.get("paths","cwd"))
+    # os.chdir(config.get("mandatory_paths","cwd"))
     curr_dir = os.getcwd()
     os.chdir(prism_path)
     # print(os.getcwd())
@@ -287,7 +287,7 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
     """
     # print("model_path ", model_path)
     # print("model_prefix ", model_prefix)
-    # os.chdir(config.get("paths","cwd"))
+    # os.chdir(config.get("mandatory_paths","cwd"))
     if noprobchecks:
         noprobchecks = '-noprobchecks '
     else:
@@ -501,7 +501,7 @@ def call_storm(args, silent: bool = False, model_path=model_path, properties_pat
 
     # print(std_output_file)
 
-    # os.chdir(config.get("paths","cwd"))
+    # os.chdir(config.get("mandatory_paths","cwd"))
     # print(os.getcwd())
     storm_args = []
 

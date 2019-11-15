@@ -60,7 +60,7 @@ try:
     from z3 import *
     os.chdir(cwd)
 except ImportError:
-    z3_path = config.get("paths", "z3_path")
+    z3_path = config.get("mandatory_paths", "z3_path")
 
     if not os.path.exists(z3_path):
         raise OSError("Directory does not exist: " + str(z3_path))

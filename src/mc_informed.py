@@ -3,40 +3,44 @@ import os
 import sys
 from os.path import isfile
 from pathlib import Path
-
 from sympy import Interval
 
-workspace = os.path.dirname(__file__)
-cwd = os.getcwd()
-os.chdir(workspace)
-
-sys.path.append(os.path.join(workspace, '../src/'))
 from common.math import margin
 
-config = configparser.ConfigParser()
-# print(os.getcwd())
-workspace = os.path.dirname(__file__)
-# print("workspace",workspace)
-config.read(os.path.join(workspace, "../config.ini"))
-# os.chdir(config.get("paths", "properties"))
+cwd = os.getcwd()
+try:
+    workspace = os.path.dirname(__file__)
+    os.chdir(workspace)
 
-properties_folder = config.get("paths", "properties")
-if not os.path.exists(properties_folder):
-    raise OSError("Directory does not exist: " + str(properties_folder))
+    sys.path.append(os.path.join(workspace, '../src/'))
 
-prism_results = config.get("paths", "prism_results")
-if not os.path.exists(prism_results):
-    os.makedirs(prism_results)
+    config = configparser.ConfigParser()
+    # print(os.getcwd())
+    workspace = os.path.dirname(__file__)
+    # print("workspace",workspace)
+    config.read(os.path.join(workspace, "../config.ini"))
+    # os.chdir(config.get("paths", "properties"))
 
-storm_results = config.get("paths", "storm_results")
-if not os.path.exists(storm_results):
-    os.makedirs(storm_results)
+    model_folder = config.get("paths", "models")
+    if not os.path.exists(model_folder):
+        raise OSError(__file__ + ": Directory does not exist: " + str(model_folder))
 
-model_folder = config.get("paths", "models")
-if not os.path.exists(model_folder):
-    raise OSError("Directory does not exist: " + str(model_folder))
+    properties_folder = config.get("paths", "properties")
+    if not os.path.exists(properties_folder):
+        raise OSError(__file__ + "Directory does not exist: " + str(properties_folder))
 
-os.chdir(cwd)
+    prism_results = config.get("paths", "prism_results")
+    if not os.path.exists(prism_results):
+        os.makedirs(prism_results)
+
+    storm_results = config.get("paths", "storm_results")
+    if not os.path.exists(storm_results):
+        os.makedirs(storm_results)
+
+except Exception as ex:
+    raise ex
+finally:
+    os.chdir(cwd)
 
 
 def general_create_data_informed_properties(prop_file, intervals, output_file=False, silent: bool = False):

@@ -12,10 +12,12 @@ from tkinter.ttk import Progressbar
 
 import matplotlib.pyplot as pyplt
 import matplotlib
+from termcolor import colored
 
 from common.convert import ineq_to_constraints
 from common.z3 import is_this_z3_function, translate_z3_function, is_this_exponential_function
 
+error_occurred = None
 matplotlib.use("TKAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
@@ -25,17 +27,41 @@ config = configparser.ConfigParser()
 workspace = os.path.dirname(__file__)
 sys.path.append(workspace)
 
-from mc_informed import general_create_data_informed_properties
-from load import load_functions, find_param, load_data, find_param_old
-from common.math import create_intervals
-import space
-from synthetise import check_deeper
-from mc import call_prism_files, call_storm_files
-from sample_n_visualise import sample_list_funs, eval_and_show, get_param_values, heatmap
-from optimize import optimize
 
+def load_config():
+    """ Loads variables from the config file """
+    config.read(os.path.join(workspace, "../config.ini"))
 
-cwd = os.getcwd()
+    for it in ["models", "properties", "data", "prism_results", "storm_results", "refinement_results", "figures", "optimisation", "tmp"]:
+        subdir = config.get("paths", it)
+        if subdir == "":
+            print(colored(f"{os.path.join(os.path.join(workspace,'..'), it) }", "blue"))
+            config.set(f"{os.path.join(os.path.join(workspace,'..'), it) }")
+            # return False
+        if not os.path.exists(subdir):
+            os.makedirs(subdir)
+    return True
+
+try:
+    if not load_config():
+        print("failed at loading folder, user edit")
+
+except Exception as err:
+    print(colored(f"An error occurred during loading config file: {err}", "red"))
+    error_occurred = err
+
+try:
+    from mc_informed import general_create_data_informed_properties
+    from load import load_functions, find_param, load_data, find_param_old
+    from common.math import create_intervals
+    import space
+    from synthetise import check_deeper
+    from mc import call_prism_files, call_storm_files
+    from sample_n_visualise import sample_list_funs, eval_and_show, get_param_values, heatmap
+    from optimize import optimize
+except Exception as err:
+    print(colored(f"An error occurred during importing module: {err}", "red"))
+    error_occurred = err
 
 
 ## class copied from https://stackoverflow.com/questions/20399243/display-message-when-hovering-over-something-with-mouse-cursor-in-python/20399283
@@ -99,9 +125,16 @@ class Gui(Tk):
 
         super().__init__(*args, **kwargs)
 
+        if error_occurred is not None:
+
+            print(colored(error_occurred, "red"))
+            messagebox.showerror("Loading modules", error_occurred)
+            sys.exit()
+
         ## Trying to configure pyplot
         # pyplt.autoscale()
         pyplt.autoscale(tight=True)
+
 
         ## Variables
         ## Directories
@@ -657,11 +690,11 @@ class Gui(Tk):
         os.chdir(workspace)
         config.read(os.path.join(workspace, "../config.ini"))
 
-        self.model_dir = Path(config.get("paths", "models"))
+        self.model_dir = config.get("paths", "models")
         if not os.path.exists(self.model_dir):
             os.makedirs(self.model_dir)
 
-        self.property_dir = Path(config.get("paths", "properties"))
+        self.property_dir = config.get("paths", "properties")
         if not os.path.exists(self.property_dir):
             os.makedirs(self.property_dir)
 
@@ -693,7 +726,7 @@ class Gui(Tk):
         if not os.path.exists(self.tmp_dir):
             os.makedirs(self.tmp_dir)
             
-        os.chdir(cwd)
+        os.chdir(workspace)
 
     ## LOGIC
     ## FILE - LOAD, PARSE, SHOW, AND SAVE
