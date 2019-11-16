@@ -2,13 +2,11 @@ import os
 import configparser
 from time import time
 from socket import gethostname
-
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 
 from common.document_wrapper import DocumentWrapper
-from common.z3 import is_this_z3_function, translate_z3_function
 from space import RefinedSpace
 
 
@@ -118,8 +116,8 @@ def acceptance(x, x_new):
         return accept < (np.exp(x_new - x))
 
 
-def metropolis_hastings(likelihood_computer, prior, transition_model, param_init, iterations, space, data, acceptance_rule,
-                        parameter_intervals, functions, eps, progress=False):
+def metropolis_hastings(likelihood_computer, prior, transition_model, param_init, iterations, space, data,
+                        acceptance_rule, parameter_intervals, functions, eps, progress=False, debug=False):
     """ TODO
     the main method
 
@@ -132,6 +130,7 @@ def metropolis_hastings(likelihood_computer, prior, transition_model, param_init
         acceptance_rule (function(x, x_new)): decides whether to accept or reject the new sample
         parameter_intervals (list of pairs): boundaries of parameters
         progress (Tkinter element): progress bar
+        debug (bool): if True extensive print will be used
 
     Returns:
          tuple of accepted and rejected parameter points
@@ -149,15 +148,18 @@ def metropolis_hastings(likelihood_computer, prior, transition_model, param_init
         ## (space, theta, functions, data, eps)
         x_lik = likelihood_computer(space, x, functions, data, eps)
         x_new_lik = likelihood_computer(space, x_new, functions, data, eps)
-        print("iteration:", iteration)
+        if debug:
+            print("iteration:", iteration)
 
         if acceptance_rule(x_lik + np.log(prior(x, eps)), x_new_lik + np.log(prior(x_new, eps))):
             x = x_new
             accepted.append(x_new)
-            print(f"new point: {x_new} accepted")
+            if debug:
+                print(f"new point: {x_new} accepted")
         else:
             rejected.append(x_new)
-            print(f"new point: {x_new} rejected")
+            if debug:
+                print(f"new point: {x_new} rejected")
         if progress:
             progress(iteration/iterations)
 
@@ -209,7 +211,8 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
     return res
 
 
-def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_obs: int, MH_samples: int, eps, theta_init=False, where=False, progress=False):
+def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_obs: int, MH_samples: int, eps,
+                        theta_init=False, where=False, progress=False, debug=False):
     """ Initialisation method for Metropolis Hastings
     Args:
         space (RefinedSpace):
@@ -222,6 +225,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
         theta_init (list of numbers): initial point in parameter space
         where (tuple/list): output matplotlib sources to output created figure
         progress (Tkinter element): progress bar
+        debug (bool): if True extensive print will be used
 
     @author: tpetrov
     @edit: xhajnal
@@ -305,7 +309,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
     print("Initial parameter point: ", theta_init)
 
     ##                                      (likelihood_computer,    prior, transition_model,   param_init, iterations, space, data,    acceptance_rule,parameter_intervals, functions, eps):
-    accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, MH_samples, space, observations, acceptance, parameter_intervals, functions, eps, progress=progress)
+    accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, MH_samples, space, observations, acceptance, parameter_intervals, functions, eps, progress=progress, debug=debug)
 
     print(f"Set of accepted and rejected points is stored here: {tmp_dir}")
     pickle.dump(accepted, open(os.path.join(tmp_dir, f"accepted_{N_obs}.p"), 'wb'))
@@ -332,7 +336,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
         ax.legend()
         plt.show()
 
-    show = int(-0.75 * accepted.shape[0])
+    show = int(-0.75 * accepted.shape[0])  ## TODO check this line
     if not where:
         hist_show = int(-0.75 * accepted.shape[0])
         fig = plt.figure(figsize=(20, 10))
@@ -348,6 +352,9 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
         fig.tight_layout()
 
     ## Create the heat map
+    print("accepted.shape", accepted.shape)
+    if len(accepted) == 0:
+        return False, False
     heatmap_title = f'{space.get_params()[0]}, {space.get_params()[1]} estimate with MH algorithm, {MH_samples} iterations, sample size = {N_obs} \n It took {gethostname()} {round(time() - start_time)} second(s)'
     if where:
         plt.hist2d(accepted[show:, 0], accepted[show:, 1], bins=20)

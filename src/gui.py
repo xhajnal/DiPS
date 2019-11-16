@@ -28,8 +28,8 @@ workspace = os.path.dirname(__file__)
 sys.path.append(workspace)
 
 
-def load_config():
-    """ Loads variables from the config file """
+def do_config():
+    """ Validates, ste up config and creates directories from the config if not existing"""
     config.read(os.path.join(workspace, "../config.ini"))
 
     for it in ["models", "properties", "data", "prism_results", "storm_results", "refinement_results", "figures", "optimisation", "tmp"]:
@@ -48,8 +48,9 @@ def load_config():
             os.makedirs(subdir)
     return True
 
+
 try:
-    if not load_config():
+    if not do_config():
         print("failed at loading folder, user edit")
 
 except Exception as error:
@@ -200,7 +201,7 @@ class Gui(Tk):
         self.show_true_point = None
 
         ## Settings
-        self.version = "1.8.2"  ## Version of the gui
+        self.version = "1.8.3"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -1904,8 +1905,8 @@ class Gui(Tk):
             self.initialise_plot(what=self.page3_figure)
             self.page3_a.autoscale(enable=False)
             self.page3_figure.tight_layout()  ## By huypn
-            # self.page3_figure.canvas.draw()
-            # self.page3_figure.canvas.flush_events()
+            self.page3_figure.canvas.draw()
+            self.page3_figure.canvas.flush_events()
 
         if not self.silent.get():
             print(f"Using point", self.parameter_values)
@@ -2242,12 +2243,6 @@ class Gui(Tk):
 
         self.create_window_to_load_param_point(parameters=self.space.params)
 
-        self.page6_figure2.clf()
-        self.page6_b = self.page6_figure2.add_subplot(111)
-        self.page6_figure2.tight_layout()  ## By huypn
-        self.page6_figure2.canvas.draw()
-        self.page6_figure2.canvas.flush_events()
-
         from metropolis_hastings import initialise_sampling
 
         try:
@@ -2260,14 +2255,31 @@ class Gui(Tk):
             self.update()
 
             ## This progress is passed as whole to update the thing inside the called function
-            self.page6_figure2, self.page6_b = initialise_sampling(self.space, self.data, self.functions,
-                                                                   int(self.n_samples_entry.get()),
-                                                                   int(self.N_obs_entry.get()),
-                                                                   int(self.MH_samples_entry.get()),
-                                                                   float(self.eps_entry.get()),
-                                                                   theta_init=self.parameter_values,
-                                                                   where=[self.page6_figure2, self.page6_b],
-                                                                   progress=self.update_progress_bar)
+            spam = initialise_sampling(self.space, self.data, self.functions, int(self.n_samples_entry.get()),
+                                       int(self.N_obs_entry.get()), int(self.MH_samples_entry.get()),
+                                       float(self.eps_entry.get()), theta_init=self.parameter_values,
+                                       where=[self.page6_figure2, self.page6_b], progress=self.update_progress_bar,
+                                       debug=self.debug.get())
+            if spam[0] is not False:
+                ## Clear figure
+                self.page6_figure2.clf()
+                self.page6_b = self.page6_figure2.add_subplot(111)
+                self.page6_figure2.canvas.draw()
+                self.page6_figure2.canvas.flush_events()
+
+                self.page6_figure2, self.page6_b = spam
+                self.page6_figure2.tight_layout()
+                self.page6_figure2.canvas.draw()
+                self.page6_figure2.canvas.flush_events()
+                self.update()
+            else:
+                messagebox.showwarning("Metropolis Hastings", "No accepted point found, not showing the plot")
+                ## Clear figure
+                self.page6_figure2.clf()
+                self.page6_b = self.page6_figure2.add_subplot(111)
+                self.page6_figure2.canvas.draw()
+                self.page6_figure2.canvas.flush_events()
+                self.update()
         finally:
             self.new_window.destroy()
             del self.new_window
@@ -2280,10 +2292,7 @@ class Gui(Tk):
         #     messagebox.showerror(sys.exc_info()[1], "Try to check whether the data, functions, and computed constraints are aligned.")
         # finally:
         #     self.cursor_toggle_busy(False)
-        self.page6_figure2.tight_layout()
-        self.page6_figure2.canvas.draw()
-        self.page6_figure2.canvas.flush_events()
-        self.update()
+
 
     def refine_space(self):
         """ Refines (Parameter) Space. Plots the results. """
@@ -2504,6 +2513,12 @@ class Gui(Tk):
         self.space = ""
         self.parameters = ""
         self.parameter_domains = []
+
+        self.page6_figure2.clf()
+        self.page6_b = self.page6_figure2.add_subplot(111)
+        self.page6_figure2.canvas.draw()
+        self.page6_figure2.canvas.flush_events()
+
         self.status_set("Space deleted.")
 
     def validate_space(self, position=False):
