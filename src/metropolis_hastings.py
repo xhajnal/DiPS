@@ -57,19 +57,14 @@ def transition_model_a(theta, parameter_intervals):
     @author: tpetrov
     @edit: xhajnal, denis
     """
-    ## So far for 2 parameters
     sd = 0.3  ## Standard deviation of the normal distribution
-    theta_new = np.zeros(2)
+    theta_new = np.zeros(len(theta))
 
-    temp = parameter_intervals[0][0] - 1  ## Lower bound of first parameter - 1
-    while (temp <= parameter_intervals[0][0]) or (temp >= parameter_intervals[0][1]):
-        temp = np.random.normal(theta[0], sd)
-    theta_new[0] = temp
-
-    temp = parameter_intervals[1][0] - 1  ## Lower bound of second parameter - 1
-    while (temp <= parameter_intervals[1][0]) or (temp >= parameter_intervals[1][1]):
-        temp = np.random.normal(theta[1], sd)
-    theta_new[1] = temp
+    for index, param in enumerate(theta):
+        temp = parameter_intervals[index][0] - 1  ## Lower bound of first parameter - 1
+        while (temp <= parameter_intervals[index][0]) or (temp >= parameter_intervals[index][1]):
+            temp = np.random.normal(theta[index], sd)
+        theta_new[index] = temp
 
     return theta_new
 
@@ -113,6 +108,10 @@ def acceptance(x, x_new):
         accept = np.random.uniform(0, 1)
         # Since we did a log likelihood, we need to exponate in order to compare to the random number
         # less likely x_new are less likely to be accepted
+        # print("x", x)
+        # print("x_new", x_new)
+        # print("x_new - x", x_new - x)
+        # print("np.exp(x_new - x)", np.exp(x_new - x))
         return accept < (np.exp(x_new - x))
 
 
@@ -147,9 +146,13 @@ def metropolis_hastings(likelihood_computer, prior, transition_model, param_init
         x_new = transition_model(x, parameter_intervals)
         ## (space, theta, functions, data, eps)
         x_lik = likelihood_computer(space, x, functions, data, eps)
+        # print("x_lik", x_lik)
         x_new_lik = likelihood_computer(space, x_new, functions, data, eps)
+        # print("x_new_lik", x_new_lik)
         if debug:
             print("iteration:", iteration)
+        # print("x_lik + np.log(prior(x, eps))", x_lik + np.log(prior(x, eps)))
+        # print("x_new_lik + np.log(prior(x_new, eps))", x_new_lik + np.log(prior(x_new, eps)))
 
         if acceptance_rule(x_lik + np.log(prior(x, eps)), x_new_lik + np.log(prior(x_new, eps))):
             x = x_new
@@ -186,8 +189,10 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
     # print("data", data)
     # print("functions", functions)
 
-    locals()[space.get_params()[0]] = theta[0]
-    locals()[space.get_params()[1]] = theta[1]
+    for index, param in enumerate(theta):
+        locals()[space.get_params()[index]] = theta[index]
+    # locals()[space.get_params()[0]] = theta[0]
+    # locals()[space.get_params()[1]] = theta[1]
 
     for data_point in observations:  # observations:
         # print("data_point", data_point)
@@ -259,7 +264,11 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
 
     ## If no starting point given
     if not theta_init:
-        theta_init = [(parameter_intervals[0][0] + parameter_intervals[0][1])/2, (parameter_intervals[1][0] + parameter_intervals[1][1])/2]  ## Middle of the intervals # np.ones(10)*0.1
+        theta_init = []
+        ## Select point which is center of each interval
+        for index, param in enumerate(parameter_intervals):
+             theta_init.append((parameter_intervals[index][0] + parameter_intervals[index][1])/2)
+        # theta_init = [(parameter_intervals[0][0] + parameter_intervals[0][1])/2, (parameter_intervals[1][0] + parameter_intervals[1][1])/2]  ## Middle of the intervals # np.ones(10)*0.1
 
     for index, param in enumerate(space.get_params()):
         globals()[param] = theta_init[index]

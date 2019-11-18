@@ -201,7 +201,7 @@ class Gui(Tk):
         self.show_true_point = None
 
         ## Settings
-        self.version = "1.8.3"  ## Version of the gui
+        self.version = "1.8.4"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -528,7 +528,7 @@ class Gui(Tk):
 
         self.eps_entry = Entry(frame_left)
         self.eps_entry.grid(row=3, column=4)
-        self.eps_entry.insert(END, '0')
+        self.eps_entry.insert(END, '0.0001')
 
         # N: int, N_obs: int, MH_samples: int, eps
 
