@@ -691,8 +691,6 @@ class Gui(Tk):
         help_menu.add_command(label="Check for updates", command=self.check_updates)
         help_menu.add_command(label="About", command=self.print_about)
 
-        self.autoload()
-
     def load_config(self):
         """ Loads variables from the config file """
         os.chdir(workspace)
@@ -1115,6 +1113,10 @@ class Gui(Tk):
                 self.unfold_data()
             if not self.silent.get():
                 print("Loaded data: ", self.data)
+
+            ## Clear intervals
+            self.data_intervals = ""
+            self.data_intervals_text.delete('1.0', END)
 
             ## Autosave
             if not file:
@@ -2243,6 +2245,12 @@ class Gui(Tk):
 
         self.create_window_to_load_param_point(parameters=self.space.params)
 
+        ## Clear figure
+        self.page6_figure2.clf()
+        self.page6_b = self.page6_figure2.add_subplot(111)
+        self.page6_figure2.canvas.draw()
+        self.page6_figure2.canvas.flush_events()
+
         from metropolis_hastings import initialise_sampling
 
         try:
@@ -2261,12 +2269,6 @@ class Gui(Tk):
                                        where=[self.page6_figure2, self.page6_b], progress=self.update_progress_bar,
                                        debug=self.debug.get())
             if spam[0] is not False:
-                ## Clear figure
-                self.page6_figure2.clf()
-                self.page6_b = self.page6_figure2.add_subplot(111)
-                self.page6_figure2.canvas.draw()
-                self.page6_figure2.canvas.flush_events()
-
                 self.page6_figure2, self.page6_b = spam
                 self.page6_figure2.tight_layout()
                 self.page6_figure2.canvas.draw()
@@ -2292,7 +2294,6 @@ class Gui(Tk):
         #     messagebox.showerror(sys.exc_info()[1], "Try to check whether the data, functions, and computed constraints are aligned.")
         # finally:
         #     self.cursor_toggle_busy(False)
-
 
     def refine_space(self):
         """ Refines (Parameter) Space. Plots the results. """
@@ -2766,6 +2767,7 @@ if "wind" in platform.system().lower():
     gui.state('zoomed')
 else:
     gui.attributes('-zoomed', True)
+gui.autoload()
 
 gui.protocol('WM_DELETE_WINDOW', gui.ask_quit)
 sys.setrecursionlimit(20000)
