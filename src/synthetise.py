@@ -438,15 +438,6 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         if debug:
             print(save)
 
-    ## Parameters
-    globals()["parameters"] = set()
-    for polynome in constraints:
-        globals()["parameters"].update(find_param(polynome))
-    globals()["parameters"] = sorted(list(globals()["parameters"]))
-    parameters = globals()["parameters"]
-    if debug:
-        print("parameters", parameters)
-
     ## If the given region is space
     ## TODO correct this
     if not isinstance(region, list):
@@ -463,12 +454,29 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
 
         ## Check whether the the set of params is equal
         print("space.params", space.params)
+        globals()["parameters"] = space.params
+        parameters = globals()["parameters"]
         print("parameters", parameters)
-        if not sorted(space.params) == sorted(parameters):
-            raise Exception("The set of parameters of the given space and properties does not correspond")
+
+        ## TODO add possible check like this
+        # if not sorted(space.params) == sorted(parameters):
+        #     raise Exception("The set of parameters of the given space and properties does not correspond")
 
     ## If the region is just list of intervals - a space is to be created
     else:
+        globals()["parameters"] = set()
+
+        if isinstance(constraints[0], list):
+            for polynome in constraints[0]:
+                globals()["parameters"].update(find_param(polynome))
+        else:
+            for polynome in constraints:
+                globals()["parameters"].update(find_param(polynome))
+        globals()["parameters"] = sorted(list(globals()["parameters"]))
+        parameters = globals()["parameters"]
+        if debug:
+            print("parameters", parameters)
+
         ### Regions
         ### Taking care of unchangeable tuples
         for interval_index in range(len(region)):
@@ -710,7 +718,12 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
             print("Using interval arithmetic")
             globals()["que"] = Queue()
 
-            egg = constraints_to_ineq(constraints, debug=debug)
+            ## if already feed with funcs, intervals
+            if isinstance(constraints[0], list):
+                egg = constraints
+            else:
+                egg = constraints_to_ineq(constraints, debug=debug)
+
             if not egg:
                 return space
             if not silent:
@@ -764,7 +777,11 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                 if not silent:
                     print(f"Using interval method to solve spliced rectangle number {white_space.index(rectangle)+1} of {len(white_space)}.")
 
-                egg = constraints_to_ineq(constraints, debug=debug)
+                ## if already feed with funcs, intervals
+                if isinstance(constraints[0], list):
+                    egg = constraints
+                else:
+                    egg = constraints_to_ineq(constraints, debug=debug)
                 if not egg:
                     return space
                 private_check_deeper_interval(rectangle, egg[0], egg[1], max(0, recursion_depth - (int(log(len(white_space), 2)))), epsilon, next_coverage, silent, debug=debug)
@@ -1432,7 +1449,7 @@ def check_interval_in(region, constraints, intervals, silent: bool = False, call
         silent = False
 
     if not silent:
-        print("checking interval in", region, "current time is ", datetime.datetime.now())
+        print("Checking interval in", region, "current time is ", datetime.datetime.now())
 
     if called:
         if not silent:
@@ -1498,7 +1515,7 @@ def check_interval_out(region, constraints, intervals, silent: bool = False, cal
         silent = False
 
     if not silent:
-        print("checking interval_out", region, "current time is ", datetime.datetime.now())
+        print("Checking interval_out", region, "current time is ", datetime.datetime.now())
 
     if called:
         if not silent:
@@ -1659,8 +1676,8 @@ def private_check_deeper_interval(region, constraints, intervals, recursion_dept
     ## Add calls to the Queue
     # print("adding",[copy.deepcopy(foo),prop,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo),prop,n-1,epsilon,coverage,silent]))
     # print("adding",[copy.deepcopy(foo2),prop,n-1,epsilon,coverage,silent], "with len", len([copy.deepcopy(foo2),prop,n-1,epsilon,coverage,silent]))
-    globals()["que"].enqueue([copy.deepcopy(foo), constraints, intervals, recursion_depth - 1, epsilon, coverage, silent])
-    globals()["que"].enqueue([copy.deepcopy(foo2), constraints, intervals, recursion_depth - 1, epsilon, coverage, silent])
+    globals()["que"].enqueue([copy.deepcopy(foo), constraints, intervals, recursion_depth - 1, epsilon, coverage, silent, debug])
+    globals()["que"].enqueue([copy.deepcopy(foo2), constraints, intervals, recursion_depth - 1, epsilon, coverage, silent, debug])
 
     ## Execute the queue
     # print(globals()["que"].printQueue())

@@ -2352,7 +2352,12 @@ class Gui(Tk):
 
             ## RETURNS TUPLE -- (SPACE,(NONE, ERROR TEXT)) or (SPACE, )
             ## feeding z3 solver with z3 expressions, python expressions otherwise
-            if str(self.solver.get()) == "z3" and int(self.alg.get()) < 5 and self.z3_constraints:
+            if int(self.alg.get()) == 5:
+                spam = check_deeper(self.space, [self.functions, self.data_intervals], self.max_depth, self.epsilon,
+                                    self.coverage, silent=self.silent.get(), version=int(self.alg.get()), size_q=False,
+                                    debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
+                                    solver=str(self.solver.get()), delta=self.delta, gui=True)
+            elif str(self.solver.get()) == "z3" and self.z3_constraints:
                 spam = check_deeper(self.space, self.z3_constraints, self.max_depth, self.epsilon, self.coverage,
                                     silent=self.silent.get(), version=int(self.alg.get()), size_q=False,
                                     debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
