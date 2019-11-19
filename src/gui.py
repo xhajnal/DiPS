@@ -6,6 +6,7 @@ import webbrowser
 import pickle
 import os
 from pathlib import Path
+from os.path import basename
 from tkinter import filedialog, ttk
 from tkinter.messagebox import askyesno
 from tkinter.ttk import Progressbar
@@ -152,6 +153,7 @@ class Gui(Tk):
         self.prism_results = ""  ## Path to prism results
         self.storm_results = ""  ## Path to Storm results
         self.refinement_results = ""  ## Path to refinement results
+        self.mh_results_dir = ""  ##  Path to mh results
         self.figures_dir = ""  ## Path to saved figures
         self.optimisation_results_dir = ""  ## Path to saved optimisation results
         self.tmp_dir = ""  ## Path for tmp folder
@@ -166,7 +168,7 @@ class Gui(Tk):
         self.constraints_file = StringVar()  ## constraints file
         self.space_file = StringVar()  ## Space file
 
-        ## Checking the change
+        ## Flags for the change
         self.model_changed = False
         self.property_changed = False
         self.functions_changed = False
@@ -174,6 +176,7 @@ class Gui(Tk):
         self.data_intervals_changed = False
         self.constraints_changed = False
         self.space_changed = False
+        self.mh_results_changed = False
 
         ## True Variables
         # self.model = ""
@@ -188,6 +191,7 @@ class Gui(Tk):
         self.constraints = ""  ## Computed or loaded constrains
         self.z3_constraints = ""  ## Constrains with z3 expressions inside
         self.space = ""  ## Instance of a space Class
+        self.mh_results = "" ## Instance of MH results class
 
         ## Results
         self.sampled_functions = []
@@ -592,6 +596,9 @@ class Gui(Tk):
         Button(frame_left, text='Open space', command=self.load_space).grid(row=14, column=2, sticky=S, padx=4, pady=4)
         Button(frame_left, text='Save space', command=self.save_space).grid(row=14, column=3, sticky=S, padx=4, pady=4)
         Button(frame_left, text='Delete space', command=self.refresh_space).grid(row=14, column=4, sticky=S, padx=4, pady=4)
+        Button(frame_left, text='Load MH Results', command=self.load_mh_results).grid(row=15, column=2, sticky=S, padx=4, pady=4)
+        Button(frame_left, text='Save MH Results', command=self.save_mh_results).grid(row=15, column=3, sticky=S, padx=4, pady=4)
+        Button(frame_left, text='Delete MH Results', command=self.refresh_mh).grid(row=15, column=4, sticky=S, padx=4, pady=4)
 
         frame_right = Frame(page6, width=500, height=200)
         frame_right.pack(side=TOP, fill=BOTH, expand=True)
@@ -708,6 +715,11 @@ class Gui(Tk):
         if not os.path.exists(self.data_dir):
             os.makedirs(self.data_dir)
 
+        ## results
+        self.results_dir = config.get("paths", "results")
+        if not os.path.exists(self.results_dir):
+            os.makedirs(self.results_dir)
+
         self.prism_results = config.get("paths", "prism_results")
         if not os.path.exists(self.prism_results):
             os.makedirs(self.prism_results)
@@ -727,6 +739,8 @@ class Gui(Tk):
         self.optimisation_results_dir = config.get("paths", "optimisation")
         if not os.path.exists(self.optimisation_results_dir):
             os.makedirs(self.optimisation_results_dir)
+
+        self.mh_results_dir = os.path.join(self.results_dir, "mh_results")
 
         self.tmp_dir = config.get("paths", "tmp")
         if not os.path.exists(self.tmp_dir):
@@ -1359,6 +1373,57 @@ class Gui(Tk):
                     self.save_space(os.path.join(self.tmp_dir, "space"))
                 self.status_set("Space loaded.")
 
+    def load_mh_results(self, file=False):
+        """ loads Metropolis hastings results (accepted) and plots them
+
+        Args:
+            file (path/string): direct path to load the pickled file
+        """
+
+        if file:
+            if not os.path.isfile(file):
+                return
+            spam = file
+        else:
+            print("Loading Metropolis Hasting results ...")
+
+            if self.space:
+                if not askyesno("Loading Metropolis Hasting results", "Previously obtained plot will be lost. Do you want to proceed?"):
+                    return
+            ## Delete previous plot
+
+            self.status_set("Please select the file to be loaded.")
+            spam = filedialog.askopenfilename(initialdir=self.mh_results_dir, title="Loading Metropolis Hasting results - Select file",
+                                              filetypes=(("pickled files", "*.p"), ("all files", "*.*")))
+
+        ## If no file selected
+        if spam == "":
+            self.status_set("No file selected.")
+            return
+        else:
+            self.mh_results_changed = True
+            self.mh_results = pickle.load(open(spam, "rb"))
+
+            ## Clear figure
+            self.page6_figure2.clf()
+            self.page6_b = self.page6_figure2.add_subplot(111)
+            self.page6_figure2.canvas.draw()
+            self.page6_figure2.canvas.flush_events()
+
+            egg = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b])
+
+            self.page6_figure2, self.page6_b = egg
+            self.page6_figure2.tight_layout()
+            self.page6_figure2.canvas.draw()
+            self.page6_figure2.canvas.flush_events()
+            self.update()
+
+            ## Autosave
+            if not file:
+                self.save_mh_results(os.path.join(self.tmp_dir, "mh_results"))
+
+            self.status_set("Metropolis hastings results loaded.")
+
     def print_space(self, clear=False):
         """ Print the niceprint of the space into space text window.
 
@@ -1462,7 +1527,7 @@ class Gui(Tk):
                 self.status_set("No file selected to store the model.")
                 return
 
-        if "." not in save_model_file:
+        if "." not in basename(save_model_file):
             save_model_file = save_model_file + ".pm"
         # print("save_model_file", save_model_file)
 
@@ -1495,7 +1560,7 @@ class Gui(Tk):
                 self.status_set("No file selected to store the property.")
                 return
 
-        if "." not in save_property_file:
+        if "." not in basename(save_property_file):
             save_property_file = save_property_file + ".pctl"
         # print("save_property_file", save_property_file)
 
@@ -1552,7 +1617,7 @@ class Gui(Tk):
                 self.status_set("No file selected to store data informed property.")
                 return
 
-        if "." not in save_data_informed_property_file:
+        if "." not in basename(save_data_informed_property_file):
             save_data_informed_property_file = save_data_informed_property_file + ".pctl"
         # print("save_property_file", save_property_file)
 
@@ -1598,7 +1663,7 @@ class Gui(Tk):
                 self.status_set("No file selected to store the rational functions.")
                 return
 
-        if "." not in save_functions_file:
+        if "." not in basename(save_functions_file):
             save_functions_file = save_functions_file + ".txt"
 
         with open(save_functions_file, "w") as file:
@@ -1640,7 +1705,7 @@ class Gui(Tk):
                 self.status_set("No file selected to store the parsed rational functions.")
                 return
 
-        if "." not in save_functions_file:
+        if "." not in basename(save_functions_file):
             save_functions_file = save_functions_file + ".p"
 
         if not self.silent.get() and not file:
@@ -1674,7 +1739,7 @@ class Gui(Tk):
                 self.status_set("No file selected to store the data.")
                 return
 
-        if "." not in save_data_file:
+        if "." not in basename(save_data_file):
             save_data_file = save_data_file + ".p"
 
         if not self.silent.get():
@@ -1716,7 +1781,7 @@ class Gui(Tk):
                 self.status_set("No file selected to store the constraints.")
                 return
 
-        if "." not in save_constraints_file:
+        if "." not in basename(save_constraints_file):
             save_constraints_file = save_constraints_file + ".p"
 
         if not self.silent.get():
@@ -1747,7 +1812,7 @@ class Gui(Tk):
                 self.status_set("No file selected to store the space in.")
                 return
 
-        if "." not in save_space_file:
+        if "." not in basename(save_space_file):
             save_space_file = save_space_file + ".p"
 
         if not self.silent.get():
@@ -1756,6 +1821,38 @@ class Gui(Tk):
         pickle.dump(self.space, open(save_space_file, 'wb'))
         if not file:
             self.status_set("Space saved.")
+
+    def save_mh_results(self, file=False):
+        """ Saves Metropolis hastings results a pickled file.
+
+        Args:
+            file (string):  file to save Metropolis hastings results
+        """
+
+        if file:
+            save_mh_results_file = file
+        else:
+            print("Saving Metropolis hastings results ...")
+            if self.mh_results is "":
+                self.status_set("There is no Metropolis hastings results to be saved.")
+                return
+            self.status_set("Please select folder to store Metropolis hastings results in.")
+            save_mh_results_file = filedialog.asksaveasfilename(initialdir=self.mh_results_dir, title="Metropolis hastings results saving - Select file",
+                                                                filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+            if save_mh_results_file == "":
+                self.status_set("No file selected to store Metropolis hastings results in.")
+                return
+
+        if "." not in basename(save_mh_results_file):
+            save_mh_results_file = save_mh_results_file + ".p"
+
+        if not self.silent.get():
+            print("Saving Metropolis hastings results as a file:", save_mh_results_file)
+
+        pickle.dump(self.mh_results, open(save_mh_results_file, 'wb'))
+        # pickle.dump(self.mh_results, open(os.path.join(self.mh_results_dir, f"mh_results_{strftime('%d-%b-%Y-%H-%M-%S', localtime())}.p"), 'wb'))
+        if not file:
+            self.status_set("Metropolis hastings results saved.")
 
     ## ANALYSIS
     def synth_params(self):
@@ -2108,7 +2205,7 @@ class Gui(Tk):
                 self.status_set("No file selected to store the optimisation results.")
                 return
 
-        if "." not in save_opt_result_file:
+        if "." not in basename(save_opt_result_file):
             save_opt_result_file = save_opt_result_file + ".txt"
 
         with open(save_opt_result_file, "w") as file:
@@ -2263,11 +2360,13 @@ class Gui(Tk):
             self.update()
 
             ## This progress is passed as whole to update the thing inside the called function
-            spam = initialise_sampling(self.space, self.data, self.functions, int(self.n_samples_entry.get()),
-                                       int(self.N_obs_entry.get()), int(self.MH_samples_entry.get()),
-                                       float(self.eps_entry.get()), theta_init=self.parameter_values,
-                                       where=[self.page6_figure2, self.page6_b], progress=self.update_progress_bar,
-                                       debug=self.debug.get())
+            self.mh_results = initialise_sampling(self.space, self.data, self.functions, int(self.n_samples_entry.get()),
+                                                  int(self.N_obs_entry.get()), int(self.MH_samples_entry.get()),
+                                                  float(self.eps_entry.get()), theta_init=self.parameter_values,
+                                                  where=[self.page6_figure2, self.page6_b],
+                                                  progress=self.update_progress_bar, debug=self.debug.get())
+            spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b])
+
             if spam[0] is not False:
                 self.page6_figure2, self.page6_b = spam
                 self.page6_figure2.tight_layout()
@@ -2286,6 +2385,9 @@ class Gui(Tk):
             self.new_window.destroy()
             del self.new_window
             self.cursor_toggle_busy(False)
+
+        ## Autosave
+        self.save_mh_results(os.path.join(self.tmp_dir, "mh_results"))
 
         # try:
         #     self.cursor_toggle_busy(True)
@@ -2508,7 +2610,7 @@ class Gui(Tk):
         return True
 
     def refresh_space(self):
-        """ Unloads space. """
+        """ Refreshes space. """
         if self.space:
             if not askyesno("Sample & Refine", "Data of the space, its text representation, and the plot will be lost. Do you want to proceed?"):
                 return
@@ -2519,13 +2621,21 @@ class Gui(Tk):
         self.space = ""
         self.parameters = ""
         self.parameter_domains = []
+        self.status_set("Space refreshed.")
 
+    def refresh_mh(self):
+        """ Refreshes MH results"""
+        if self.mh_results:
+            if not askyesno("Sample & Refine", "Data of the metropolis hastings and the plot will be lost. Do you want to proceed?"):
+                return
+        self.mh_results_changed = False
+        self.mh_results = ""
         self.page6_figure2.clf()
         self.page6_b = self.page6_figure2.add_subplot(111)
         self.page6_figure2.canvas.draw()
         self.page6_figure2.canvas.flush_events()
 
-        self.status_set("Space deleted.")
+        self.status_set("MH results refreshed.")
 
     def validate_space(self, position=False):
         """ Validates space.
@@ -2764,6 +2874,7 @@ class Gui(Tk):
             self.load_data(file=os.path.join(self.tmp_dir, "data.p"))
             self.load_constraints(file=os.path.join(self.tmp_dir, "constraints.p"))
             self.load_space(file=os.path.join(self.tmp_dir, "space.p"))
+            self.load_mh_results(file=os.path.join(self.tmp_dir, "mh_results.p"))
 
 
 gui = Gui()

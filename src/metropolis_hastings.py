@@ -1,6 +1,6 @@
 import os
 import configparser
-from time import time
+from time import strftime, localtime, time
 from socket import gethostname
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,12 +20,74 @@ os.chdir(workspace)
 
 
 config.read(os.path.join(workspace, "../config.ini"))
+results_dir = config.get("paths", "results")
+
+results_dir = os.path.join(results_dir, "mh_results")
+if not os.path.exists(results_dir):
+    os.makedirs(results_dir)
+
 tmp_dir = config.get("paths", "tmp")
 if not os.path.exists(tmp_dir):
     os.makedirs(tmp_dir)
 
 os.chdir(cwd)
 wrapper = DocumentWrapper(width=75)
+
+
+class HastingsResults:
+    """ Class to represent Metropolis Hastings results"""
+
+    def __init__(self, params, theta_init, accepted, observations_count: int, observations_samples_count: int, MH_sampling_iterations: int, eps, show=0, title="", bins=20):
+        """
+        Args:
+            params (list of strings): parameter names
+            accepted (np.array): accepted points
+            observations_count (int): total number of observations
+            observations_samples_count (int): sample size from the observations
+            MH_sampling_iterations (int): number of iterations/steps in searching in space
+            eps (number): very small value used as probability of non-feasible values in prior
+            show (int): starting from show-th value
+            title (string): title of the plot
+        """
+        ## Inside variables
+        self.params = params
+        self.theta_init = theta_init
+
+        ## Results
+        self.accepted = accepted
+
+        ## Results setting
+        self.observations_count = observations_count
+        self.observations_samples_count = observations_samples_count
+        self.MH_sampling_iterations = MH_sampling_iterations
+        self.eps = eps
+
+        ## Visualisation setting
+        self.show = show
+        self.title = title
+        self.bins = bins
+
+    def show_mh_heatmap(self, where=False):
+        """ Visualises the result of Metropolis Hastings as a heatmap
+
+        Args:
+            where (tuple/list): output matplotlib sources to output created figure
+        """
+        if where:
+            plt.hist2d(self.accepted[self.show:, 0], self.accepted[self.show:, 1], bins=self.bins)
+            plt.xlabel(self.params[0])
+            plt.ylabel(self.params[1])
+            plt.title("\n".join(wrapper.wrap(self.title)))
+            where[1] = plt.colorbar()
+            return where[0], where[1]
+        else:
+            plt.figure(figsize=(12, 6))
+            plt.hist2d(self.accepted[self.show:, 0], self.accepted[self.show:, 1], bins=self.bins)
+            plt.colorbar()
+            plt.xlabel(self.params[0])
+            plt.ylabel(self.params[1])
+            plt.title(self.title)
+            plt.show()
 
 
 def sample(functions, data_means):
@@ -216,16 +278,17 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
     return res
 
 
-def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_obs: int, MH_samples: int, eps,
+def initialise_sampling(space: RefinedSpace, observations, functions, observations_count: int,
+                        observations_samples_count: int, MH_sampling_iterations: int, eps,
                         theta_init=False, where=False, progress=False, debug=False):
     """ Initialisation method for Metropolis Hastings
     Args:
         space (RefinedSpace):
         observations (list of numbers): either experiment or data(experiment result frequency)
         functions (list of strings):
-        N (number): total data amount
-        N_obs (number): number of samples
-        MH_samples (number): number of iterations
+        observations_count (int): total number of observations
+        observations_samples_count (int): sample size from the observations
+        MH_sampling_iterations (int): number of iterations/steps in searching in space
         eps (number): very small value used as probability of non-feasible values in prior
         theta_init (list of numbers): initial point in parameter space
         where (tuple/list): output matplotlib sources to output created figure
@@ -279,13 +342,13 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
         ## Checking the type of observations (experiment/data)
         if len(observations) > len(functions):
             ## Already given observations
-            N = len(observations)
+            observations_count = len(observations)
         else:
             ## Changing the data into observations
             spam = []
             index = 0
             for observation in observations:
-                for times in range(int(observation * float(N))):
+                for times in range(int(observation * float(observations_count))):
                     spam.append(index)
                 index = index + 1
             observations = spam
@@ -293,13 +356,13 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
         data_means = [eval(fi) for fi in functions]
         print("data means", data_means)
         samples = []
-        for i in range(N):
+        for i in range(observations_count):
             samples.append(sample(functions, data_means))
         print("samples", samples)
 
-        observations = np.array(samples)[np.random.randint(0, N, N_obs)]
+        observations = np.array(samples)[np.random.randint(0, observations_count, observations_samples_count)]
     print("observations", observations)
-    N_obs = min(N, N_obs)
+    observations_samples_count = min(observations_count, observations_samples_count)
 
     if not where:
         fig = plt.figure(figsize=(10, 10))
@@ -307,7 +370,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
         ax.hist(observations, bins=range(len(functions)))
         ax.set_xlabel("Value")
         ax.set_ylabel("Frequency")
-        ax.set_title(f"Figure 1: Distribution of {N_obs} observations (from full sample= {N})")
+        ax.set_title(f"Figure 1: Distribution of {observations_samples_count} observations (from full sample= {observations_count})")
         plt.show()
 
     # theta_new = transition_model_a(theta_true, parameter_intervals)     ## apparently just a print call
@@ -318,11 +381,16 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
     print("Initial parameter point: ", theta_init)
 
     ##                                      (likelihood_computer,    prior, transition_model,   param_init, iterations, space, data,    acceptance_rule,parameter_intervals, functions, eps):
-    accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, MH_samples, space, observations, acceptance, parameter_intervals, functions, eps, progress=progress, debug=debug)
+    accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, MH_sampling_iterations, space, observations, acceptance, parameter_intervals, functions, eps, progress=progress, debug=debug)
 
+    print("accepted.shape", accepted.shape)
+    if len(accepted) == 0:
+        return False, False
+
+    ## TODO dump the class instead
     print(f"Set of accepted and rejected points is stored here: {tmp_dir}")
-    pickle.dump(accepted, open(os.path.join(tmp_dir, f"accepted_{N_obs}.p"), 'wb'))
-    pickle.dump(rejected, open(os.path.join(tmp_dir, f"rejected_{N_obs}.p"), 'wb'))
+    pickle.dump(accepted, open(os.path.join(tmp_dir, f"accepted_{observations_samples_count}.p"), 'wb'))
+    pickle.dump(rejected, open(os.path.join(tmp_dir, f"rejected_{observations_samples_count}.p"), 'wb'))
 
     # accepted = pickle.load(open(os.path.join(tmp_dir, f"accepted_{N_obs}.p"), "rb"))
     # rejected = pickle.load(open(os.path.join(tmp_dir, f"rejected_{N_obs}.p"), "rb"))
@@ -332,6 +400,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
     # print("accepted[100:to_show, 1]", accepted[100:to_show, 1])
     # print("rejected", rejected)
 
+    ## Create TODO plot
     if not where:
         fig = plt.figure(figsize=(10, 10))
         ax = fig.add_subplot(2, 1, 1)
@@ -340,11 +409,12 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
         ax.plot(accepted[(0, 100)[len(accepted) > 200]:to_show, 1], 'b.', label='Accepted', alpha=0.5)
         ax.set_xlabel("Step")
         ax.set_ylabel("Value")
-        ax.set_title("Figure 2: MCMC sampling for N=" + str(N_obs) + " with Metropolis-Hastings. First " + str(to_show) + " samples are shown.")
+        ax.set_title("Figure 2: MCMC sampling for N=" + str(observations_samples_count) + " with Metropolis-Hastings. First " + str(to_show) + " samples are shown.")
         ax.grid()
         ax.legend()
         plt.show()
 
+    ## Create TODO plot
     show = int(-0.75 * accepted.shape[0])  ## TODO check this line
     if not where:
         hist_show = int(-0.75 * accepted.shape[0])
@@ -361,22 +431,12 @@ def initialise_sampling(space: RefinedSpace, observations, functions, N: int, N_
         fig.tight_layout()
 
     ## Create the heat map
-    print("accepted.shape", accepted.shape)
-    if len(accepted) == 0:
-        return False, False
-    heatmap_title = f'{space.get_params()[0]}, {space.get_params()[1]} estimate with MH algorithm, {MH_samples} iterations, sample size = {N_obs} \n It took {gethostname()} {round(time() - start_time)} second(s)'
+    heatmap_title = f'{space.get_params()[0]}, {space.get_params()[1]} estimate with MH algorithm, {MH_sampling_iterations} iterations, sample size = {observations_samples_count} \n It took {gethostname()} {round(time() - start_time)} second(s)'
+
+    ##        HastingsResults(self, params, theta_init, accepted, observations_count, observations_samples_count, MH_sampling_iterations, eps, show=0, title="", bins=20):
+    results = HastingsResults(space.params, theta_init, accepted, observations_count, observations_samples_count, MH_sampling_iterations, eps, show=0, title=heatmap_title)
+
     if where:
-        plt.hist2d(accepted[show:, 0], accepted[show:, 1], bins=20)
-        plt.xlabel(space.get_params()[0])
-        plt.ylabel(space.get_params()[1])
-        plt.title("\n".join(wrapper.wrap(heatmap_title)))
-        where[1] = plt.colorbar()
-        return where[0], where[1]
+        return results
     else:
-        plt.figure(figsize=(12, 6))
-        plt.hist2d(accepted[show:, 0], accepted[show:, 1], bins=20)
-        plt.colorbar()
-        plt.xlabel(space.get_params()[0])
-        plt.ylabel(space.get_params()[1])
-        plt.title(heatmap_title)
-        plt.show()
+        results.show_mh_heatmap(where=where)
