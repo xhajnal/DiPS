@@ -1,6 +1,6 @@
 import os
 import configparser
-from time import strftime, localtime, time
+from time import time
 from socket import gethostname
 import numpy as np
 import matplotlib.pyplot as plt
@@ -46,8 +46,9 @@ class HastingsResults:
             observations_samples_count (int): sample size from the observations
             MH_sampling_iterations (int): number of iterations/steps in searching in space
             eps (number): very small value used as probability of non-feasible values in prior
-            show (int): starting from show-th value
+            show (number): show from
             title (string): title of the plot
+            bins (int): number of segments in the plot
         """
         ## Inside variables
         self.params = params
@@ -63,16 +64,31 @@ class HastingsResults:
         self.eps = eps
 
         ## Visualisation setting
+        # ## Conversion into percents
+        # if show is False:
+        #     self.show = int(-0.75 * accepted.shape[0])
+        # elif 0 < show < 1:
+        #     self.show = int(-show * accepted.shape[0])
+        # else:
+        #     self.show = int(-show/100 * accepted.shape[0])
         self.show = show
         self.title = title
         self.bins = bins
 
-    def show_mh_heatmap(self, where=False):
+    def show_mh_heatmap(self, where=False, bins=False, show=False):
         """ Visualises the result of Metropolis Hastings as a heatmap
 
         Args:
             where (tuple/list): output matplotlib sources to output created figure
+            bins (int): number of segments in the plot
+            show (number): show last x percents of the accepted values
         """
+        if bins is not False:
+            self.bins = bins
+
+        if show is not False and show > 0:
+            self.show = show
+
         if where:
             plt.hist2d(self.accepted[self.show:, 0], self.accepted[self.show:, 1], bins=self.bins)
             plt.xlabel(self.params[0])
@@ -280,7 +296,7 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
 
 def initialise_sampling(space: RefinedSpace, observations, functions, observations_count: int,
                         observations_samples_count: int, MH_sampling_iterations: int, eps,
-                        theta_init=False, where=False, progress=False, debug=False):
+                        theta_init=False, where=False, progress=False, show=False, bins=20, debug=False):
     """ Initialisation method for Metropolis Hastings
     Args:
         space (RefinedSpace):
@@ -293,6 +309,8 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         theta_init (list of numbers): initial point in parameter space
         where (tuple/list): output matplotlib sources to output created figure
         progress (Tkinter element): progress bar
+        show (number): show last x percents of the accepted values
+        bins (int): number of segments in the plot
         debug (bool): if True extensive print will be used
 
     @author: tpetrov
@@ -414,17 +432,22 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         ax.legend()
         plt.show()
 
+    if show is False:
+        show = int(-0.75 * accepted.shape[0])
+    elif 0 < show < 1:
+        show = int(-show * accepted.shape[0])
+    else:
+        show = int(-show / 100 * accepted.shape[0])
+
     ## Create TODO plot
-    show = int(-0.75 * accepted.shape[0])  ## TODO check this line
     if not where:
-        hist_show = int(-0.75 * accepted.shape[0])
         fig = plt.figure(figsize=(20, 10))
         ax = fig.add_subplot(1, 2, 1)
         ax.plot(accepted[show:, 0])
         ax.set_title(f"Figure 4: Trace for {space.get_params()[0]}")
         ax.set_ylabel(f"${space.get_params()[0]}$")
         ax = fig.add_subplot(1, 2, 2)
-        ax.hist(accepted[hist_show:, 0], bins=20, density=True)
+        ax.hist(accepted[show:, 0], bins=20, density=True)
         ax.set_ylabel("Frequency")
         ax.set_xlabel(f"${space.get_params()[0]}$")
         ax.set_title(f"Fig.5: Histogram of ${space.get_params()[0]}$")
@@ -434,7 +457,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     heatmap_title = f'{space.get_params()[0]}, {space.get_params()[1]} estimate with MH algorithm, {MH_sampling_iterations} iterations, sample size = {observations_samples_count} \n It took {gethostname()} {round(time() - start_time)} second(s)'
 
     ##        HastingsResults(self, params, theta_init, accepted, observations_count, observations_samples_count, MH_sampling_iterations, eps, show=0, title="", bins=20):
-    results = HastingsResults(space.params, theta_init, accepted, observations_count, observations_samples_count, MH_sampling_iterations, eps, show=0, title=heatmap_title)
+    results = HastingsResults(space.params, theta_init, accepted, observations_count, observations_samples_count, MH_sampling_iterations, eps, show=show, title=heatmap_title, bins=bins)
 
     if where:
         return results

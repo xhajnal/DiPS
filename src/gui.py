@@ -205,7 +205,7 @@ class Gui(Tk):
         self.show_true_point = None
 
         ## Settings
-        self.version = "1.8.4"  ## Version of the gui
+        self.version = "1.8.5"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -513,7 +513,6 @@ class Gui(Tk):
         label71 = Label(frame_left, text="Set N_obs: ", anchor=W, justify=LEFT)
         label71.grid(row=1, column=3)
         createToolTip(label71, text='number of samples to be used for sampling - subset of all samples')
-
         self.N_obs_entry = Entry(frame_left)
         self.N_obs_entry.grid(row=1, column=4)
         self.N_obs_entry.insert(END, '500')
@@ -521,20 +520,30 @@ class Gui(Tk):
         label71 = Label(frame_left, text="Set MH_samples: ", anchor=W, justify=LEFT)
         label71.grid(row=2, column=3)
         createToolTip(label71, text='number of iterations')
-
         self.MH_samples_entry = Entry(frame_left)
         self.MH_samples_entry.grid(row=2, column=4)
         self.MH_samples_entry.insert(END, '500')
 
-        label71 = Label(frame_left, text="Set eps: ", anchor=W, justify=LEFT)
-        label71.grid(row=3, column=3)
-        createToolTip(label71, text='very small value used as probability of non-feasible values in prior')
-
+        label72 = Label(frame_left, text="Set eps: ", anchor=W, justify=LEFT)
+        label72.grid(row=3, column=3)
+        createToolTip(label72, text='very small value used as probability of non-feasible values in prior')
         self.eps_entry = Entry(frame_left)
         self.eps_entry.grid(row=3, column=4)
         self.eps_entry.insert(END, '0.0001')
 
-        # N: int, N_obs: int, MH_samples: int, eps
+        label73 = Label(frame_left, text="Set # bins: ", anchor=W, justify=LEFT)
+        label73.grid(row=4, column=3)
+        createToolTip(label73, text='number of segments in the plot')
+        self.bins = Entry(frame_left)
+        self.bins.grid(row=4, column=4)
+        self.bins.insert(END, '20')
+
+        label73 = Label(frame_left, text="Show from: ", anchor=W, justify=LEFT)
+        label73.grid(row=5, column=3)
+        createToolTip(label73, text='hides first n points')
+        self.show = Entry(frame_left)
+        self.show.grid(row=5, column=4)
+        self.show.insert(END, '0.75')
 
         Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=7, column=3, columnspan=2, sticky=W, pady=4)
 
@@ -2364,7 +2373,8 @@ class Gui(Tk):
                                                   int(self.N_obs_entry.get()), int(self.MH_samples_entry.get()),
                                                   float(self.eps_entry.get()), theta_init=self.parameter_values,
                                                   where=[self.page6_figure2, self.page6_b],
-                                                  progress=self.update_progress_bar, debug=self.debug.get())
+                                                  progress=self.update_progress_bar, debug=self.debug.get(),
+                                                  bins=int(self.bins.get()), show=float(self.show.get()))
             spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b])
 
             if spam[0] is not False:
