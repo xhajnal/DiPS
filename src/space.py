@@ -28,7 +28,12 @@ cwd = os.getcwd()
 os.chdir(workspace)
 
 config.read("../config.ini")
-refinement_results = config.get("paths", "refinement_results")
+
+results_dir = config.get("paths", "results")
+if not os.path.exists(results_dir):
+    os.makedirs(results_dir)
+
+refinement_results = os.path.join(results_dir, "refinement_results")
 if not os.path.exists(refinement_results):
     os.makedirs(refinement_results)
 

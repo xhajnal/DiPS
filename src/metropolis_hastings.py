@@ -20,7 +20,10 @@ os.chdir(workspace)
 
 
 config.read(os.path.join(workspace, "../config.ini"))
+
 results_dir = config.get("paths", "results")
+if not os.path.exists(results_dir):
+    os.makedirs(results_dir)
 
 results_dir = os.path.join(results_dir, "mh_results")
 if not os.path.exists(results_dir):

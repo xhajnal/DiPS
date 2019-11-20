@@ -19,17 +19,21 @@ os.chdir(workspace)
 
 config.read(os.path.join(workspace, "../config.ini"))
 
-prism_results = config.get("paths", "prism_results")
-if not os.path.exists(prism_results):
-    raise OSError(__file__ + ": Directory does not exist: " + str(prism_results))
-
-storm_results = config.get("paths", "storm_results")
-if not os.path.exists(prism_results):
-    raise OSError(__file__ + ": Directory does not exist: " + str(storm_results))
-
 data_path = config.get("paths", "data")
 if not os.path.exists(data_path):
     raise OSError(__file__ + ": Directory does not exist: " + str(data_path))
+
+results_dir = config.get("paths", "results")
+if not os.path.exists(results_dir):
+    raise OSError(__file__ + ": Directory does not exist: " + str(results_dir))
+
+prism_results = os.path.join(results_dir, "prism_results")
+if not os.path.exists(prism_results):
+    raise OSError(__file__ + ": Directory does not exist: " + str(prism_results))
+
+storm_results = os.path.join(results_dir, "storm_results")
+if not os.path.exists(prism_results):
+    raise OSError(__file__ + ": Directory does not exist: " + str(storm_results))
 
 os.chdir(cwd)
 

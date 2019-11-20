@@ -19,7 +19,9 @@ model_path = config.get("paths", "models")
 if not os.path.exists(model_path):
     os.makedirs(model_path)
 
-prism_results = config.get("paths", "prism_results")
+results_dir = config.get("paths", "results")
+
+prism_results = os.path.join(results_dir, "prism_results")
 if not os.path.exists(prism_results):
     os.makedirs(prism_results)
 

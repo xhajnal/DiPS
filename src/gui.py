@@ -150,6 +150,8 @@ class Gui(Tk):
         self.model_dir = ""  ## Path to model
         self.property_dir = ""  ## Path to temporal properties
         self.data_dir = ""  ## Path to data
+
+        self.results_dir = ""  ## Path to results
         self.prism_results = ""  ## Path to prism results
         self.storm_results = ""  ## Path to Storm results
         self.refinement_results = ""  ## Path to refinement results
@@ -724,32 +726,34 @@ class Gui(Tk):
         if not os.path.exists(self.data_dir):
             os.makedirs(self.data_dir)
 
-        ## results
+        ## Results
         self.results_dir = config.get("paths", "results")
         if not os.path.exists(self.results_dir):
             os.makedirs(self.results_dir)
 
-        self.prism_results = config.get("paths", "prism_results")
+        self.prism_results = os.path.join(self.results_dir, "prism_results")
         if not os.path.exists(self.prism_results):
             os.makedirs(self.prism_results)
 
-        self.storm_results = config.get("paths", "storm_results")
+        self.storm_results = os.path.join(self.results_dir, "storm_results")
         if not os.path.exists(self.storm_results):
             os.makedirs(self.storm_results)
 
-        self.refinement_results = config.get("paths", "refinement_results")
+        self.refinement_results = os.path.join(self.results_dir, "refinement_results")
         if not os.path.exists(self.refinement_results):
             os.makedirs(self.refinement_results)
 
-        self.figures_dir = config.get("paths", "figures")
+        self.figures_dir = os.path.join(self.results_dir, "figures")
         if not os.path.exists(self.figures_dir):
             os.makedirs(self.figures_dir)
-        
-        self.optimisation_results_dir = config.get("paths", "optimisation")
+
+        self.optimisation_results_dir = os.path.join(self.results_dir, "optimisation")
         if not os.path.exists(self.optimisation_results_dir):
             os.makedirs(self.optimisation_results_dir)
 
         self.mh_results_dir = os.path.join(self.results_dir, "mh_results")
+        if not os.path.exists(self.mh_results_dir):
+            os.makedirs(self.mh_results_dir)
 
         self.tmp_dir = config.get("paths", "tmp")
         if not os.path.exists(self.tmp_dir):

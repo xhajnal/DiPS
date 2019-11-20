@@ -29,11 +29,15 @@ try:
     if not os.path.exists(properties_folder):
         raise OSError(__file__ + "Directory does not exist: " + str(properties_folder))
 
-    prism_results = config.get("paths", "prism_results")
+    results_dir = config.get("paths", "results")
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+
+    prism_results = os.path.join(results_dir, "prism_results")
     if not os.path.exists(prism_results):
         os.makedirs(prism_results)
 
-    storm_results = config.get("paths", "storm_results")
+    storm_results = os.path.join(results_dir, "storm_results")
     if not os.path.exists(storm_results):
         os.makedirs(storm_results)
 
