@@ -29,11 +29,11 @@ if not os.path.exists(results_dir):
 
 prism_results = os.path.join(results_dir, "prism_results")
 if not os.path.exists(prism_results):
-    raise OSError(__file__ + ": Directory does not exist: " + str(prism_results))
+    os.makedirs(prism_results)
 
 storm_results = os.path.join(results_dir, "storm_results")
 if not os.path.exists(prism_results):
-    raise OSError(__file__ + ": Directory does not exist: " + str(storm_results))
+    os.makedirs(prism_results)
 
 os.chdir(cwd)
 

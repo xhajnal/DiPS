@@ -33,7 +33,7 @@ def do_config():
     """ Validates, ste up config and creates directories from the config if not existing"""
     config.read(os.path.join(workspace, "../config.ini"))
 
-    for it in ["models", "properties", "data", "prism_results", "storm_results", "refinement_results", "figures", "optimisation", "tmp"]:
+    for it in ["models", "properties", "data", "results", "tmp"]:
         try:
             subdir = config.get("paths", it)
         except:
