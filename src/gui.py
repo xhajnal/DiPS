@@ -207,7 +207,7 @@ class Gui(Tk):
         self.show_true_point = None
 
         ## Settings
-        self.version = "1.8.5"  ## Version of the gui
+        self.version = "1.8.6"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -546,6 +546,13 @@ class Gui(Tk):
         self.show = Entry(frame_left)
         self.show.grid(row=5, column=4)
         self.show.insert(END, '0.75')
+
+        label73 = Label(frame_left, text="Set timeout: ", anchor=W, justify=LEFT)
+        label73.grid(row=6, column=3)
+        createToolTip(label73, text='in seconds')
+        self.mh_timeout = Entry(frame_left)
+        self.mh_timeout.grid(row=6, column=4)
+        self.mh_timeout.insert(END, '3600')
 
         Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=7, column=3, columnspan=2, sticky=W, pady=4)
 
@@ -2378,7 +2385,8 @@ class Gui(Tk):
                                                   float(self.eps_entry.get()), theta_init=self.parameter_values,
                                                   where=[self.page6_figure2, self.page6_b],
                                                   progress=self.update_progress_bar, debug=self.debug.get(),
-                                                  bins=int(self.bins.get()), show=float(self.show.get()))
+                                                  bins=int(self.bins.get()), show=float(self.show.get()),
+                                                  timeout=int(self.mh_timeout.get()))
             spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b])
 
             if spam[0] is not False:

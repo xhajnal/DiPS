@@ -197,7 +197,7 @@ def acceptance(x, x_new):
 
 
 def metropolis_hastings(likelihood_computer, prior, transition_model, param_init, iterations, space, data,
-                        acceptance_rule, parameter_intervals, functions, eps, progress=False, debug=False):
+                        acceptance_rule, parameter_intervals, functions, eps, progress=False, timeout=False, debug=False):
     """ TODO
     the main method
 
@@ -210,6 +210,7 @@ def metropolis_hastings(likelihood_computer, prior, transition_model, param_init
         acceptance_rule (function(x, x_new)): decides whether to accept or reject the new sample
         parameter_intervals (list of pairs): boundaries of parameters
         progress (Tkinter element): progress bar
+        timeout (int): timeout in seconds
         debug (bool): if True extensive print will be used
 
     Returns:
@@ -246,6 +247,10 @@ def metropolis_hastings(likelihood_computer, prior, transition_model, param_init
                 print(f"new point: {x_new} rejected")
         if progress:
             progress(iteration/iterations)
+
+        ## Finish iterations after timeout
+        if (time() - globals()["start_time"]) > timeout and timeout is not False:
+            break
 
     return np.array(accepted), np.array(rejected)
 
@@ -299,7 +304,7 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
 
 def initialise_sampling(space: RefinedSpace, observations, functions, observations_count: int,
                         observations_samples_count: int, MH_sampling_iterations: int, eps,
-                        theta_init=False, where=False, progress=False, show=False, bins=20, debug=False):
+                        theta_init=False, where=False, progress=False, show=False, bins=20, timeout=False, debug=False):
     """ Initialisation method for Metropolis Hastings
     Args:
         space (RefinedSpace):
@@ -314,13 +319,16 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         progress (Tkinter element): progress bar
         show (number): show last x percents of the accepted values
         bins (int): number of segments in the plot
+        timeout (int): timeout in seconds
         debug (bool): if True extensive print will be used
+
 
     @author: tpetrov
     @edit: xhajnal
     """
     ## Internal settings
     start_time = time()
+    globals()["start_time"] = start_time
 
     # ## Convert z3 functions
     # for index, function in enumerate(functions):
@@ -402,7 +410,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     print("Initial parameter point: ", theta_init)
 
     ##                                      (likelihood_computer,    prior, transition_model,   param_init, iterations, space, data,    acceptance_rule,parameter_intervals, functions, eps):
-    accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, MH_sampling_iterations, space, observations, acceptance, parameter_intervals, functions, eps, progress=progress, debug=debug)
+    accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, MH_sampling_iterations, space, observations, acceptance, parameter_intervals, functions, eps, progress=progress, timeout=timeout, debug=debug)
 
     print("accepted.shape", accepted.shape)
     if len(accepted) == 0:
