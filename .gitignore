@@ -123,25 +123,25 @@ ipython/*
 ./config.ini
 models/*
 properties/*
-results/prism_results/*
-results/storm_results/*
+
+!data/*.p
+data/*/*
+
+results/prism_results/*/*
+results/storm_results/*/*
 results/performance_results/*
+results/optimisation_results/*
+results/figures/*
+results/mh_results/*
+results/refinement_results/*
+
 
 src/test/*
 src/other_sources/*
 
-results/refinement_results/*.p
-results/refinement_results/*.P
-results/refinement_results/*.png
-results/refinement_results/*.PNG
-results/refinement_results/figure_to_title.txt
 
-data/*
-!data/*.p
-
-results/optimisation_results/*
 test/_trial_*
-results/figures/*
+
 tmp/*
 
 # storm calls
