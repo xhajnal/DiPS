@@ -127,8 +127,8 @@ properties/*
 !data/*.p
 data/*/*
 
-results/prism_results/*/*
-results/storm_results/*/*
+results/prism_results/*
+results/storm_results/*
 results/performance_results/*
 results/optimisation_results/*
 results/figures/*

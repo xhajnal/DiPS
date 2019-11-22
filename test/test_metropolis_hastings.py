@@ -26,25 +26,25 @@ class MyTestCase(unittest.TestCase):
 
         ## (space, observations, functions, N, N_obs, MH_samples, eps)
         # initialise_sampling(space, [], g, 5000, 100, 50000, 0)
-        initialise_sampling(space, observations=[], functions=g, observations_count=500, observations_samples_count=100, MH_sampling_iterations=100, eps=0)
+        initialise_sampling(space, observations=[], functions=g, observations_count=500, observations_samples_size=100, MH_sampling_iterations=100, eps=0)
 
     def test_example2(self):
         space = RefinedSpace([(0, 1), (0, 1)], ["p", "q"], ["Real", "Real"], [[[0, 0.5], [0, 0.5]]], [],
                              true_point=[0.82, 0.92])
         f = ["p**2-2*p+1", "2*q*p**2-2*p**2-2*q*p+2*p", "(-2)*q*p**2+p**2+2*q*p"]
-        initialise_sampling(space, observations=[], functions=f, observations_count=500, observations_samples_count=100, MH_sampling_iterations=100, eps=0)
+        initialise_sampling(space, observations=[], functions=f, observations_count=500, observations_samples_size=100, MH_sampling_iterations=100, eps=0)
 
     def test_given_observation(self):
         space = RefinedSpace([(0, 1), (0, 1)], ["p", "q"], ["Real", "Real"], [[[0, 0.5], [0, 0.5]]], [],
                              true_point=[0.82, 0.92])
         f = ["p**2-2*p+1", "2*q*p**2-2*p**2-2*q*p+2*p", "(-2)*q*p**2+p**2+2*q*p"]
-        initialise_sampling(space, observations=[0, 2, 1, 2, 1, 0, 2, 1, 0, 1], functions=f, observations_count=500, observations_samples_count=100, MH_sampling_iterations=100, eps=0)
+        initialise_sampling(space, observations=[0, 2, 1, 2, 1, 0, 2, 1, 0, 1], functions=f, observations_count=500, observations_samples_size=100, MH_sampling_iterations=100, eps=0)
 
     def test_given_data(self):
         space = RefinedSpace([(0, 1), (0, 1)], ["p", "q"], ["Real", "Real"], [[[0, 0.5], [0, 0.5]]], [],
                              true_point=[0.82, 0.92])
         f = ["p**2-2*p+1", "2*q*p**2-2*p**2-2*q*p+2*p", "(-2)*q*p**2+p**2+2*q*p"]
-        initialise_sampling(space, observations=[0.2, 0.5, 0.3], functions=f, observations_count=500, observations_samples_count=100, MH_sampling_iterations=100, eps=0)
+        initialise_sampling(space, observations=[0.2, 0.5, 0.3], functions=f, observations_count=500, observations_samples_size=100, MH_sampling_iterations=100, eps=0)
 
 
 if __name__ == '__main__':

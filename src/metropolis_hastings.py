@@ -321,7 +321,7 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
 
 
 def initialise_sampling(space: RefinedSpace, observations, functions, observations_count: int,
-                        observations_samples_count: int, MH_sampling_iterations: int, eps,
+                        observations_samples_size: int, MH_sampling_iterations: int, eps,
                         theta_init=False, where=False, progress=False, show=False, bins=20, timeout=False, debug=False):
     """ Initialisation method for Metropolis Hastings
     Args:
@@ -329,7 +329,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         observations (list of numbers): either experiment or data(experiment result frequency)
         functions (list of strings):
         observations_count (int): total number of observations
-        observations_samples_count (int): sample size from the observations
+        observations_samples_size (int): sample size from the observations
         MH_sampling_iterations (int): number of iterations/steps in searching in space
         eps (number): very small value used as probability of non-feasible values in prior
         theta_init (list of numbers): initial point in parameter space
@@ -348,8 +348,9 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     start_time = time()
     globals()["start_time"] = start_time
 
+    observations_samples_size = min(observations_count, observations_samples_size)
     ##        HastingsResults(self, params, theta_init, accepted, observations_count, observations_samples_count, MH_sampling_iterations, eps, show=0, title="", bins=20):
-    globals()["results"] = HastingsResults(space.params, theta_init, False, observations_count, observations_samples_count, MH_sampling_iterations, eps, show=show, title="", bins=bins, last_iter=0, timeout=timeout)
+    globals()["results"] = HastingsResults(space.params, theta_init, False, observations_count, observations_samples_size, MH_sampling_iterations, eps, show=show, title="", bins=bins, last_iter=0, timeout=timeout)
 
     # ## Convert z3 functions
     # for index, function in enumerate(functions):
@@ -410,9 +411,8 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
             samples.append(sample(functions, data_means))
         print("samples", samples)
 
-        observations = np.array(samples)[np.random.randint(0, observations_count, observations_samples_count)]
+        observations = np.array(samples)[np.random.randint(0, observations_count, observations_samples_size)]
     print("observations", observations)
-    observations_samples_count = min(observations_count, observations_samples_count)
 
     if not where:
         fig = plt.figure(figsize=(10, 10))
@@ -420,7 +420,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         ax.hist(observations, bins=range(len(functions)))
         ax.set_xlabel("Value")
         ax.set_ylabel("Frequency")
-        ax.set_title(f"Figure 1: Distribution of {observations_samples_count} observations (from full sample= {observations_count})")
+        ax.set_title(f"Figure 1: Distribution of {observations_samples_size} observations (from full sample= {observations_count})")
         plt.show()
 
     # theta_new = transition_model_a(theta_true, parameter_intervals)     ## apparently just a print call
@@ -441,8 +441,8 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
 
     ## TODO dump the class instead
     print(f"Set of accepted and rejected points is stored here: {tmp_dir}")
-    pickle.dump(accepted, open(os.path.join(tmp_dir, f"accepted_{observations_samples_count}.p"), 'wb'))
-    pickle.dump(rejected, open(os.path.join(tmp_dir, f"rejected_{observations_samples_count}.p"), 'wb'))
+    pickle.dump(accepted, open(os.path.join(tmp_dir, f"accepted_{observations_samples_size}.p"), 'wb'))
+    pickle.dump(rejected, open(os.path.join(tmp_dir, f"rejected_{observations_samples_size}.p"), 'wb'))
 
     # accepted = pickle.load(open(os.path.join(tmp_dir, f"accepted_{N_obs}.p"), "rb"))
     # rejected = pickle.load(open(os.path.join(tmp_dir, f"rejected_{N_obs}.p"), "rb"))
@@ -461,7 +461,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         ax.plot(accepted[(0, 100)[len(accepted) > 200]:to_show, 1], 'b.', label='Accepted', alpha=0.5)
         ax.set_xlabel("Step")
         ax.set_ylabel("Value")
-        ax.set_title("Figure 2: MCMC sampling for N=" + str(observations_samples_count) + " with Metropolis-Hastings. First " + str(to_show) + " samples are shown.")
+        ax.set_title("Figure 2: MCMC sampling for N=" + str(observations_samples_size) + " with Metropolis-Hastings. First " + str(to_show) + " samples are shown.")
         ax.grid()
         ax.legend()
         plt.show()
@@ -489,6 +489,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         ax.set_title(f"Fig.5: Histogram of ${space.get_params()[0]}$")
         fig.tight_layout()
 
+    ## TODO make a option to set to see the whole space, not zoomed
     if where:
         return globals()["results"]
     else:

@@ -21,12 +21,12 @@ from common.math import cartesian_product
 wraper = DocumentWrapper(width=60)
 
 
-def get_param_values(parameters, size_q, intervals=False, debug: bool = False):
+def get_param_values(parameters, sample_size, intervals=False, debug: bool = False):
     """ Creates linearly sampled parameter space from the given parameter intervals and number of samples
 
     Args:
         parameters (list): of parameters to sample
-        size_q (int): sample size in each parameter
+        sample_size (int): sample size in each parameter
         intervals (bool): if False (0,1) interval is used
         debug (bool): if debug extensive output is provided
     """
@@ -35,12 +35,12 @@ def get_param_values(parameters, size_q, intervals=False, debug: bool = False):
         if intervals:
             if debug:
                 print(f"Parameter index:{param} with intervals: [{intervals[param][0]},{intervals[param][1]}]")
-            parameter_values.append(np.linspace(intervals[param][0], intervals[param][1], size_q, endpoint=True))
+            parameter_values.append(np.linspace(intervals[param][0], intervals[param][1], sample_size, endpoint=True))
         else:
-            parameter_values.append(np.linspace(0, 1, size_q, endpoint=True))
+            parameter_values.append(np.linspace(0, 1, sample_size, endpoint=True))
     parameter_values = cartesian_product(*parameter_values)
     if (len(parameters) - 1) == 0:
-        parameter_values = np.linspace(0, 1, size_q, endpoint=True)[np.newaxis, :].T
+        parameter_values = np.linspace(0, 1, sample_size, endpoint=True)[np.newaxis, :].T
     if debug:
         print("Parameter_values: ", parameter_values)
     return parameter_values
@@ -84,7 +84,7 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
         title = "{} {}={},".format(title, parameters[param], parameter_value[param])
     title = title[:-1]
 
-    title = f"{title}\n values: "
+    title = f"{title}\n function(s) values: "
     for polynome in functions:
         expression = eval(polynome)
         if debug:
@@ -147,12 +147,12 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
     return values
 
 
-def sample_dictionary_funs(dictionary, size_q, keys=None, debug: bool = False):
+def sample_dictionary_funs(dictionary, sample_size, keys=None, debug: bool = False):
     """ Returns a dictionary of function values for sampled parametrisations
 
     Args:
         dictionary: dictionary of list of functions
-        size_q (int): sample size in each parameter
+        sample_size (int): sample size in each parameter
         keys (list): dictionary keys to be used
         debug (bool): if debug extensive output is provided
 
@@ -172,17 +172,17 @@ def sample_dictionary_funs(dictionary, size_q, keys=None, debug: bool = False):
 
     ## For
     for key in keys:
-        array = sample_list_funs(dictionary[key], size_q, debug=debug)
+        array = sample_list_funs(dictionary[key], sample_size, debug=debug)
         sampling[key] = array
     return sampling
 
 
-def sample_list_funs(functions, size_q, parameters=False, intervals=False, silent: bool = False, debug: bool = False):
+def sample_list_funs(functions, sample_size, parameters=False, intervals=False, silent: bool = False, debug: bool = False):
     """ Returns a list of function values for sampled parametrisations
 
     Args:
         functions: (list of functions) to be sampled
-        size_q (int): sample size in each parameter
+        sample_size (int): sample size in each parameter
         parameters (list of strings): parameter names (used for faster eval)
         intervals (list of pairs of numbers): intervals of parameters
         silent (bool): if silent command line output is set to minimum
@@ -220,7 +220,7 @@ def sample_list_funs(functions, size_q, parameters=False, intervals=False, silen
         if debug:
             print("Sorted parameters: ", fun_parameters)
 
-        parameter_values = get_param_values(fun_parameters, size_q, intervals=intervals, debug=debug)
+        parameter_values = get_param_values(fun_parameters, sample_size, intervals=intervals, debug=debug)
 
         for parameter_value in parameter_values:
             if debug:
@@ -243,12 +243,12 @@ def sample_list_funs(functions, size_q, parameters=False, intervals=False, silen
     return arr
 
 
-def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug: bool = False, show_all_in_one=False, where=False):
+def visualise(dic_fun, agents_quantities, sample_size, cumulative=False, debug: bool = False, show_all_in_one=False, where=False):
     """ Creates bar plot of probabilities of i successes for sampled parametrisation
 
     Args:
         dic_fun (dictionary N -> list of rational functions)
-        size_q (int): sample size in each parameter
+        sample_size (int): sample size in each parameter
         agents_quantities (int): pop sizes to be used
         cumulative (bool): if True cdf instead of pdf is visualised
         debug (bool): if debug extensive output is provided
@@ -275,7 +275,7 @@ def visualise(dic_fun, agents_quantities, size_q, cumulative=False, debug: bool 
         if debug:
             print("Sorted parameters: ", parameters)
 
-        parameter_values = get_param_values(parameters, size_q, debug)
+        parameter_values = get_param_values(parameters, sample_size, debug)
 
         for parameter_value in parameter_values:
             if debug:

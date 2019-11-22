@@ -68,7 +68,7 @@ class RefinedSpace:
             sat_samples: (list of points): satisfying points
             unsat_samples: (list of points): unsatisfying points
             true_point (list of numbers):: The true value in the parameter space
-            title (string):: text to added in the end of the Figure titles, CASE STUDY STANDARD: f"model: {model_type}, population = {population}, size_q = {size_q},  \n Dataset = {dataset}, alpha={alpha}, #samples={n_samples}"
+            title (string):: text to added in the end of the Figure titles, CASE STUDY STANDARD: f"model: {model_type}, population = {population}, sample_size = {sample_size},  \n Dataset = {dataset}, alpha={alpha}, #samples={n_samples}"
         """
 
         ## REGION
@@ -90,7 +90,7 @@ class RefinedSpace:
             if param in ["region", "params", "types", "rectangles_sat", "rectangles_unsat", "rectangles_unknown", "sat_samples", "unsat_samples", "true_point"]:
                 raise Exception(f"Parameter name {param} is not allowed as it is one of the variables")
             ## TODO add "delta"
-            if param in ["funcs", "intervals", "silent", "debug", "constraints", "points", "solver", "recursion_depth",  "epsilon", "coverage", "silent", "version", "size_q", "debug", "save", "title", "where", "show_space", "solver", "gui"]:
+            if param in ["funcs", "intervals", "silent", "debug", "constraints", "points", "solver", "recursion_depth",  "epsilon", "coverage", "silent", "version", "sample_size", "debug", "save", "title", "where", "show_space", "solver", "gui"]:
                 raise Exception(f"Parameter name {param} is not allowed as it is one of the variables")
         self.params = params
 
@@ -631,19 +631,19 @@ class RefinedSpace:
         self.rectangles_unsat_to_show = []
         return PatchCollection(rectangles_unsat, facecolor='r', alpha=0.5)
 
-    def grid_sample(self, constraints, size_q, silent: bool = False, save=False, progress=False):
+    def grid_sample(self, constraints, sample_size, silent: bool = False, save=False, progress=False):
         """ Executes grid sampling
 
         Args:
             constraints  (list of strings): array of properties
-            size_q (int): number of samples in dimension
+            sample_size (int): number of samples in dimension
             silent (bool): if silent printed output is set to minimum
             save (bool): if True output is pickled
             progress (Tkinter element): progress bar
         """
         from synthetise import sample
         self.gridsampled = True
-        sample(self, constraints, size_q, compress=True, silent=silent, save=save, progress=progress)
+        sample(self, constraints, sample_size, compress=True, silent=silent, save=save, progress=progress)
 
     def show_samples(self, which):
         """ Visualises samples in 2D """

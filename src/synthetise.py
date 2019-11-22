@@ -409,7 +409,7 @@ def check_safe(region, constraints, silent: bool = False, called=False, solver="
             return result
 
 
-def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent, version, size_q=False, debug=False, save=False, title="", where=False, show_space=True, solver="z3", delta=0.001, gui=False):
+def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent, version, sample_size=False, debug=False, save=False, title="", where=False, show_space=True, solver="z3", delta=0.001, gui=False):
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
 
     Args:
@@ -420,7 +420,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         coverage (float): coverage threshold to stop computation
         silent (bool): if silent printed output is set to minimum
         version (Int): version of the algorithm to be used
-        size_q (Int): number of samples in dimension used for presampling
+        sample_size (Int): number of samples in dimension used for presampling
         debug (bool): if True extensive print will be used
         save (bool): if True output is stored
         title (string):: text to be added in Figure titles
@@ -511,7 +511,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         print("constraints", constraints)
 
     ## PRESAMPLING HERE
-    if size_q:
+    if sample_size:
         if version == 1:
             print("Using presampled DFS method")
         elif version == 2:
@@ -534,7 +534,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
 
         # funcs, intervals = constraints_to_ineq(constraints)
 
-        to_be_searched = sample(space, constraints, size_q, compress=True, silent=not debug, save=save)
+        to_be_searched = sample(space, constraints, sample_size, compress=True, silent=not debug, save=save)
 
         if debug:
             print(type(to_be_searched))
@@ -600,9 +600,9 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                 spam = to_interval([sat_min, sat_max])
                 for interval_index in range(len(spam)):
                     ## increase the space to the left
-                    spam[interval_index][0] = max(region[interval_index][0], spam[interval_index][0] - (region[interval_index][1]-region[interval_index][0])/(size_q-1))
+                    spam[interval_index][0] = max(region[interval_index][0], spam[interval_index][0] - (region[interval_index][1]-region[interval_index][0])/(sample_size-1))
                     ## increase the space to the right
-                    spam[interval_index][1] = min(region[interval_index][1], spam[interval_index][1] + (region[interval_index][1] - region[interval_index][0]) / (size_q - 1))
+                    spam[interval_index][1] = min(region[interval_index][1], spam[interval_index][1] + (region[interval_index][1] - region[interval_index][0]) / (sample_size - 1))
                 print(f"Intervals bordering the sat hull are: {spam}")
                 space.remove_white(region)
                 regions = refine_by(region, spam, debug)
@@ -817,7 +817,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
             #     private_check_deeper_interval(rectangle, constraints, 0, epsilon, coverage, silent, debug=debug)
 
     ## VISUALISATION
-    if not size_q:
+    if not sample_size:
         ## If the visualisation of the space did not succeed space_shown = (None, error message)
         if show_space:
             space.refinement_took(time() - start_time)
@@ -1689,22 +1689,22 @@ def private_check_deeper_interval(region, constraints, intervals, recursion_dept
         private_check_deeper_interval(*globals()["que"].dequeue())
 
 
-def create_matrix(size_q, dim):
-    """ Return **dim** dimensional array of length **size_q** in each dimension
+def create_matrix(sample_size, dim):
+    """ Return **dim** dimensional array of length **sample_size** in each dimension
 
     Args:
-        size_q (int): number of samples in dimension
+        sample_size (int): number of samples in dimension
         dim (int): number of dimensions
 
     """
-    return np.array(private_create_matrix(size_q, dim, dim))
+    return np.array(private_create_matrix(sample_size, dim, dim))
 
 
-def private_create_matrix(size_q, dim, n_param):
-    """ Return **dim** dimensional array of length **size_q** in each dimension
+def private_create_matrix(sample_size, dim, n_param):
+    """ Return **dim** dimensional array of length **sample_size** in each dimension
 
     Args:
-        size_q (int): number of samples in dimension
+        sample_size (int): number of samples in dimension
         dim (int): number of dimensions
         n_param (int): dummy parameter
 
@@ -1715,16 +1715,16 @@ def private_create_matrix(size_q, dim, n_param):
         for i in range(n_param):
             point.append(0)
         return [point, 9]
-    return [private_create_matrix(size_q, dim - 1, n_param) for _ in range(size_q)]
+    return [private_create_matrix(sample_size, dim - 1, n_param) for _ in range(sample_size)]
 
 
-def sample(space, constraints, size_q, compress=False, silent=True, save=False, debug: bool = False, progress=False):
-    """ Samples the space in **size_q** samples in each dimension and saves if the point is in respective interval
+def sample(space, constraints, sample_size, compress=False, silent=True, save=False, debug: bool = False, progress=False):
+    """ Samples the space in **sample_size** samples in each dimension and saves if the point is in respective interval
 
     Args:
         space: (space.RefinedSpace): space
         constraints  (list of strings): array of properties
-        size_q (int): number of samples in dimension
+        sample_size (int): number of samples in dimension
         compress (bool): if True, only a conjunction of the values (prop in the interval) is used
         silent (bool): if silent printed output is set to minimum
         debug (bool): if True extensive print will be used
@@ -1749,22 +1749,22 @@ def sample(space, constraints, size_q, compress=False, silent=True, save=False, 
     if debug:
         print("space.params", space.params)
         print("space.region", space.region)
-        print("size_q", size_q)
+        print("sample_size", sample_size)
     for param in range(len(space.params)):
-        parameter_values.append(np.linspace(space.region[param][0], space.region[param][1], size_q, endpoint=True))
-        parameter_indices.append(np.asarray(range(0, size_q)))
+        parameter_values.append(np.linspace(space.region[param][0], space.region[param][1], sample_size, endpoint=True))
+        parameter_indices.append(np.asarray(range(0, sample_size)))
 
-    sampling = create_matrix(size_q, len(space.params))
+    sampling = create_matrix(sample_size, len(space.params))
     if not silent:
         print("sampling here")
-        print("size_q", size_q)
+        print("sample_size", sample_size)
         print("space.params", space.params)
         print("sampling", sampling)
     parameter_values = cartesian_product(*parameter_values)
     parameter_indices = cartesian_product(*parameter_indices)
 
     # if (len(space.params) - 1) == 0:
-    #    parameter_values = linspace(0, 1, size_q, endpoint=True)[newaxis, :].T
+    #    parameter_values = linspace(0, 1, sample_size, endpoint=True)[newaxis, :].T
     if not silent:
         print("parameter_values", parameter_values)
         print("parameter_indices", parameter_indices)
@@ -1858,21 +1858,21 @@ def refine_into_rectangles(sampled_space, silent=True):
     Returns:
         Hyperectangles of length at least 2 (in each dimension)
     """
-    size_q = len(sampled_space[0])
+    sample_size = len(sampled_space[0])
     dimensions = len(sampled_space.shape) - 1
     if not silent:
         print("\n refine into rectangles here ")
         print(type(sampled_space))
         print("shape", sampled_space.shape)
         print("space:", sampled_space)
-        print("size_q:", size_q)
+        print("sample_size:", sample_size)
         print("dimensions:", dimensions)
     # find_max_rectangle(sampled_space, [0, 0])
 
     if dimensions == 2:
         parameter_indices = []
         for param in range(dimensions):
-            parameter_indices.append(np.asarray(range(0, size_q)))
+            parameter_indices.append(np.asarray(range(0, sample_size)))
         parameter_indices = cartesian_product(*parameter_indices)
         if not silent:
             print(parameter_indices)
@@ -1900,7 +1900,7 @@ def find_max_rectangle(sampled_space, starting_point, silent=True):
     Returns:
         (triple) : (starting point, end point, is_sat)
     """
-    size_q = len(sampled_space[0])
+    sample_size = len(sampled_space[0])
     dimensions = len(sampled_space.shape) - 1
     if dimensions == 2:
         index_x = starting_point[0]
@@ -1913,7 +1913,7 @@ def find_max_rectangle(sampled_space, starting_point, silent=True):
             if not silent:
                 print(starting_point, "already added, skipping")
             return
-        if index_x >= size_q - 1 or index_y >= size_q - 1:
+        if index_x >= sample_size - 1 or index_y >= sample_size - 1:
             if not silent:
                 print(starting_point, "is at the border, skipping")
             sampled_space[index_x][index_y][1] = 2
@@ -1938,7 +1938,7 @@ def find_max_rectangle(sampled_space, starting_point, silent=True):
                 if not silent:
                     print(f"rectangle [[{index_x},{index_y}],[{index_x + length},{index_y + length}]] does not satisfy all sat not all unsat")
                 break
-            elif index_x + length > size_q or index_y + length > size_q:
+            elif index_x + length > sample_size or index_y + length > sample_size:
                 if not silent:
                     print(f"rectangle [[{index_x},{index_y}],[{index_x + length},{index_y + length}]] is out of box, using lower value")
                 length = length - 1

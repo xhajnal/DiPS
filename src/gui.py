@@ -224,7 +224,7 @@ class Gui(Tk):
         self.delta = 0.01  ## dreal setting
 
         self.factor = BooleanVar()  ## Flag for factorising rational functions
-        self.size_q = ""  ## Number of samples
+        self.sample_size = ""  ## Number of samples
         self.save = ""  ## True if saving on
 
         ## OTHER SETTINGS
@@ -379,8 +379,8 @@ class Gui(Tk):
 
 
         Label(self.page3, text="Set number of samples per variable (grid size):", anchor=W, justify=LEFT).grid(row=1, column=0, padx=4, pady=4)
-        self.fun_size_q_entry = Entry(self.page3)
-        self.fun_size_q_entry.grid(row=1, column=1)
+        self.fun_sample_size_entry = Entry(self.page3)
+        self.fun_sample_size_entry.grid(row=1, column=1)
 
         Button(self.page3, text='Sample functions', command=self.sample_fun).grid(row=2, column=0, sticky=W, padx=4, pady=4)
 
@@ -430,7 +430,9 @@ class Gui(Tk):
         self.data_text.grid(row=2, column=0, columnspan=16, sticky=W, padx=4, pady=4)
 
         ## SET THE INTERVAL COMPUTATION SETTINGS
-        Button(page4, text='Optimize parameters', command=self.optimize).grid(row=3, column=0, sticky=W, padx=4, pady=4)
+        buton41 = Button(page4, text='Optimize parameters', command=self.optimize)
+        buton41.grid(row=3, column=0, sticky=W, padx=4, pady=4)
+        createToolTip(buton41, text='using regression')
 
         label42 = Label(page4, text="Set alpha, the confidence:", anchor=W, justify=LEFT)
         label42.grid(row=4)
@@ -500,85 +502,88 @@ class Gui(Tk):
 
         ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=1, column=0, columnspan=15, sticky='nwe', padx=10, pady=8)
 
-        label61 = Label(frame_left, text="Set size_q: ", anchor=W, justify=LEFT, padx=10)
+        label61 = Label(frame_left, text="Set grid size: ", anchor=W, justify=LEFT, padx=10)
         label61.grid(row=1, pady=16)
         createToolTip(label61, text='number of samples per dimension')
 
-        self.size_q_entry = Entry(frame_left)
-        self.size_q_entry.grid(row=1, column=1)
-        self.size_q_entry.insert(END, '5')
+        self.sample_size_entry = Entry(frame_left)
+        self.sample_size_entry.grid(row=1, column=1)
+        self.sample_size_entry.insert(END, '5')
 
         Button(frame_left, text='Grid sampling', command=self.sample_space).grid(row=7, column=0, columnspan=2, sticky=W, padx=10, pady=4)
 
         ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=2, rowspan=8, sticky='ns', padx=0, pady=25)
 
-        label71 = Label(frame_left, text="Set N_obs: ", anchor=W, justify=LEFT)
-        label71.grid(row=1, column=3)
+        label71 = Label(frame_left, text="Set # of samples: ", anchor=W, justify=LEFT)
+        label71.grid(row=1, column=8)
         createToolTip(label71, text='number of samples to be used for sampling - subset of all samples')
-        self.N_obs_entry = Entry(frame_left)
-        self.N_obs_entry.grid(row=1, column=4)
-        self.N_obs_entry.insert(END, '500')
+        self.observations_samples_size_entry = Entry(frame_left)
+        self.observations_samples_size_entry.grid(row=1, column=9)
+        self.observations_samples_size_entry.insert(END, '500')
 
-        label71 = Label(frame_left, text="Set MH_samples: ", anchor=W, justify=LEFT)
-        label71.grid(row=2, column=3)
-        createToolTip(label71, text='number of iterations')
-        self.MH_samples_entry = Entry(frame_left)
-        self.MH_samples_entry.grid(row=2, column=4)
-        self.MH_samples_entry.insert(END, '500')
+        label71 = Label(frame_left, text="Set # of iteration: ", anchor=W, justify=LEFT)
+        label71.grid(row=2, column=8)
+        createToolTip(label71, text='number of iterations, steps in parameter space')
+        self.MH_sampling_iterations_entry = Entry(frame_left)
+        self.MH_sampling_iterations_entry.grid(row=2, column=9)
+        self.MH_sampling_iterations_entry.insert(END, '500')
 
         label72 = Label(frame_left, text="Set eps: ", anchor=W, justify=LEFT)
-        label72.grid(row=3, column=3)
+        label72.grid(row=3, column=8)
         createToolTip(label72, text='very small value used as probability of non-feasible values in prior')
         self.eps_entry = Entry(frame_left)
-        self.eps_entry.grid(row=3, column=4)
+        self.eps_entry.grid(row=3, column=9)
         self.eps_entry.insert(END, '0.0001')
 
-        label73 = Label(frame_left, text="Set # bins: ", anchor=W, justify=LEFT)
-        label73.grid(row=4, column=3)
+        label73 = Label(frame_left, text="Set grid size: ", anchor=W, justify=LEFT)
+        label73.grid(row=4, column=8)
         createToolTip(label73, text='number of segments in the plot')
         self.bins = Entry(frame_left)
-        self.bins.grid(row=4, column=4)
+        self.bins.grid(row=4, column=9)
         self.bins.insert(END, '20')
 
         label73 = Label(frame_left, text="Show from: ", anchor=W, justify=LEFT)
-        label73.grid(row=5, column=3)
-        createToolTip(label73, text='hides first n points')
+        label73.grid(row=5, column=8)
+        createToolTip(label73, text='show last x percent of accepted pints')
         self.show = Entry(frame_left)
-        self.show.grid(row=5, column=4)
-        self.show.insert(END, '0.75')
+        self.show.grid(row=5, column=9)
+        self.show.insert(END, '75')
 
         label73 = Label(frame_left, text="Set timeout: ", anchor=W, justify=LEFT)
-        label73.grid(row=6, column=3)
+        label73.grid(row=6, column=8)
         createToolTip(label73, text='in seconds')
         self.mh_timeout = Entry(frame_left)
-        self.mh_timeout.grid(row=6, column=4)
+        self.mh_timeout.grid(row=6, column=9)
         self.mh_timeout.insert(END, '3600')
 
-        Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=7, column=3, columnspan=2, sticky=W, pady=4)
+        Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=7, column=8, columnspan=2, sticky=W, pady=4)
 
         ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=5, rowspan=8, sticky='ns', padx=10, pady=25)
 
         label62 = Label(frame_left, text="Set max_dept: ", anchor=W, justify=LEFT)
-        label62.grid(row=1, column=8, padx=10)
+        label62.grid(row=1, column=3, padx=0)
         createToolTip(label62, text='Maximal number of splits')
         label63 = Label(frame_left, text="Set coverage: ", anchor=W, justify=LEFT)
-        label63.grid(row=2, column=8, padx=10)
+        label63.grid(row=2, column=3, padx=0)
         createToolTip(label63, text='Proportion of the nonwhite area to be reached')
         label64 = Label(frame_left, text="Set epsilon: ", anchor=W, justify=LEFT)
-        label64.grid(row=3, column=8, padx=10)
+        label64.grid(row=3, column=3, padx=0)
         createToolTip(label64,
                       text='Minimal size of the rectangle to be checked (if 0 all rectangles are being checked)')
         label65 = Label(frame_left, text="Set algorithm: ", anchor=W, justify=LEFT)
-        label65.grid(row=4, column=8, padx=10)
-        createToolTip(label65, text='Choose from algorithms:\n 1-4 - using SMT solvers \n 1 - DFS search \n 2 - BFS search \n 3 - BFS search with example propagation \n 4 - BFS with example and counterexample propagation \n 5 - interval algorithmic')
+        label65.grid(row=4, column=3, padx=0)
+        createToolTip(label65,
+                      text='Choose from algorithms:\n 1-4 - using SMT solvers \n 1 - DFS search \n 2 - BFS search \n 3 - BFS search with example propagation \n 4 - BFS with example and counterexample propagation \n 5 - interval algorithmic')
 
-        label66 = Label(frame_left, text="Set solver: ", anchor=W, justify=LEFT)
-        label66.grid(row=5, column=8, padx=10)
-        createToolTip(label66, text='When using SMT solver (alg 1-4), two options are possible, z3 or dreal (with delta complete decision procedures)')
+        label66 = Label(frame_left, text="Set SMT solver: ", anchor=W, justify=LEFT)
+        label66.grid(row=5, column=3, padx=0)
+        createToolTip(label66,
+                      text='When using SMT solver (alg 1-4), two options are possible, z3 or dreal (with delta complete decision procedures)')
 
-        label67 = Label(frame_left, text="Set delta: ", anchor=W, justify=LEFT)
-        label67.grid(row=6, column=8, padx=10)
-        createToolTip(label67, text='When using dreal solver, delta is used to set solver error boundaries for satisfiability.')
+        label67 = Label(frame_left, text="Set delta for dreal: ", anchor=W, justify=LEFT)
+        label67.grid(row=6, column=3, padx=0)
+        createToolTip(label67,
+                      text='When using dreal solver, delta is used to set solver error boundaries for satisfiability.')
 
         self.max_dept_entry = Entry(frame_left)
         self.coverage_entry = Entry(frame_left)
@@ -587,12 +592,12 @@ class Gui(Tk):
         self.solver = ttk.Combobox(frame_left, values=('z3', 'dreal'))
         self.delta_entry = Entry(frame_left)
 
-        self.max_dept_entry.grid(row=1, column=9)
-        self.coverage_entry.grid(row=2, column=9)
-        self.epsilon_entry.grid(row=3, column=9)
-        self.alg.grid(row=4, column=9)
-        self.solver.grid(row=5, column=9)
-        self.delta_entry.grid(row=6, column=9)
+        self.max_dept_entry.grid(row=1, column=4)
+        self.coverage_entry.grid(row=2, column=4)
+        self.epsilon_entry.grid(row=3, column=4)
+        self.alg.grid(row=4, column=4)
+        self.solver.grid(row=5, column=4)
+        self.delta_entry.grid(row=6, column=4)
 
         self.max_dept_entry.insert(END, '5')
         self.coverage_entry.insert(END, '0.95')
@@ -601,15 +606,16 @@ class Gui(Tk):
         self.solver.current(0)
         self.delta_entry.insert(END, '0.01')
 
-        Button(frame_left, text='Refine space', command=self.refine_space).grid(row=7, column=8, columnspan=2, sticky=W, pady=4, padx=10)
+        Button(frame_left, text='Refine space', command=self.refine_space).grid(row=7, column=3, columnspan=2, sticky=W,
+                                                                                pady=4, padx=0)
 
         ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=8, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
 
         self.space_text = scrolledtext.ScrolledText(frame_left, height=200, width=100, state=DISABLED)
         self.space_text.grid(row=12, column=0, columnspan=15, rowspan=2, sticky=W, padx=10)  # pack(anchor=W, fill=X)
 
-        frame_left.rowconfigure(13, weight=1)
-        frame_left.columnconfigure(15, weight=1)
+        # frame_left.rowconfigure(13, weight=1)
+        # frame_left.columnconfigure(15, weight=1)
 
         Button(frame_left, text='Open space', command=self.load_space).grid(row=14, column=2, sticky=S, padx=4, pady=4)
         Button(frame_left, text='Save space', command=self.save_space).grid(row=14, column=3, sticky=S, padx=4, pady=4)
@@ -621,7 +627,7 @@ class Gui(Tk):
         frame_right = Frame(page6, width=500, height=200)
         frame_right.pack(side=TOP, fill=BOTH, expand=True)
 
-        Button(frame_right, text='Edit True point', command=self.edit_true_point).pack(side=TOP)
+        Button(frame_right, text='Set True point', command=self.set_true_point).pack(side=TOP)
 
         Label(frame_right, text=f"Space Visualisation", anchor=W, justify=CENTER).pack(side=TOP)
 
@@ -1494,7 +1500,7 @@ class Gui(Tk):
                 self.page6_figure.canvas.draw()
                 self.page6_figure.canvas.flush_events()
 
-    def edit_true_point(self):
+    def set_true_point(self):
         """ Sets the true point of the space """
 
         if self.space is "":
@@ -1950,8 +1956,8 @@ class Gui(Tk):
         """ Samples rational functions. Prints the result. """
         print("Sampling rational functions ...")
         self.status_set("Sampling rational functions. - checking inputs")
-        if self.fun_size_q_entry.get() == "":
-            messagebox.showwarning("Sampling rational functions", "Choose size_q, number of samples per dimension.")
+        if self.fun_sample_size_entry.get() == "":
+            messagebox.showwarning("Sampling rational functions", "Choose grid size, number of samples per dimension.")
             return
         if self.functions == "":
             messagebox.showwarning("Sampling rational functions", "Load the functions first, please")
@@ -1962,7 +1968,7 @@ class Gui(Tk):
 
         try:
             self.cursor_toggle_busy(True)
-            self.sampled_functions = sample_list_funs(self.functions, int(self.fun_size_q_entry.get()),
+            self.sampled_functions = sample_list_funs(self.functions, int(self.fun_sample_size_entry.get()),
                                                       parameters=self.parameters, intervals=self.parameter_domains,
                                                       debug=self.debug.get(), silent=self.silent.get())
         finally:
@@ -2044,8 +2050,8 @@ class Gui(Tk):
             messagebox.showwarning("Sampling rational functions", "Load the functions first, please")
             return
 
-        if self.fun_size_q_entry.get() == "":
-            messagebox.showwarning("Sampling rational functions", "Choose size_q, number of samples per dimension.")
+        if self.fun_sample_size_entry.get() == "":
+            messagebox.showwarning("Sampling rational functions", "Choose grid size, number of samples per dimension.")
             return
         self.page3_figure_in_use.set("2")
 
@@ -2056,7 +2062,7 @@ class Gui(Tk):
         self.Next_sample_button.config(state="normal")
         self.reinitialise_plot(set_onclick=True)
 
-        for parameter_point in get_param_values(self.parameters, self.fun_size_q_entry.get(), False):
+        for parameter_point in get_param_values(self.parameters, self.fun_sample_size_entry.get(), False):
             if self.page3_figure_in_use.get() is not "2":
                 return
 
@@ -2095,8 +2101,8 @@ class Gui(Tk):
             messagebox.showwarning("Plot heatmap", "Load the functions first, please")
             return
 
-        if self.fun_size_q_entry.get() == "":
-            messagebox.showwarning("Plot heatmap", "Choose size_q, number of samples per dimension.")
+        if self.fun_sample_size_entry.get() == "":
+            messagebox.showwarning("Plot heatmap", "Choose grid size, number of samples per dimension.")
             return
 
         self.validate_parameters(where=self.functions)
@@ -2119,7 +2125,7 @@ class Gui(Tk):
                 return
             i = i + 1
             self.page3_figure = heatmap(function, self.parameter_domains,
-                                        [int(self.fun_size_q_entry.get()), int(self.fun_size_q_entry.get())],
+                                        [int(self.fun_sample_size_entry.get()), int(self.fun_sample_size_entry.get())],
                                         posttitle=f"Function number {i}: {function}", where=True,
                                         parameters=self.parameters)
             self.initialise_plot(what=self.page3_figure)
@@ -2282,11 +2288,11 @@ class Gui(Tk):
         print("Sampling space ...")
         self.status_set("Space sampling - checking inputs")
         ## Getting values from entry boxes
-        self.size_q = int(self.size_q_entry.get())
+        self.sample_size = int(self.sample_size_entry.get())
 
         ## Checking if all entries filled
-        if self.size_q == "":
-            messagebox.showwarning("Sample space", "Choose size_q, number of samples before sampling.")
+        if self.sample_size == "":
+            messagebox.showwarning("Sample space", "Choose grid size, number of samples before sampling.")
             return
 
         if self.constraints == "":
@@ -2301,7 +2307,7 @@ class Gui(Tk):
         if not self.silent.get():
             print("space.params", self.space.params)
             print("constraints", self.constraints)
-            print("size_q", self.size_q)
+            print("grid size", self.sample_size)
 
         try:
             self.cursor_toggle_busy(True)
@@ -2313,7 +2319,7 @@ class Gui(Tk):
             self.update()
 
             ## This progress is passed as whole to update the thing inside the called function
-            self.space.grid_sample(self.constraints, self.size_q, silent=self.silent.get(), save=False, progress=self.update_progress_bar)
+            self.space.grid_sample(self.constraints, self.sample_size, silent=self.silent.get(), save=False, progress=self.update_progress_bar)
         finally:
             self.new_window.destroy()
             del self.new_window
@@ -2368,6 +2374,10 @@ class Gui(Tk):
         self.page6_figure2.canvas.draw()
         self.page6_figure2.canvas.flush_events()
 
+        ## Create a warning
+        if int(self.n_samples_entry.get()) < int(self.observations_samples_size_entry.get()):
+            messagebox.showwarning("Metropolis Hastings", "Number of samples from observations (data) is higher than number of observation, using all observations as samples.")
+
         from metropolis_hastings import initialise_sampling
 
         try:
@@ -2381,7 +2391,7 @@ class Gui(Tk):
 
             ## This progress is passed as whole to update the thing inside the called function
             self.mh_results = initialise_sampling(self.space, self.data, self.functions, int(self.n_samples_entry.get()),
-                                                  int(self.N_obs_entry.get()), int(self.MH_samples_entry.get()),
+                                                  int(self.observations_samples_size_entry.get()), int(self.MH_sampling_iterations_entry.get()),
                                                   float(self.eps_entry.get()), theta_init=self.parameter_values,
                                                   where=[self.page6_figure2, self.page6_b],
                                                   progress=self.update_progress_bar, debug=self.debug.get(),
@@ -2478,17 +2488,17 @@ class Gui(Tk):
             ## feeding z3 solver with z3 expressions, python expressions otherwise
             if int(self.alg.get()) == 5:
                 spam = check_deeper(self.space, [self.functions, self.data_intervals], self.max_depth, self.epsilon,
-                                    self.coverage, silent=self.silent.get(), version=int(self.alg.get()), size_q=False,
+                                    self.coverage, silent=self.silent.get(), version=int(self.alg.get()), sample_size=False,
                                     debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
                                     solver=str(self.solver.get()), delta=self.delta, gui=True)
             elif str(self.solver.get()) == "z3" and self.z3_constraints:
                 spam = check_deeper(self.space, self.z3_constraints, self.max_depth, self.epsilon, self.coverage,
-                                    silent=self.silent.get(), version=int(self.alg.get()), size_q=False,
+                                    silent=self.silent.get(), version=int(self.alg.get()), sample_size=False,
                                     debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
                                     solver=str(self.solver.get()), delta=self.delta, gui=True)
             else:
                 spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
-                                    silent=self.silent.get(), version=int(self.alg.get()), size_q=False,
+                                    silent=self.silent.get(), version=int(self.alg.get()), sample_size=False,
                                     debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
                                     solver=str(self.solver.get()), delta=self.delta, gui=True)
         finally:
