@@ -40,7 +40,8 @@ wrapper = DocumentWrapper(width=75)
 class HastingsResults:
     """ Class to represent Metropolis Hastings results"""
 
-    def __init__(self, params, theta_init, accepted, observations_count: int, observations_samples_count: int, MH_sampling_iterations: int, eps, show=0, title="", bins=20):
+    def __init__(self, params, theta_init, accepted, observations_count: int, observations_samples_count: int,
+                 MH_sampling_iterations: int, eps, show=0, pretitle="", title="", bins=20, last_iter=0, timeout=0, time_it_took=0):
         """
         Args:
             params (list of strings): parameter names
@@ -50,6 +51,7 @@ class HastingsResults:
             MH_sampling_iterations (int): number of iterations/steps in searching in space
             eps (number): very small value used as probability of non-feasible values in prior
             show (number): show from
+            pretitle (string): title to be put in front of title
             title (string): title of the plot
             bins (int): number of segments in the plot
         """
@@ -76,7 +78,13 @@ class HastingsResults:
         #     self.show = int(-show/100 * accepted.shape[0])
         self.show = show
         self.title = title
+        self.pretitle = pretitle
+
         self.bins = bins
+
+        self.last_iter = last_iter
+        self.timeout = timeout
+        self.time_it_took = time_it_took
 
     def show_mh_heatmap(self, where=False, bins=False, show=False):
         """ Visualises the result of Metropolis Hastings as a heatmap
@@ -86,6 +94,12 @@ class HastingsResults:
             bins (int): number of segments in the plot
             show (number): show last x percents of the accepted values
         """
+        if self.title is "":
+            if self.last_iter > 0:
+                self.title = f'Estimate of MH algorithm, {self.last_iter} iterations, sample size = {self.observations_samples_count} \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
+            else:
+                self.title = f'Estimate of MH algorithm, {self.MH_sampling_iterations} iterations, sample size = {self.observations_samples_count} \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
+
         if bins is not False:
             self.bins = bins
 
@@ -197,7 +211,7 @@ def acceptance(x, x_new):
 
 
 def metropolis_hastings(likelihood_computer, prior, transition_model, param_init, iterations, space, data,
-                        acceptance_rule, parameter_intervals, functions, eps, progress=False, timeout=False, debug=False):
+                        acceptance_rule, parameter_intervals, functions, eps, progress=False, timeout=-1, debug=False):
     """ TODO
     the main method
 
@@ -249,9 +263,13 @@ def metropolis_hastings(likelihood_computer, prior, transition_model, param_init
             progress(iteration/iterations)
 
         ## Finish iterations after timeout
-        if (time() - globals()["start_time"]) > timeout and timeout is not False:
+        if (time() - globals()["start_time"]) > timeout >= 0:
+            ## TODO store current iteration index
+            globals()["results"].last_iter = iteration
+            globals()["results"].time_it_took = time() - globals()["start_time"]
             break
 
+    globals()["results"].time_it_took = time() - globals()["start_time"]
     return np.array(accepted), np.array(rejected)
 
 
@@ -329,6 +347,9 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     ## Internal settings
     start_time = time()
     globals()["start_time"] = start_time
+
+    ##        HastingsResults(self, params, theta_init, accepted, observations_count, observations_samples_count, MH_sampling_iterations, eps, show=0, title="", bins=20):
+    globals()["results"] = HastingsResults(space.params, theta_init, False, observations_count, observations_samples_count, MH_sampling_iterations, eps, show=show, title="", bins=bins, last_iter=0, timeout=timeout)
 
     # ## Convert z3 functions
     # for index, function in enumerate(functions):
@@ -412,6 +433,8 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     ##                                      (likelihood_computer,    prior, transition_model,   param_init, iterations, space, data,    acceptance_rule,parameter_intervals, functions, eps):
     accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, MH_sampling_iterations, space, observations, acceptance, parameter_intervals, functions, eps, progress=progress, timeout=timeout, debug=debug)
 
+    globals()["results"].accepted = accepted
+
     print("accepted.shape", accepted.shape)
     if len(accepted) == 0:
         return False, False
@@ -450,6 +473,8 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     else:
         show = int(-show / 100 * accepted.shape[0])
 
+    globals()["results"].show = show
+
     ## Create TODO plot
     if not where:
         fig = plt.figure(figsize=(20, 10))
@@ -464,13 +489,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         ax.set_title(f"Fig.5: Histogram of ${space.get_params()[0]}$")
         fig.tight_layout()
 
-    ## Create the heat map
-    heatmap_title = f'{space.get_params()[0]}, {space.get_params()[1]} estimate with MH algorithm, {MH_sampling_iterations} iterations, sample size = {observations_samples_count} \n It took {gethostname()} {round(time() - start_time)} second(s)'
-
-    ##        HastingsResults(self, params, theta_init, accepted, observations_count, observations_samples_count, MH_sampling_iterations, eps, show=0, title="", bins=20):
-    results = HastingsResults(space.params, theta_init, accepted, observations_count, observations_samples_count, MH_sampling_iterations, eps, show=show, title=heatmap_title, bins=bins)
-
     if where:
-        return results
+        return globals()["results"]
     else:
-        results.show_mh_heatmap(where=where)
+        globals()["results"].show_mh_heatmap(where=where)
