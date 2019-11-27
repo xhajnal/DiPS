@@ -614,8 +614,8 @@ class Gui(Tk):
         self.space_text = scrolledtext.ScrolledText(frame_left, height=200, width=100, state=DISABLED)
         self.space_text.grid(row=12, column=0, columnspan=15, rowspan=2, sticky=W, padx=10)  # pack(anchor=W, fill=X)
 
-        # frame_left.rowconfigure(13, weight=1)
-        # frame_left.columnconfigure(15, weight=1)
+        frame_left.rowconfigure(13, weight=1)
+        frame_left.columnconfigure(15, weight=1)
 
         Button(frame_left, text='Open space', command=self.load_space).grid(row=14, column=2, sticky=S, padx=4, pady=4)
         Button(frame_left, text='Save space', command=self.save_space).grid(row=14, column=3, sticky=S, padx=4, pady=4)
@@ -2909,6 +2909,7 @@ class Gui(Tk):
             self.load_mh_results(file=os.path.join(self.tmp_dir, "mh_results.p"))
 
 
+sys.setrecursionlimit(4000000)
 gui = Gui()
 ## System dependent fullscreen setting
 if "wind" in platform.system().lower():

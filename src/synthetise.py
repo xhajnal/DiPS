@@ -755,7 +755,8 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
 
             ## Setting the coverage as lower value between desired coverage and the proportional expected coverage
             next_coverage = min(coverage, (space.get_coverage() + (rectangle_size / space.get_volume())*coverage))
-            print(colored(f"Using proportional coverage: {next_coverage}", "blue"))
+            if not silent:
+                print(colored(f"Using proportional coverage: {next_coverage}", "blue"))
 
             if debug:
                 print("region", rectangle)
