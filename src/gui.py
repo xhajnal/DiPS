@@ -223,6 +223,8 @@ class Gui(Tk):
         self.solver = ""  ## SMT solver - z3 or dreal
         self.delta = 0.01  ## dreal setting
 
+        self.refinement_timeout = 0  ## timeout for refinement
+
         self.factor = BooleanVar()  ## Flag for factorising rational functions
         self.sample_size = ""  ## Number of samples
         self.save = ""  ## True if saving on
@@ -480,7 +482,7 @@ class Gui(Tk):
         page5.rowconfigure(2, weight=1)
         page5.columnconfigure(16, weight=1)
 
-        Button(page5, text='Recalculate constraints', command=self.recalculate_constraints).grid(row=0, column=0, sticky=W, padx=4, pady=4)
+        Button(page5, text='Calculate constraints', command=self.recalculate_constraints).grid(row=0, column=0, sticky=W, padx=4, pady=4)
 
         self.constraints_text = scrolledtext.ScrolledText(page5, height=100, state=DISABLED)
         self.constraints_text.grid(row=1, column=0, columnspan=16, rowspan=2, sticky=W, padx=4, pady=4)
@@ -771,7 +773,9 @@ class Gui(Tk):
         self.tmp_dir = config.get("paths", "tmp")
         if not os.path.exists(self.tmp_dir):
             os.makedirs(self.tmp_dir)
-            
+
+        self.refinement_timeout = config.get("settings", "refine_timeout")
+
         os.chdir(workspace)
 
     ## LOGIC

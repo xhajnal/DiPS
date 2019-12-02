@@ -17,11 +17,11 @@ Feel free to leave response either via issues or email.
 
 ### 1. INSTALL DEPENDENCIES:
 
-* [Python](https://www.python.org/)
+* [Python](https://www.python.org/) 3
 * [Jupyter Notebook](https://jupyter.org/install) (optional)
-* [z3](https://github.com/Z3Prover/z3/releases) - make sure you use same (32/64bit) version as the Python
-* [PRISM](http://www.prismmodelchecker.org) 
-* [Storm](http://www.stormchecker.org/) (optional)
+* [z3](https://github.com/Z3Prover/z3/releases) 4.6.0 - make sure you use same (32/64bit) version as the Python
+* [PRISM](http://www.prismmodelchecker.org) 4.4
+* [Storm](http://www.stormchecker.org/) (optional) 
 * [Prophesy](https://moves.rwth-aachen.de/research/tools/prophesy/) (optional)
 * missing python packages 
   * in the main directory run `pip install -v .`
@@ -31,18 +31,17 @@ Feel free to leave response either via issues or email.
 
 In the main folder there is `config.ini` file. Please fill in required paths.
 
+[mandatory_paths]
 * `prism_path`: path to PRISM `PRISM\bin\`
 * `z3_path`: path to z3 `MYZ3\bin\python`. 
 * `cwd`: path to ipython folder `MYmpm/ipython`
+
+[paths]
 * `models`: path to [PRISM models](http://www.prismmodelchecker.org/tutorial/die.php) 
 * `properties`: path to [PRISM properties](https://www.prismmodelchecker.org/manual/PropertySpecification/Introduction) 
 * `data`: path to data
-* `prism_results`: path to prism results
-* `storm_results`: path to storm results
-* `refinement_results`: path to refinement results 
-* `figures`: path to save plot results
+* `results`: path to save results
 * `tmp`: path to save temporal/intermidiate files
-* `refine_timeout`: timeout for a refinement (in seconds)
 
 *****
 ## HOW TO RUN
