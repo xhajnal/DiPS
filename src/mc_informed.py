@@ -8,43 +8,40 @@ from sympy import Interval
 from common.math import margin
 
 cwd = os.getcwd()
-try:
-    workspace = os.path.dirname(__file__)
-    os.chdir(workspace)
 
-    sys.path.append(os.path.join(workspace, '../src/'))
+workspace = os.path.dirname(__file__)
+os.chdir(workspace)
 
-    config = configparser.ConfigParser()
-    # print(os.getcwd())
-    workspace = os.path.dirname(__file__)
-    # print("workspace",workspace)
-    config.read(os.path.join(workspace, "../config.ini"))
-    # os.chdir(config.get("paths", "properties"))
+sys.path.append(os.path.join(workspace, '../src/'))
 
-    model_folder = config.get("paths", "models")
-    if not os.path.exists(model_folder):
-        raise OSError(__file__ + ": Directory does not exist: " + str(model_folder))
+config = configparser.ConfigParser()
+# print(os.getcwd())
+workspace = os.path.dirname(__file__)
+# print("workspace",workspace)
+config.read(os.path.join(workspace, "../config.ini"))
+# os.chdir(config.get("paths", "properties"))
 
-    properties_folder = config.get("paths", "properties")
-    if not os.path.exists(properties_folder):
-        raise OSError(__file__ + "Directory does not exist: " + str(properties_folder))
+model_folder = config.get("paths", "models")
+if not os.path.exists(model_folder):
+    raise OSError(__file__ + ": Directory does not exist: " + str(model_folder))
 
-    results_dir = config.get("paths", "results")
-    if not os.path.exists(results_dir):
-        os.makedirs(results_dir)
+properties_folder = config.get("paths", "properties")
+if not os.path.exists(properties_folder):
+    raise OSError(__file__ + "Directory does not exist: " + str(properties_folder))
 
-    prism_results = os.path.join(results_dir, "prism_results")
-    if not os.path.exists(prism_results):
-        os.makedirs(prism_results)
+results_dir = config.get("paths", "results")
+if not os.path.exists(results_dir):
+    os.makedirs(results_dir)
 
-    storm_results = os.path.join(results_dir, "storm_results")
-    if not os.path.exists(storm_results):
-        os.makedirs(storm_results)
+prism_results = os.path.join(results_dir, "prism_results")
+if not os.path.exists(prism_results):
+    os.makedirs(prism_results)
 
-except Exception as error:
-    raise error
-finally:
-    os.chdir(cwd)
+storm_results = os.path.join(results_dir, "storm_results")
+if not os.path.exists(storm_results):
+    os.makedirs(storm_results)
+
+os.chdir(cwd)
 
 
 def general_create_data_informed_properties(prop_file, intervals, output_file=False, silent: bool = False):
