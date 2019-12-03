@@ -147,6 +147,7 @@ class Gui(Tk):
 
         ## Variables
         ## Directories
+        self.cwd = ""  ## Path to the main directory of the project
         self.model_dir = ""  ## Path to model
         self.property_dir = ""  ## Path to temporal properties
         self.data_dir = ""  ## Path to data
@@ -729,20 +730,33 @@ class Gui(Tk):
         os.chdir(workspace)
         config.read(os.path.join(workspace, "../config.ini"))
 
+        try:
+            self.cwd = config.get("mandatory_paths", "cwd")
+        except configparser.NoOptionError:
+            self.cwd = os.path.join("..", os.path.dirname(__file__))
+
         self.model_dir = config.get("paths", "models")
+        if not os.path.isabs(self.model_dir):
+            self.model_dir = os.path.join(self.cwd, self.model_dir)
         if not os.path.exists(self.model_dir):
             os.makedirs(self.model_dir)
 
         self.property_dir = config.get("paths", "properties")
+        if not os.path.isabs(self.property_dir):
+            self.model_dir = os.path.join(self.cwd, self.property_dir)
         if not os.path.exists(self.property_dir):
             os.makedirs(self.property_dir)
 
         self.data_dir = config.get("paths", "data")
+        if not os.path.isabs(self.data_dir):
+            self.model_dir = os.path.join(self.cwd, self.data_dir)
         if not os.path.exists(self.data_dir):
             os.makedirs(self.data_dir)
 
         ## Results
         self.results_dir = config.get("paths", "results")
+        if not os.path.isabs(self.results_dir):
+            self.model_dir = os.path.join(self.cwd, self.results_dir)
         if not os.path.exists(self.results_dir):
             os.makedirs(self.results_dir)
 

@@ -44,7 +44,7 @@ os.chdir(workspace)
 config.read("../config.ini")
 # config.sections()
 
-refine_timeout = int(config.get("paths", "refine_timeout"))
+refine_timeout = int(config.get("settings", "refine_timeout"))
 
 results_dir = config.get("paths", "results")
 if not os.path.exists(results_dir):

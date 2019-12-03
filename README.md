@@ -23,7 +23,10 @@ Feel free to leave response either via issues or email.
 * [PRISM](http://www.prismmodelchecker.org) 4.4
 * [Storm](http://www.stormchecker.org/) (optional) 
 * [Prophesy](https://moves.rwth-aachen.de/research/tools/prophesy/) (optional)
-* missing python packages 
+* install tkinter library 
+  * Windows - already done
+  * otherwise go [here](https://tkdocs.com/tutorial/install.html) 
+* other missing python packages 
   * in the main directory run `pip install -v .`
 
 ****
