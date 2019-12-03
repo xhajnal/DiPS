@@ -788,7 +788,7 @@ class Gui(Tk):
         if not os.path.exists(self.tmp_dir):
             os.makedirs(self.tmp_dir)
 
-        self.refinement_timeout = config.get("settings", "refine_timeout")
+        pyplt.rcParams["savefig.directory"] = self.figures_dir
 
         os.chdir(workspace)
 
@@ -1378,7 +1378,7 @@ class Gui(Tk):
             self.refresh_space()
 
             self.status_set("Please select the space to be loaded.")
-            spam = filedialog.askopenfilename(initialdir=self.data_dir, title="Space loading - Select file",
+            spam = filedialog.askopenfilename(initialdir=self.refinement_results, title="Space loading - Select file",
                                               filetypes=(("pickled files", "*.p"), ("all files", "*.*")))
 
         ## If no file selected
@@ -1848,9 +1848,10 @@ class Gui(Tk):
             print("Saving the space ...")
             if self.space is "":
                 self.status_set("There is no space to be saved.")
+                messagebox.showwarning("Saving Space", "There is no space to be saved.")
                 return
             self.status_set("Please select folder to store the space in.")
-            save_space_file = filedialog.asksaveasfilename(initialdir=self.data_dir, title="Space saving - Select file",
+            save_space_file = filedialog.asksaveasfilename(initialdir=self.refinement_results, title="Space saving - Select file",
                                                            filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
             if save_space_file == "":
                 self.status_set("No file selected to store the space in.")

@@ -798,7 +798,8 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
             ## If the visualisation of the space did not succeed space_shown = (None, error message)
             if not where:
                 space_shown = space.show(f"max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n Refinement took {socket.gethostname()} {round(time() - single_rectangle_start_time)} second(s)", save=save, where=where, show_all=not gui)
-            print()
+            if not silent:
+                print()
             if space.get_coverage() >= coverage:
                 break
 
