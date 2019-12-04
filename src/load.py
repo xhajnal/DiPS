@@ -1,4 +1,3 @@
-import configparser
 import glob
 import os
 import pickle
@@ -7,35 +6,14 @@ import re
 from pathlib import Path
 from termcolor import colored
 from sympy import factor
+from common.config import load_config
 
-config = configparser.ConfigParser()
-print(os.getcwd())
-
-workspace = os.path.dirname(__file__)
-# print("workspace", workspace)
-cwd = os.getcwd()
-os.chdir(workspace)
-
-
-config.read(os.path.join(workspace, "../config.ini"))
-
-data_path = config.get("paths", "data")
-if not os.path.exists(data_path):
-    raise OSError(__file__ + ": Directory does not exist: " + str(data_path))
-
-results_dir = config.get("paths", "results")
-if not os.path.exists(results_dir):
-    raise OSError(__file__ + ": Directory does not exist: " + str(results_dir))
-
-prism_results = os.path.join(results_dir, "prism_results")
-if not os.path.exists(prism_results):
-    os.makedirs(prism_results)
-
-storm_results = os.path.join(results_dir, "storm_results")
-if not os.path.exists(prism_results):
-    os.makedirs(prism_results)
-
-os.chdir(cwd)
+spam = load_config()
+data_path = spam["data"]
+results_dir = spam["results"]
+prism_results = spam["prism_results"]
+storm_results = spam["storm_results"]
+del spam
 
 ###############################
 ###   RATIONAL FUNCTIONS    ###

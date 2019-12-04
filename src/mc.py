@@ -7,47 +7,21 @@ import subprocess
 import sys
 from time import time, strftime, localtime
 from pathlib import Path
-
 import psutil
 from termcolor import colored
 
-import configparser
+from load import parse_params_from_model
+from common.files import write_to_file
+from common.config import load_config
 
-config = configparser.ConfigParser()
-# print(os.getcwd())
-workspace = os.path.dirname(__file__)
-# print("workspace", workspace)
-cwd = os.getcwd()
-os.chdir(workspace)
-
-config.read(os.path.join(workspace, "../config.ini"))
-# config.sections()
-# prism_path = config.paths['prism_path']
-
-prism_path = config.get("mandatory_paths", "prism_path")
-if not os.path.exists(prism_path):
-    raise OSError(__file__ + ": Directory does not exist: " + str(prism_path))
-
-model_path = config.get("paths", "models")
-if not os.path.exists(model_path):
-    raise OSError(__file__ + ": Directory does not exist: " + str(model_path))
-
-properties_path = config.get("paths", "properties")
-if not os.path.exists(properties_path):
-    raise OSError(__file__ + ": Directory does not exist: " + str(properties_path))
-
-results_dir = config.get("paths", "results")
-if not os.path.exists(results_dir):
-    os.makedirs(results_dir)
-
-prism_results = os.path.join(results_dir, "prism_results")
-if not os.path.exists(prism_results):
-    os.makedirs(prism_results)
-
-storm_results = os.path.join(results_dir, "storm_results")
-if not os.path.exists(storm_results):
-    os.makedirs(storm_results)
-
+spam = load_config()
+prism_path = spam["prism_path"]
+model_path = spam["models"]
+properties_path = spam["properties"]
+results_dir = spam["results"]
+prism_results = spam["prism_results"]
+storm_results = spam["storm_results"]
+del spam
 
 if "prism" not in os.environ["PATH"]:
     print("prism was probably not in PATH, adding it there")
@@ -55,10 +29,6 @@ if "prism" not in os.environ["PATH"]:
         os.environ["PATH"] = os.environ["PATH"] + ";" + prism_path
     else:
         os.environ["PATH"] = os.environ["PATH"] + ":" + prism_path
-
-from load import parse_params_from_model
-from common.files import write_to_file
-os.chdir(cwd)
 
 
 def set_javaheap_win(size):

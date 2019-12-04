@@ -18,38 +18,48 @@ Feel free to leave response either via issues or email.
 ### 1. INSTALL DEPENDENCIES:
 
 * [Python](https://www.python.org/) 3
-* [Jupyter Notebook](https://jupyter.org/install) (optional)
-* [z3](https://github.com/Z3Prover/z3/releases) 4.6.0 - make sure you use same (32/64bit) version as the Python
+	* Python header files should also be installed, please use `sudo apt install python3-dev` (Ubuntu/Debian) or `sudo dnf install python3-devel` (Fedora/CentOS)
 * [PRISM](http://www.prismmodelchecker.org) 4.4
-* [Storm](http://www.stormchecker.org/) (optional) 
-* [Prophesy](https://moves.rwth-aachen.de/research/tools/prophesy/) (optional)
 * install tkinter library 
   * Windows - already done
   * otherwise go [here](https://tkdocs.com/tutorial/install.html) 
 * other missing python packages 
-  * in the main directory run `pip install -v .`
+  * in the main directory `MYmpm` run `pip3 install -v .`
+* [Jupyter Notebook](https://jupyter.org/install) (optional)
+* [Storm](http://www.stormchecker.org/) (optional, advanced) 
+* [Prophesy](https://moves.rwth-aachen.de/research/tools/prophesy/) (optional, advanced)
 
 ****
-### 2. SETUP CONFIG
+### 2. SETUP CONFIG (OPTIONAL)
 
 In the main folder there is `config.ini` file. Please fill in required paths.
 
 [mandatory_paths]
 * `prism_path`: path to PRISM `PRISM\bin\`
-* `z3_path`: path to z3 `MYZ3\bin\python`. 
-* `cwd`: path to ipython folder `MYmpm/ipython`
+* `cwd`: path to the main folder `MYmpm`
 
 [paths]
-* `models`: path to [PRISM models](http://www.prismmodelchecker.org/tutorial/die.php) 
-* `properties`: path to [PRISM properties](https://www.prismmodelchecker.org/manual/PropertySpecification/Introduction) 
-* `data`: path to data
-* `results`: path to save results
+* `models`: path to [PRISM models](http://www.prismmodelchecker.org/tutorial/die.php) eg. `MYmpm/models`
+* `properties`: path to [PRISM properties](https://www.prismmodelchecker.org/manual/PropertySpecification/Introduction) eg. `MYmpm/properties`
+* `data`: path to data eg. `MYmpm/data`
+* `results`: path to save results (all the results are saved in the subfolders) eg. `MYmpm/results`
 * `tmp`: path to save temporal/intermidiate files
 
 *****
 ## HOW TO RUN
 
 *****
+Now you can import the code as library, run the tool with GUI, or use Jupyter notebook. 
+
+### Tool
+\- open command line in the main mpm directory (on Win - please open it with admin privileges to ensure changing the PRISM setting does not fail on permission denied)
+
+`>> cd src`
+
+`>> python gui.py`
+
+Graphical User Interface should appear now (With some output return in command line). 
+We are currently working on the manual, by that time you have to manage on your own.
 
 ### Jupyter notebook
 \- open command line in the main mpm directory (on Win - please open it with admin privileges to ensure changing the PRISM setting does not fail on permission denied)
@@ -68,14 +78,7 @@ Several notebooks appear:
 
 to run thought the workflow of the paper just run the notebooks in this order. The documentation and the source code of the used functions is in `mpm\src`. When you are familiar with the notebooks, try your input files or even adapt the notebooks.  
 
-### Tool
-\- open command line in the main mpm directory (on Win - please open it with admin privileges to ensure changing the PRISM setting does not fail on permission denied)
 
-`>> cd src`
-
-`>> python gui.py`
-
-Graphical User Interface should appear now. We are currently working on the manual, by that time you have to manage on your own.
 
 *****
 ## HOW TO USE

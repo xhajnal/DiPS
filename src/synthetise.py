@@ -13,15 +13,8 @@ from math import log
 from mpmath import mpi
 from matplotlib.patches import Rectangle
 import numpy as np
-
-from common.z3 import is_this_z3_function, translate_z3_function
-
-if "wind" not in platform.system().lower():
-    from dreal import logical_and, logical_or, logical_not, Variable, CheckSatisfiability
-# from dreal import *
-
-workspace = os.path.dirname(__file__)
-sys.path.append(workspace)
+# workspace = os.path.dirname(__file__)
+# sys.path.append(workspace)
 from load import find_param
 from space import RefinedSpace
 from space import get_rectangle_volume
@@ -30,29 +23,18 @@ from common.math import is_in
 from common.convert import to_interval
 from common.convert import constraints_to_ineq
 from common.queue import Queue
+from common.config import load_config
+from common.z3 import is_this_z3_function, translate_z3_function
 
-import configparser
+if "wind" not in platform.system().lower():
+    from dreal import logical_and, logical_or, logical_not, Variable, CheckSatisfiability
 
-config = configparser.ConfigParser()
-
-# print(os.getcwd())
-workspace = os.path.dirname(__file__)
-# print("workspace", workspace)
-cwd = os.getcwd()
-os.chdir(workspace)
-
-config.read("../config.ini")
-# config.sections()
-
-refine_timeout = int(config.get("settings", "refine_timeout"))
-
-results_dir = config.get("paths", "results")
-if not os.path.exists(results_dir):
-    os.makedirs(results_dir)
-
-refinement_results = os.path.join(results_dir, "refinement_results")
-if not os.path.exists(refinement_results):
-    os.makedirs(refinement_results)
+spam = load_config()
+results_dir = spam["results"]
+refinement_results = spam["refinement_results"]
+refine_timeout = spam["refine_timeout"]
+z3_path = spam["z3_path"]
+del spam
 
 # import struct
 # print("You are running "+ str(struct.calcsize("P") * 8)+"bit Python, please verify that installed z3 is compatible")
@@ -60,12 +42,12 @@ if not os.path.exists(refinement_results):
 
 # print(os.environ["PATH"])
 
+cwd = os.getcwd()
+
 try:
     from z3 import *
     os.chdir(cwd)
 except ImportError:
-    z3_path = config.get("mandatory_paths", "z3_path")
-
     if not os.path.exists(z3_path):
         raise OSError("Directory does not exist: " + str(z3_path))
     print("z3_path", z3_path)

@@ -127,6 +127,8 @@ properties/*
 !data/*.p
 data/*/*
 
+results/data_intervals/*
+results/constraints/*
 results/prism_results/*
 results/storm_results/*
 results/performance_results/*

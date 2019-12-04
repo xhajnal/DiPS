@@ -30,7 +30,7 @@ sys.path.append(workspace)
 
 
 def do_config():
-    """ Validates, ste up config and creates directories from the config if not existing"""
+    """ Validates, set up config and creates directories from the config if not existing"""
     config.read(os.path.join(workspace, "../config.ini"))
 
     for it in ["models", "properties", "data", "results", "tmp"]:
@@ -45,7 +45,15 @@ def do_config():
             print(colored(f"{'paths', {it}, os.path.join(os.path.join(workspace,'..'), it) }", "blue"))
             config.set("paths", it, f"{os.path.join(os.path.join(workspace,'..'), it) }")
             # return False
+        # print("subdir", subdir)
+        if not os.path.isabs(subdir):
+            main_dir = config.get("mandatory_paths", "cwd")
+            if main_dir == "":
+                main_dir = os.path.join(workspace, '..')
+            subdir = os.path.join(main_dir, subdir)
+            # print("new subdir", subdir)
         if not os.path.exists(subdir):
+            # print("Making subdirectories", subdir)
             os.makedirs(subdir)
     return True
 
@@ -144,7 +152,6 @@ class Gui(Tk):
         # pyplt.autoscale()
         pyplt.autoscale(tight=True)
 
-
         ## Variables
         ## Directories
         self.cwd = ""  ## Path to the main directory of the project
@@ -153,6 +160,8 @@ class Gui(Tk):
         self.data_dir = ""  ## Path to data
 
         self.results_dir = ""  ## Path to results
+        self.data_intervals_dir = ""  ## Path to data intervals
+        self.constraints_dir = ""  ## Path to constraints
         self.prism_results = ""  ## Path to prism results
         self.storm_results = ""  ## Path to Storm results
         self.refinement_results = ""  ## Path to refinement results
@@ -160,13 +169,13 @@ class Gui(Tk):
         self.figures_dir = ""  ## Path to saved figures
         self.optimisation_results_dir = ""  ## Path to saved optimisation results
         self.tmp_dir = ""  ## Path for tmp folder
-        self.load_config()  ## Load the config file
 
         ## Files
         self.model_file = StringVar()  ## Model file
         self.property_file = StringVar()  ## Property file
         self.data_informed_property_file = StringVar()  ## Data informed property file
         self.data_file = StringVar()  ## Data file
+        self.data_intervals_file = StringVar  ## Data intervals file
         self.functions_file = StringVar()  ## Rational functions file
         self.constraints_file = StringVar()  ## constraints file
         self.space_file = StringVar()  ## Space file
@@ -190,22 +199,22 @@ class Gui(Tk):
         self.z3_functions = ""  ## functions with z3 expressions inside
         self.data_intervals = ""  ## Computed intervals
         self.parameters = ""  ##  Parsed parameters
-        self.parameter_domains = []  ## Parameters intervals
+        self.parameter_domains = []  ## Parameters domains as intervals
         self.constraints = ""  ## Computed or loaded constrains
         self.z3_constraints = ""  ## Constrains with z3 expressions inside
-        self.space = ""  ## Instance of a space Class
-        self.mh_results = "" ## Instance of MH results class
+        self.space = ""  ## Instance of a RefinedSpace class
+        self.mh_results = ""  ## Instance of HastingsResults class
 
         ## Results
-        self.sampled_functions = []
+        self.sampled_functions = []  ## List of values of sampled functions True/False
         self.optimised_param_point = ""  ## List of parameter values with least distance
         self.optimised_function_value = ""  ## List of functions values with least distance
         self.optimised_distance = ""  ## The actual distance between functions and data
 
         ## Space visualisation settings
-        self.show_samples = None
-        self.show_refinement = None
-        self.show_true_point = None
+        self.show_samples = None  ## flag telling whether to show samples
+        self.show_refinement = None  ## flag telling whether to show refinement
+        self.show_true_point = None  ## flag telling whether to show true point
 
         ## Settings
         self.version = "1.8.6"  ## Version of the gui
@@ -268,18 +277,22 @@ class Gui(Tk):
         self.data_label = Label(frame, textvariable=self.data_file, anchor=W, justify=LEFT)
         self.data_label.grid(row=3, column=1, sticky=W, padx=4)
 
-        Label(frame, text=f"Constraints file:", anchor=W, justify=LEFT).grid(row=4, column=0, sticky=W, padx=4)
-        self.constraints_label = Label(frame, textvariable=self.constraints_file, anchor=W, justify=LEFT)
-        self.constraints_label.grid(row=4, column=1, sticky=W, padx=4)
+        Label(frame, text=f"Data intervals file:", anchor=W, justify=LEFT).grid(row=4, column=0, sticky=W, padx=4)
+        self.data_intevals_label = Label(frame, textvariable=self.data_intervals_file, anchor=W, justify=LEFT)
+        self.data_intevals_label.grid(row=4, column=1, sticky=W, padx=4)
 
-        Label(frame, text=f"Space file:", anchor=W, justify=LEFT).grid(row=5, column=0, sticky=W, padx=4)
+        Label(frame, text=f"Constraints file:", anchor=W, justify=LEFT).grid(row=5, column=0, sticky=W, padx=4)
+        self.constraints_label = Label(frame, textvariable=self.constraints_file, anchor=W, justify=LEFT)
+        self.constraints_label.grid(row=5, column=1, sticky=W, padx=4)
+
+        Label(frame, text=f"Space file:", anchor=W, justify=LEFT).grid(row=6, column=0, sticky=W, padx=4)
         self.space_label = Label(frame, textvariable=self.space_file, anchor=W, justify=LEFT)
-        self.space_label.grid(row=5, column=1, sticky=W, padx=4)
+        self.space_label.grid(row=6, column=1, sticky=W, padx=4)
 
         show_print_checkbutton = Checkbutton(frame, text="Hide print in command line", variable=self.silent)
-        show_print_checkbutton.grid(row=5, column=9, sticky=E, padx=4)
+        show_print_checkbutton.grid(row=6, column=9, sticky=E, padx=4)
         debug_checkbutton = Checkbutton(frame, text="Extensive command line print", variable=self.debug)
-        debug_checkbutton.grid(row=5, column=10, sticky=E, padx=4)
+        debug_checkbutton.grid(row=6, column=10, sticky=E, padx=4)
         # print("self.silent", self.silent.get())
 
         ## DESIGN - TABS
@@ -313,8 +326,7 @@ class Gui(Tk):
 
         self.model_text = scrolledtext.ScrolledText(frame_left, height=100)
         # self.model_text.config(state="disabled")
-        self.model_text.grid(row=2, column=0, columnspan=16, rowspan=2, sticky=W, padx=4,
-                             pady=4)  # pack(anchor=W, fill=X, expand=True)
+        self.model_text.grid(row=2, column=0, columnspan=16, rowspan=2, sticky=W, padx=4, pady=4)  # pack(anchor=W, fill=X, expand=True)
 
         frame_right = Frame(page1)  ## Property part
         for i in range(7):
@@ -453,7 +465,9 @@ class Gui(Tk):
         self.alpha_entry.insert(END, '0.90')
         self.n_samples_entry.insert(END, '60')
 
-        Button(page4, text='Create intervals', command=self.create_data_intervals).grid(row=6, column=0, sticky=W, padx=4, pady=4)
+        Button(page4, text='Compute intervals', command=self.compute_data_intervals).grid(row=6, column=0, sticky=W, padx=4, pady=4)
+        Button(page4, text='Load intervals', command=self.load_data_intervals).grid(row=6, column=1, sticky=W, padx=4, pady=4)
+        Button(page4, text='Save intervals', command=self.save_data_intervals).grid(row=6, column=2, sticky=W, padx=4, pady=4)
 
         Label(page4, text=f"Intervals:", anchor=W, justify=LEFT).grid(row=7, column=0, sticky=W, padx=4, pady=4)
 
@@ -594,6 +608,8 @@ class Gui(Tk):
         self.alg = ttk.Combobox(frame_left, values=('1', '2', '3', '4', '5'))
         self.solver = ttk.Combobox(frame_left, values=('z3', 'dreal'))
         self.delta_entry = Entry(frame_left)
+        ## TODO not shown
+        self.refinement_timeout = 3600
 
         self.max_dept_entry.grid(row=1, column=4)
         self.coverage_entry.grid(row=2, column=4)
@@ -709,7 +725,7 @@ class Gui(Tk):
         # analysis_menu = Menu(main_menu, tearoff=0)
         # main_menu.add_cascade(label="Analysis", menu=analysis_menu)
         # analysis_menu.add_command(label="Synthesise parameters", command=self.synth_params)
-        # analysis_menu.add_command(label="Create intervals", command=self.create_intervals)
+        # analysis_menu.add_command(label="Compute intervals", command=self.create_intervals)
         # analysis_menu.add_command(label="Sample space", command=self.sample_space)
         # analysis_menu.add_command(label="Refine space", command=self.refine_space)
 
@@ -724,69 +740,114 @@ class Gui(Tk):
         help_menu.add_command(label="Help", command=self.show_help)
         help_menu.add_command(label="Check for updates", command=self.check_updates)
         help_menu.add_command(label="About", command=self.print_about)
+        self.load_config()  ## Load the config file
 
     def load_config(self):
         """ Loads variables from the config file """
         os.chdir(workspace)
         config.read(os.path.join(workspace, "../config.ini"))
 
-        try:
-            self.cwd = config.get("mandatory_paths", "cwd")
-        except configparser.NoOptionError:
-            self.cwd = os.path.join("..", os.path.dirname(__file__))
+        self.cwd = config.get("mandatory_paths", "cwd")
+        if self.cwd == "":
+            self.cwd = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
+        if not os.path.isabs(self.cwd):
+            self.cwd = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
+        # print("self.cwd", self.cwd)
 
         self.model_dir = config.get("paths", "models")
+        if self.model_dir == "":
+            self.model_dir = "models"
         if not os.path.isabs(self.model_dir):
             self.model_dir = os.path.join(self.cwd, self.model_dir)
         if not os.path.exists(self.model_dir):
             os.makedirs(self.model_dir)
+        # print("self.model_dir", self.model_dir)
 
         self.property_dir = config.get("paths", "properties")
+        if self.property_dir == "":
+            self.property_dir = "properties"
         if not os.path.isabs(self.property_dir):
-            self.model_dir = os.path.join(self.cwd, self.property_dir)
+            self.property_dir = os.path.join(self.cwd, self.property_dir)
         if not os.path.exists(self.property_dir):
             os.makedirs(self.property_dir)
+        # print("self.property_dir", self.property_dir)
 
         self.data_dir = config.get("paths", "data")
+        if self.data_dir == "":
+            self.data_dir = "data"
         if not os.path.isabs(self.data_dir):
-            self.model_dir = os.path.join(self.cwd, self.data_dir)
+            self.data_dir = os.path.join(self.cwd, self.data_dir)
         if not os.path.exists(self.data_dir):
             os.makedirs(self.data_dir)
+        # print("self.data_dir", self.data_dir)
 
         ## Results
         self.results_dir = config.get("paths", "results")
+        if self.results_dir == "":
+            self.results_dir = "results"
         if not os.path.isabs(self.results_dir):
-            self.model_dir = os.path.join(self.cwd, self.results_dir)
+            self.results_dir = os.path.join(self.cwd, self.results_dir)
         if not os.path.exists(self.results_dir):
             os.makedirs(self.results_dir)
+        # print("self.results_dir", self.results_dir)
+
+        self.data_intervals_dir = os.path.join(self.results_dir, "data_intervals")
+        if not os.path.exists(self.data_intervals_dir):
+            os.makedirs(self.data_intervals_dir)
+        # print("self.data_intervals_dir", self.data_intervals_dir)
 
         self.prism_results = os.path.join(self.results_dir, "prism_results")
         if not os.path.exists(self.prism_results):
             os.makedirs(self.prism_results)
+        # print("self.prism_results", self.prism_results)
 
         self.storm_results = os.path.join(self.results_dir, "storm_results")
         if not os.path.exists(self.storm_results):
             os.makedirs(self.storm_results)
+        # print("self.storm_results", self.storm_results)
 
         self.refinement_results = os.path.join(self.results_dir, "refinement_results")
         if not os.path.exists(self.refinement_results):
             os.makedirs(self.refinement_results)
+        # print("self.refinement_results", self.refinement_results)
+
+        self.constraints_dir = os.path.join(self.results_dir, "constraints")
+        if not os.path.exists(self.constraints_dir):
+            os.makedirs(self.constraints_dir)
+        # print("self.constraints_dir", self.constraints_dir)
 
         self.figures_dir = os.path.join(self.results_dir, "figures")
         if not os.path.exists(self.figures_dir):
             os.makedirs(self.figures_dir)
+        # print("self.figures_dir", self.figures_dir)
 
-        self.optimisation_results_dir = os.path.join(self.results_dir, "optimisation")
+        self.optimisation_results_dir = os.path.join(self.results_dir, "optimisation_results")
         if not os.path.exists(self.optimisation_results_dir):
             os.makedirs(self.optimisation_results_dir)
+        # print("self.optimisation_results_dir", self.optimisation_results_dir)
 
         self.mh_results_dir = os.path.join(self.results_dir, "mh_results")
         if not os.path.exists(self.mh_results_dir):
             os.makedirs(self.mh_results_dir)
+        # print("self.mh_results_dir", self.mh_results_dir)
 
         self.tmp_dir = config.get("paths", "tmp")
+        if not os.path.isabs(self.tmp_dir):
+            self.tmp_dir = os.path.join(self.cwd, self.tmp_dir)
         if not os.path.exists(self.tmp_dir):
             os.makedirs(self.tmp_dir)
+        # print("self.tmp_dir", self.tmp_dir)
+
+        ## TODO pass this to gui entries
+        try:
+            self.refinement_timeout = config.get("settings", "refine_timeout")
+        except configparser.NoOptionError:
+            pass
+        try:
+            self.mh_timeout.delete(0, 'end')
+            self.mh_timeout.insert(END, config.get("settings", "mh_timeout"))
+        except configparser.NoOptionError:
+            pass
 
         pyplt.rcParams["savefig.directory"] = self.figures_dir
 
@@ -1247,12 +1308,57 @@ class Gui(Tk):
         self.unfold_data()
 
     def load_data_intervals(self, file=False):
-        """ Loads intervals from a given file
+        """ Loads data intervals from a given file
         Args:
-            file (path/string): direct path to load the intervals file
+            file (path/string): direct path to load the data intervals file
         """
-        ## TODO
-        pass
+        if file:
+            if not os.path.isfile(file):
+                return
+            spam = file
+        else:
+            print("Loading data intervals ...")
+
+            if self.data_intervals:
+                if not askyesno("Loading data intervals", "Previously obtained space will be lost. Do you want to proceed?"):
+                    return
+
+            self.status_set("Please select the data intervals to be loaded.")
+            spam = filedialog.askopenfilename(initialdir=self.data_intervals_dir, title="Data intervals loading - Select file",
+                                              filetypes=(("pickled files", "*.p"), ("all files", "*.*")))
+
+        ## If no file selected
+        if spam == "":
+            self.status_set("No file selected.")
+            return
+        else:
+            self.data_intervals_changed = True
+            self.data_intervals_file = StringVar()
+            self.data_intervals_file.set(spam)
+
+            self.data_intervals = pickle.load(open(self.data_intervals_file.get(), "rb"))
+
+            intervals = ""
+            if not self.silent.get():
+                print("Loaded data intervals", self.data_intervals)
+            for interval in self.data_intervals:
+                intervals = f"{intervals},\n({interval.inf}, {interval.sup})"
+            # print("intervals", intervals)
+            intervals = intervals[2:]
+            self.data_intervals_text.configure(state='normal')
+            self.data_intervals_text.delete('1.0', END)
+            self.data_intervals_text.insert('end', intervals)
+
+            self.data_intervals_changed = True
+
+            if not self.data_intervals:
+                messagebox.showwarning("Loading data intervals", "No data intervals loaded. Please check input file.")
+                self.status_set("No data intervals loaded.")
+            else:
+                ## Autosave
+                if not file:
+                    self.save_data_intervals(os.path.join(self.tmp_dir, "data_intervals"))
+                self.status_set("Data intervals loaded.")
 
     def recalculate_constraints(self):
         """ Merges rational functions and intervals into constraints. Shows it afterwards. """
@@ -1287,7 +1393,7 @@ class Gui(Tk):
                 if not askyesno("Loading constraints", "Previously obtained constraints will be lost. Do you want to proceed?"):
                     return
             self.status_set("Please select the constraints to be loaded.")
-            spam = filedialog.askopenfilename(initialdir=self.data_dir, title="constraints loading - Select file",
+            spam = filedialog.askopenfilename(initialdir=self.constraints_dir, title="constraints loading - Select file",
                                               filetypes=(("text files", "*.p"), ("all files", "*.*")))
 
         if self.debug.get():
@@ -1725,7 +1831,8 @@ class Gui(Tk):
         """
 
         if self.functions is "":
-            self.status_set("There is no functions to be saved.")
+            self.status_set("There are no functions to be saved.")
+            messagebox.showwarning("Saving functions", "There are no functions to be saved.")
             return
 
         if file:
@@ -1794,14 +1901,39 @@ class Gui(Tk):
         if not file:
             self.status_set("Data saved.")
 
-    def save_intervals(self, file=False):
-        """ Saves constraints as a pickled file.
+    def save_data_intervals(self, file=False):
+        """ Saves data intervals as a pickled file.
 
         Args:
-            file (string):  file to save the constraints
+            file (string):  file to save the data intervals
         """
-        ## TODO
-        pass
+        if file:
+            save_data_intervals_file = file
+        else:
+            print("Saving the data intervals ...")
+
+            if not self.data_intervals:
+                messagebox.showwarning("Saving data intervals", "There are no data intervals to be saved.")
+                self.status_set("There are no data intervals to be saved.")
+                return
+
+            self.status_set("Please select folder to store the data intervals in.")
+            save_data_intervals_file = filedialog.asksaveasfilename(initialdir=self.data_intervals_dir, title="Data intervals saving - Select file",
+                                                                    filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+            if save_data_intervals_file == "":
+                self.status_set("No file selected to store the data intervals.")
+                return
+
+        if "." not in basename(save_data_intervals_file):
+            save_data_intervals_file = save_data_intervals_file + ".p"
+
+        if not self.silent.get():
+            print("Saving data intervals as a file:", save_data_intervals_file)
+
+        pickle.dump(self.data_intervals, open(save_data_intervals_file, 'wb'))
+
+        if not file:
+            self.status_set("Data intervals saved.")
 
     def save_constraints(self, file=False):
         """ Saves constraints as a pickled file.
@@ -1819,7 +1951,7 @@ class Gui(Tk):
                 return
 
             self.status_set("Please select folder to store the constraints in.")
-            save_constraints_file = filedialog.asksaveasfilename(initialdir=self.data_dir, title="constraints saving - Select file",
+            save_constraints_file = filedialog.asksaveasfilename(initialdir=self.constraints_dir, title="constraints saving - Select file",
                                                                  filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
             if save_constraints_file == "":
                 self.status_set("No file selected to store the constraints.")
@@ -2258,7 +2390,7 @@ class Gui(Tk):
             file.write(f"function values {self.optimised_function_value} \n")
             file.write(f"distance {self.optimised_distance} \n")
 
-    def create_data_intervals(self):
+    def compute_data_intervals(self):
         """ Creates intervals from data. """
         print("Creating intervals ...")
         self.status_set("Create interval - checking inputs")
@@ -2298,7 +2430,7 @@ class Gui(Tk):
         self.data_intervals_changed = True
 
         ## Autosave
-        self.save_intervals(os.path.join(self.tmp_dir, "intervals"))
+        self.save_data_intervals(os.path.join(self.tmp_dir, "intervals"))
 
         self.status_set("Intervals created.")
 
@@ -2916,13 +3048,14 @@ class Gui(Tk):
 
     def autoload(self):
         if askyesno("Autoload from tmp folder", "Would you like to load autosaved files from tmp folder?"):
+            print("Loading tmp files from ", self.tmp_dir)
             self.load_model(file=os.path.join(self.tmp_dir, "model.pm"))
             self.load_property(file=os.path.join(self.tmp_dir, "properties.pctl"))
             self.load_parsed_functions(file=os.path.join(self.tmp_dir, "functions.p"))
             # self.load_functions(file=os.path.join(self.tmp_dir, "functions_prism.txt"))
             # self.load_functions(file=os.path.join(self.tmp_dir, "functions_storm.txt"))
-            self.load_data_intervals(file=os.path.join(self.tmp_dir, "intervals.p"))
             self.load_data(file=os.path.join(self.tmp_dir, "data.p"))
+            self.load_data_intervals(file=os.path.join(self.tmp_dir, "intervals.p"))
             self.load_constraints(file=os.path.join(self.tmp_dir, "constraints.p"))
             self.load_space(file=os.path.join(self.tmp_dir, "space.p"))
             self.load_mh_results(file=os.path.join(self.tmp_dir, "mh_results.p"))

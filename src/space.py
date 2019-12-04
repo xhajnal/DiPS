@@ -11,33 +11,16 @@ from termcolor import colored  ## Colored output
 
 ## ONLY FOR SAVING FILES
 import os
-import sys
 
 from common.math import get_rectangle_volume
 from sample_n_visualise import visualise_by_param  ## Multidimensional refinement proxy
 from common.document_wrapper import DocumentWrapper  ## Text wrapper for figure tight layout
+from common.config import load_config
 
-workspace = os.path.dirname(__file__)
-sys.path.append(workspace)
-import configparser
-
-config = configparser.ConfigParser()
-workspace = os.path.dirname(__file__)
-# print("workspace", workspace)
-cwd = os.getcwd()
-os.chdir(workspace)
-
-config.read("../config.ini")
-
-results_dir = config.get("paths", "results")
-if not os.path.exists(results_dir):
-    os.makedirs(results_dir)
-
-refinement_results = os.path.join(results_dir, "refinement_results")
-if not os.path.exists(refinement_results):
-    os.makedirs(refinement_results)
-
-os.chdir(cwd)
+spam = load_config()
+results_dir = spam["results"]
+refinement_results = spam["refinement_results"]
+del spam
 
 
 class RefinedSpace:

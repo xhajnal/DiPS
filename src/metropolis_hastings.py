@@ -1,5 +1,4 @@
 import os
-import configparser
 from time import time
 from socket import gethostname
 import numpy as np
@@ -8,32 +7,13 @@ import pickle
 
 from common.document_wrapper import DocumentWrapper
 from space import RefinedSpace
+from common.config import load_config
 
+spam = load_config()
+# results_dir = spam["results"]
+tmp_dir = spam["tmp"]
+del spam
 
-config = configparser.ConfigParser()
-print(os.getcwd())
-
-workspace = os.path.dirname(__file__)
-# print("workspace", workspace)
-cwd = os.getcwd()
-os.chdir(workspace)
-
-
-config.read(os.path.join(workspace, "../config.ini"))
-
-results_dir = config.get("paths", "results")
-if not os.path.exists(results_dir):
-    os.makedirs(results_dir)
-
-results_dir = os.path.join(results_dir, "mh_results")
-if not os.path.exists(results_dir):
-    os.makedirs(results_dir)
-
-tmp_dir = config.get("paths", "tmp")
-if not os.path.exists(tmp_dir):
-    os.makedirs(tmp_dir)
-
-os.chdir(cwd)
 wrapper = DocumentWrapper(width=75)
 
 

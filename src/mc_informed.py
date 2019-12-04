@@ -1,4 +1,3 @@
-import configparser
 import os
 import sys
 from os.path import isfile
@@ -6,42 +5,15 @@ from pathlib import Path
 from sympy import Interval
 
 from common.math import margin
+from common.config import load_config
 
-cwd = os.getcwd()
-
-workspace = os.path.dirname(__file__)
-os.chdir(workspace)
-
-sys.path.append(os.path.join(workspace, '../src/'))
-
-config = configparser.ConfigParser()
-# print(os.getcwd())
-workspace = os.path.dirname(__file__)
-# print("workspace",workspace)
-config.read(os.path.join(workspace, "../config.ini"))
-# os.chdir(config.get("paths", "properties"))
-
-model_folder = config.get("paths", "models")
-if not os.path.exists(model_folder):
-    raise OSError(__file__ + ": Directory does not exist: " + str(model_folder))
-
-properties_folder = config.get("paths", "properties")
-if not os.path.exists(properties_folder):
-    raise OSError(__file__ + "Directory does not exist: " + str(properties_folder))
-
-results_dir = config.get("paths", "results")
-if not os.path.exists(results_dir):
-    os.makedirs(results_dir)
-
-prism_results = os.path.join(results_dir, "prism_results")
-if not os.path.exists(prism_results):
-    os.makedirs(prism_results)
-
-storm_results = os.path.join(results_dir, "storm_results")
-if not os.path.exists(storm_results):
-    os.makedirs(storm_results)
-
-os.chdir(cwd)
+spam = load_config()
+model_folder = spam["models"]
+properties_folder = spam["properties"]
+results_dir = spam["results"]
+prism_results = spam["prism_results"]
+storm_results = spam["storm_results"]
+del spam
 
 
 def general_create_data_informed_properties(prop_file, intervals, output_file=False, silent: bool = False):

@@ -1,39 +1,17 @@
-import sys
 import time
 import os
 import socket
-import configparser
 import numpy
-
-config = configparser.ConfigParser()
-print(os.getcwd())
-
-workspace = os.path.dirname(__file__)
-# print("workspace", workspace)
-cwd = os.getcwd()
-os.chdir(workspace)
-
-config.read(os.path.join(workspace, "../config.ini"))
-
-model_path = config.get("paths", "models")
-if not os.path.exists(model_path):
-    os.makedirs(model_path)
-
-results_dir = config.get("paths", "results")
-
-prism_results = os.path.join(results_dir, "prism_results")
-if not os.path.exists(prism_results):
-    os.makedirs(prism_results)
-
-tmp = config.get("paths", "tmp")
-if not os.path.exists(tmp):
-    os.makedirs(tmp)
-
-sys.path.append(workspace)
 from mc import call_prism
 from load import find_param, parse_params_from_model
+from common.config import load_config
 
-os.chdir(cwd)
+spam = load_config()
+model_path = spam["models"]
+results_dir = spam["results"]
+prism_results = spam["prism_results"]
+tmp = spam["tmp"]
+del spam
 
 
 def generate_all_data_two_param(agents_quantities, dic_fun, p_v=None, q_v=None):
