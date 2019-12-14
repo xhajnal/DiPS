@@ -1210,7 +1210,7 @@ class Gui(Tk):
             self.status_set("Please select the data to be loaded.")
 
             spam = filedialog.askopenfilename(initialdir=self.data_dir, title="Data loading - Select file",
-                                              filetypes=(("pickled files", "*.p"), ("all files", "*.*")))
+                                              filetypes=(("pickled files", "*.p"), ("comma separated values", "*.csv"), ("all files", "*.*")))
         ## If no file selected
         if spam == "":
             self.status_set("No file selected.")
@@ -2835,11 +2835,17 @@ class Gui(Tk):
                 print("Space is empty - creating a new one.")
             ## Parse params and its intervals
             self.validate_parameters(where=self.constraints)
+
+            ## Check whether param interval loading went good
+            if isinstance(self.parameter_domains, list):
+                if isinstance(self.parameter_domains[0][0], Entry):
+                    self.parameter_domains = []
+                    return False
+
             self.space = space.RefinedSpace(self.parameter_domains, self.parameters)
         else:
             if self.constraints_changed:
-                messagebox.showwarning(position,
-                                       "Using previously created space with new constraints. Consider using fresh new space.")
+                messagebox.showwarning(position, "Using previously created space with new constraints. Consider using fresh new space.")
                 ## Check if the properties and data are valid
                 globals()["parameters"] = set()
                 for polynome in self.constraints:
