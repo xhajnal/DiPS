@@ -18,7 +18,9 @@ Feel free to leave response either via issues or email.
 ### 1. INSTALL DEPENDENCIES:
 
 * [Python](https://www.python.org/) 3
-	* Python header files should also be installed, please use `sudo apt install python3-dev` (Ubuntu/Debian) or `sudo dnf install python3-devel` (Fedora/CentOS)
+	* Windows - just python
+	* Ubuntu/Debian - Python header files should also be installed, please use `sudo apt install python3-dev`
+	* Fedora/CentOS - Python header files should also be installed, please use`sudo dnf install python3-devel`
 * [PRISM](http://www.prismmodelchecker.org) 4.4
 * install tkinter library 
   * Windows - already done
