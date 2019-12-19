@@ -643,15 +643,15 @@ class Gui(Tk):
         Button(frame_left, text='Save MH Results', command=self.save_mh_results).grid(row=15, column=3, sticky=S, padx=4, pady=4)
         Button(frame_left, text='Delete MH Results', command=self.refresh_mh).grid(row=15, column=4, sticky=S, padx=4, pady=4)
 
-        frame_right = Frame(page6, width=500, height=200)
-        frame_right.pack(side=TOP, fill=BOTH, expand=True)
+        self.frame_right = Frame(page6, width=500, height=200)
+        self.frame_right.pack(side=TOP, fill=BOTH, expand=True)
 
-        Button(frame_right, text='Set True point', command=self.set_true_point).pack(side=TOP)
+        Button(self.frame_right, text='Set True point', command=self.set_true_point).pack(side=TOP)
 
-        Label(frame_right, text=f"Space Visualisation", anchor=W, justify=CENTER).pack(side=TOP)
+        Label(self.frame_right, text=f"Space Visualisation", anchor=W, justify=CENTER).pack(side=TOP)
 
         ##################################################### UPPER PLOT ###############################################
-        self.page6_plotframe = Frame(frame_right)
+        self.page6_plotframe = Frame(self.frame_right)
         self.page6_plotframe.pack(side=TOP, fill=Y, expand=True)
         self.page6_figure = pyplt.figure(figsize=(8, 2))
         self.page6_figure.tight_layout()  ## By huypn
@@ -665,20 +665,7 @@ class Gui(Tk):
         self.page6_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
         self.page6_a = self.page6_figure.add_subplot(111)
 
-        ##################################################### LOWER PLOT ###############################################
-        self.page6_plotframe2 = Frame(frame_right)
-        self.page6_plotframe2.pack(side=TOP, fill=Y, expand=True)
-        self.page6_figure2 = pyplt.figure(figsize=(8, 2))
-        self.page6_figure2.tight_layout()  ## By huypn
-
-        self.page6_canvas2 = FigureCanvasTkAgg(self.page6_figure2, master=self.page6_plotframe2)  # A tk.DrawingArea.
-        self.page6_canvas2.draw()
-        self.page6_canvas2.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-
-        self.page6_toolbar2 = NavigationToolbar2Tk(self.page6_canvas2, self.page6_plotframe2)
-        self.page6_toolbar2.update()
-        self.page6_canvas2.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-        self.page6_b = self.page6_figure2.add_subplot(111)
+        self.set_lower_figure()
         #################################################### /PLOTS ####################################################
 
         ## MENU
@@ -2178,7 +2165,7 @@ class Gui(Tk):
         else:
             self.page3_figure = spam
             self.page3_a = egg
-            self.initialise_plot(what=self.page3_figure)
+            self.initialise_plot3(what=self.page3_figure)
             self.page3_a.autoscale(enable=False)
             self.page3_figure.tight_layout()  ## By huypn
             self.page3_figure.canvas.draw()
@@ -2230,7 +2217,7 @@ class Gui(Tk):
                 self.page3_figure = spam
                 self.page3_a = egg
 
-                self.initialise_plot(what=self.page3_figure)
+                self.initialise_plot3(what=self.page3_figure)
                 # self.page3_a.autoscale(enable=False)
                 # self.page3_figure.canvas.draw()
                 # self.page3_figure.canvas.flush_events()
@@ -2279,7 +2266,7 @@ class Gui(Tk):
                                         [int(self.fun_sample_size_entry.get()), int(self.fun_sample_size_entry.get())],
                                         posttitle=f"Function number {i}: {function}", where=True,
                                         parameters=self.parameters)
-            self.initialise_plot(what=self.page3_figure)
+            self.initialise_plot3(what=self.page3_figure)
 
             self.Next_sample_button.wait_variable(self.button_pressed)
         # self.Next_sample_button.config(state="disabled")
@@ -2519,15 +2506,16 @@ class Gui(Tk):
 
         self.create_window_to_load_param_point(parameters=self.space.params)
 
-        ## Clear figure
-        self.page6_figure2.clf()
-        self.page6_b = self.page6_figure2.add_subplot(111)
-        self.page6_figure2.canvas.draw()
-        self.page6_figure2.canvas.flush_events()
-
         ## Create a warning
         if int(self.n_samples_entry.get()) < int(self.observations_samples_size_entry.get()):
             messagebox.showwarning("Metropolis Hastings", "Number of samples from observations (data) is higher than number of observation, using all observations as samples.")
+
+        ## Clear figure
+        self.set_lower_figure(clear=True)
+        # self.page6_figure2.clf()
+        # self.page6_b = self.page6_figure2.add_subplot(111)
+        # self.page6_figure2.canvas.draw()
+        # self.page6_figure2.canvas.flush_events()
 
         from metropolis_hastings import initialise_sampling
 
@@ -3019,7 +3007,7 @@ class Gui(Tk):
             self.page3_figure.canvas.mpl_connect('button_press_event', onclick)
         self.update()
 
-    def initialise_plot(self, what=False):
+    def initialise_plot3(self, what=False):
         """ Plots the what (figure) into where (Tkinter object - Window/Frame/....) """
         # try:
         #     self.page3_canvas.get_tk_widget().destroy()
@@ -3065,6 +3053,26 @@ class Gui(Tk):
             self.load_constraints(file=os.path.join(self.tmp_dir, "constraints.p"))
             self.load_space(file=os.path.join(self.tmp_dir, "space.p"))
             self.load_mh_results(file=os.path.join(self.tmp_dir, "mh_results.p"))
+
+    def set_lower_figure(self, clear=False):
+        ##################################################### LOWER PLOT ###############################################
+        if clear:
+            self.page6_plotframe2.destroy()
+
+        self.page6_plotframe2 = Frame(self.frame_right)
+        self.page6_plotframe2.pack(side=TOP, fill=Y, expand=True)
+
+        self.page6_figure2 = pyplt.figure(figsize=(8, 2))
+        self.page6_figure2.tight_layout()  ## By huypn
+
+        self.page6_canvas2 = FigureCanvasTkAgg(self.page6_figure2, master=self.page6_plotframe2)  # A tk.DrawingArea.
+        self.page6_canvas2.draw()
+        self.page6_canvas2.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+
+        self.page6_toolbar2 = NavigationToolbar2Tk(self.page6_canvas2, self.page6_plotframe2)
+        self.page6_toolbar2.update()
+        self.page6_canvas2.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+        self.page6_b = self.page6_figure2.add_subplot(111)
 
 
 sys.setrecursionlimit(4000000)
