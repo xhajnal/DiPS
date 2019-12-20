@@ -822,7 +822,7 @@ def private_check_deeper(region, constraints, recursion_depth, epsilon, coverage
     Args:
         region (list of pairs of numbers): list of intervals, low and high bound, defining the parameter space to be refined
         constraints  (list of strings): array of properties
-        n (Int): max number of recursions to do
+        recursion_depth (Int): max number of recursions to do
         epsilon (float): minimal size of rectangle to be checked
         coverage (float): coverage threshold to stop computation
         silent (bool): if silent printed output is set to minimum
@@ -927,7 +927,7 @@ def private_check_deeper_queue(region, constraints, recursion_depth, epsilon, co
     Args:
         region (list of pairs of numbers): list of intervals, low and high bound, defining the parameter space to be refined
         constraints  (list of strings): array of properties
-        n (Int): max number of recursions to do
+        recursion_depth (Int): max number of recursions to do
         epsilon (float): minimal size of rectangle to be checked
         coverage (float): coverage threshold to stop computation
         silent (bool): if silent printed output is set to minimum
@@ -1033,7 +1033,7 @@ def private_check_deeper_queue_checking(region, constraints, recursion_depth, ep
     Args:
         region (list of pairs of numbers): list of intervals, low and high bound, defining the parameter space to be refined
         constraints  (list of strings): array of properties
-        n (Int): max number of recursions to do
+        recursion_depth (Int): max number of recursions to do
         epsilon (float): minimal size of rectangle to be checked
         coverage (float): coverage threshold to stop computation
         silent (bool): if silent printed output is set to minimum
@@ -1101,12 +1101,19 @@ def private_check_deeper_queue_checking(region, constraints, recursion_depth, ep
     if recursion_depth == 0:
         return
 
-    example_points = re.findall(r'[0-9./]+', str(example))
-    if solver == "dreal":
-        del example_points[::2]
-    # counterexample_points= re.findall(r'[0-9./]+', str(counterexample))
+    spam = str(example)
+    spam = spam[1:-1]
+    spam = spam.split(",")
+    spam.sort()
+    example_points = []
+    for value in spam:
+        example_points.append(float(eval(value.split("=")[1])))
+    # example_points = re.findall(r'[0-9./]+', str(example))
     # print(example_points)
     # print(counterexample_points)
+
+    if solver == "dreal":
+        del example_points[::2]
 
     ## Find maximum dimension an make a cut
     index, maximum = 0, 0
@@ -1160,7 +1167,7 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
     Args:
         region (list of pairs of numbers): list of intervals, low and high bound, defining the parameter space to be refined
         constraints (list of strings): array of properties
-        n (Int): max number of recursions to do
+        recursion_depth (Int): max number of recursions to do
         epsilon (float): minimal size of rectangle to be checked
         coverage (float): coverage threshold to stop computation
         silent (bool): if silent printed output is set to minimum
@@ -1200,6 +1207,7 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
         return f"coverage {space.get_coverage()} is above the threshold"
 
     ## Resolving if the region safe/unsafe/unknown
+    ## If both example and counterexample are None
     if model is None:
         example = check_unsafe(region, constraints, silent, solver=solver, delta=delta, debug=debug)
         # print("example", example)
@@ -1207,12 +1215,14 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
             counterexample = None
         else:
             counterexample = check_safe(region, constraints, silent, solver=solver, delta=delta, debug=debug)
+    ## elif the example is None
     elif model[0] is None:
         example = check_unsafe(region, constraints, silent, solver=solver, delta=delta, debug=debug)
     else:
         if not silent:
             print("skipping check_unsafe at", region, "since example", model[0])
         example = model[0]
+    ## if counterexample is not None
     if model is not None:
         if model[1] is None:
             counterexample = check_safe(region, constraints, silent, solver=solver, delta=delta, debug=debug)
@@ -1239,9 +1249,25 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
     if recursion_depth == 0:
         return
 
+    spam = str(example)
+    spam = spam[1:-1]
+    spam = spam.split(",")
+    spam.sort()
+    example_points = []
+    for value in spam:
+        example_points.append(float(eval(value.split("=")[1])))
+
+    spam = str(counterexample)
+    spam = spam[1:-1]
+    spam = spam.split(",")
+    spam.sort()
+    counterexample_points = []
+    for value in spam:
+        counterexample_points.append(float(eval(value.split("=")[1])))
+
     # print("example", example)
-    example_points = re.findall(r'[0-9./]+', str(example))
-    counterexample_points = re.findall(r'[0-9./]+', str(counterexample))
+    # example_points = re.findall(r'[0-9./]+', str(example))
+    # counterexample_points = re.findall(r'[0-9./]+', str(counterexample))
     if solver == "dreal":
         del example_points[::2]
         del counterexample_points[::2]
@@ -1272,14 +1298,14 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
         model_low[0] = None
         model_high[0] = None
     else:
-        if float(eval(example_points[index])) > low + (high - low) / 2:
+        if float(example_points[index]) > low + (high - low) / 2:
             model_low[0] = None
             model_high[0] = example
         else:
             model_low[0] = example
             model_high[0] = None
         ## Overwrite if equal
-        if float(eval(example_points[index])) == low + (high - low) / 2:
+        if float(example_points[index]) == low + (high - low) / 2:
             model_low[0] = None
             model_high[0] = None
 
@@ -1287,7 +1313,7 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
         model_low[1] = None
         model_high[1] = None
     else:
-        if float(eval(counterexample_points[index])) > low + (high - low) / 2:
+        if float(counterexample_points[index]) > low + (high - low) / 2:
             model_low[1] = None
             model_high[1] = counterexample
         else:
@@ -1295,7 +1321,7 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
             model_high[1] = None
 
         ## Overwrite if equal
-        if float(eval(counterexample_points[index])) == low + (high - low) / 2:
+        if float(counterexample_points[index]) == low + (high - low) / 2:
             model_low[1] = None
             model_high[1] = None
 
@@ -1377,7 +1403,7 @@ def check_deeper_iter(region, constraints, recursion_depth, epsilon, coverage, s
     Args:
         region (list of pairs of numbers): list of intervals, low and high bound, defining the parameter space to be refined
         constraints  (list of strings): array of properties
-        n (Int): max number of recursions to do
+        recursion_depth (Int): max number of recursions to do
         epsilon (float): minimal size of rectangle to be checked
         coverage (float): coverage threshold to stop computation
         silent (bool): if silent printed output is set to minimum
@@ -1567,7 +1593,7 @@ def private_check_deeper_interval(region, constraints, intervals, recursion_dept
         region (list of pairs of numbers): list of intervals, low and high bound, defining the parameter space to be refined
         constraints  (list of strings): array of properties
         intervals (list of pairs/ sympy.Intervals): array of interval to constrain constraints
-        n (Int): max number of recursions to do
+        recursion_depth (Int): max number of recursions to do
         epsilon (float): minimal size of rectangle to be checked
         coverage (float): coverage threshold to stop computation
         silent (bool): if silent printed output is set to minimum
