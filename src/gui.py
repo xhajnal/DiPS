@@ -324,7 +324,7 @@ class Gui(Tk):
         Label(frame_left, text=f"Loaded model file:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, padx=4,
                                                                                    pady=4)  # pack(anchor=W)
 
-        self.model_text = scrolledtext.ScrolledText(frame_left, height=100)
+        self.model_text = scrolledtext.ScrolledText(frame_left, width=200, height=100)
         # self.model_text.config(state="disabled")
         self.model_text.grid(row=2, column=0, columnspan=16, rowspan=2, sticky=W, padx=4, pady=4)  # pack(anchor=W, fill=X, expand=True)
 
@@ -341,7 +341,7 @@ class Gui(Tk):
         Label(frame_right, text=f"Loaded property file:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W,
                                                                                        pady=4)  # pack(anchor=W)
 
-        self.property_text = scrolledtext.ScrolledText(frame_right, height=100)
+        self.property_text = scrolledtext.ScrolledText(frame_right,  width=200, height=100)
         # self.property_text.config(state="disabled")
         self.property_text.grid(row=2, column=0, columnspan=16, rowspan=2, sticky=W + E + N + S, pady=4)  # pack(anchor=W, fill=X)
 
@@ -375,7 +375,7 @@ class Gui(Tk):
 
         Label(page2, text=f"Loaded Prism/Storm output file:", anchor=W, justify=LEFT).grid(row=4, column=0, sticky=W, padx=4, pady=4)
 
-        self.functions_text = scrolledtext.ScrolledText(page2, height=100, state=DISABLED)
+        self.functions_text = scrolledtext.ScrolledText(page2, width=200, height=100, state=DISABLED)
         self.functions_text.grid(row=5, column=0, columnspan=16, rowspan=2, sticky=W, padx=4, pady=4)
 
         Label(page2, text=f"Rational functions section.", anchor=W, justify=LEFT).grid(row=1, column=17, sticky=W, padx=4, pady=4)
@@ -383,7 +383,7 @@ class Gui(Tk):
         Button(page2, text='Save functions', command=self.save_functions).grid(row=3, column=18, sticky=W, pady=4)
 
         Label(page2, text=f"Parsed function(s):", anchor=W, justify=LEFT).grid(row=4, column=17, sticky=W, padx=4, pady=4)
-        self.functions_parsed_text = scrolledtext.ScrolledText(page2, height=100, state=DISABLED)
+        self.functions_parsed_text = scrolledtext.ScrolledText(page2, width=200, height=100, state=DISABLED)
         self.functions_parsed_text.grid(row=5, column=17, columnspan=16, rowspan=2, sticky=W, pady=4)
 
 
@@ -401,7 +401,7 @@ class Gui(Tk):
 
         Label(self.page3, text=f"Values of sampled points:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, padx=4, pady=4)
 
-        self.sampled_functions_text = scrolledtext.ScrolledText(self.page3, height=100, state=DISABLED)
+        self.sampled_functions_text = scrolledtext.ScrolledText(self.page3, width=200, height=100, state=DISABLED)
         self.sampled_functions_text.grid(row=4, column=0, columnspan=8, rowspan=2, sticky=W, padx=4, pady=4)
 
         Label(self.page3, text=f"Rational functions visualisation", anchor=W, justify=CENTER).grid(row=1, column=14, columnspan=3, pady=4)
@@ -484,7 +484,7 @@ class Gui(Tk):
         self.property_text2.grid(row=2, column=18, columnspan=16, rowspan=2, sticky=W + E + N + S, padx=5, pady=4)
         Button(page4, text='Generate data informed properties', command=self.generate_data_informed_properties).grid(row=4, column=18, sticky=W, padx=5, pady=4)
 
-        self.data_informed_property_text = scrolledtext.ScrolledText(page4, height=4, state=DISABLED)
+        self.data_informed_property_text = scrolledtext.ScrolledText(page4, width=200, height=4, state=DISABLED)
         self.data_informed_property_text.grid(row=5, column=18, columnspan=16, rowspan=4, sticky=W + E + N + S, padx=5, pady=10)
 
         Button(page4, text='Save data informed properties', command=self.save_data_informed_properties).grid(row=9, column=18, sticky=W, padx=5, pady=4)
@@ -499,7 +499,7 @@ class Gui(Tk):
 
         Button(page5, text='Calculate constraints', command=self.recalculate_constraints).grid(row=0, column=0, sticky=W, padx=4, pady=4)
 
-        self.constraints_text = scrolledtext.ScrolledText(page5, height=100, state=DISABLED)
+        self.constraints_text = scrolledtext.ScrolledText(page5, width=200, height=100, state=DISABLED)
         self.constraints_text.grid(row=1, column=0, columnspan=16, rowspan=2, sticky=W, padx=4, pady=4)
 
         Label(page5, text=f"Import/Export:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, padx=4, pady=4)

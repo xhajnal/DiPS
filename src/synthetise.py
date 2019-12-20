@@ -844,15 +844,15 @@ def private_check_deeper(region, constraints, recursion_depth, epsilon, coverage
     if get_rectangle_volume(region) < epsilon:
         if len(region) > 2:
             if not silent:
-                print(recursion_depth, colored(f"hyperrectangle {region} too small, skipped", "grey"))
+                print("depth:", recursion_depth, colored(f"hyperrectangle {region} too small, skipped", "grey"))
             return f"hyperrectangle {region} too small, skipped"
         elif len(region) == 2:
             if not silent:
-                print(recursion_depth, colored(f"rectangle {region} too small, skipped", "grey"))
+                print("depth:", recursion_depth, colored(f"rectangle {region} too small, skipped", "grey"))
             return f"rectangle {region} too small, skipped"
         else:
             if not silent:
-                print(recursion_depth, colored(f"interval {region} too small, skipped", "grey"))
+                print("depth:", recursion_depth, colored(f"interval {region} too small, skipped", "grey"))
             return f"interval {region} too small, skipped"
 
     ## Stop if the the current coverage is above the given thresholds
@@ -867,14 +867,17 @@ def private_check_deeper(region, constraints, recursion_depth, epsilon, coverage
     if check_unsafe(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
         result = "unsafe"
         if not silent:
+            print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} {result} \n", "red"))
     elif check_safe(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
         result = "safe"
         if not silent:
+            print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} {result} \n", "green"))
     else:
         result = "unknown"
         if not silent:
+            print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} {result} \n", "grey"))
 
     # print("result",result)
@@ -949,15 +952,15 @@ def private_check_deeper_queue(region, constraints, recursion_depth, epsilon, co
     if get_rectangle_volume(region) < epsilon:
         if len(region) > 2:
             if not silent:
-                print(recursion_depth, colored(f"hyperrectangle {region} too small, skipped", "grey"))
+                print("depth:", recursion_depth, colored(f"hyperrectangle {region} too small, skipped", "grey"))
             return f"hyperrectangle {region} too small, skipped"
         elif len(region) == 2:
             if not silent:
-                print(recursion_depth, colored(f"rectangle {region} too small, skipped", "grey"))
+                print("depth:", recursion_depth, colored(f"rectangle {region} too small, skipped", "grey"))
             return f"rectangle {region} too small, skipped"
         else:
             if not silent:
-                print(recursion_depth, colored(f"interval {region} too small, skipped", "grey"))
+                print("depth:", recursion_depth, colored(f"interval {region} too small, skipped", "grey"))
             return f"interval {region} too small, skipped"
 
     ## Stop if the the current coverage is above the given thresholds
@@ -970,14 +973,17 @@ def private_check_deeper_queue(region, constraints, recursion_depth, epsilon, co
     if check_unsafe(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
         result = "unsafe"
         if not silent:
+            print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} {result} \n", "red"))
     elif check_safe(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
         result = "safe"
         if not silent:
+            print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} {result} \n", "green"))
     else:
         result = "unknown"
         if not silent:
+            print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} {result} \n", "grey"))
 
     if result == "safe" or result == "unsafe":
@@ -1056,15 +1062,15 @@ def private_check_deeper_queue_checking(region, constraints, recursion_depth, ep
     if get_rectangle_volume(region) < epsilon:
         if len(region) > 2:
             if not silent:
-                print(recursion_depth, colored(f"hyperrectangle {region} too small, skipped", "grey"))
+                print("depth:", recursion_depth, colored(f"hyperrectangle {region} too small, skipped", "grey"))
             return f"hyperrectangle {region} too small, skipped"
         elif len(region) == 2:
             if not silent:
-                print(recursion_depth, colored(f"rectangle {region} too small, skipped", "grey"))
+                print("depth:", recursion_depth, colored(f"rectangle {region} too small, skipped", "grey"))
             return f"rectangle {region} too small, skipped"
         else:
             if not silent:
-                print(recursion_depth, colored(f"interval {region} too small, skipped", "grey"))
+                print("depth:", recursion_depth, colored(f"interval {region} too small, skipped", "grey"))
             return f"interval {region} too small, skipped"
 
     ## Stop if the the current coverage is above the given thresholds
@@ -1087,15 +1093,18 @@ def private_check_deeper_queue_checking(region, constraints, recursion_depth, ep
     if example is True:
         space.remove_white(region)
         if not silent:
+            print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} is unsafe", "red"))
         return
     elif check_safe(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
         space.remove_white(region)
         if not silent:
+            print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()}  is safe", "red"))
         return
     else:  ## unknown
         if not silent:
+            print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, space.get_coverage(), example)
 
     if recursion_depth == 0:
@@ -1188,15 +1197,15 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
     if get_rectangle_volume(region) < epsilon:
         if len(region) > 2:
             if not silent:
-                print(recursion_depth, colored(f"hyperrectangle {region} too small, skipped", "grey"))
+                print("depth:", recursion_depth, colored(f"hyperrectangle {region} too small, skipped", "grey"))
             return f"hyperrectangle {region} too small, skipped"
         elif len(region) == 2:
             if not silent:
-                print(recursion_depth, colored(f"rectangle {region} too small, skipped", "grey"))
+                print("depth:", recursion_depth, colored(f"rectangle {region} too small, skipped", "grey"))
             return f"rectangle {region} too small, skipped"
         else:
             if not silent:
-                print(recursion_depth, colored(f"interval {region} too small, skipped", "grey"))
+                print("depth:", recursion_depth, colored(f"interval {region} too small, skipped", "grey"))
             return f"interval {region} too small, skipped"
 
     ## Stop if the the current coverage is above the given thresholds
@@ -1235,15 +1244,18 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
     if example is True:
         space.remove_white(region)
         if not silent:
+            print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} is unsafe", "red"))
         return
     elif counterexample is True:
         space.remove_white(region)
         if not silent:
+            print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()}  is safe", "green"))
         return
     else:  # Unknown
         if not silent:
+            print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} {(example, counterexample)}", "grey"))
 
     if recursion_depth == 0:
@@ -1619,15 +1631,15 @@ def private_check_deeper_interval(region, constraints, intervals, recursion_dept
     if get_rectangle_volume(region) < epsilon:
         if len(region) > 2:
             if not silent:
-                print(recursion_depth, colored(f"hyperrectangle {region} too small, skipped", "grey"))
+                print("depth:", recursion_depth, colored(f"hyperrectangle {region} too small, skipped", "grey"))
             return f"hyperrectangle {region} too small, skipped"
         elif len(region) == 2:
             if not silent:
-                print(recursion_depth, colored(f"rectangle {region} too small, skipped", "grey"))
+                print("depth:", recursion_depth, colored(f"rectangle {region} too small, skipped", "grey"))
             return f"rectangle {region} too small, skipped"
         else:
             if not silent:
-                print(recursion_depth, colored(f"interval {region} too small, skipped", "grey"))
+                print("depth:", recursion_depth, colored(f"interval {region} too small, skipped", "grey"))
             return f"interval {region} too small, skipped"
 
     ## Stop if the the current coverage is above the given thresholds
@@ -1642,16 +1654,19 @@ def private_check_deeper_interval(region, constraints, intervals, recursion_dept
     if check_interval_out(region, constraints, intervals, silent=silent, called=False, debug=debug) is True:
         result = "unsafe"
         if not silent:
+            print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} {result} \n", "red"))
             print()
     elif check_interval_in(region, constraints, intervals, silent=silent, called=False, debug=debug) is True:
         result = "safe"
         if not silent:
+            print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} {result} \n", "green"))
             print()
     else:
         result = "unknown"
         if not silent:
+            print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} {result} \n", "grey"))
             print()
 

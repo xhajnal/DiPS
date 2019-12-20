@@ -190,7 +190,7 @@ def acceptance(x, x_new):
         return accept < (np.exp(x_new - x))
 
 
-def metropolis_hastings(likelihood_computer, prior, transition_model, param_init, iterations, space, data,
+def metropolis_hastings(likelihood_computer, prior, transition_model, param_init, iterations, space, observations,
                         acceptance_rule, parameter_intervals, functions, eps, progress=False, timeout=-1, debug=False):
     """ TODO
     the main method
@@ -200,7 +200,7 @@ def metropolis_hastings(likelihood_computer, prior, transition_model, param_init
         transition_model (function(x)): a function that draws a sample from a symmetric distribution and returns it
         param_init  (pair of numbers): a starting sample
         iterations (int): number of accepted to generated
-        data (list of numbers):: the data that we wish to model
+        observations (list of numbers): observations that we wish to model
         acceptance_rule (function(x, x_new)): decides whether to accept or reject the new sample
         parameter_intervals (list of pairs): boundaries of parameters
         progress (Tkinter element): progress bar
@@ -221,9 +221,9 @@ def metropolis_hastings(likelihood_computer, prior, transition_model, param_init
     for iteration in range(iterations):
         x_new = transition_model(x, parameter_intervals)
         ## (space, theta, functions, data, eps)
-        x_lik = likelihood_computer(space, x, functions, data, eps)
+        x_lik = likelihood_computer(space, x, functions, observations, eps)
         # print("x_lik", x_lik)
-        x_new_lik = likelihood_computer(space, x_new, functions, data, eps)
+        x_new_lik = likelihood_computer(space, x_new, functions, observations, eps)
         # print("x_new_lik", x_new_lik)
         if debug:
             print("iteration:", iteration)
@@ -284,6 +284,8 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
         # print("x=", globals()["x"])
         # print("y=", globals()["y"])
         # print(eval("x+y"))
+
+        ## TODO this line can be optimised by storing already computed values
         temp = eval(functions[data_point])
 
         # print(temp)
@@ -432,7 +434,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     # print("accepted[100:to_show, 1]", accepted[100:to_show, 1])
     # print("rejected", rejected)
 
-    ## Create TODO plot
+    ## Create TODO add name plot
     if not where:
         fig = plt.figure(figsize=(10, 10))
         ax = fig.add_subplot(2, 1, 1)
@@ -441,7 +443,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         ax.plot(accepted[(0, 100)[len(accepted) > 200]:to_show, 1], 'b.', label='Accepted', alpha=0.5)
         ax.set_xlabel("Step")
         ax.set_ylabel("Value")
-        ax.set_title("Figure 2: MCMC sampling for N=" + str(observations_samples_size) + " with Metropolis-Hastings. First " + str(to_show) + " samples are shown.")
+        ax.set_title(f"Figure 2: MCMC sampling for N={observations_samples_size} with Metropolis-Hastings. Last {to_show}% of samples are shown.")
         ax.grid()
         ax.legend()
         plt.show()
@@ -455,7 +457,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
 
     globals()["results"].show = show
 
-    ## Create TODO plot
+    ## Create TODO add name plot
     if not where:
         fig = plt.figure(figsize=(20, 10))
         ax = fig.add_subplot(1, 2, 1)
