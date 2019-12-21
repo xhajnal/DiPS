@@ -217,7 +217,7 @@ class Gui(Tk):
         self.show_true_point = None  ## flag telling whether to show true point
 
         ## Settings
-        self.version = "1.8.6"  ## Version of the gui
+        self.version = "1.9.1"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -1425,10 +1425,9 @@ class Gui(Tk):
                     break
 
             constraints = ""
-            for prop in self.constraints:
-                constraints = f"{prop},\n{constraints}"
-            constraints = constraints[:-2]
-
+            for constraint in self.constraints:
+                constraints = f"{constraints},\n{constraint}"
+            constraints = constraints[2:]
             self.constraints_text.configure(state='normal')
             self.constraints_text.delete('1.0', END)
             self.constraints_text.insert('end', constraints)
