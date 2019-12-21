@@ -2618,9 +2618,8 @@ class Gui(Tk):
             ## TODO - tweak - update this to actually show the progress
             self.new_window = Toplevel(self)
             Label(self.new_window, text="Refinement in progress", anchor=W, justify=LEFT).pack()
-            pb_hD = ttk.Progressbar(self.new_window, orient='horizontal', mode='indeterminate')
-            pb_hD.pack(expand=True, fill=BOTH, side=TOP)
-            pb_hD.start(50)
+            self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
+            self.progress_bar.pack(expand=True, fill=BOTH, side=TOP)
             self.update()
 
             ## RETURNS TUPLE -- (SPACE,(NONE, ERROR TEXT)) or (SPACE, )
@@ -2629,17 +2628,17 @@ class Gui(Tk):
                 spam = check_deeper(self.space, [self.functions, self.data_intervals], self.max_depth, self.epsilon,
                                     self.coverage, silent=self.silent.get(), version=int(self.alg.get()), sample_size=False,
                                     debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
-                                    solver=str(self.solver.get()), delta=self.delta, gui=True)
+                                    solver=str(self.solver.get()), delta=self.delta, gui=self.update_progress_bar)
             elif str(self.solver.get()) == "z3" and self.z3_constraints:
                 spam = check_deeper(self.space, self.z3_constraints, self.max_depth, self.epsilon, self.coverage,
                                     silent=self.silent.get(), version=int(self.alg.get()), sample_size=False,
                                     debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
-                                    solver=str(self.solver.get()), delta=self.delta, gui=True)
+                                    solver=str(self.solver.get()), delta=self.delta, gui=self.update_progress_bar)
             else:
                 spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
                                     silent=self.silent.get(), version=int(self.alg.get()), sample_size=False,
                                     debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
-                                    solver=str(self.solver.get()), delta=self.delta, gui=True)
+                                    solver=str(self.solver.get()), delta=self.delta, gui=self.update_progress_bar)
         finally:
             self.cursor_toggle_busy(False)
             self.new_window.destroy()
@@ -3026,13 +3025,17 @@ class Gui(Tk):
         self.page3_toolbar.update()
         self.page3_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
 
-    def update_progress_bar(self, change):
+    def update_progress_bar(self, change_to=False, change_by=False):
         """ Updates progress bar
 
         Args:
-            change (number): value to set the progress
+            change_to (number): value to set the progress
+            change_by (number): value to add to the progress
         """
-        self.progress_bar['value'] = round(100*change)
+        if change_to is not False:
+            self.progress_bar['value'] = 100*change_to
+        if change_by is not False:
+            self.progress_bar['value'] = self.progress_bar['value'] + 100*change_by
         self.update()
 
     def ask_quit(self):
