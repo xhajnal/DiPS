@@ -724,9 +724,9 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         else:
             print(colored("Chosen version not found", "red"))
     else:
-        numb_rectangles = len(white_space)
+        numb_of_rectangles = len(white_space)
         copy_white_space = copy.deepcopy(white_space)
-        for rectangle in copy_white_space:
+        for index, rectangle in enumerate(copy_white_space):
             single_rectangle_start_time = time()
             ## To get more similar result substituting the number of splits from the max_depth
             if debug:
@@ -750,37 +750,36 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                 print("region", rectangle)
                 print("constraints", constraints)
             if gui:
-                gui((white_space.index(rectangle)) / numb_rectangles)
+                gui(index / numb_of_rectangles)
             if version == 1:
                 if not silent:
-                    print(f"Using DFS method with {('dreal', 'z3')[solver == 'z3']} solver to solve spliced rectangle number {white_space.index(rectangle) + 1} of {numb_rectangles}")
-                private_check_deeper(rectangle, constraints, max(0, recursion_depth - (int(log(numb_rectangles, 2)))),
+                    print(f"Using DFS method with {('dreal', 'z3')[solver == 'z3']} solver to solve spliced rectangle number {index + 1} of {numb_of_rectangles}")
+                private_check_deeper(rectangle, constraints, max(0, recursion_depth - (int(log(numb_of_rectangles, 2)))),
                                      epsilon, next_coverage, silent, solver=solver, delta=delta, debug=debug)
             elif version == 2:
                 if not silent:
-                    print(f"Using BFS method with {('dreal', 'z3')[solver == 'z3']} solver to solve spliced rectangle number {white_space.index(rectangle) + 1}")
+                    print(f"Using BFS method with {('dreal', 'z3')[solver == 'z3']} solver to solve spliced rectangle number {index + 1}")
                 private_check_deeper_queue(rectangle, constraints,
-                                           max(0, recursion_depth - (int(log(numb_rectangles, 2)))), epsilon,
+                                           max(0, recursion_depth - (int(log(numb_of_rectangles, 2)))), epsilon,
                                            next_coverage, silent, solver=solver, delta=delta, debug=debug)
             elif version == 3:
                 if not silent:
-                    print(f"Using BFS method with passing examples with {('dreal', 'z3')[solver == 'z3']} solver to solve spliced rectangle number {white_space.index(rectangle) + 1} of {numb_rectangles}")
+                    print(f"Using BFS method with passing examples with {('dreal', 'z3')[solver == 'z3']} solver to solve spliced rectangle number {index + 1} of {numb_of_rectangles}")
                 private_check_deeper_queue_checking(rectangle, constraints,
-                                                    max(0, recursion_depth - (int(log(numb_rectangles, 2)))), epsilon,
+                                                    max(0, recursion_depth - (int(log(numb_of_rectangles, 2)))), epsilon,
                                                     next_coverage, silent, model=None, solver=solver, delta=delta,
                                                     debug=debug)
             elif version == 4:
                 if not silent:
-                    print(f"Using BFS method with passing examples and counterexamples with {('dreal', 'z3')[solver == 'z3']} solver to solve spliced rectangle number {white_space.index(rectangle) + 1} of {numb_rectangles}")
+                    print(f"Using BFS method with passing examples and counterexamples with {('dreal', 'z3')[solver == 'z3']} solver to solve spliced rectangle number {index + 1} of {numb_of_rectangles}")
                 private_check_deeper_queue_checking_both(rectangle, constraints,
-                                                         max(0, recursion_depth - (int(log(numb_rectangles, 2)))),
+                                                         max(0, recursion_depth - (int(log(numb_of_rectangles, 2)))),
                                                          epsilon, next_coverage, silent, model=None, solver=solver,
                                                          delta=delta, debug=debug)
             elif version == 5:
                 # globals()["que"].enqueue([copy.deepcopy(foo), constraints, recursion_depth, epsilon, coverage, silent, None, solver, delta])
                 if not silent:
-                    print(
-                        f"Using interval method to solve spliced rectangle number {white_space.index(rectangle) + 1} of {numb_rectangles}.")
+                    print(f"Using interval arithmetic to solve spliced rectangle number {index + 1} of {numb_of_rectangles}.")
 
                 ## if already feed with funcs, intervals
                 if isinstance(constraints[0], list):
@@ -789,7 +788,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                     egg = constraints_to_ineq(constraints, debug=debug)
                 if not egg:
                     return space
-                private_check_deeper_interval(rectangle, egg[0], egg[1], max(1, 1 + recursion_depth - (int(log(numb_rectangles, 2)))),
+                private_check_deeper_interval(rectangle, egg[0], egg[1], max(1, 1 + recursion_depth - (int(log(numb_of_rectangles, 2)))),
                                               epsilon, next_coverage, silent, debug=debug)
             else:
                 print(colored("Chosen version not found", "red"))
