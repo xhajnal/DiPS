@@ -217,7 +217,7 @@ class Gui(Tk):
         self.show_true_point = None  ## flag telling whether to show true point
 
         ## Settings
-        self.version = "1.9.1"  ## Version of the gui
+        self.version = "1.9.2"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -2594,10 +2594,17 @@ class Gui(Tk):
         if self.alg.get() == "":
             messagebox.showwarning("Refine space", "Pick algorithm for the refinement before running.")
             return
-
-        if self.constraints == "":
-            messagebox.showwarning("Refine space", "Load or calculate constraints before refinement.")
-            return
+        if int(self.alg.get()) == 5:
+            if self.functions == "":
+                messagebox.showwarning("Refine space", "Load or synthesise functions before refinement.")
+                return
+            if self.data_intervals == "":
+                messagebox.showwarning("Refine space", "Load or compute data intervals before refinement.")
+                return
+        else:
+            if self.constraints == "":
+                messagebox.showwarning("Refine space", "Load or calculate constraints before refinement.")
+                return
 
         if not self.validate_space("Refine Space"):
             return
