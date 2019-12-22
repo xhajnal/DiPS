@@ -10,6 +10,7 @@ from os.path import basename
 from tkinter import filedialog, ttk
 from tkinter.messagebox import askyesno
 from tkinter.ttk import Progressbar
+from screeninfo import get_monitors
 
 import matplotlib.pyplot as pyplt
 import matplotlib
@@ -304,19 +305,13 @@ class Gui(Tk):
 
 
         ## TAB EDIT
-        page1 = ttk.Frame(nb, width=600, height=200, name="model_properties")  # Adds tab 1 of the notebook
+        page1 = ttk.Frame(nb, name="model_properties")  # Adds tab 1 of the notebook
         nb.add(page1, text='Model & Properties', state="normal", sticky="nsew")
 
-        # page1.rowconfigure(5, weight=1)
-        # page1.columnconfigure(6, weight=1)
-
-        frame_left = Frame(page1, width=400, height=100)  ## Model part
-        # for i in range(4):
-        #    frame_left.rowconfigure(i, weight=1)
+        frame_left = Frame(page1, width=int(get_monitors()[0].width/2), height=int(get_monitors()[0].width/2))  ## Model part
+        frame_left.grid_propagate(0)
         frame_left.rowconfigure(2, weight=1)
         frame_left.columnconfigure(6, weight=1)
-        # for i in range(7):
-        #     frame_left.columnconfigure(i, weight=1)
         frame_left.pack(side=LEFT, fill=X)
 
         Button(frame_left, text='Open model', command=self.load_model).grid(row=0, column=0, sticky=W, padx=4,
@@ -326,15 +321,14 @@ class Gui(Tk):
         Label(frame_left, text=f"Loaded model file:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, padx=4,
                                                                                    pady=4)  # pack(anchor=W)
 
-        self.model_text = scrolledtext.ScrolledText(frame_left, width=200, height=100)
+        self.model_text = scrolledtext.ScrolledText(frame_left, width=int(get_monitors()[0].width/2), height=int(get_monitors()[0].width/2))
         # self.model_text.config(state="disabled")
         self.model_text.grid(row=2, column=0, columnspan=16, rowspan=2, sticky=W, padx=4, pady=4)  # pack(anchor=W, fill=X, expand=True)
 
-        frame_right = Frame(page1)  ## Property part
-        for i in range(7):
-            frame_left.columnconfigure(i, weight=1)
-        frame_right.rowconfigure(3, weight=1)
-        # frame_right.columnconfigure(6, weight=1)
+        frame_right = Frame(page1, width=int(get_monitors()[0].width/2), height=int(get_monitors()[0].width/2))  ## Property part
+        frame_right.grid_propagate(0)
+        frame_right.rowconfigure(5, weight=1)
+        frame_right.columnconfigure(2, weight=1)
         frame_right.pack(side=RIGHT, fill=X)
 
         Button(frame_right, text='Open property', command=self.load_property).grid(row=0, column=0, sticky=W, pady=4,
@@ -343,7 +337,7 @@ class Gui(Tk):
         Label(frame_right, text=f"Loaded property file:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W,
                                                                                        pady=4)  # pack(anchor=W)
 
-        self.property_text = scrolledtext.ScrolledText(frame_right,  width=200, height=100)
+        self.property_text = scrolledtext.ScrolledText(frame_right, width=int(get_monitors()[0].width/2), height=int(get_monitors()[0].width/2))
         # self.property_text.config(state="disabled")
         self.property_text.grid(row=2, column=0, columnspan=16, rowspan=2, sticky=W + E + N + S, pady=4)  # pack(anchor=W, fill=X)
 
@@ -352,114 +346,146 @@ class Gui(Tk):
 
 
         ## TAB SYNTHESISE
-        page2 = ttk.Frame(nb, width=400, height=100, name="synthesise")  # Adds tab 2 of the notebook
+        page2 = ttk.Frame(nb, name="synthesise")  # Adds tab 2 of the notebook
         nb.add(page2, text='Synthesise functions')
+        page2.grid_propagate(0)
 
-        page2.rowconfigure(5, weight=1)
-        page2.columnconfigure(6, weight=1)
+        frame_left = Frame(page2, width=int(get_monitors()[0].width / 2), height=int(get_monitors()[0].width / 2))
+        frame_left.grid_propagate(0)
+        frame_left.rowconfigure(5, weight=1)
+        frame_left.columnconfigure(6, weight=1)
+        frame_left.pack(side=LEFT, fill=X)
+
+        frame_right = Frame(page2, width=int(get_monitors()[0].width / 2), height=int(get_monitors()[0].width / 2))
+        frame_right.grid_propagate(0)
+        frame_right.rowconfigure(5, weight=1)
+        frame_right.columnconfigure(2, weight=1)
+        frame_right.pack(side=RIGHT, fill=X)
 
         ## SELECTING THE PROGRAM
         self.program.set("prism")
-        Label(page2, text="Select the program: ", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, padx=4,
-                                                                               pady=4)
-        Radiobutton(page2, text="Prism", variable=self.program, value="prism").grid(row=1, column=1, sticky=W, pady=4)
-        radio = Radiobutton(page2, text="Storm", variable=self.program, value="storm")
+        Label(frame_left, text="Select the program: ", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, padx=4, pady=4)
+        Radiobutton(frame_left, text="Prism", variable=self.program, value="prism").grid(row=1, column=1, sticky=W, pady=4)
+        radio = Radiobutton(frame_left, text="Storm", variable=self.program, value="storm")
         radio.grid(row=1, column=2, sticky=W, pady=4)
         createToolTip(radio,
                       text='This option results in a command that would produce desired output. (If you installed Storm, open command line and insert the command. Then load output file.)')
 
-        Label(page2, text=f"Show function(s):", anchor=W, justify=LEFT).grid(row=2, column=0, sticky=W, padx=4, pady=4)
-        Radiobutton(page2, text="Original", variable=self.factor, value=False).grid(row=2, column=1, sticky=W, pady=4)
-        Radiobutton(page2, text="Factorised", variable=self.factor, value=True).grid(row=2, column=2, sticky=W, pady=4)
+        Label(frame_left, text=f"Show function(s):", anchor=W, justify=LEFT).grid(row=2, column=0, sticky=W, padx=4, pady=4)
+        Radiobutton(frame_left, text="Original", variable=self.factor, value=False).grid(row=2, column=1, sticky=W, pady=4)
+        Radiobutton(frame_left, text="Factorised", variable=self.factor, value=True).grid(row=2, column=2, sticky=W, pady=4)
 
-        Button(page2, text='Run parameter synthesis', command=self.synth_params).grid(row=3, column=0, sticky=W, padx=4, pady=4)
-        Button(page2, text='Open Prism/Storm output file', command=self.load_mc_output_file).grid(row=3, column=1, sticky=W, pady=4)
+        Button(frame_left, text='Run parameter synthesis', command=self.synth_params).grid(row=3, column=0, sticky=W, padx=4, pady=4)
+        Button(frame_left, text='Open Prism/Storm output file', command=self.load_mc_output_file).grid(row=3, column=1, sticky=W, pady=4)
 
-        Label(page2, text=f"Loaded Prism/Storm output file:", anchor=W, justify=LEFT).grid(row=4, column=0, sticky=W, padx=4, pady=4)
+        Label(frame_left, text=f"Loaded Prism/Storm output file:", anchor=W, justify=LEFT).grid(row=4, column=0, sticky=W, padx=4, pady=4)
 
-        self.functions_text = scrolledtext.ScrolledText(page2, width=200, height=100, state=DISABLED)
+        self.functions_text = scrolledtext.ScrolledText(frame_left, width=int(get_monitors()[0].width / 2), height=int(get_monitors()[0].width / 2), state=DISABLED)
         self.functions_text.grid(row=5, column=0, columnspan=16, rowspan=2, sticky=W, padx=4, pady=4)
 
-        Label(page2, text=f"Rational functions section.", anchor=W, justify=LEFT).grid(row=1, column=17, sticky=W, padx=4, pady=4)
-        Button(page2, text='Open functions', command=self.load_parsed_functions).grid(row=3, column=17, sticky=W, padx=4, pady=4)
-        Button(page2, text='Save functions', command=self.save_functions).grid(row=3, column=18, sticky=W, pady=4)
+        Label(frame_right, text=f"Rational functions section.", anchor=W, justify=LEFT).grid(row=1, column=1, sticky=W, padx=4, pady=4)
+        Button(frame_right, text='Open functions', command=self.load_parsed_functions).grid(row=3, column=1, sticky=W, padx=4, pady=4)
+        Button(frame_right, text='Save functions', command=self.save_functions).grid(row=3, column=2, sticky=W, pady=4)
 
-        Label(page2, text=f"Parsed function(s):", anchor=W, justify=LEFT).grid(row=4, column=17, sticky=W, padx=4, pady=4)
-        self.functions_parsed_text = scrolledtext.ScrolledText(page2, width=200, height=100, state=DISABLED)
-        self.functions_parsed_text.grid(row=5, column=17, columnspan=16, rowspan=2, sticky=W, pady=4)
+        Label(frame_right, text=f"Parsed function(s):", anchor=W, justify=LEFT).grid(row=4, column=1, sticky=W, padx=4, pady=4)
+        self.functions_parsed_text = scrolledtext.ScrolledText(frame_right, width=int(get_monitors()[0].width / 2), height=int(get_monitors()[0].width / 2), state=DISABLED)
+        self.functions_parsed_text.grid(row=5, column=1, columnspan=16, rowspan=2, sticky=W, pady=4)
 
 
         ## TAB SAMPLE AND VISUALISE
-        self.page3 = ttk.Frame(nb, width=400, height=200, name="sampling")
-        nb.add(self.page3, text='Sample functions')
+        page3 = ttk.Frame(nb, name="sampling")
+        nb.add(page3, text='Sample functions')
+        page3.grid_propagate(0)
 
+        frame_left = Frame(page3, width=int(get_monitors()[0].width * 0.3), height=int(get_monitors()[0].width / 2))
+        frame_left.grid_propagate(0)
+        frame_left.rowconfigure(5, weight=1)
+        frame_left.columnconfigure(2, weight=1)
+        frame_left.pack(side=LEFT, fill=X)
 
+        self.frame3_right = Frame(page3, width=int(get_monitors()[0].width * 0.7), height=int(get_monitors()[0].width / 2))
+        self.frame3_right.grid_propagate(0)
+        self.frame3_right.rowconfigure(5, weight=1)
+        self.frame3_right.columnconfigure(4, weight=1)
+        self.frame3_right.pack(side=RIGHT, fill=X)
 
-        Label(self.page3, text="Set number of samples per variable (grid size):", anchor=W, justify=LEFT).grid(row=1, column=0, padx=4, pady=4)
-        self.fun_sample_size_entry = Entry(self.page3)
+        Label(frame_left, text="Set number of samples per variable (grid size):", anchor=W, justify=LEFT).grid(row=1, column=0, padx=4, pady=4)
+        self.fun_sample_size_entry = Entry(frame_left)
         self.fun_sample_size_entry.grid(row=1, column=1)
 
-        Button(self.page3, text='Sample functions', command=self.sample_fun).grid(row=2, column=0, sticky=W, padx=4, pady=4)
+        Button(frame_left, text='Sample functions', command=self.sample_fun).grid(row=2, column=0, sticky=W, padx=4, pady=4)
 
-        Label(self.page3, text=f"Values of sampled points:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, padx=4, pady=4)
+        Label(frame_left, text=f"Values of sampled points:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, padx=4, pady=4)
 
-        self.sampled_functions_text = scrolledtext.ScrolledText(self.page3, width=200, height=100, state=DISABLED)
+        self.sampled_functions_text = scrolledtext.ScrolledText(frame_left, width=int(get_monitors()[0].width/2), height=int(get_monitors()[0].width/2), state=DISABLED)
         self.sampled_functions_text.grid(row=4, column=0, columnspan=8, rowspan=2, sticky=W, padx=4, pady=4)
 
-        Label(self.page3, text=f"Rational functions visualisation", anchor=W, justify=CENTER).grid(row=1, column=14, columnspan=3, pady=4)
-        Button(self.page3, text='Plot functions in a given point', command=self.show_funs_in_single_point).grid(row=2, column=14, padx=4, pady=4)
-        Button(self.page3, text='Plot all sampled points', command=self.show_funs_in_all_points).grid(row=2, column=15, padx=4, pady=4)
-        Button(self.page3, text='Heatmap', command=self.show_heatmap).grid(row=2, column=16, padx=4, pady=4)
-        self.Next_sample_button = Button(self.page3, text="Next plot", state="disabled",
+        Label(self.frame3_right, text=f"Rational functions visualisation", anchor=W, justify=CENTER).grid(row=1, column=1, columnspan=3, pady=4)
+        Button(self.frame3_right, text='Plot functions in a given point', command=self.show_funs_in_single_point).grid(row=2, column=1, padx=4, pady=4)
+        Button(self.frame3_right, text='Plot all sampled points', command=self.show_funs_in_all_points).grid(row=2, column=2, padx=4, pady=4)
+        Button(self.frame3_right, text='Heatmap', command=self.show_heatmap).grid(row=2, column=3, padx=4, pady=4)
+        self.Next_sample_button = Button(self.frame3_right, text="Next plot", state="disabled",
                                          command=lambda: self.button_pressed.set(True))
-        self.Next_sample_button.grid(row=3, column=15, padx=4, pady=4)
+        self.Next_sample_button.grid(row=3, column=2, padx=4, pady=4)
 
         self.page3_figure = None
         # self.page3_figure = pyplt.figure()
         # self.page3_a = self.page3_figure.add_subplot(111)
         # print("type a", type(self.a))
 
-        self.page3.rowconfigure(5, weight=1)
-        self.page3.columnconfigure(18, weight=1)
+        # self.page3.rowconfigure(5, weight=1)
+        # self.page3.columnconfigure(18, weight=1)
 
         self.page3_figure_in_use = StringVar()
         self.page3_figure_in_use.set("")
 
 
         ## TAB DATA
-        page4 = ttk.Frame(nb, width=400, height=200, name="data")
+        page4 = ttk.Frame(nb, name="data")
         nb.add(page4, text='Data & Intervals')
         # page4.columnconfigure(0, weight=1)
         # page4.rowconfigure(2, weight=1)
         # page4.rowconfigure(7, weight=1)
 
-        Button(page4, text='Open data file', command=self.load_data).grid(row=0, column=0, sticky=W, padx=4, pady=4)
-        Button(page4, text='Save data', command=self.save_data).grid(row=0, column=1, sticky=W, padx=4)
+        frame_left = Frame(page4, width=int(get_monitors()[0].width / 2), height=int(get_monitors()[0].height * 0.8))
+        frame_left.grid_propagate(0)
+        frame_left.rowconfigure(8, weight=1)
+        frame_left.columnconfigure(6, weight=1)
+        frame_left.pack(side=LEFT, fill=X)
 
-        label10 = Label(page4, text=f"Data:", anchor=W, justify=LEFT)
+        frame_right = Frame(page4, width=int(get_monitors()[0].width / 2), height=int(get_monitors()[0].height * 0.8))
+        frame_right.grid_propagate(0)
+        frame_right.rowconfigure(8, weight=1)
+        frame_right.columnconfigure(1, weight=1)
+        frame_right.pack(side=RIGHT, fill=X)
+
+        Button(frame_left, text='Open data file', command=self.load_data).grid(row=0, column=0, sticky=W, padx=4, pady=4)
+        Button(frame_left, text='Save data', command=self.save_data).grid(row=0, column=1, sticky=W, padx=4)
+
+        label10 = Label(frame_left, text=f"Data:", anchor=W, justify=LEFT)
         label10.grid(row=1, column=0, sticky=W, padx=4, pady=4)
         createToolTip(label10, text='For each rational function exactly one data point should be assigned.')
 
-        self.data_text = Text(page4, height=11)  # , height=10, width=30
+        self.data_text = scrolledtext.ScrolledText(frame_left, width=int(get_monitors()[0].width / 2), height=int(get_monitors()[0].height * 0.8 / 40))  # , height=10, width=30
         ## self.data_text.bind("<FocusOut>", self.parse_data)
         # self.data_text = Text(page4, height=12, state=DISABLED)  # , height=10, width=30
         # self.data_text.config(state="disabled")
         self.data_text.grid(row=2, column=0, columnspan=16, sticky=W, padx=4, pady=4)
 
         ## SET THE INTERVAL COMPUTATION SETTINGS
-        buton41 = Button(page4, text='Optimize parameters', command=self.optimize)
+        buton41 = Button(frame_left, text='Optimize parameters', command=self.optimize)
         buton41.grid(row=3, column=0, sticky=W, padx=4, pady=4)
         createToolTip(buton41, text='using regression')
 
-        label42 = Label(page4, text="Set alpha, the confidence:", anchor=W, justify=LEFT)
+        label42 = Label(frame_left, text="Set alpha, the confidence:", anchor=W, justify=LEFT)
         label42.grid(row=4)
         createToolTip(label42, text='confidence')
-        label43 = Label(page4, text="Set n_samples, number of samples: ", anchor=W, justify=LEFT)
+        label43 = Label(frame_left, text="Set n_samples, number of samples: ", anchor=W, justify=LEFT)
         label43.grid(row=5)
         createToolTip(label43, text='number of samples')
 
-        self.alpha_entry = Entry(page4)
-        self.n_samples_entry = Entry(page4)
+        self.alpha_entry = Entry(frame_left)
+        self.n_samples_entry = Entry(frame_left)
 
         self.alpha_entry.grid(row=4, column=1)
         self.n_samples_entry.grid(row=5, column=1)
@@ -467,29 +493,29 @@ class Gui(Tk):
         self.alpha_entry.insert(END, '0.90')
         self.n_samples_entry.insert(END, '60')
 
-        Button(page4, text='Compute intervals', command=self.compute_data_intervals).grid(row=6, column=0, sticky=W, padx=4, pady=4)
-        Button(page4, text='Load intervals', command=self.load_data_intervals).grid(row=6, column=1, sticky=W, padx=4, pady=4)
-        Button(page4, text='Save intervals', command=self.save_data_intervals).grid(row=6, column=2, sticky=W, padx=4, pady=4)
+        Button(frame_left, text='Compute intervals', command=self.compute_data_intervals).grid(row=6, column=0, sticky=W, padx=4, pady=4)
+        Button(frame_left, text='Load intervals', command=self.load_data_intervals).grid(row=6, column=1, sticky=W, padx=4, pady=4)
+        Button(frame_left, text='Save intervals', command=self.save_data_intervals).grid(row=6, column=2, sticky=W, padx=4, pady=4)
 
-        Label(page4, text=f"Intervals:", anchor=W, justify=LEFT).grid(row=7, column=0, sticky=W, padx=4, pady=4)
+        Label(frame_left, text=f"Intervals:", anchor=W, justify=LEFT).grid(row=7, column=0, sticky=W, padx=4, pady=4)
 
-        self.data_intervals_text = Text(page4, height=11, state=DISABLED)  # height=10, width=30
+        self.data_intervals_text = scrolledtext.ScrolledText(frame_left, width=int(get_monitors()[0].width / 2), height=int(get_monitors()[0].height * 0.8 / 40), state=DISABLED)  # height=10, width=30
         # self.data_intervals_text.config(state="disabled")
         self.data_intervals_text.grid(row=8, column=0, rowspan=2, columnspan=16, sticky=W, padx=4, pady=4)
+        # ttk.Separator(frame_left, orient=VERTICAL).grid(row=0, column=17, rowspan=10, sticky='ns', padx=50, pady=10)
 
-        ttk.Separator(page4, orient=VERTICAL).grid(row=0, column=17, rowspan=10, sticky='ns', padx=50, pady=10)
-        Label(page4, text=f"Data informed property section.", anchor=W, justify=LEFT).grid(row=0, column=18, sticky=W, padx=5, pady=4)
-        Label(page4, text=f"Loaded property file:", anchor=W, justify=LEFT).grid(row=1, column=18, sticky=W, padx=5, pady=4)
+        Label(frame_right, text=f"Data informed property section.", anchor=W, justify=LEFT).grid(row=0, column=1, sticky=W, padx=5, pady=4)
+        Label(frame_right, text=f"Loaded property file:", anchor=W, justify=LEFT).grid(row=1, column=1, sticky=W, padx=5, pady=4)
 
-        self.property_text2 = scrolledtext.ScrolledText(page4, height=4, state=DISABLED)
+        self.property_text2 = scrolledtext.ScrolledText(frame_right, width=int(get_monitors()[0].width / 2), height=int(get_monitors()[0].height * 0.8 / 40), state=DISABLED)
         # self.property_text2.config(state="disabled")
-        self.property_text2.grid(row=2, column=18, columnspan=16, rowspan=2, sticky=W + E + N + S, padx=5, pady=4)
-        Button(page4, text='Generate data informed properties', command=self.generate_data_informed_properties).grid(row=4, column=18, sticky=W, padx=5, pady=4)
+        self.property_text2.grid(row=2, column=1, columnspan=16, rowspan=2, sticky=W + E + N + S, padx=5, pady=4)
+        Button(frame_right, text='Generate data informed properties', command=self.generate_data_informed_properties).grid(row=4, column=1, sticky=W, padx=5, pady=4)
 
-        self.data_informed_property_text = scrolledtext.ScrolledText(page4, width=200, height=4, state=DISABLED)
-        self.data_informed_property_text.grid(row=5, column=18, columnspan=16, rowspan=4, sticky=W + E + N + S, padx=5, pady=10)
+        self.data_informed_property_text = scrolledtext.ScrolledText(frame_right, width=int(get_monitors()[0].width / 2), height=int(get_monitors()[0].height * 0.8 / 80), state=DISABLED)
+        self.data_informed_property_text.grid(row=5, column=1, columnspan=16, rowspan=4, sticky=W + E + N + S, padx=5, pady=10)
 
-        Button(page4, text='Save data informed properties', command=self.save_data_informed_properties).grid(row=9, column=18, sticky=W, padx=5, pady=4)
+        Button(frame_right, text='Save data informed properties', command=self.save_data_informed_properties).grid(row=9, column=1, sticky=W, padx=5, pady=4)
 
 
         ## TAB constraints
@@ -632,7 +658,7 @@ class Gui(Tk):
 
         ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=8, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
 
-        self.space_text = scrolledtext.ScrolledText(frame_left, height=200, width=100, state=DISABLED)
+        self.space_text = scrolledtext.ScrolledText(frame_left, width=110, height=200, state=DISABLED)
         self.space_text.grid(row=12, column=0, columnspan=15, rowspan=2, sticky=W, padx=10)  # pack(anchor=W, fill=X)
 
         frame_left.rowconfigure(13, weight=1)
@@ -3022,8 +3048,8 @@ class Gui(Tk):
         #     self.update()
         # except AttributeError:
         #     pass
-        self.page3_plotframe = Frame(self.page3)
-        self.page3_plotframe.grid(row=5, column=9, columnspan=10, padx=50, pady=4, sticky=N+S+E+W)
+        self.page3_plotframe = Frame(self.frame3_right)
+        self.page3_plotframe.grid(row=5, column=1, columnspan=4, padx=5, pady=4, sticky=N+S+E+W)
 
         self.page3_canvas = FigureCanvasTkAgg(what, master=self.page3_plotframe)
         self.page3_canvas.draw()
