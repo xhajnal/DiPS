@@ -26,6 +26,8 @@ import configparser
 
 config = configparser.RawConfigParser()
 workspace = os.path.dirname(__file__)
+if workspace is "":
+    workspace = os.getcwd()
 sys.path.append(workspace)
 
 
