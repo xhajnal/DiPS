@@ -1,6 +1,5 @@
 import datetime
 import os
-import re
 import socket
 import sys
 import pickle
@@ -47,6 +46,7 @@ cwd = os.getcwd()
 try:
     from z3 import *
     os.chdir(cwd)
+    p = Real('p')
 except ImportError:
     if not os.path.exists(z3_path):
         raise OSError("Directory does not exist: " + str(z3_path))

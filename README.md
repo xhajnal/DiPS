@@ -31,6 +31,8 @@ Feel free to leave response either via issues or email.
 * [Storm](http://www.stormchecker.org/) (optional, advanced) 
 * [Prophesy](https://moves.rwth-aachen.de/research/tools/prophesy/) (optional, advanced)
 
+Are you having trouble with z3? Read `MYmpm\README-z3.md`. Still having trouble? Please contact us.
+
 ****
 ### 2. SETUP CONFIG (OPTIONAL)
 
@@ -111,6 +113,3 @@ and I want to thank the following people for user testing and feedback:
 * [Stefano Tognazzi](https://github.com/stefanotognazzi)
 * Morgane Nouvian
 * [Matej Troják](https://github.com/xtrojak)
-<!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE2NTk2ODA0MzFdfQ==
--->

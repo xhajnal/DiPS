@@ -10,7 +10,6 @@ from os.path import basename
 from tkinter import filedialog, ttk
 from tkinter.messagebox import askyesno
 from tkinter.ttk import Progressbar
-from screeninfo import get_monitors
 
 import matplotlib.pyplot as pyplt
 import matplotlib
