@@ -47,7 +47,7 @@ In the main folder there is `config.ini` file. Please fill in required paths.
 * `properties`: path to [PRISM properties](https://www.prismmodelchecker.org/manual/PropertySpecification/Introduction) eg. `MYmpm/properties`
 * `data`: path to data eg. `MYmpm/data`
 * `results`: path to save results (all the results are saved in the subfolders) eg. `MYmpm/results`
-* `tmp`: path to save temporal/intermidiate files
+* `tmp`: path to save temporal/intermidiate files  eg. `MYmpm/tmp`
 
 *****
 ## HOW TO RUN
@@ -73,14 +73,14 @@ We are currently working on the manual, by that time you have to manage on your 
 `>> jupyter notebook`
 
 Several notebooks appear:
- 
-* `create_data_and_synth_params` can be used to automatically create models, properties, and synthesise rational function using PRISM for population models used in [[1]](#one).
+* `create\_models\_and\_properties` can be used to automatically create models, properties for population models presented in [[1]](#one).
+* `synth_params` serves to synthesise rational function using PRISM 
 * `sample_n_visualise` samples and visualises result rational functions
 * `generate_data` generate synthetic data by simulating the model
 * `direct_param_synth` creates commands to be used for "direct" constrain solving using PRISM and Storm without deriving rational functions.
-* `analysis` our method - parameter space refinement using z3 solver or interval arithmetic to solve constraints    
+* `analysis` employs parameter space refinement using z3 solver or interval arithmetic to solve computed constraints    
 
-to run thought the workflow of the paper just run the notebooks in this order. The documentation and the source code of the used functions is in `mpm\src`. When you are familiar with the notebooks, try your input files or even adapt the notebooks.  
+to follow workflow of the paper [[1]](#one) just run the notebooks in this order. The documentation and the source code of the used functions is in `mpm\src`. When you are familiar with the notebooks, try your input files or even adapt the notebooks.  
 
 
 
@@ -88,9 +88,13 @@ to run thought the workflow of the paper just run the notebooks in this order. T
 ## HOW TO USE
 
 *****
-Manual in progress ...
+To briefly present the main worflow of the tool using graphical user interface please see `tutorial.pdf`.
 
-The main worflow described in the paper (below) (if not reachable, please write us an email.)
+More information on how to use the tool can be obtained from the paper [[1]](#one) (if not reachable, please write us an email.)
+
+Manual in progress - see `manual.pdf`
+
+
 
 *****
 ## HOW TO CITE US
