@@ -107,7 +107,7 @@ Manual in progress - see `manual.pdf`
 ## HOW TO CITE US
 
 <a name="one"> </a>
-[1] M. Hajnal, M. Nouvian, D. Šafránek, and T. Petrov, Data-informed parameter synthesis for population Markov chains In: International Workshop on Hybrid Systems Biology. Springer, 2019. To appear.
+[1] Hajnal, M., Nouvian, M., Šafránek, D., Petrov, T.: Data-informed parameter synthesis for population markov chains. In: Češka, M., Paoletti, N. (eds.) Hybrid Systems Biology. pp. 147{164. Springer International Publishing, Cham (2019)
 
 
 *****
