@@ -1,7 +1,9 @@
-# Mpm
-Multiple properties Probabilistic systems Model checker
+# DiPS Data-informed Parameter Synthesiser
 
-Mpm builds upon already created model checkers for probabilistic systems -- [PARAM](https://depend.cs.uni-saarland.de/tools/param/publications/bibitem.php?key=HahnHWZ10), [PRISM](http://www.prismmodelchecker.org), [Prophesy](https://moves.rwth-aachen.de/research/tools/prophesy/), and [Storm](http://www.stormchecker.org/) .
+## A Tool for Data-informed Parameter Synthesis for Discrete-Time Stochastic Processes from Multiple-Property Specifications
+
+
+DiPS builds upon already created model checkers for probabilistic systems -- [PARAM](https://depend.cs.uni-saarland.de/tools/param/publications/bibitem.php?key=HahnHWZ10), [PRISM](http://www.prismmodelchecker.org), [Prophesy](https://moves.rwth-aachen.de/research/tools/prophesy/), and [Storm](http://www.stormchecker.org/) .
 It extends those to solve multiple property cases with higher efficiency.
 
 In advance, it provides data-informed analysis to constrain rational functions which are the result of symbolic model checking.
@@ -33,12 +35,12 @@ Feel free to leave response either via issues or email.
   * Windows - already done
   * otherwise go [here](https://tkdocs.com/tutorial/install.html) 
 * other missing python packages 
-  * in the main directory `MYmpm` run `pip3 install -v .`
+  * in the main directory `MyDiPS` run `pip3 install -v .`
 * [Jupyter Notebook](https://jupyter.org/install) (optional)
 * [Storm](http://www.stormchecker.org/) (optional, advanced) 
 * [Prophesy](https://moves.rwth-aachen.de/research/tools/prophesy/) (optional, advanced)
 
-Are you having trouble with z3? Read `MYmpm\README-z3.md`. Still having trouble? Please contact us.
+Are you having trouble with z3? Read `MyDiPS\README-z3.md`. Still having trouble? Please contact us.
 
 ****
 ### 2. SETUP CONFIG (OPTIONAL)
@@ -47,14 +49,14 @@ In the main folder, there is `config.ini` file. Please fill in required paths.
 
 [mandatory_paths]
 * `prism_path`: path to PRISM `PRISM\bin\`
-* `cwd`: path to the main folder `MYmpm`
+* `cwd`: path to the main folder `MyDiPS`
 
 [paths]
-* `models`: path to [PRISM models](http://www.prismmodelchecker.org/tutorial/die.php) eg. `MYmpm/models`
-* `properties`: path to [PRISM properties](https://www.prismmodelchecker.org/manual/PropertySpecification/Introduction) eg. `MYmpm/properties`
-* `data`: path to data eg. `MYmpm/data`
-* `results`: path to save results (all the results are saved in the subfolders) eg. `MYmpm/results`
-* `tmp`: path to save temporal/intermidiate files  eg. `MYmpm/tmp`
+* `models`: path to [PRISM models](http://www.prismmodelchecker.org/tutorial/die.php) eg. `MyDiPS/models`
+* `properties`: path to [PRISM properties](https://www.prismmodelchecker.org/manual/PropertySpecification/Introduction) eg. `MyDiPS/properties`
+* `data`: path to data eg. `MyDiPS/data`
+* `results`: path to save results (all the results are saved in the subfolders) eg. `MyDiPS/results`
+* `tmp`: path to save temporal/intermidiate files  eg. `MyDiPS/tmp`
 
 *****
 ## HOW TO RUN
@@ -63,7 +65,7 @@ In the main folder, there is `config.ini` file. Please fill in required paths.
 Now you can import the code as a library, run the tool with GUI, or use Jupyter notebook. 
 
 ### Tool
-\- open command line in the main mpm directory (on Win - please open it with admin privileges to ensure changing the PRISM setting does not fail on permission denied)
+\- open command line in the main DiPS directory (on Win - please open it with admin privileges to ensure changing the PRISM setting does not fail on permission denied)
 
 `>> cd src`
 
@@ -73,7 +75,7 @@ Graphical User Interface should appear now (With some output return in the comma
 We are currently working on the manual; by that time you have to manage on your own.
 
 ### Jupyter notebook
-\- open command line in the main mpm directory (on Win - please open it with admin privileges to ensure changing the PRISM setting does not fail on permission denied)
+\- open command line in the main DiPS directory (on Win - please open it with admin privileges to ensure changing the PRISM setting does not fail on permission denied)
 
 `>> cd ipython`
 
@@ -87,7 +89,7 @@ Several notebooks appear:
 * `direct_param_synth` creates commands to be used for "direct" constrain solving using PRISM and Storm without deriving rational functions.
 * `analysis` employs parameter space refinement using z3 solver or interval arithmetic to solve computed constraints    
 
-to follow workflow of the paper [[1]](#one) just run the notebooks in this order. The documentation and the source code of the used functions is in `mpm\src`. When you are familiar with the notebooks, try your input files or even adapt the notebooks.  
+to follow workflow of the paper [[1]](#one) just run the notebooks in this order. The documentation and the source code of the used functions is in `MyDiPS\src`. When you are familiar with the notebooks, try your input files or even adapt the notebooks.  
 
 
 
