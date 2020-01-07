@@ -247,7 +247,7 @@ class Gui(Tk):
 
     def gui_init(self):
         ## GUI INIT
-        self.title('Mpm')
+        self.title('DiPS')
         self.minsize(1000, 300)
 
         ## Temporal gui features
@@ -2903,13 +2903,13 @@ class Gui(Tk):
     def show_help(self):
         """ Shows GUI help """
         print("Showing help ...")
-        webbrowser.open_new("https://github.com/xhajnal/mpm#mpm")
+        webbrowser.open_new("https://github.com/xhajnal/DiPS#dips-data-informed-parameter-synthesiser")
 
     def check_updates(self):
         """ Shows latest releases """
         print("Checking for updates ...")
         self.status_set("Checking for updates ...")
-        webbrowser.open_new("https://github.com/xhajnal/mpm/releases")
+        webbrowser.open_new("https://github.com/xhajnal/DiPS/releases")
 
     def print_about(self):
         """ Shows GUI about """
@@ -2917,7 +2917,7 @@ class Gui(Tk):
         top2 = Toplevel(self)
         top2.title("About")
         top2.resizable(0, 0)
-        explanation = f" Mpm version: {self.version} \n More info here: https://github.com/xhajnal/mpm \n Powered by University of Konstanz and Masaryk University"
+        explanation = f" DiPS version: {self.version} \n More info here: https://github.com/xhajnal/DiPS \n Powered by University of Konstanz, Masaryk University, and Max Planck Institute"
         Label(top2, justify=LEFT, text=explanation).pack(padx=13, pady=20)
         top2.transient(self)
         top2.grab_set()
