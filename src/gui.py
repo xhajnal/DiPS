@@ -1182,9 +1182,22 @@ class Gui(Tk):
                 self.functions = pickle.load(open(self.functions_file.get(), "rb"))
 
             ## Factorising the parsed functions
+            ## TODO maybe add progress bar
             if self.factorise.get():
+                self.cursor_toggle_busy(True)
+                self.new_window = Toplevel(self)
+                Label(self.new_window, text="Factorising functions in progress", anchor=W, justify=LEFT).pack()
+                self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
+                self.progress_bar.pack()
+                self.update()
+                self.status_set("Factorising functions ...")
                 for index, function in enumerate(self.functions):
                     self.functions[index] = str(factor(self.functions[index]))
+                    self.update_progress_bar(change_to=(index+1)/len(self.functions))
+
+                self.new_window.destroy()
+                del self.new_window
+                self.cursor_toggle_busy(False)
 
             print("loaded functions", self.functions)
             if not self.functions:
