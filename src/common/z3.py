@@ -24,7 +24,8 @@ def is_this_z3_function(function: str):
     Args:
         function (string): expression to be checked
     """
-    return "If" in function or "And" in function or "Or" in function or "Not" in function
+    # print("is_this_z3_function?", function)
+    return ("If" in function) or ("And" in function) or ("Or" in function) or ("Not" in function) or ("Pow" in function)
 
 
 ## TODO not fully checked what the z3 parser cannot eat

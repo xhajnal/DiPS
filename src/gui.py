@@ -5,6 +5,7 @@ from tkinter import scrolledtext, messagebox
 import webbrowser
 import pickle
 import os
+from sympy import factor
 from pathlib import Path
 from os.path import basename
 from tkinter import filedialog, ttk
@@ -237,7 +238,7 @@ class Gui(Tk):
 
         self.refinement_timeout = 0  ## timeout for refinement
 
-        self.factor = BooleanVar()  ## Flag for factorising rational functions
+        self.factorise = BooleanVar()  ## Flag for factorising rational functions
         self.sample_size = ""  ## Number of samples
         self.save = ""  ## True if saving on
 
@@ -255,7 +256,7 @@ class Gui(Tk):
         self.new_window = None
 
         ## DESIGN
-        print("height", self.winfo_height())
+        # print("height", self.winfo_height())
 
         ## STATUS BAR
         self.status = Label(self, text="", bd=1, relief=SUNKEN, anchor=W)
@@ -373,8 +374,8 @@ class Gui(Tk):
                       text='This option results in a command that would produce desired output. (If you installed Storm, open command line and insert the command. Then load output file.)')
 
         Label(frame_left, text=f"Show function(s):", anchor=W, justify=LEFT).grid(row=2, column=0, sticky=W, padx=4, pady=4)
-        Radiobutton(frame_left, text="Original", variable=self.factor, value=False).grid(row=2, column=1, sticky=W, pady=4)
-        Radiobutton(frame_left, text="Factorised", variable=self.factor, value=True).grid(row=2, column=2, sticky=W, pady=4)
+        Radiobutton(frame_left, text="Original", variable=self.factorise, value=False).grid(row=2, column=1, sticky=W, pady=4)
+        Radiobutton(frame_left, text="Factorised", variable=self.factorise, value=True).grid(row=2, column=2, sticky=W, pady=4)
 
         Button(frame_left, text='Run parameter synthesis', command=self.synth_params).grid(row=3, column=0, sticky=W, padx=4, pady=4)
         Button(frame_left, text='Open Prism/Storm output file', command=self.load_mc_output_file).grid(row=3, column=1, sticky=W, pady=4)
@@ -1017,7 +1018,7 @@ class Gui(Tk):
 
         # print("self.factor", self.factor.get())
         self.functions, rewards = load_functions(self.functions_file.get(), tool=self.program.get(),
-                                                 factorize=self.factor.get(), rewards_only=False, f_only=False)
+                                                 factorize=self.factorise.get(), rewards_only=False, f_only=False)
         ## Merge functions and rewards
         # print("self.functions", self.functions)
         # print("rewards", rewards)
@@ -1180,6 +1181,11 @@ class Gui(Tk):
             if ".p" in self.functions_file.get():
                 self.functions = pickle.load(open(self.functions_file.get(), "rb"))
 
+            ## Factorising the parsed functions
+            if self.factorise.get():
+                for index, function in enumerate(self.functions):
+                    self.functions[index] = str(factor(self.functions[index]))
+
             print("loaded functions", self.functions)
             if not self.functions:
                 messagebox.showwarning("Loading functions", "No functions loaded. Please check input file.")
@@ -1187,6 +1193,7 @@ class Gui(Tk):
                 return
 
             for function in self.functions:
+                print("function, ", function)
                 if is_this_z3_function(function):
                     self.store_z3_functions()
                     messagebox.showinfo("Loading functions",
