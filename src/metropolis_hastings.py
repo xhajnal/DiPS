@@ -278,6 +278,8 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
     # locals()[space.get_params()[0]] = theta[0]
     # locals()[space.get_params()[1]] = theta[1]
 
+    evaled_functions = {}
+
     for data_point in observations:  # observations:
         # print("data_point", data_point)
         # print("functions[data_point]", functions[data_point])
@@ -286,7 +288,11 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
         # print(eval("x+y"))
 
         ## TODO this line can be optimised by storing already computed values
-        temp = eval(functions[data_point])
+        if data_point in evaled_functions.keys():
+            temp = evaled_functions[data_point]
+        else:
+            evaled_functions[data_point] = eval(functions[data_point])
+            temp = evaled_functions[data_point]
 
         # print(temp)
         # print(np.log(temp))
