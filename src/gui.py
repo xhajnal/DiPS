@@ -1192,6 +1192,7 @@ class Gui(Tk):
                 self.update()
                 self.status_set("Factorising functions ...")
                 for index, function in enumerate(self.functions):
+                    ## Factorise
                     self.functions[index] = str(factor(self.functions[index]))
                     self.update_progress_bar(change_to=(index+1)/len(self.functions))
 
@@ -1199,7 +1200,7 @@ class Gui(Tk):
                 del self.new_window
                 self.cursor_toggle_busy(False)
 
-            print("loaded functions", self.functions)
+            ## Check for z3 expressions
             if not self.functions:
                 messagebox.showwarning("Loading functions", "No functions loaded. Please check input file.")
                 self.status_set("No rational functions loaded.")
@@ -1213,6 +1214,7 @@ class Gui(Tk):
                                         "Some of the functions contains z3 expressions, these are being stored and used only for z3 refinement, shown functions are translated into python expressions.")
                     break
 
+            ## Print functions into TextBox
             functions = ""
 
             for function in self.functions:
@@ -1472,6 +1474,7 @@ class Gui(Tk):
             if self.debug.get():
                 print("self.constraints", self.constraints)
 
+            ## Check for z3 expressions
             for constraint in self.constraints:
                 if is_this_z3_function(constraint):
                     self.store_z3_constraints()
@@ -1479,6 +1482,7 @@ class Gui(Tk):
                                         "Some of the constraints contains z3 expressions, these are being stored and used only for z3 refinement, shown constraints are translated into python expressions.")
                     break
 
+            ## Print constraints into TextBox
             constraints = ""
             for constraint in self.constraints:
                 constraints = f"{constraints},\n{constraint}"
@@ -1492,6 +1496,7 @@ class Gui(Tk):
             self.parameters = []
             self.parameter_domains = []
 
+            ## Check whether constraints not empty
             if not self.constraints:
                 messagebox.showwarning("Loading constraints", "No constraints loaded. Please check input file.")
                 self.status_set("No constraints loaded.")

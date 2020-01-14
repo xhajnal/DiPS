@@ -107,7 +107,7 @@ def sample(functions, data_means):
     """ Will sample according to the pdf as given by the polynomials
 
     Returns:
-         ## TODO
+         ## TODO @Tanja
 
     @author: tpetrov
     """
@@ -145,7 +145,7 @@ def transition_model_a(theta, parameter_intervals):
 
 
 def prior(x, eps):
-    """ TODO
+    """ TODO @Tanja
     Args:
         x: (tuple) Distribution parameters: x[0] = mu, x[1] = sigma (new or current)
         eps (number): very small value used as probability of non-feasible values in prior
@@ -192,7 +192,7 @@ def acceptance(x, x_new):
 
 def metropolis_hastings(likelihood_computer, prior, transition_model, param_init, iterations, space, observations,
                         acceptance_rule, parameter_intervals, functions, eps, progress=False, timeout=-1, debug=False):
-    """ TODO
+    """ TODO @Tanja
     the main method
 
         likelihood_computer (function(x, data)): returns the likelihood that these parameters generated the data
@@ -254,7 +254,7 @@ def metropolis_hastings(likelihood_computer, prior, transition_model, param_init
 
 
 def manual_log_like_normal(space, theta, functions, observations, eps):
-    """ TODO
+    """ TODO @Tanja
 
     Args:
         space (Refined space):
@@ -264,7 +264,7 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
         eps (number): very small value used as probability of non-feasible values in prior
 
     Returns:
-         ## TODO
+         ## TODO @Tanja
 
     @author: tpetrov
     @edit: xhajnal
@@ -337,8 +337,8 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     globals()["start_time"] = start_time
 
     observations_samples_size = min(observations_count, observations_samples_size)
-    ##        HastingsResults(self, params, theta_init, accepted, observations_count, observations_samples_count, MH_sampling_iterations, eps, show=0, title="", bins=20):
-    globals()["results"] = HastingsResults(space.params, theta_init, False, observations_count, observations_samples_size, MH_sampling_iterations, eps, show=show, title="", bins=bins, last_iter=0, timeout=timeout)
+    ##                     HastingsResults ( params, param_intervals, theta_init, accepted, observations_count, observations_samples_count, MH_sampling_iterations, eps, show, pretitle, title, bins, last_iter,  timeout,        time_it_took, rescale):
+    globals()["results"] = HastingsResults(space.params, space.region, theta_init, False, observations_count, observations_samples_size, MH_sampling_iterations, eps, show=show, title="", bins=bins, last_iter=0, timeout=timeout)
 
     # ## Convert z3 functions
     # for index, function in enumerate(functions):
@@ -369,7 +369,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         theta_init = []
         ## Select point which is center of each interval
         for index, param in enumerate(parameter_intervals):
-             theta_init.append((parameter_intervals[index][0] + parameter_intervals[index][1])/2)
+            theta_init.append((parameter_intervals[index][0] + parameter_intervals[index][1])/2)
         # theta_init = [(parameter_intervals[0][0] + parameter_intervals[0][1])/2, (parameter_intervals[1][0] + parameter_intervals[1][1])/2]  ## Middle of the intervals # np.ones(10)*0.1
 
     for index, param in enumerate(space.get_params()):
@@ -418,7 +418,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
 
     print("Initial parameter point: ", theta_init)
 
-    ##                                      (likelihood_computer,    prior, transition_model,   param_init, iterations, space, data,    acceptance_rule,parameter_intervals, functions, eps):
+    ##                                      (likelihood_computer,    prior, transition_model,   param_init, iterations,             space,    data, acceptance_rule, parameter_intervals, functions, eps, progress,          timeout,         debug):
     accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, MH_sampling_iterations, space, observations, acceptance, parameter_intervals, functions, eps, progress=progress, timeout=timeout, debug=debug)
 
     globals()["results"].accepted = accepted
@@ -440,7 +440,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     # print("accepted[100:to_show, 1]", accepted[100:to_show, 1])
     # print("rejected", rejected)
 
-    ## Create TODO add name plot
+    ## Create TODO add name plot @Tanja
     if not where:
         fig = plt.figure(figsize=(10, 10))
         ax = fig.add_subplot(2, 1, 1)
@@ -463,7 +463,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
 
     globals()["results"].show = show
 
-    ## Create TODO add name plot
+    ## Create TODO add name plot @Tanja
     if not where:
         fig = plt.figure(figsize=(20, 10))
         ax = fig.add_subplot(1, 2, 1)
@@ -477,7 +477,10 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         ax.set_title(f"Fig.5: Histogram of ${space.get_params()[0]}$")
         fig.tight_layout()
 
-    ## TODO make a option to set to see the whole space, not zoomed
+    ## TODO make a option to set to see the whole space, not zoomed - freaking hard
+    ## "Currently hist2d calculates it's own axis limits, and any limits previously set are ignored." (https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.axes.Axes.hist2d.html)
+    ## Option 2 - https://stackoverflow.com/questions/29175093/creating-a-log-linear-plot-in-matplotlib-using-hist2d
+    ## No scale
     if where:
         return globals()["results"]
     else:
