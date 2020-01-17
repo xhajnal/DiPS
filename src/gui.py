@@ -1012,13 +1012,18 @@ class Gui(Tk):
         self.functions_file.set(spam)
         # print("self.functions_file.get() ", self.functions_file.get())
         if not self.functions_file.get() is "":
+
             self.functions_changed = True
             # self.model_changed = False
             # self.property_changed = False
         # print("self.functions_changed", self.functions_changed)
 
         # print("self.factor", self.factor.get())
-        self.functions, rewards = load_functions(self.functions_file.get(), tool=self.program.get(),
+        if self.factorise.get():
+            self.status_set("Loading selected file ...")
+        else:
+            self.status_set("Loading selected file and factorising...")
+        self.functions, rewards = load_functions(os.path.abspath(self.functions_file.get()), tool=self.program.get(),
                                                  factorize=self.factorise.get(), rewards_only=False, f_only=False)
         ## Merge functions and rewards
         # print("self.functions", self.functions)
@@ -1049,11 +1054,12 @@ class Gui(Tk):
                 messagebox.showinfo("Loading functions", "Some of the functions contains z3 expressions, these are being stored and used only for z3 refinement, shown functions are translated into python expressions.")
                 break
 
-        ## Show loaded functions
+        ## Print functions into TextBox
         self.functions_text.configure(state='normal')
         self.functions_text.delete('1.0', END)
         self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
         # self.functions_text.configure(state='disabled')
+
         ## Resetting parsed intervals
         self.parameters = []
         self.parameter_domains = []
@@ -1182,16 +1188,23 @@ class Gui(Tk):
             if ".p" in self.functions_file.get():
                 self.functions = pickle.load(open(self.functions_file.get(), "rb"))
 
+            ## Check whether functions not empty
+            if not self.functions:
+                messagebox.showwarning("Loading functions", "No functions loaded. Please check input file.")
+                self.status_set("No rational functions loaded.")
+                return
+
+            print("loaded functions", self.functions)
+
             ## Factorising the parsed functions
-            ## TODO maybe add progress bar
             if self.factorise.get():
+                self.status_set("Factorising functions ...")
                 self.cursor_toggle_busy(True)
                 self.new_window = Toplevel(self)
                 Label(self.new_window, text="Factorising functions in progress", anchor=W, justify=LEFT).pack()
                 self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
                 self.progress_bar.pack()
                 self.update()
-                self.status_set("Factorising functions ...")
                 for index, function in enumerate(self.functions):
                     ## Factorise
                     self.functions[index] = str(factor(self.functions[index]))
@@ -1202,26 +1215,18 @@ class Gui(Tk):
                 self.cursor_toggle_busy(False)
 
             ## Check for z3 expressions
-            if not self.functions:
-                messagebox.showwarning("Loading functions", "No functions loaded. Please check input file.")
-                self.status_set("No rational functions loaded.")
-                return
-
             for function in self.functions:
                 print("function, ", function)
                 if is_this_z3_function(function):
                     self.store_z3_functions()
-                    messagebox.showinfo("Loading functions",
-                                        "Some of the functions contains z3 expressions, these are being stored and used only for z3 refinement, shown functions are translated into python expressions.")
+                    messagebox.showinfo("Loading functions", "Some of the functions contains z3 expressions, these are being stored and used only for z3 refinement, shown functions are translated into python expressions.")
                     break
 
             ## Print functions into TextBox
             functions = ""
-
             for function in self.functions:
                 functions = f"{functions},\n{function}"
             functions = functions[2:]
-
             self.functions_parsed_text.configure(state='normal')
             self.functions_parsed_text.delete('1.0', END)
             self.functions_parsed_text.insert('end', functions)
@@ -1681,7 +1686,7 @@ class Gui(Tk):
         else:
             print(self.space.nice_print())
             self.create_window_to_load_param_point(parameters=self.space.params)
-            self.space.true_point = self.parameter_values
+            self.space.true_point = self.parameter_point
             print(self.space.nice_print())
 
             self.print_space()
@@ -2020,7 +2025,6 @@ class Gui(Tk):
         Args:
             file (string):  file to save the space
         """
-
         if file:
             save_space_file = file
         else:
@@ -2216,7 +2220,7 @@ class Gui(Tk):
         #     self.page3_figure = pyplt.figure()
         #     self.page3_a = self.page3_figure.add_subplot(111)
         # print("self.parameter_values", self.parameter_values)
-        spam, egg = eval_and_show(self.functions, self.parameter_values, parameters=self.parameters,
+        spam, egg = eval_and_show(self.functions, self.parameter_point, parameters=self.parameters,
                                   data=self.data, data_intervals=self.data_intervals,
                                   debug=self.debug.get(), where=[self.page3_figure, self.page3_a])
 
@@ -2232,7 +2236,7 @@ class Gui(Tk):
             self.page3_figure.canvas.flush_events()
 
         if not self.silent.get():
-            print(f"Using point", self.parameter_values)
+            print(f"Using point", self.parameter_point)
         self.status_set("Sampling rational functions done.")
 
     def show_funs_in_all_points(self):
@@ -2356,7 +2360,7 @@ class Gui(Tk):
             self.cursor_toggle_busy(True)
             ## TODO - tweak - update this to actually show the progress
             self.new_window = Toplevel(self)
-            Label(self.new_window, text="Refinement in progress", anchor=W, justify=LEFT).pack()
+            Label(self.new_window, text="Optimisation in progress", anchor=W, justify=LEFT).pack()
             pb_hD = ttk.Progressbar(self.new_window, orient='horizontal', mode='indeterminate')
             pb_hD.pack(expand=True, fill=BOTH, side=TOP)
             pb_hD.start(50)
@@ -2591,7 +2595,7 @@ class Gui(Tk):
             ## This progress is passed as whole to update the thing inside the called function
             self.mh_results = initialise_sampling(self.space, self.data, self.functions, int(self.n_samples_entry.get()),
                                                   int(self.observations_samples_size_entry.get()), int(self.MH_sampling_iterations_entry.get()),
-                                                  float(self.eps_entry.get()), theta_init=self.parameter_values,
+                                                  float(self.eps_entry.get()), theta_init=self.parameter_point,
                                                   where=[self.page6_figure2, self.page6_b],
                                                   progress=self.update_progress_bar, debug=self.debug.get(),
                                                   bins=int(self.bins.get()), show=float(self.show.get()),
@@ -3027,21 +3031,22 @@ class Gui(Tk):
 
         i = 1
         ## For each param create an entry
-        self.parameter_values = []
-        for param in parameters:
+        self.parameter_point = []
+        for index, param in enumerate(parameters):
             Label(self.new_window, text=param, anchor=W, justify=LEFT).grid(row=i, column=0)
             spam = Entry(self.new_window)
             spam.grid(row=i, column=1)
-            spam.insert(END, '0')
-            self.parameter_values.append(spam)
+            ## Insert the middle of respective domain
+            spam.insert(END, str((self.parameter_domains[index][0] + self.parameter_domains[index][1])/2))
+            self.parameter_point.append(spam)
             i = i + 1
 
         ## To be used to wait until the button is pressed
         self.button_pressed.set(False)
-        load_true_point_button = Button(self.new_window, text="OK", command=self.load_param_values_from_window)
+        load_true_point_button = Button(self.new_window, text="OK", command=self.load_param_point_from_window)
         load_true_point_button.grid(row=i)
         load_true_point_button.focus()
-        load_true_point_button.bind('<Return>', self.load_param_values_from_window)
+        load_true_point_button.bind('<Return>', self.load_param_point_from_window)
 
         load_true_point_button.wait_variable(self.button_pressed)
 
@@ -3063,10 +3068,10 @@ class Gui(Tk):
             if self.space:
                 print("Space: ", self.space)
 
-    def load_param_values_from_window(self):
+    def load_param_point_from_window(self):
         """ Inner function to parse the param values from created window """
-        for index, param in enumerate(self.parameter_values):
-            self.parameter_values[index] = float(self.parameter_values[index].get())
+        for index, param in enumerate(self.parameter_point):
+            self.parameter_point[index] = float(self.parameter_point[index].get())
         self.new_window.destroy()
         del self.new_window
         self.button_pressed.set(True)
