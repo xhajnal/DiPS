@@ -676,6 +676,7 @@ class Gui(Tk):
         Button(frame_left, text='Open space', command=self.load_space).grid(row=14, column=2, sticky=S, padx=4, pady=4)
         Button(frame_left, text='Save space', command=self.save_space).grid(row=14, column=3, sticky=S, padx=4, pady=4)
         Button(frame_left, text='Delete space', command=self.refresh_space).grid(row=14, column=4, sticky=S, padx=4, pady=4)
+        Button(frame_left, text='Export text', command=self.export_space_text).grid(row=14, column=5, sticky=S, padx=4, pady=4)
         Button(frame_left, text='Load MH Results', command=self.load_mh_results).grid(row=15, column=2, padx=4, pady=4)
         Button(frame_left, text='Save MH Results', command=self.save_mh_results).grid(row=15, column=3, padx=4, pady=4)
         Button(frame_left, text='Delete MH Results', command=self.refresh_mh).grid(row=15, column=4, padx=4, pady=4)
@@ -2858,6 +2859,36 @@ class Gui(Tk):
         self.parameters = ""
         self.parameter_domains = []
         self.status_set("Space refreshed.")
+
+    def export_space_text(self, file=False):
+        """ Exports textual representation of space into a text file."""
+        if file:
+            save_space_text_file = file
+        else:
+            print("Saving the textual representation of space ...")
+            if self.space is "":
+                self.status_set("There is no space to be saved.")
+                messagebox.showwarning("Saving the textual representation of space", "There is no space to be saved.")
+                return
+            self.status_set("Please select folder to store the space in.")
+            save_space_text_file = filedialog.asksaveasfilename(initialdir=self.refinement_results,
+                                                           title="Saving the textual representation of space - Select file",
+                                                           filetypes=(("text files", "*.txt"), ("all files", "*.*")))
+            if save_space_text_file == "":
+                self.status_set("No file selected to store Saving the textual representation of space in.")
+                return
+
+        if "." not in basename(save_space_text_file):
+            save_space_file = save_space_text_file + ".txt"
+
+        if not self.silent.get():
+            print("Saving the textual representation of space as a file:", save_space_text_file)
+
+        save_space_text_file = open(save_space_text_file, "w")
+        save_space_text_file.write(self.space.nice_print(full_print=True))
+
+        if not file:
+            self.status_set("Textual representation of space saved.")
 
     def refresh_mh(self):
         """ Refreshes MH results"""
