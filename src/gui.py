@@ -524,15 +524,15 @@ class Gui(Tk):
         page5 = ttk.Frame(nb, width=400, height=200, name="constraints")
         nb.add(page5, text='Constraints')
 
-        page5.rowconfigure(2, weight=1)
-        page5.columnconfigure(16, weight=1)
+        page5.rowconfigure(4, weight=1)
+        page5.columnconfigure(17, weight=1)
 
-        Button(page5, text='Calculate constraints', command=self.recalculate_constraints).grid(row=0, column=0, sticky=W, padx=4, pady=4)
+        Button(page5, text='Calculate constraints', command=self.recalculate_constraints).grid(row=0, column=0, padx=12, pady=12)
 
         self.constraints_text = scrolledtext.ScrolledText(page5, width=200, height=100, state=DISABLED)
-        self.constraints_text.grid(row=1, column=0, columnspan=16, rowspan=2, sticky=W, padx=4, pady=4)
+        self.constraints_text.grid(row=1, column=0, columnspan=16, rowspan=2, sticky=W, padx=4)
 
-        Label(page5, text=f"Import/Export:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, padx=4, pady=4)
+        Label(page5, text=f"Import/Export:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, padx=(10, 4), pady=4)
         Button(page5, text='Open constraints', command=self.load_constraints).grid(row=3, column=1, sticky=W, pady=4)
         Button(page5, text='Append constraints', command=self.append_constraints).grid(row=3, column=2, sticky=W, pady=4)
         Button(page5, text='Save constraints', command=self.save_constraints).grid(row=3, column=3, sticky=W, pady=4)
@@ -546,13 +546,13 @@ class Gui(Tk):
         # frame_left.pack(side=LEFT, expand=False)
         frame_left = Frame(page6, width=int(self.winfo_width() / 2), height=int(self.winfo_height()))
         frame_left.grid_propagate(0)
-        frame_left.rowconfigure(15, weight=1)
-        frame_left.columnconfigure(9, weight=1)
+        frame_left.rowconfigure(16, weight=1)
+        frame_left.columnconfigure(10, weight=1)
         frame_left.pack(side=LEFT, fill=X)
 
-        self.frame_right = Frame(page6, width=int(self.winfo_width() / 2), height=int(self.winfo_height()))
-        self.frame_right.grid_propagate(0)
-        self.frame_right.pack(side=RIGHT, fill=BOTH, expand=True)
+        self.frame_center = Frame(page6, width=int(self.winfo_width() / 2), height=int(self.winfo_height()))
+        self.frame_center.grid_propagate(0)
+        self.frame_center.pack(side=LEFT, fill=BOTH, expand=True)
 
         ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=1, column=0, columnspan=15, sticky='nwe', padx=10, pady=8)
 
@@ -564,9 +564,9 @@ class Gui(Tk):
         self.sample_size_entry.grid(row=1, column=1)
         self.sample_size_entry.insert(END, '5')
 
-        Button(frame_left, text='Grid sampling', command=self.sample_space).grid(row=7, column=0, columnspan=2, sticky=W, padx=10, pady=4)
+        Button(frame_left, text='Grid sampling', command=self.sample_space).grid(row=7, column=0, columnspan=2, padx=10, pady=4)
 
-        ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=2, rowspan=7, sticky='ns', padx=0, pady=25)
+        ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=2, rowspan=7, sticky='ns', padx=25, pady=25)
 
         label71 = Label(frame_left, text="Set # of samples: ", anchor=W, justify=LEFT)
         label71.grid(row=1, column=8)
@@ -610,9 +610,9 @@ class Gui(Tk):
         self.mh_timeout.grid(row=6, column=9)
         self.mh_timeout.insert(END, '3600')
 
-        Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=7, column=8, columnspan=2, sticky=W, pady=4)
+        Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=7, column=8, columnspan=2, pady=4)
 
-        ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=5, rowspan=7, sticky='ns', padx=10, pady=25)
+        ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=5, rowspan=7, sticky='ns', padx=25, pady=25)
 
         label62 = Label(frame_left, text="Set max_dept: ", anchor=W, justify=LEFT)
         label62.grid(row=1, column=3, padx=0)
@@ -662,33 +662,53 @@ class Gui(Tk):
         self.solver.current(0)
         self.delta_entry.insert(END, '0.01')
 
-        Button(frame_left, text='Refine space', command=self.refine_space).grid(row=7, column=3, columnspan=2, sticky=W,
-                                                                                pady=4, padx=0)
+        Button(frame_left, text='Refine space', command=self.refine_space).grid(row=7, column=3, columnspan=2, pady=4, padx=0)
 
         ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=8, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
 
+        Label(frame_left, text="Textual representation of space", anchor=CENTER, justify=CENTER, padx=10).grid(row=9, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
         self.space_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_height() * 0.8/19), state=DISABLED)
-        self.space_text.grid(row=12, column=0, columnspan=15, rowspan=2, sticky=W, padx=10)  # pack(anchor=W, fill=X)
+        self.space_text.grid(row=13, column=0, columnspan=15, rowspan=2, sticky=W, padx=10)
+        Button(frame_left, text='Export text', command=self.export_space_text).grid(row=15, column=8, sticky=S, padx=4, pady=(10, 0))
 
-        # frame_left.rowconfigure(13, weight=1)
-        # frame_left.columnconfigure(15, weight=1)
+        # highlightbackground="blue", highlightcolor="blue", highlightthickness=1,
+        frame_right = Frame(page6, width=int(self.winfo_width() / 2), height=int(self.winfo_height()))
+        # frame_right.grid_propagate(0)
+        # frame_right.rowconfigure(9, weight=1)
+        # frame_right.columnconfigure(1, weight=1)
+        frame_right.pack(side=RIGHT, fill=BOTH)
 
-        Button(frame_left, text='Open space', command=self.load_space).grid(row=14, column=2, sticky=S, padx=4, pady=4)
-        Button(frame_left, text='Save space', command=self.save_space).grid(row=14, column=3, sticky=S, padx=4, pady=4)
-        Button(frame_left, text='Delete space', command=self.refresh_space).grid(row=14, column=4, sticky=S, padx=4, pady=4)
-        Button(frame_left, text='Export text', command=self.export_space_text).grid(row=14, column=5, sticky=S, padx=4, pady=4)
-        Button(frame_left, text='Load MH Results', command=self.load_mh_results).grid(row=15, column=2, padx=4, pady=4)
-        Button(frame_left, text='Save MH Results', command=self.save_mh_results).grid(row=15, column=3, padx=4, pady=4)
-        Button(frame_left, text='Delete MH Results', command=self.refresh_mh).grid(row=15, column=4, padx=4, pady=4)
+        Button(frame_right, text='Open space', command=self.load_space).grid(row=1, column=1, padx=(4, 40), pady=7)
+        Button(frame_right, text='Save space', command=self.save_space).grid(row=2, column=1, padx=(4, 40), pady=7)
+        Button(frame_right, text='Delete space', command=self.refresh_space).grid(row=3, column=1, padx=(4, 40), pady=7)
 
-        # self.frame_right = Frame(page6, width=500, height=200)
-        # self.frame_right.pack(side=TOP, fill=BOTH, expand=True)
+        Button(frame_right, text='Load MH Results', command=self.load_mh_results).grid(row=5, column=1, padx=(4, 40), pady=7)
+        Button(frame_right, text='Save MH Results', command=self.save_mh_results).grid(row=6, column=1, padx=(4, 40), pady=7)
+        Button(frame_right, text='Delete MH Results', command=self.refresh_mh).grid(row=7, column=1, padx=(4, 40), pady=7)
 
-        Button(self.frame_right, text='Set True point', command=self.set_true_point).pack(side=TOP)
-        Label(self.frame_right, text=f"Space Visualisation", anchor=W, justify=CENTER).pack(side=TOP)
+        frame_right.rowconfigure(0, weight=1)
+        frame_right.rowconfigure(4, weight=1)
+        frame_right.rowconfigure(8, weight=1)
+
+        # frame_right_up = Frame(frame_right, highlightbackground="green", highlightcolor="green", highlightthickness=1, height=int(self.winfo_height()/2))
+        # frame_right_up.pack(side=TOP, fill=BOTH)
+        #
+        # Button(frame_right_up, text='Open space', command=self.load_space).grid(row=1, column=1, padx=4, pady=4)
+        # Button(frame_right_up, text='Save space', command=self.save_space).grid(row=2, column=1, padx=4, pady=4)
+        # Button(frame_right_up, text='Delete space', command=self.refresh_space).grid(row=3, column=1, padx=4, pady=4)
+        #
+        # frame_right_bottom = Frame(frame_right, height=int(self.winfo_height()/2))
+        # frame_right_bottom.pack(side=BOTTOM, fill=BOTH)
+        #
+        # Button(frame_right_bottom, text='Load MH Results', command=self.load_mh_results).pack(side=TOP)
+        # Button(frame_right_bottom, text='Save MH Results', command=self.save_mh_results).pack(side=TOP)
+        # Button(frame_right_bottom, text='Delete MH Results', command=self.refresh_mh).pack(side=TOP)
+
+        Button(self.frame_center, text='Set True point', command=self.set_true_point).pack(side=TOP, pady=10)
+        # Label(self.frame_center, text=f"Space Visualisation", anchor=W, justify=CENTER).pack(side=TOP)
 
         ##################################################### UPPER PLOT ###############################################
-        self.page6_plotframe = Frame(self.frame_right)
+        self.page6_plotframe = Frame(self.frame_center)
         self.page6_plotframe.pack(side=TOP, fill=Y, expand=True)
         self.page6_figure = pyplt.figure(figsize=(8, 2))
         self.page6_figure.tight_layout()  ## By huypn
@@ -3167,7 +3187,7 @@ class Gui(Tk):
         if clear:
             self.page6_plotframe2.destroy()
 
-        self.page6_plotframe2 = Frame(self.frame_right)
+        self.page6_plotframe2 = Frame(self.frame_center)
         self.page6_plotframe2.pack(side=TOP, fill=Y, expand=True)
 
         self.page6_figure2 = pyplt.figure(figsize=(8, 2))
