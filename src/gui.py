@@ -245,6 +245,7 @@ class Gui(Tk):
         ## OTHER SETTINGS
         self.button_pressed = BooleanVar()  ## Inner variable to close created window
         self.python_recursion_depth = 1000  ## Inner python setting
+        self.space_colapsed = True
 
     def gui_init(self):
         ## GUI INIT
@@ -670,6 +671,7 @@ class Gui(Tk):
         self.space_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_height() * 0.8/19), state=DISABLED)
         self.space_text.grid(row=13, column=0, columnspan=15, rowspan=2, sticky=W, padx=10)
         Button(frame_left, text='Export text', command=self.export_space_text).grid(row=15, column=8, sticky=S, padx=4, pady=(10, 0))
+        Button(frame_left, text='Extend / Collapse text ', command=self.collapse_space_text).grid(row=15, column=7, sticky=S, padx=4, pady=(10, 0))
 
         # highlightbackground="blue", highlightcolor="blue", highlightthickness=1,
         frame_right = Frame(page6, width=int(self.winfo_width() / 2), height=int(self.winfo_height()))
@@ -1656,13 +1658,17 @@ class Gui(Tk):
             if not self.silent.get() and not clear:
                 print("space", self.space)
                 print()
-                print("space nice print \n", self.space.nice_print())
+                print("space nice print \n", self.space.nice_print(full_print=not self.space_colapsed))
 
             self.space_text.configure(state='normal')
             self.space_text.delete('1.0', END)
             if not clear:
-                self.space_text.insert('end', self.space.nice_print())
+                self.space_text.insert('end', self.space.nice_print(full_print=not self.space_colapsed))
             # self.space_text.configure(state='disabled')
+
+    def collapse_space_text(self):
+        self.space_colapsed = not self.space_colapsed
+        self.print_space()
 
     def show_space(self, show_refinement, show_samples, show_true_point, clear=False, show_all=False):
         """ Visualises the space in the plot.
