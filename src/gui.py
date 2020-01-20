@@ -1653,10 +1653,11 @@ class Gui(Tk):
             messagebox.showwarning("Edit True point", "Load space first.")
             return
         else:
-            print(self.space.nice_print())
+            # print(self.space.nice_print())
+            self.parameter_domains = self.space.region
             self.create_window_to_load_param_point(parameters=self.space.params)
-            self.space.true_point = self.parameter_values
-            print(self.space.nice_print())
+            self.space.true_point = self.parameter_point
+            # print(self.space.nice_print())
 
             self.print_space()
             self.page6_a.cla()
