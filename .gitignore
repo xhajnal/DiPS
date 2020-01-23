@@ -113,7 +113,7 @@ venv.bak/
 \.DS_Store
 
 #########
-# Local #
+# LOCAL #
 #########
 ipython/*
 #!ipython/data*
@@ -121,11 +121,15 @@ ipython/*
 !ipython/*.md
 
 ./config.ini
-models/*
-properties/*
 
-!data/*.p
-data/*/*
+models/*
+!models/example/
+
+properties/*
+!properties/example/
+
+data/*
+!data/example/
 
 results/data_intervals/*
 results/constraints/*
@@ -137,14 +141,14 @@ results/figures/*
 results/mh_results/*
 results/refinement_results/*
 
-
 src/test/*
 src/other_sources/*
-
 
 test/_trial_*
 
 tmp/*
 
-# storm calls
+###############
+# STORM CALLS #
+###############
 *.cmd
