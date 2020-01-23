@@ -1566,36 +1566,42 @@ class Gui(Tk):
             self.status_set("No file selected.")
             return
         else:
-            self.space_changed = True
-            self.space_file.set(spam)
+            try:
+                self.cursor_toggle_busy(True)
+                self.status_set("Space is being loaded.")
+                self.space_changed = True
+                self.space_file.set(spam)
 
-            self.space = pickle.load(open(self.space_file.get(), "rb"))
+                self.space = pickle.load(open(self.space_file.get(), "rb"))
 
-            ## Show the space as niceprint()
-            self.print_space()
+                ## Show the space as niceprint()
+                self.print_space()
 
-            ## Ask if you want to visualise the space
-            # self.show_samples = messagebox.askyesno("Loaded space", "Do you want to visualise samples?")
-            self.show_samples = True
-            # self.show_refinement = messagebox.askyesno("Loaded space", "Do you want to visualise refinement (safe & unsafe regions)?")
-            self.show_refinement = True
-            if self.space.true_point is not None:
-                self.show_true_point = True
-                # self.show_true_point = messagebox.askyesno("Loaded space", "Do you want to show the true point?")
-            else:
-                self.show_true_point = False
-            self.show_space(self.show_refinement, self.show_samples, self.show_true_point, show_all=True)
+                ## Ask if you want to visualise the space
+                # self.show_samples = messagebox.askyesno("Loaded space", "Do you want to visualise samples?")
+                self.show_samples = True
+                # self.show_refinement = messagebox.askyesno("Loaded space", "Do you want to visualise refinement (safe & unsafe regions)?")
+                self.show_refinement = True
+                if self.space.true_point is not None:
+                    self.show_true_point = True
+                    # self.show_true_point = messagebox.askyesno("Loaded space", "Do you want to show the true point?")
+                else:
+                    self.show_true_point = False
 
-            self.space_changed = True
+                self.show_space(self.show_refinement, self.show_samples, self.show_true_point, show_all=True)
 
-            if not self.space:
-                messagebox.showwarning("Loading space", "No space loaded. Please check input file.")
-                self.status_set("No space loaded.")
-            else:
-                ## Autosave
-                if not file:
-                    self.save_space(os.path.join(self.tmp_dir, "space"))
-                self.status_set("Space loaded.")
+                self.space_changed = True
+
+                if not self.space:
+                    messagebox.showwarning("Loading space", "No space loaded. Please check input file.")
+                    self.status_set("No space loaded.")
+                else:
+                    ## Autosave
+                    if not file:
+                        self.save_space(os.path.join(self.tmp_dir, "space"))
+                    self.status_set("Space loaded.")
+            finally:
+                self.cursor_toggle_busy(False)
 
     def load_mh_results(self, file=False):
         """ loads Metropolis hastings results (accepted) and plots them
@@ -1680,27 +1686,32 @@ class Gui(Tk):
             clear (bool): if True the plot is cleared
             show_all (bool):  if True, not only newly added rectangles are shown
         """
-        if not self.space == "":
-            if not clear:
-                figure, axis = self.space.show(green=show_refinement, red=show_refinement, sat_samples=show_samples,
-                                               unsat_samples=show_samples, true_point=show_true_point, save=False,
-                                               where=[self.page6_figure, self.page6_a], show_all=show_all)
+        try:
+            self.cursor_toggle_busy(True)
+            self.status_set("Space is being visualised.")
+            if not self.space == "":
+                if not clear:
+                    figure, axis = self.space.show(green=show_refinement, red=show_refinement, sat_samples=show_samples,
+                                                   unsat_samples=show_samples, true_point=show_true_point, save=False,
+                                                   where=[self.page6_figure, self.page6_a], show_all=show_all)
 
-                ## If no plot provided
-                if figure is None:
-                    messagebox.showinfo("Load Space", axis)
+                    ## If no plot provided
+                    if figure is None:
+                        messagebox.showinfo("Load Space", axis)
+                    else:
+                        self.page6_figure = figure
+                        self.page6_a = axis
+                        self.page6_figure.tight_layout()  ## By huypn
+                        self.page6_figure.canvas.draw()
+                        self.page6_figure.canvas.flush_events()
                 else:
-                    self.page6_figure = figure
-                    self.page6_a = axis
+                    self.page6_figure.clf()
+                    self.page6_a = self.page6_figure.add_subplot(111)
                     self.page6_figure.tight_layout()  ## By huypn
                     self.page6_figure.canvas.draw()
                     self.page6_figure.canvas.flush_events()
-            else:
-                self.page6_figure.clf()
-                self.page6_a = self.page6_figure.add_subplot(111)
-                self.page6_figure.tight_layout()  ## By huypn
-                self.page6_figure.canvas.draw()
-                self.page6_figure.canvas.flush_events()
+        finally:
+            self.cursor_toggle_busy(False)
 
     def set_true_point(self):
         """ Sets the true point of the space """

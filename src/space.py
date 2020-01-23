@@ -352,7 +352,7 @@ class RefinedSpace:
                 else:
                     print("No sat samples so far, nothing to show")
 
-            if sat_samples and self.gridsampled and not self.unsat_samples:
+            if sat_samples and self.gridsampled and not self.unsat_samples and not (green or red):
                 print("Since no unsat samples, the whole grid of points are sat, not visualising this trivial case.")
                 if where:
                     return None, "Since no unsat samples, the whole grid of points are sat, not visualising this trivial case."
@@ -397,7 +397,7 @@ class RefinedSpace:
                 else:
                     print("No unsat samples so far, nothing to show")
 
-            if unsat_samples and self.gridsampled and not self.sat_samples:
+            if unsat_samples and self.gridsampled and not self.sat_samples and not (green or red):
                 print("Since no sat samples, the whole grid of points are unsat, not visualising this trivial case.")
                 if where:
                     return None, "Since no sat samples, the whole grid of points are unsat, not visualising this trivial case."
