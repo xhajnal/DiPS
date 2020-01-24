@@ -247,6 +247,10 @@ class Gui(Tk):
         self.python_recursion_depth = 1000  ## Inner python setting
         self.space_colapsed = True
 
+        ## Other variables
+        self.progress = StringVar()
+        self.progress.set("0%")
+
     def gui_init(self):
         ## GUI INIT
         self.title('DiPS')
@@ -1202,7 +1206,7 @@ class Gui(Tk):
             self.status_set("No file selected.")
             return
         else:
-            self.functions = False
+            self.functions = []
             self.functions_changed = True
             self.functions_file.set(spam)
             self.z3_functions = ""
@@ -1220,21 +1224,23 @@ class Gui(Tk):
 
             ## Factorising the parsed functions
             if self.factorise.get():
-                self.status_set("Factorising functions ...")
-                self.cursor_toggle_busy(True)
-                self.new_window = Toplevel(self)
-                Label(self.new_window, text="Factorising functions in progress", anchor=W, justify=LEFT).pack()
-                self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
-                self.progress_bar.pack()
-                self.update()
-                for index, function in enumerate(self.functions):
-                    ## Factorise
-                    self.functions[index] = str(factor(self.functions[index]))
-                    self.update_progress_bar(change_to=(index+1)/len(self.functions))
-
-                self.new_window.destroy()
-                del self.new_window
-                self.cursor_toggle_busy(False)
+                try:
+                    self.status_set("Factorising functions ...")
+                    self.cursor_toggle_busy(True)
+                    self.new_window = Toplevel(self)
+                    Label(self.new_window, text="Factorising functions in progress", anchor=W, justify=LEFT).pack()
+                    Label(self.new_window, textvar=self.progress, anchor=W, justify=LEFT).pack()
+                    self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
+                    self.progress_bar.pack()
+                    self.update()
+                    for index, function in enumerate(self.functions):
+                        ## Factorise
+                        self.functions[index] = str(factor(self.functions[index]))
+                        self.update_progress_bar(change_to=(index+1)/len(self.functions))
+                finally:
+                    self.cursor_toggle_busy(False)
+                    self.new_window.destroy()
+                    del self.new_window
 
             ## Check for z3 expressions
             for function in self.functions:
@@ -2554,6 +2560,7 @@ class Gui(Tk):
 
             self.new_window = Toplevel(self)
             Label(self.new_window, text="Sampling progress", anchor=W, justify=LEFT).pack()
+            Label(self.new_window, textvar=self.progress, anchor=W, justify=LEFT).pack()
             self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
             self.progress_bar.pack()
             self.update()
@@ -2564,6 +2571,7 @@ class Gui(Tk):
             self.new_window.destroy()
             del self.new_window
             self.cursor_toggle_busy(False)
+            self.progress.set("0%")
 
         self.print_space()
 
@@ -2626,6 +2634,7 @@ class Gui(Tk):
 
             self.new_window = Toplevel(self)
             Label(self.new_window, text="Metropolis hastings progress", anchor=W, justify=LEFT).pack()
+            Label(self.new_window, textvar=self.progress, anchor=W, justify=LEFT).pack()
             self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
             self.progress_bar.pack()
             self.update()
@@ -2658,6 +2667,7 @@ class Gui(Tk):
             self.new_window.destroy()
             del self.new_window
             self.cursor_toggle_busy(False)
+            self.progress.set("0%")
 
         ## Autosave
         self.save_mh_results(os.path.join(self.tmp_dir, "mh_results"))
@@ -2697,17 +2707,17 @@ class Gui(Tk):
         if self.alg.get() == "":
             messagebox.showwarning("Refine space", "Pick algorithm for the refinement before running.")
             return
-        if int(self.alg.get()) == 5:
-            if self.functions == "":
-                messagebox.showwarning("Refine space", "Load or synthesise functions before refinement.")
-                return
-            if self.data_intervals == "":
-                messagebox.showwarning("Refine space", "Load or compute data intervals before refinement.")
-                return
-        else:
-            if self.constraints == "":
-                messagebox.showwarning("Refine space", "Load or calculate constraints before refinement.")
-                return
+        # if int(self.alg.get()) == 5:
+        #     if self.functions == "":
+        #         messagebox.showwarning("Refine space", "Load or synthesise functions before refinement.")
+        #         return
+        #     if self.data_intervals == "":
+        #         messagebox.showwarning("Refine space", "Load or compute data intervals before refinement.")
+        #         return
+        # else:
+        if self.constraints == "":
+            messagebox.showwarning("Refine space", "Load or calculate constraints before refinement.")
+            return
 
         if not self.validate_space("Refine Space"):
             return
@@ -2727,18 +2737,19 @@ class Gui(Tk):
             ## TODO - tweak - update this to actually show the progress
             self.new_window = Toplevel(self)
             Label(self.new_window, text="Refinement in progress", anchor=W, justify=LEFT).pack()
+            Label(self.new_window, textvar=self.progress, anchor=W, justify=LEFT).pack()
             self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
             self.progress_bar.pack(expand=True, fill=BOTH, side=TOP)
             self.update()
 
             ## RETURNS TUPLE -- (SPACE,(NONE, ERROR TEXT)) or (SPACE, )
             ## feeding z3 solver with z3 expressions, python expressions otherwise
-            if int(self.alg.get()) == 5:
-                spam = check_deeper(self.space, [self.functions, self.data_intervals], self.max_depth, self.epsilon,
-                                    self.coverage, silent=self.silent.get(), version=int(self.alg.get()), sample_size=False,
-                                    debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
-                                    solver=str(self.solver.get()), delta=self.delta, gui=self.update_progress_bar)
-            elif str(self.solver.get()) == "z3" and self.z3_constraints:
+            # if int(self.alg.get()) == 5:
+            #     spam = check_deeper(self.space, [self.functions, self.data_intervals], self.max_depth, self.epsilon,
+            #                         self.coverage, silent=self.silent.get(), version=int(self.alg.get()), sample_size=False,
+            #                         debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
+            #                         solver=str(self.solver.get()), delta=self.delta, gui=self.update_progress_bar)
+            if str(self.solver.get()) == "z3" and self.z3_constraints:
                 spam = check_deeper(self.space, self.z3_constraints, self.max_depth, self.epsilon, self.coverage,
                                     silent=self.silent.get(), version=int(self.alg.get()), sample_size=False,
                                     debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
@@ -2751,6 +2762,7 @@ class Gui(Tk):
         finally:
             self.cursor_toggle_busy(False)
             self.new_window.destroy()
+            self.progress.set("0%")
         ## If the visualisation of the space did not succeed
         if isinstance(spam, tuple):
             self.space = spam[0]
@@ -2795,8 +2807,7 @@ class Gui(Tk):
             self.key = StringVar()
             self.status_set("Choosing ranges of parameters:")
             self.new_window = Toplevel(self)
-            label = Label(self.new_window,
-                          text="Please choose intervals of the parameters to be used:")
+            label = Label(self.new_window, text="Please choose intervals of the parameters to be used:")
             label.grid(row=0)
             self.key.set(" ")
 
@@ -3174,8 +3185,10 @@ class Gui(Tk):
         """
         if change_to is not False:
             self.progress_bar['value'] = 100*change_to
+            self.progress.set(f"{100*change_to}%")
         if change_by is not False:
             self.progress_bar['value'] = self.progress_bar['value'] + 100*change_by
+            self.progress.set(f"{self.progress_bar['value'] + 100*change_by}%")
         self.update()
 
     def ask_quit(self):
