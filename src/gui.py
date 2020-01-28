@@ -1919,14 +1919,30 @@ class Gui(Tk):
         if not file:
             self.status_set("Rational functions saved.")
 
+    @staticmethod
+    def scrap_TextBox(where):
+        text = where.get('1.0', END).split("\n")
+        if isinstance(text, str):
+            text = [text]
+        print("text", text)
+        scrap = []
+        for line in text:
+            if line is "":
+                continue
+            ## Getting rid of commma
+            line = line.split(",")[0]
+            scrap.append(line)
+        return scrap
+
     def save_functions(self, file=False):
         """ Saves parsed rational functions as a pickled file.
 
         Args:
             file: file to save the parsed functions
         """
+        functions = self.scrap_TextBox(self.functions_parsed_text)
 
-        if self.functions is "":
+        if functions is []:
             self.status_set("There are no functions to be saved.")
             messagebox.showwarning("Saving functions", "There are no functions to be saved.")
             return
@@ -1958,7 +1974,7 @@ class Gui(Tk):
         if not self.silent.get() and not file:
             print("Saving parsed functions as a file:", save_functions_file)
 
-        pickle.dump(self.functions, open(save_functions_file, 'wb'))
+        pickle.dump(functions, open(save_functions_file, 'wb'))
         self.status_set("Parsed functions saved.")
 
     def save_data(self, file=False):
@@ -2003,12 +2019,15 @@ class Gui(Tk):
         Args:
             file (string):  file to save the data intervals
         """
+
+        data_intervals = self.scrap_TextBox(self.data_intervals_text)
+
         if file:
             save_data_intervals_file = file
         else:
             print("Saving the data intervals ...")
 
-            if not self.data_intervals:
+            if not data_intervals:
                 messagebox.showwarning("Saving data intervals", "There are no data intervals to be saved.")
                 self.status_set("There are no data intervals to be saved.")
                 return
@@ -2026,7 +2045,7 @@ class Gui(Tk):
         if not self.silent.get():
             print("Saving data intervals as a file:", save_data_intervals_file)
 
-        pickle.dump(self.data_intervals, open(save_data_intervals_file, 'wb'))
+        pickle.dump(data_intervals, open(save_data_intervals_file, 'wb'))
 
         if not file:
             self.status_set("Data intervals saved.")
@@ -2037,12 +2056,13 @@ class Gui(Tk):
         Args:
             file (string):  file to save the constraints
         """
+        constraints = self.scrap_TextBox(self.constraints_text)
 
         if file:
             save_constraints_file = file
         else:
             print("Saving the constraints ...")
-            if self.constraints is "":
+            if constraints is "":
                 self.status_set("There is no constraints to be saved.")
                 return
 
@@ -2059,7 +2079,7 @@ class Gui(Tk):
         if not self.silent.get():
             print("Saving constraints as a file:", save_constraints_file)
 
-        pickle.dump(self.constraints, open(save_constraints_file, 'wb'))
+        pickle.dump(constraints, open(save_constraints_file, 'wb'))
         if not file:
             self.status_set("constraints saved.")
 
