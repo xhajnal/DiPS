@@ -2,7 +2,6 @@ import datetime
 import os
 import socket
 import sys
-import pickle
 import platform
 import itertools
 from time import strftime, localtime, time
@@ -11,19 +10,18 @@ from termcolor import colored
 from math import log
 from mpmath import mpi
 from matplotlib.patches import Rectangle
-import numpy as np
 # workspace = os.path.dirname(__file__)
 # sys.path.append(workspace)
 from load import find_param
+from sample_space import sample
 from space import RefinedSpace
 from space import get_rectangle_volume
-from common.math import cartesian_product
 from common.math import is_in
 from common.convert import to_interval
 from common.convert import constraints_to_ineq
 from common.queue import Queue
 from common.config import load_config
-from common.z3 import is_this_z3_function, translate_z3_function
+from common.space_stuff import refine_by
 
 if "wind" not in platform.system().lower():
     from dreal import logical_and, logical_or, logical_not, Variable, CheckSatisfiability
@@ -108,49 +106,6 @@ try:
     p = Real('p')
 except NameError:
     raise Exception("z3 not loaded properly")
-
-
-def refine_by(region1, region2, debug: bool = False):
-    """ Returns the first (hyper)space refined/spliced by the second (hyperspace) into orthogonal subspaces
-
-    Args:
-        region1 (list of pairs): (hyper)space defined by the regions
-        region2 (list of pairs): (hyper)space defined by the regions
-        debug (bool): if True extensive print will be used
-    """
-
-    if not is_in(region2, region1):
-        raise Exception("the first interval is not within the second, it cannot be refined/spliced properly")
-
-    region1 = copy.deepcopy(region1)
-    regions = []
-    ## for each dimension trying to cut of the space
-    for dimension in range(len(region2)):
-        ## LEFT
-        if region1[dimension][0] < region2[dimension][0]:
-            sliced_region = copy.deepcopy(region1)
-            sliced_region[dimension][1] = region2[dimension][0]
-            if debug:
-                print("left ", sliced_region)
-            regions.append(sliced_region)
-            region1[dimension][0] = region2[dimension][0]
-            if debug:
-                print("new intervals", region1)
-
-        ## RIGHT
-        if region1[dimension][1] > region2[dimension][1]:
-            sliced_region = copy.deepcopy(region1)
-            sliced_region[dimension][0] = region2[dimension][1]
-            if debug:
-                print("right ", sliced_region)
-            regions.append(sliced_region)
-            region1[dimension][1] = region2[dimension][1]
-            if debug:
-                print("new intervals", region1)
-
-    # print("region1 ", region1)
-    regions.append(region1)
-    return regions
 
 
 def check_unsafe(region, constraints, silent: bool = False, called=False, solver="z3", delta=0.001, debug: bool = False):
@@ -875,7 +830,7 @@ def private_check_deeper(region, constraints, recursion_depth, epsilon, coverage
                 print("depth:", recursion_depth, colored(f"interval {region} too small, skipped", "grey"))
             return f"interval {region} too small, skipped"
 
-    ## Stop if the the current coveage is above the given thresholds
+    ## Stop if the the current coverage is above the given thresholds
     if space.get_coverage() >= coverage:
         print(colored(f"coverage {space.get_coverage()} is above the threshold", "blue"))
         return f"coverage {space.get_coverage()} is above the threshold"
@@ -1765,299 +1720,3 @@ def private_check_deeper_interval(region, constraints, intervals, recursion_dept
         private_check_deeper_interval(*globals()["que"].dequeue())
 
 
-def create_matrix(sample_size, dim):
-    """ Return **dim** dimensional array of length **sample_size** in each dimension
-
-    Args:
-        sample_size (int): number of samples in dimension
-        dim (int): number of dimensions
-
-    """
-    return np.array(private_create_matrix(sample_size, dim, dim))
-
-
-def private_create_matrix(sample_size, dim, n_param):
-    """ Return **dim** dimensional array of length **sample_size** in each dimension
-
-    Args:
-        sample_size (int): number of samples in dimension
-        dim (int): number of dimensions
-        n_param (int): dummy parameter
-
-    @author: xtrojak, xhajnal
-    """
-    if dim == 0:
-        point = []
-        for i in range(n_param):
-            point.append(0)
-        return [point, 9]
-    return [private_create_matrix(sample_size, dim - 1, n_param) for _ in range(sample_size)]
-
-
-def sample(space, constraints, sample_size, compress=False, silent=True, save=False, debug: bool = False, progress=False):
-    """ Samples the space in **sample_size** samples in each dimension and saves if the point is in respective interval
-
-    Args:
-        space: (space.RefinedSpace): space
-        constraints  (list of strings): array of properties
-        sample_size (int): number of samples in dimension
-        compress (bool): if True, only a conjunction of the values (prop in the interval) is used
-        silent (bool): if silent printed output is set to minimum
-        debug (bool): if True extensive print will be used
-        save (bool): if True output is pickled
-        debug (bool): if True extensive print will be used
-        progress (Tkinter element): progress bar
-
-    Returns:
-        (dict) of point to list of Bools whether f(point) in interval[index]
-    """
-    if debug:
-        silent = False
-
-    ## Convert z3 functions
-    for index, constraint in enumerate(constraints):
-        if is_this_z3_function(constraint):
-            constraints[index] = translate_z3_function(constraint)
-
-    start_time = time()
-    parameter_values = []
-    parameter_indices = []
-    if debug:
-        print("space.params", space.params)
-        print("space.region", space.region)
-        print("sample_size", sample_size)
-    for param in range(len(space.params)):
-        parameter_values.append(np.linspace(space.region[param][0], space.region[param][1], sample_size, endpoint=True))
-        parameter_indices.append(np.asarray(range(0, sample_size)))
-
-    sampling = create_matrix(sample_size, len(space.params))
-    if not silent:
-        print("sampling here")
-        print("sample_size", sample_size)
-        print("space.params", space.params)
-        print("sampling", sampling)
-    parameter_values = cartesian_product(*parameter_values)
-    parameter_indices = cartesian_product(*parameter_indices)
-
-    # if (len(space.params) - 1) == 0:
-    #    parameter_values = linspace(0, 1, sample_size, endpoint=True)[newaxis, :].T
-    if not silent:
-        print("parameter_values", parameter_values)
-        print("parameter_indices", parameter_indices)
-        # print("a sample:", sampling[0][0])
-    parameter_index = 0
-    ## For each parametrisation eval the constraints
-    for index, parameter_value in enumerate(parameter_values):
-        ## For each parameter set the current sample point value
-        if progress:
-            progress(index / len(parameter_values))
-        for param in range(len(space.params)):
-            locals()[space.params[param]] = float(parameter_value[param])
-            if debug:
-                print("type(locals()[space.params[param]])", type(locals()[space.params[param]]))
-                print(f"locals()[space.params[param]] = {space.params[param]} = {float(parameter_value[param])}")
-        ## print("parameter_value", parameter_value)
-        # print(str(parameter_value))
-        # print(type(parameter_value))
-        ## print("parameter_index", parameter_indices[i])
-        ## print(type(parameter_indices[i]))
-        ## print("sampling", sampling)
-        ## print("sampling[0][0]", sampling[0, 0])
-        # sampling[0][0] = [[0.], [True]]
-
-        ## print("sampling[0][0][0]", sampling[0][0][0])
-        ## print("sampling[0][0][0]", type(sampling[0][0][0]))
-
-        ## print("here")
-        ## print(tuple(parameter_indices[i]))
-        ## print(sampling[tuple(parameter_indices[i])])
-        # sampling[0, 0] = 9
-        # sampling[0, 0] = True
-
-        sampling[tuple(parameter_indices[parameter_index])][0] = list(parameter_value)
-
-        satisfied_list = []
-        ## For each constraint (inequality - interval bound)
-        for index, constraint in enumerate(constraints):
-            # print(constraint)
-            # print("type(constraint[index])", type(constraint))
-            # for param in range(len(space.params)):
-            #     print(space.params[param], parameter_value[param])
-            #     print("type(space.params[param])", type(space.params[param]))
-            #     print("type(parameter_value[param])", type(parameter_value[param]))
-
-            if debug:
-                print(f"constraints[{index}]", constraint)
-                print(f"eval(constraints[{index}])", eval(constraint))
-
-            satisfied_list.append(eval(constraint))
-
-            ## print("cycle")
-            ## print(sampling[tuple(parameter_indices[i])])
-
-        if False in satisfied_list:
-            # print("adding unsat", sampling[tuple(parameter_indices[i])][0])
-            space.add_unsat_samples([sampling[tuple(parameter_indices[parameter_index])][0]])
-            if compress:
-                sampling[tuple(parameter_indices[parameter_index])][1] = False
-            else:
-                sampling[tuple(parameter_indices[parameter_index])][1] = satisfied_list
-        else:
-            # print("adding sat", sampling[tuple(parameter_indices[i])][0])
-            space.add_sat_samples([sampling[tuple(parameter_indices[parameter_index])][0]])
-            if compress:
-                sampling[tuple(parameter_indices[parameter_index])][1] = True
-            else:
-                sampling[tuple(parameter_indices[parameter_index])][1] = satisfied_list
-        parameter_index = parameter_index + 1
-
-    ## Setting flag to not visualise sat if no unsat and vice versa
-    space.gridsampled = True
-
-    ## Saving the sampled space as pickled dictionary
-    if save:
-        if save is True:
-            save = str(strftime("%d-%b-%Y-%H-%M-%S", localtime()))
-        pickle.dump(sampling, open(os.path.join(refinement_results, ("Sampled_space_" + save).split(".")[0] + ".p"), "wb"))
-
-    space.sampling_took(time() - start_time)
-    return sampling
-
-
-def refine_into_rectangles(sampled_space, silent=True):
-    """ Refines the sampled space into hyperrectangles such that rectangle is all sat or all unsat
-
-    Args:
-        sampled_space: (space.RefinedSpace): space
-        silent (bool): if silent printed output is set to minimum
-
-    Returns:
-        Hyperectangles of length at least 2 (in each dimension)
-    """
-    sample_size = len(sampled_space[0])
-    dimensions = len(sampled_space.shape) - 1
-    if not silent:
-        print("\n refine into rectangles here ")
-        print(type(sampled_space))
-        print("shape", sampled_space.shape)
-        print("space:", sampled_space)
-        print("sample_size:", sample_size)
-        print("dimensions:", dimensions)
-    # find_max_rectangle(sampled_space, [0, 0])
-
-    if dimensions == 2:
-        parameter_indices = []
-        for param in range(dimensions):
-            parameter_indices.append(np.asarray(range(0, sample_size)))
-        parameter_indices = cartesian_product(*parameter_indices)
-        if not silent:
-            print(parameter_indices)
-        a = []
-        for point in parameter_indices:
-            # print("point", point)
-            result = find_max_rectangle(sampled_space, point, silent=silent)
-            if result is not None:
-                a.append(result)
-        if not silent:
-            print(a)
-        return a
-    else:
-        print(f"Sorry, {dimensions} dimensions TBD")
-
-
-def find_max_rectangle(sampled_space, starting_point, silent=True):
-    """ Finds the largest hyperrectangles such that rectangle is all sat or all unsat from starting point in positive direction
-
-    Args:
-        sampled_space (space.RefinedSpace): space
-        starting_point (list of floats): a point in the space to start search in
-        silent (bool): if silent printed output is set to minimum
-
-    Returns:
-        (triple) : (starting point, end point, is_sat)
-    """
-    sample_size = len(sampled_space[0])
-    dimensions = len(sampled_space.shape) - 1
-    if dimensions == 2:
-        index_x = starting_point[0]
-        index_y = starting_point[1]
-        length = 2
-        start_value = sampled_space[index_x][index_y][1]
-        if not silent:
-            print("Dealing with 2D space at starting point", starting_point, "with start value", start_value)
-        if start_value == 2:
-            if not silent:
-                print(starting_point, "already added, skipping")
-            return
-        if index_x >= sample_size - 1 or index_y >= sample_size - 1:
-            if not silent:
-                print(starting_point, "is at the border, skipping")
-            sampled_space[index_x][index_y][1] = 2
-            return
-
-        ## While other value is found
-        while True:
-            ## print(index_x+length)
-            ## print(sampled_space[index_x:index_x+length, index_y:index_y+length])
-            values = list(
-                map(lambda x: [y[1] for y in x], sampled_space[index_x:index_x + length, index_y:index_y + length]))
-            # print(values)
-            foo = []
-            for x in values:
-                for y in x:
-                    foo.append(y)
-            values = foo
-            if not silent:
-                print("Values found: ", values)
-            if (not start_value) in values:
-                length = length - 1
-                if not silent:
-                    print(f"rectangle [[{index_x},{index_y}],[{index_x + length},{index_y + length}]] does not satisfy all sat not all unsat")
-                break
-            elif index_x + length > sample_size or index_y + length > sample_size:
-                if not silent:
-                    print(f"rectangle [[{index_x},{index_y}],[{index_x + length},{index_y + length}]] is out of box, using lower value")
-                length = length - 1
-                break
-            else:
-                length = length + 1
-
-        ## Mark as seen (only this point)
-        sampled_space[index_x][index_y][1] = 2
-        length = length - 1
-
-        ## Skip if only this point safe/unsafe
-        if length == 0:
-            if not silent:
-                print("Only single point found, skipping")
-            return
-
-        ## print((sampled_space[index_x, index_y], sampled_space[index_x+length-2, index_y+length-2]))
-
-        # print(type(sampled_space))
-        # place(sampled_space, sampled_space==False, 2)
-        # print("new sampled_space: \n", sampled_space)
-
-        # print("the space to be marked: \n", sampled_space[index_x:(index_x + length - 1), index_y:(index_y + length - 1)])
-        if not silent:
-            print("length", length)
-
-        ## old result (in corner points format)
-        # result = (sampled_space[index_x, index_y], sampled_space[index_x + length - 1, index_y + length - 1])
-
-        ## new result (in region format)
-        result = ([[sampled_space[index_x, index_y][0][0], sampled_space[index_x + length, index_y][0][0]],
-                   [sampled_space[index_x, index_y][0][1], sampled_space[index_x, index_y + length][0][1]]])
-        print(f"adding rectangle [[{index_x},{index_y}],[{index_x + length},{index_y + length}]] with value [{sampled_space[index_x, index_y][0]},{sampled_space[index_x + length, index_y + length][0]}]")
-
-        ## OLD seen marking (setting seen for all searched points)
-        # place(sampled_space[index_x:(index_x + length), index_y:(index_y + length)],
-        #      sampled_space[index_x:(index_x + length), index_y:(index_y + length)] == False, 2)
-        # place(sampled_space[index_x:(index_x + length), index_y:(index_y + length)],
-        #      sampled_space[index_x:(index_x + length), index_y:(index_y + length)] == True, 2)
-
-        print("new sampled_space: \n", sampled_space)
-        ## globals()["que"].enqueue([[index_x, index_x+length-2],[index_y, index_y+length-2]],start_value)
-        return result
-    else:
-        print(f"Sorry, {dimensions} dimensions TBD")

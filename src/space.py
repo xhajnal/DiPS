@@ -624,7 +624,7 @@ class RefinedSpace:
             save (bool): if True output is pickled
             progress (Tkinter element): progress bar
         """
-        from synthetise import sample
+        from sample_space import sample
         self.gridsampled = True
         sample(self, constraints, sample_size, compress=True, silent=silent, save=save, progress=progress)
 

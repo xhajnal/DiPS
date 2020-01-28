@@ -5,7 +5,7 @@ import time
 import pickle
 import socket
 
-from synthetise import check_deeper
+from refine_space import check_deeper
 from load import get_all_f, load_pickled_data
 from common.math import create_intervals
 

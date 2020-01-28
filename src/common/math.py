@@ -136,3 +136,32 @@ def get_rectangle_volume(rectangle):
     for interval in rectangle:
         intervals.append(interval[1] - interval[0])
     return prod(intervals)
+
+
+def create_matrix(sample_size, dim):
+    """ Return **dim** dimensional array of length **sample_size** in each dimension
+
+    Args:
+        sample_size (int): number of samples in dimension
+        dim (int): number of dimensions
+
+    """
+    return np.array(private_create_matrix(sample_size, dim, dim))
+
+
+def private_create_matrix(sample_size, dim, n_param):
+    """ Return **dim** dimensional array of length **sample_size** in each dimension
+
+    Args:
+        sample_size (int): number of samples in dimension
+        dim (int): number of dimensions
+        n_param (int): dummy parameter
+
+    @author: xtrojak, xhajnal
+    """
+    if dim == 0:
+        point = []
+        for i in range(n_param):
+            point.append(0)
+        return [point, 9]
+    return [private_create_matrix(sample_size, dim - 1, n_param) for _ in range(sample_size)]

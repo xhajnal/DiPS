@@ -74,7 +74,7 @@ try:
     from load import load_functions, find_param, load_data, find_param_old
     from common.math import create_intervals
     import space
-    from synthetise import check_deeper
+    from refine_space import check_deeper
     from mc import call_prism_files, call_storm_files
     from sample_n_visualise import sample_list_funs, eval_and_show, get_param_values, heatmap
     from optimize import optimize

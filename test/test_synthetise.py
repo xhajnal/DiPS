@@ -3,7 +3,7 @@ import unittest
 from sympy import Interval
 
 from common.convert import ineq_to_constraints
-from src.synthetise import *
+from src.refine_space import *
 cwd = os.getcwd()
 
 
