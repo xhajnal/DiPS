@@ -1,12 +1,18 @@
 import os
 import pickle
 from time import time, strftime, localtime
-
 import numpy as np
 
 from common.math import create_matrix, cartesian_product
 from common.z3 import is_this_z3_function, translate_z3_function
-from refine_space import refinement_results
+from common.config import load_config
+
+spam = load_config()
+results_dir = spam["results"]
+refinement_results = spam["refinement_results"]
+refine_timeout = spam["refine_timeout"]
+z3_path = spam["z3_path"]
+del spam
 
 
 def sample(space, constraints, sample_size, compress=False, silent=True, save=False, debug: bool = False, progress=False):
