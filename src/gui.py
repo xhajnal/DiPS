@@ -145,7 +145,6 @@ class Gui(Tk):
         super().__init__(*args, **kwargs)
 
         if error_occurred is not None:
-
             print(colored(error_occurred, "red"))
             messagebox.showerror("Loading modules", error_occurred)
             raise error_occurred
@@ -261,14 +260,14 @@ class Gui(Tk):
         self.progress_bar = None
         self.new_window = None
 
-        ## DESIGN
+        #################################################### DESIGN ####################################################
         # print("height", self.winfo_height())
 
-        ## STATUS BAR
+        #################################################### STATUS BAR ################################################
         self.status = Label(self, text="", bd=1, relief=SUNKEN, anchor=W)
         self.status.pack(side=BOTTOM, fill=X)
 
-        ## DESIGN - STATUS
+        ################################################ DESIGN - STATUS ###############################################
         frame = Frame(self)  ## Upper frame
         frame.pack(fill=X)
 
@@ -316,13 +315,14 @@ class Gui(Tk):
         debug_checkbutton.grid(row=4, column=1, sticky=E, padx=4)
         # print("self.silent", self.silent.get())
 
-        ## DESIGN - TABS
+        ################################################################################################################
+        ################################################ DESIGN - TABS #################################################
+        ################################################################################################################
         # Defines and places the notebook widget
         nb = ttk.Notebook(self)  ## Tab part of the GUI
         nb.pack(fill="both", expand=1)
 
-
-        ## TAB EDIT
+        ################################################### TAB EDIT ###################################################
         page1 = ttk.Frame(nb, name="model_properties")  # Adds tab 1 of the notebook
         nb.add(page1, text='Model & Properties', state="normal", sticky="nsew")
 
@@ -349,7 +349,6 @@ class Gui(Tk):
         frame_right.columnconfigure(16, weight=1)
         frame_right.pack(side=RIGHT, fill=X)
 
-
         Button(frame_right, text='Open property', command=self.load_property).grid(row=0, column=1, sticky=W, pady=4,
                                                                                    padx=4)  # pack(anchor=W)
         Button(frame_right, text='Save property', command=self.save_property).grid(row=0, column=2, sticky=W, pady=4)  # pack(anchor=W)
@@ -363,7 +362,7 @@ class Gui(Tk):
         # print(nb.select(0), type(nb.select(0)))
         # print(page1, type(page1))
 
-        ## TAB SYNTHESISE
+        ############################################# TAB SYNTHESISE ###################################################
         page2 = ttk.Frame(nb, name="synthesise")  # Adds tab 2 of the notebook
         nb.add(page2, text='Synthesise functions')
         page2.grid_propagate(0)
@@ -386,8 +385,7 @@ class Gui(Tk):
         Radiobutton(frame_left, text="Prism", variable=self.program, value="prism").grid(row=1, column=1, sticky=W, pady=4)
         radio = Radiobutton(frame_left, text="Storm", variable=self.program, value="storm")
         radio.grid(row=1, column=2, sticky=W, pady=4)
-        createToolTip(radio,
-                      text='This option results in a command that would produce desired output. (If you installed Storm, open command line and insert the command. Then load output file.)')
+        createToolTip(radio, text='This option results in a command that would produce desired output. (If you installed Storm, open command line and insert the command. Then load output file.)')
 
         Label(frame_left, text=f"Show function(s):", anchor=W, justify=LEFT).grid(row=2, column=0, sticky=W, padx=4, pady=4)
         Radiobutton(frame_left, text="Original", variable=self.factorise, value=False).grid(row=2, column=1, sticky=W, pady=4)
@@ -409,8 +407,7 @@ class Gui(Tk):
         self.functions_parsed_text = scrolledtext.ScrolledText(frame_right, width=int(self.winfo_width() / 2), height=int(self.winfo_width() / 2), state=DISABLED)
         self.functions_parsed_text.grid(row=5, column=1, columnspan=16, rowspan=2, sticky=W, pady=4)
 
-
-        ## TAB SAMPLE AND VISUALISE
+        ######################################### TAB SAMPLE AND VISUALISE #############################################
         page3 = ttk.Frame(nb, name="sampling")
         nb.add(page3, text='Sample functions')
         page3.grid_propagate(0)
@@ -442,8 +439,7 @@ class Gui(Tk):
         Button(self.frame3_right, text='Plot functions in a given point', command=self.show_funs_in_single_point).grid(row=2, column=1, padx=4, pady=4)
         Button(self.frame3_right, text='Plot all sampled points', command=self.show_funs_in_all_points).grid(row=2, column=2, padx=4, pady=4)
         Button(self.frame3_right, text='Heatmap', command=self.show_heatmap).grid(row=2, column=3, padx=4, pady=4)
-        self.Next_sample_button = Button(self.frame3_right, text="Next plot", state="disabled",
-                                         command=lambda: self.button_pressed.set(True))
+        self.Next_sample_button = Button(self.frame3_right, text="Next plot", state="disabled", command=lambda: self.button_pressed.set(True))
         self.Next_sample_button.grid(row=3, column=2, padx=4, pady=4)
 
         self.page3_figure = None
@@ -457,8 +453,7 @@ class Gui(Tk):
         self.page3_figure_in_use = StringVar()
         self.page3_figure_in_use.set("")
 
-
-        ## TAB DATA
+        ################################################### TAB DATA ###################################################
         page4 = ttk.Frame(nb, name="data")
         nb.add(page4, text='Data & Intervals')
         # page4.columnconfigure(0, weight=1)
@@ -535,40 +530,51 @@ class Gui(Tk):
 
         Button(frame_right, text='Save data informed properties', command=self.save_data_informed_properties).grid(row=9, column=1, sticky=W, padx=5, pady=4)
 
-
-        ## TAB constraints
+        ############################################### TAB CONSTRAINTS ################################################
         page5 = ttk.Frame(nb, width=400, height=200, name="constraints")
         nb.add(page5, text='Constraints')
 
-        page5.rowconfigure(4, weight=1)
-        page5.columnconfigure(17, weight=1)
+        for i in range(1, 9):
+            page5.columnconfigure(i, weight=1)
+        page5.columnconfigure(10, pad=7)
+        page5.rowconfigure(3, weight=1)
+        page5.rowconfigure(5, pad=7)
 
-        Button(page5, text='Calculate constraints', command=self.recalculate_constraints).grid(row=0, column=0, padx=12, pady=12)
+        button = Button(page5, text='Calculate constraints', command=self.recalculate_constraints)
+        button.grid(sticky=W, padx=12, pady=12)
 
-        self.constraints_text = scrolledtext.ScrolledText(page5, width=200, height=100, state=DISABLED)
-        self.constraints_text.grid(row=1, column=0, columnspan=16, rowspan=2, sticky=W, padx=4)
+        self.constraints_text = scrolledtext.ScrolledText(page5)
+        self.constraints_text.grid(row=1, column=0, columnspan=9, rowspan=4, padx=5, sticky=E+W+S+N)
 
-        Label(page5, text=f"Import/Export:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, padx=(10, 4), pady=4)
-        Button(page5, text='Open constraints', command=self.load_constraints).grid(row=3, column=1, sticky=W, pady=4)
-        Button(page5, text='Append constraints', command=self.append_constraints).grid(row=3, column=2, sticky=W, pady=4)
-        Button(page5, text='Save constraints', command=self.save_constraints).grid(row=3, column=3, sticky=W, pady=4)
+        label = Label(page5, text=f"Import/Export:", anchor=W, justify=LEFT)
+        label.grid(row=5, column=0, padx=5)
+        button = Button(page5, text='Open constraints', command=self.load_constraints)
+        button.grid(row=5, column=1)
+        button = Button(page5, text='Append constraints', command=self.append_constraints)
+        button.grid(row=5, column=2)
+        button = Button(page5, text='Save constraints', command=self.save_constraints)
+        button.grid(row=5, column=3)
 
-
-        ## TAB SAMPLE AND REFINEMENT
+        ############################################ TAB SAMPLE AND REFINEMENT #########################################
         page6 = ttk.Frame(nb, name="refine")
         nb.add(page6, text='Sample & Refine space')
 
         # frame_left = Frame(page6, width=500, height=200)
         # frame_left.pack(side=LEFT, expand=False)
-        frame_left = Frame(page6, width=int(self.winfo_width() / 2), height=int(self.winfo_height()))
+        frame_left = Frame(page6, width=int(self.winfo_width() * 0.4), height=int(self.winfo_height()))
+        frame_left.pack(side=LEFT)
         frame_left.grid_propagate(0)
         frame_left.rowconfigure(16, weight=1)
-        frame_left.columnconfigure(10, weight=1)
-        frame_left.pack(side=LEFT, fill=X)
+        for i in range(0, 9):
+            frame_left.columnconfigure(i, weight=1)
+        frame_left.columnconfigure(9, pad=7)
+        frame_left.rowconfigure(14, weight=1)
+        frame_left.rowconfigure(15, pad=7)
 
         self.frame_center = Frame(page6, width=int(self.winfo_width() / 2), height=int(self.winfo_height()))
         self.frame_center.grid_propagate(0)
         self.frame_center.pack(side=LEFT, fill=BOTH, expand=True)
+        # self.frame_center.minsize(int(self.winfo_width() / 2), int(self.winfo_height()))
 
         ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=1, column=0, columnspan=15, sticky='nwe', padx=10, pady=8)
 
@@ -585,48 +591,48 @@ class Gui(Tk):
         ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=2, rowspan=7, sticky='ns', padx=25, pady=25)
 
         label71 = Label(frame_left, text="Set # of samples: ", anchor=W, justify=LEFT)
-        label71.grid(row=1, column=8)
+        label71.grid(row=1, column=7)
         createToolTip(label71, text='number of samples to be used for sampling - subset of all samples')
         self.observations_samples_size_entry = Entry(frame_left)
-        self.observations_samples_size_entry.grid(row=1, column=9)
+        self.observations_samples_size_entry.grid(row=1, column=8)
         self.observations_samples_size_entry.insert(END, '500')
 
         label71 = Label(frame_left, text="Set # of iteration: ", anchor=W, justify=LEFT)
-        label71.grid(row=2, column=8)
+        label71.grid(row=2, column=7)
         createToolTip(label71, text='number of iterations, steps in parameter space')
         self.MH_sampling_iterations_entry = Entry(frame_left)
-        self.MH_sampling_iterations_entry.grid(row=2, column=9)
+        self.MH_sampling_iterations_entry.grid(row=2, column=8)
         self.MH_sampling_iterations_entry.insert(END, '500')
 
         label72 = Label(frame_left, text="Set eps: ", anchor=W, justify=LEFT)
-        label72.grid(row=3, column=8)
+        label72.grid(row=3, column=7)
         createToolTip(label72, text='very small value used as probability of non-feasible values in prior')
         self.eps_entry = Entry(frame_left)
-        self.eps_entry.grid(row=3, column=9)
+        self.eps_entry.grid(row=3, column=8)
         self.eps_entry.insert(END, '0.0001')
 
         label73 = Label(frame_left, text="Set grid size: ", anchor=W, justify=LEFT)
-        label73.grid(row=4, column=8)
+        label73.grid(row=4, column=7)
         createToolTip(label73, text='number of segments in the plot')
         self.bins = Entry(frame_left)
-        self.bins.grid(row=4, column=9)
+        self.bins.grid(row=4, column=8)
         self.bins.insert(END, '20')
 
         label73 = Label(frame_left, text="Show from: ", anchor=W, justify=LEFT)
-        label73.grid(row=5, column=8)
+        label73.grid(row=5, column=7)
         createToolTip(label73, text='show last x percent of accepted pints')
         self.show = Entry(frame_left)
-        self.show.grid(row=5, column=9)
+        self.show.grid(row=5, column=8)
         self.show.insert(END, '75')
 
         label73 = Label(frame_left, text="Set timeout: ", anchor=W, justify=LEFT)
-        label73.grid(row=6, column=8)
+        label73.grid(row=6, column=7)
         createToolTip(label73, text='in seconds')
         self.mh_timeout = Entry(frame_left)
-        self.mh_timeout.grid(row=6, column=9)
+        self.mh_timeout.grid(row=6, column=8)
         self.mh_timeout.insert(END, '3600')
 
-        Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=7, column=8, columnspan=2, pady=4)
+        Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=7, column=7, columnspan=2, pady=4)
 
         ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=5, rowspan=7, sticky='ns', padx=25, pady=25)
 
@@ -642,18 +648,15 @@ class Gui(Tk):
                       text='Minimal size of the rectangle to be checked (if 0 all rectangles are being checked)')
         label65 = Label(frame_left, text="Set algorithm: ", anchor=W, justify=LEFT)
         label65.grid(row=4, column=3, padx=0)
-        createToolTip(label65,
-                      text='Choose from algorithms:\n 1-4 - using SMT solvers \n 1 - DFS search \n 2 - BFS search \n 3 - BFS search with example propagation \n 4 - BFS with example and counterexample propagation \n 5 - interval algorithmic')
+        createToolTip(label65, text='Choose from algorithms:\n 1-4 - using SMT solvers \n 1 - DFS search \n 2 - BFS search \n 3 - BFS search with example propagation \n 4 - BFS with example and counterexample propagation \n 5 - interval algorithmic')
 
         label66 = Label(frame_left, text="Set SMT solver: ", anchor=W, justify=LEFT)
         label66.grid(row=5, column=3, padx=0)
-        createToolTip(label66,
-                      text='When using SMT solver (alg 1-4), two options are possible, z3 or dreal (with delta complete decision procedures)')
+        createToolTip(label66, text='When using SMT solver (alg 1-4), two options are possible, z3 or dreal (with delta complete decision procedures)')
 
         label67 = Label(frame_left, text="Set delta for dreal: ", anchor=W, justify=LEFT)
         label67.grid(row=6, column=3, padx=0)
-        createToolTip(label67,
-                      text='When using dreal solver, delta is used to set solver error boundaries for satisfiability.')
+        createToolTip(label67, text='When using dreal solver, delta is used to set solver error boundaries for satisfiability.')
 
         self.max_dept_entry = Entry(frame_left)
         self.coverage_entry = Entry(frame_left)
@@ -684,25 +687,26 @@ class Gui(Tk):
 
         Label(frame_left, text="Textual representation of space", anchor=CENTER, justify=CENTER, padx=10).grid(row=9, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
         self.space_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_height() * 0.8/19), state=DISABLED)
-        self.space_text.grid(row=13, column=0, columnspan=15, rowspan=2, sticky=W, padx=10)
-        Button(frame_left, text='Export text', command=self.export_space_text).grid(row=15, column=8, sticky=S, padx=4, pady=(10, 0))
-        Button(frame_left, text='Extend / Collapse text ', command=self.collapse_space_text).grid(row=15, column=7, sticky=S, padx=4, pady=(10, 0))
+        self.space_text.grid(row=13, column=0, columnspan=9, rowspan=2, sticky=W, padx=10)
+        Button(frame_left, text='Extend / Collapse text', command=self.collapse_space_text).grid(row=15, column=3, sticky=S, padx=4, pady=(10, 10))
+        Button(frame_left, text='Export text', command=self.export_space_text).grid(row=15, column=4, sticky=S, padx=4, pady=(10, 10))
 
         # highlightbackground="blue", highlightcolor="blue", highlightthickness=1,
-        frame_right = Frame(page6, width=int(self.winfo_width() / 2), height=int(self.winfo_height()))
+        frame_right = Frame(page6)
         # frame_right.grid_propagate(0)
         # frame_right.rowconfigure(9, weight=1)
         # frame_right.columnconfigure(1, weight=1)
-        frame_right.pack(side=RIGHT, fill=BOTH)
+        frame_right.pack(side=RIGHT, fill=BOTH, anchor=W)
 
-        Button(frame_right, text='Open space', command=self.load_space).grid(row=1, column=1, padx=(4, 40), pady=7)
-        Button(frame_right, text='Save space', command=self.save_space).grid(row=2, column=1, padx=(4, 40), pady=7)
-        Button(frame_right, text='Delete space', command=self.refresh_space).grid(row=3, column=1, padx=(4, 40), pady=7)
+        Button(frame_right, text='Open space', command=self.load_space).grid(row=1, column=0, padx=(4, 4), pady=7)
+        Button(frame_right, text='Save space', command=self.save_space).grid(row=2, column=0, padx=(4, 4), pady=7)
+        Button(frame_right, text='Delete space', command=self.refresh_space).grid(row=3, column=0, padx=(4, 4), pady=7)
 
-        Button(frame_right, text='Load MH Results', command=self.load_mh_results).grid(row=5, column=1, padx=(4, 40), pady=7)
-        Button(frame_right, text='Save MH Results', command=self.save_mh_results).grid(row=6, column=1, padx=(4, 40), pady=7)
-        Button(frame_right, text='Delete MH Results', command=self.refresh_mh).grid(row=7, column=1, padx=(4, 40), pady=7)
+        Button(frame_right, text='Load MH Results', command=self.load_mh_results).grid(row=5, column=0, padx=(4, 4), pady=7)
+        Button(frame_right, text='Save MH Results', command=self.save_mh_results).grid(row=6, column=0, padx=(4, 4), pady=7)
+        Button(frame_right, text='Delete MH Results', command=self.refresh_mh).grid(row=7, column=0, padx=(4, 4), pady=7)
 
+        frame_right.columnconfigure(0, weight=1)
         frame_right.rowconfigure(0, weight=1)
         frame_right.rowconfigure(4, weight=1)
         frame_right.rowconfigure(8, weight=1)
