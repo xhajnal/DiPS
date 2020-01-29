@@ -178,7 +178,8 @@ class Gui(Tk):
         self.property_file = StringVar()  ## Property file
         self.data_informed_property_file = StringVar()  ## Data informed property file
         self.data_file = StringVar()  ## Data file
-        self.data_intervals_file = StringVar  ## Data intervals file
+        self.data_intervals_file = StringVar()  ## Data intervals file
+        # self.data_intervals_file.set("hello")
         self.functions_file = StringVar()  ## Rational functions file
         self.constraints_file = StringVar()  ## constraints file
         self.space_file = StringVar()  ## Space file
@@ -271,38 +272,48 @@ class Gui(Tk):
         frame = Frame(self)  ## Upper frame
         frame.pack(fill=X)
 
-        Label(frame, text=f"Model file:", anchor=W, justify=LEFT).grid(row=0, column=0, sticky=W, padx=4)
-        self.model_label = Label(frame, textvariable=self.model_file, anchor=W, justify=LEFT)
+        left_frame = Frame(frame)
+        left_frame.grid(row=0, column=0, sticky="nsew")
+
+        Label(left_frame, text=f"Model file:", anchor=W, justify=LEFT).grid(row=0, column=0, sticky=W, padx=4)
+        self.model_label = Label(left_frame, textvariable=self.model_file, anchor=W, justify=LEFT)
         self.model_label.grid(row=0, column=1, sticky=W, padx=4)
 
-        Label(frame, text=f"Property file:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, padx=4)
-        self.property_label = Label(frame, textvariable=self.property_file, anchor=W, justify=LEFT)
+        Label(left_frame, text=f"Property file:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, padx=4)
+        self.property_label = Label(left_frame, textvariable=self.property_file, anchor=W, justify=LEFT)
         self.property_label.grid(row=1, column=1, sticky=W, padx=4)
 
-        Label(frame, text=f"Functions file:", anchor=W, justify=LEFT).grid(row=2, column=0, sticky=W, padx=4)
-        self.functions_label = Label(frame, textvariable=self.functions_file, anchor=W, justify=LEFT)
+        Label(left_frame, text=f"Functions file:", anchor=W, justify=LEFT).grid(row=2, column=0, sticky=W, padx=4)
+        self.functions_label = Label(left_frame, textvariable=self.functions_file, anchor=W, justify=LEFT)
         self.functions_label.grid(row=2, column=1, sticky=W, padx=4)
 
-        Label(frame, text=f"Data file:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, padx=4)
-        self.data_label = Label(frame, textvariable=self.data_file, anchor=W, justify=LEFT)
+        Label(left_frame, text=f"Data file:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, padx=4)
+        self.data_label = Label(left_frame, textvariable=self.data_file, anchor=W, justify=LEFT)
         self.data_label.grid(row=3, column=1, sticky=W, padx=4)
 
-        Label(frame, text=f"Data intervals file:", anchor=W, justify=LEFT).grid(row=4, column=0, sticky=W, padx=4)
-        self.data_intevals_label = Label(frame, textvariable=self.data_intervals_file, anchor=W, justify=LEFT)
-        self.data_intevals_label.grid(row=4, column=1, sticky=W, padx=4)
+        center_frame = Frame(frame)
+        center_frame.grid(row=0, column=1, sticky="nsew")
 
-        Label(frame, text=f"Constraints file:", anchor=W, justify=LEFT).grid(row=5, column=0, sticky=W, padx=4)
-        self.constraints_label = Label(frame, textvariable=self.constraints_file, anchor=W, justify=LEFT)
-        self.constraints_label.grid(row=5, column=1, sticky=W, padx=4)
+        Label(center_frame, text=f"Data intervals file:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, padx=4)
+        self.data_intevals_label = Label(center_frame, textvariable=self.data_intervals_file, anchor=W, justify=LEFT)
+        self.data_intevals_label.grid(row=1, column=1, sticky=W, padx=4)
 
-        Label(frame, text=f"Space file:", anchor=W, justify=LEFT).grid(row=6, column=0, sticky=W, padx=4)
-        self.space_label = Label(frame, textvariable=self.space_file, anchor=W, justify=LEFT)
-        self.space_label.grid(row=6, column=1, sticky=W, padx=4)
+        Label(center_frame, text=f"Constraints file:", anchor=W, justify=LEFT).grid(row=2, column=0, sticky=W, padx=4)
+        self.constraints_label = Label(center_frame, textvariable=self.constraints_file, anchor=W, justify=LEFT)
+        self.constraints_label.grid(row=2, column=1, sticky=W, padx=4)
 
-        show_print_checkbutton = Checkbutton(frame, text="Hide print in command line", variable=self.silent)
-        show_print_checkbutton.grid(row=6, column=9, sticky=E, padx=4)
-        debug_checkbutton = Checkbutton(frame, text="Extensive command line print", variable=self.debug)
-        debug_checkbutton.grid(row=6, column=10, sticky=E, padx=4)
+        Label(center_frame, text=f"Space file:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, padx=4)
+        self.space_label = Label(center_frame, textvariable=self.space_file, anchor=W, justify=LEFT)
+        self.space_label.grid(row=3, column=1, sticky=W, padx=4)
+
+        frame.rowconfigure(0, weight=1)
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
+
+        show_print_checkbutton = Checkbutton(center_frame, text="Hide print in command line", variable=self.silent)
+        show_print_checkbutton.grid(row=4, column=0, sticky=E, padx=4)
+        debug_checkbutton = Checkbutton(center_frame, text="Extensive command line print", variable=self.debug)
+        debug_checkbutton.grid(row=4, column=1, sticky=E, padx=4)
         # print("self.silent", self.silent.get())
 
         ## DESIGN - TABS
@@ -501,7 +512,7 @@ class Gui(Tk):
         self.n_samples_entry.insert(END, '60')
 
         Button(frame_left, text='Compute intervals', command=self.compute_data_intervals).grid(row=6, column=0, sticky=W, padx=4, pady=4)
-        Button(frame_left, text='Load intervals', command=self.load_data_intervals).grid(row=6, column=1, sticky=W, padx=4, pady=4)
+        Button(frame_left, text='Open intervals file', command=self.load_data_intervals).grid(row=6, column=1, sticky=W, padx=4, pady=4)
         Button(frame_left, text='Save intervals', command=self.save_data_intervals).grid(row=6, column=2, sticky=W, padx=4, pady=4)
 
         Label(frame_left, text=f"Intervals:", anchor=W, justify=LEFT).grid(row=7, column=0, sticky=W, padx=4, pady=4)
@@ -1411,7 +1422,6 @@ class Gui(Tk):
             return
         else:
             self.data_intervals_changed = True
-            self.data_intervals_file = StringVar()
             self.data_intervals_file.set(spam)
 
             self.data_intervals = pickle.load(open(self.data_intervals_file.get(), "rb"))
