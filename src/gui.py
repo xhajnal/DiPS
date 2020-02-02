@@ -1594,6 +1594,9 @@ class Gui(Tk):
 
                 self.space = pickle.load(open(self.space_file.get(), "rb"))
 
+                ## Back compatibility
+                self.space.update()
+
                 ## Show the space as niceprint()
                 self.print_space()
 
@@ -1682,9 +1685,10 @@ class Gui(Tk):
         """
         if not self.space == "":
             if not self.silent.get() and not clear:
-                print("space", self.space)
+                print("space: ", self.space)
                 print()
-                print("space nice print \n", self.space.nice_print(full_print=not self.space_colapsed))
+                print("Space nice print:")
+                print(self.space.nice_print(full_print=not self.space_colapsed))
 
             self.space_text.configure(state='normal')
             self.space_text.delete('1.0', END)
@@ -1938,12 +1942,12 @@ class Gui(Tk):
         text = where.get('1.0', END).split("\n")
         if isinstance(text, str):
             text = [text]
-        print("text", text)
+        # print("text", text)
         scrap = []
         for line in text:
             if line is "":
                 continue
-            ## Getting rid of commma
+            ## Getting rid of comma
             line = line.split(",")[0]
             scrap.append(line)
         return scrap
@@ -2087,11 +2091,11 @@ class Gui(Tk):
                 self.status_set("No file selected to store the constraints.")
                 return
 
+            if not self.silent.get():
+                print("Saving constraints as a file:", save_constraints_file)
+
         if "." not in basename(save_constraints_file):
             save_constraints_file = save_constraints_file + ".p"
-
-        if not self.silent.get():
-            print("Saving constraints as a file:", save_constraints_file)
 
         pickle.dump(constraints, open(save_constraints_file, 'wb'))
         if not file:
@@ -2585,9 +2589,9 @@ class Gui(Tk):
 
         self.status_set("Space sampling is running ...")
         if not self.silent.get():
-            print("space.params", self.space.params)
-            print("constraints", self.constraints)
-            print("grid size", self.sample_size)
+            print("space parameters: ", self.space.params)
+            print("constraints: ", self.constraints)
+            print("grid size: ", self.sample_size)
 
         try:
             self.cursor_toggle_busy(True)
@@ -2724,6 +2728,10 @@ class Gui(Tk):
         self.coverage = float(self.coverage_entry.get())
         self.epsilon = float(self.epsilon_entry.get())
         self.delta = float(self.delta_entry.get())
+        if not isinstance(self.space, str):
+            self.space_coverage = float(self.space.get_coverage())
+        else:
+            self.space_coverage = 0
 
         ## Checking if all entries filled
         if self.max_depth == "":
@@ -2751,6 +2759,10 @@ class Gui(Tk):
         # else:
         if self.constraints == "":
             messagebox.showwarning("Refine space", "Load or calculate constraints before refinement.")
+            return
+
+        if self.space_coverage >= self.coverage:
+            messagebox.showinfo("Refine space", "You already achieved higher coverage than the goal.")
             return
 
         if not self.validate_space("Refine Space"):

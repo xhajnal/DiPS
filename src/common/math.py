@@ -135,7 +135,12 @@ def get_rectangle_volume(rectangle):
         raise Exception("empty rectangle has no volume")
     for interval in rectangle:
         intervals.append(interval[1] - interval[0])
-    return prod(intervals)
+
+    product = prod(intervals)
+    if isinstance(product, np.float64):
+        product = float(product)
+
+    return product
 
 
 def create_matrix(sample_size, dim):

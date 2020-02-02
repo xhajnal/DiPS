@@ -132,6 +132,16 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(round(space.get_red_volume(), 2), 0.08)
         self.assertEqual(round(space.get_nonwhite_volume(), 2), 0.16)
 
+    def test_add_white(self):
+        space = RefinedSpace((0, 1), ["x"])
+        space.add_white([[0, 0.5]])
+
+        print(space)
+        space.remove_white([[0, 1]])
+        space.add_white([[0.5, 1]])
+
+        print(space)
+
     def test_visualisation(self):
         print(colored("Space visualisations tests", 'blue'))
 
