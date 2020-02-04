@@ -449,8 +449,12 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         print()
 
     ## Checking coverage
-    if space.get_coverage() >= coverage:
-        print(colored(f"Space refinement - The coverage threshold already reached: {space.get_coverage()} >= {coverage}", "green"))
+    space_coverage = space.get_coverage()
+    globals()["init_coverage"] = space_coverage
+    # globals()["init_white_rectangles"] = len(space.get_white())
+
+    if space_coverage >= coverage:
+        print(colored(f"Space refinement - The coverage threshold already reached: {space_coverage} >= {coverage}", "green"))
         return space
 
     start_time = time()
@@ -707,21 +711,18 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                     ## THE PROBLEM IS THAT COVERAGE IS COMPUTED FOR THE WHOLE SPACE NOT ONLY FOR THE GIVEN REGION
 
                     # print("rectangle", rectangle, " constraints", constraints, "silent", silent)
-                    # print("current coverage", space.get_coverage())
+                    # print("current coverage", space_coverage)
                     # print("whole area", space.get_volume())
                     # print("rectangle_size", rectangle_size)
 
                     # ## Setting the coverage as lower value between desired coverage and the proportional expected coverage
-                    # next_coverage = min(coverage, (space.get_coverage() + (volume / space.get_volume()) * coverage))
+                    # next_coverage = min(coverage, (space_coverage + (volume / space.get_volume()) * coverage))
                     ## Setting the depth as a proportion
                     next_depth = max(0, recursion_depth - (int(log(numb_of_white_rectangles, 2))))
 
                     if debug:
                         print("region", rectangle)
                         print("constraints", constraints)
-                    ## Set the progress
-                    if gui:
-                        gui(index / numb_of_white_rectangles)
 
                     ## Check if the que created (if alg1 used before it is not)
                     try:
@@ -737,13 +738,14 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
 
                         ## Showing the step refinements of respective rectangles from the white space
                         ## If the visualisation of the space did not succeed space_shown = (None, error message)
+                        space_coverage = space.get_coverage()
                         if not where:
                             space_shown = space.show(
-                                f"max_recursion_depth:{next_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n Refinement took {socket.gethostname()} {round(time() - single_rectangle_start_time)} second(s)",
+                                f"max_recursion_depth:{next_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version} \n Refinement took {socket.gethostname()} {round(time() - single_rectangle_start_time)} second(s)",
                                 save=save, where=where, show_all=not gui)
                         if not silent:
                             print()
-                        if space.get_coverage() >= coverage:
+                        if space_coverage >= coverage:
                             break
                     elif version in [2, 3, 4]:
                         ## Add call to the Queue
@@ -788,13 +790,14 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
             elif version == 5:
                 private_check_deeper_interval(*globals()["que"].dequeue())
 
+            space_coverage = space.get_coverage()
             if not where:
                 space_shown = space.show(
-                    f"max_recursion_depth:{next_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n Refinement took {socket.gethostname()} {round(time() - single_rectangle_start_time)} second(s)",
+                    f"max_recursion_depth:{next_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version} \n Refinement took {socket.gethostname()} {round(time() - single_rectangle_start_time)} second(s)",
                     save=save, where=where, show_all=not gui)
             if not silent:
                 print()
-            if space.get_coverage() >= coverage:
+            if space_coverage >= coverage:
                 globals()["que"] = Queue()
                 break
 
@@ -803,8 +806,8 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         ## If the visualisation of the space did not succeed space_shown = (None, error message)
         if show_space:
             space.refinement_took(time() - start_time)
-            space_shown = space.show(f"max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version} \n Last refinement took {socket.gethostname()} {round(time() - start_time, 2)} of {round(space.time_refinement, 2)} second(s)", sat_samples=gui and len(space.params) <= 2, unsat_samples=gui and len(space.params) <= 2, save=save, where=where, show_all=not gui)
-    print(colored(f"Result coverage is: {space.get_coverage()}", "blue"))
+            space_shown = space.show(f"max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version} \n Last refinement took {socket.gethostname()} {round(time() - start_time, 2)} of {round(space.time_refinement, 2)} second(s)", sat_samples=gui and len(space.params) <= 2, unsat_samples=gui and len(space.params) <= 2, save=save, where=where, show_all=not gui)
+    print(colored(f"Result coverage is: {space_coverage}", "blue"))
     print(colored(f"Refinement took: {space.time_last_refinement} seconds", "blue"))
     if where:
         if space_shown[0] is None:
@@ -856,9 +859,10 @@ def private_check_deeper(region, constraints, recursion_depth, epsilon, coverage
             return f"interval {region} too small, skipped"
 
     ## Stop if the the current coverage is above the given thresholds
-    if space.get_coverage() >= coverage:
-        print(colored(f"coverage {space.get_coverage()} is above the threshold", "blue"))
-        return f"coverage {space.get_coverage()} is above the threshold"
+    space_coverage = space.get_coverage()
+    if space_coverage >= coverage:
+        print(colored(f"coverage {space_coverage} is above the threshold", "blue"))
+        return f"coverage {space_coverage} is above the threshold"
 
     # HERE MAY ADDING THE MODEL
     print("region", region)
@@ -867,14 +871,14 @@ def private_check_deeper(region, constraints, recursion_depth, epsilon, coverage
     if check_unsafe(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
         result = "unsafe"
         if progress:
-            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))//coverage)
+            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))/(coverage - globals()["init_coverage"]))
         if not silent:
             print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} {result} \n", "red"))
     elif check_safe(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
         result = "safe"
         if progress:
-            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))//coverage)
+            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))/(coverage - globals()["init_coverage"]))
         if not silent:
             print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} {result} \n", "green"))
@@ -918,14 +922,16 @@ def private_check_deeper(region, constraints, recursion_depth, epsilon, coverage
     if silent:
         private_check_deeper(foo, constraints, recursion_depth - 1, epsilon, coverage, silent, solver, delta, debug, progress)
         ## Probably not necessary
-        # if space.get_coverage() >= coverage:
+        # space_coverage = space.get_coverage()
+        # if space_coverage >= coverage:
         #     print(colored(f"coverage {space.get_coverage()} is above the threshold", "blue"))
         #     return f"coverage {space.get_coverage()} is above the threshold"
         private_check_deeper(foo2, constraints, recursion_depth - 1, epsilon, coverage, silent, solver, delta, debug, progress)
     else:
         print(recursion_depth, foo, space.get_coverage(), private_check_deeper(foo, constraints, recursion_depth - 1, epsilon, coverage, silent, solver, delta, debug, progress))
         ## Probably not necessary
-        # if space.get_coverage() >= coverage:
+        #  space_coverage = space.get_coverage()
+        #  if space_coverage >= coverage:
         #     print(colored(f"coverage {space.get_coverage()} is above the threshold", "blue"))
         #     return f"coverage {space.get_coverage()} is above the threshold"
         print(recursion_depth, foo2, space.get_coverage(), private_check_deeper(foo2, constraints, recursion_depth - 1, epsilon, coverage, silent, solver, delta, debug, progress))
@@ -973,23 +979,24 @@ def private_check_deeper_queue(region, constraints, recursion_depth, epsilon, co
             return f"interval {region} too small, skipped"
 
     ## Stop if the the current coverage is above the given thresholds
-    if space.get_coverage() >= coverage:
+    space_coverage = space.get_coverage()
+    if space_coverage >= coverage:
         globals()["que"] = Queue()
-        print(colored(f"coverage {space.get_coverage()} is above the threshold", "blue"))
-        return "coverage ", space.get_coverage(), " is above the threshold"
+        print(colored(f"coverage {space_coverage} is above the threshold", "blue"))
+        return "coverage ", space_coverage, " is above the threshold"
 
     ## HERE I CAN APPEND THE VALUE OF EXAMPLE AND COUNTEREXAMPLE
     if check_unsafe(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
         result = "unsafe"
         if progress:
-            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))//coverage)
+            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))/(coverage - globals()["init_coverage"]))
         if not silent:
             print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} {result} \n", "red"))
     elif check_safe(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
         result = "safe"
         if progress:
-            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))//coverage)
+            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))/(coverage - globals()["init_coverage"]))
         if not silent:
             print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} {result} \n", "green"))
@@ -1089,10 +1096,11 @@ def private_check_deeper_queue_checking(region, constraints, recursion_depth, ep
             return f"interval {region} too small, skipped"
 
     ## Stop if the the current coverage is above the given thresholds
-    if space.get_coverage() >= coverage:
+    space_coverage = space.get_coverage()
+    if space_coverage >= coverage:
         globals()["que"] = Queue()
-        print(colored(f"coverage {space.get_coverage()} is above the threshold", "blue"))
-        return f"coverage {space.get_coverage()} is above the threshold"
+        print(colored(f"coverage {space_coverage} is above the threshold", "blue"))
+        return f"coverage {space_coverage} is above the threshold"
 
     if model is None:
         example = check_unsafe(region, constraints, silent, solver=solver, delta=delta, debug=debug)
@@ -1108,7 +1116,7 @@ def private_check_deeper_queue_checking(region, constraints, recursion_depth, ep
     if example is True:
         space.remove_white(region)
         if progress:
-            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))//coverage)
+            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))/(coverage - globals()["init_coverage"]))
         if not silent:
             print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} is unsafe", "red"))
@@ -1116,7 +1124,7 @@ def private_check_deeper_queue_checking(region, constraints, recursion_depth, ep
     elif check_safe(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
         space.remove_white(region)
         if progress:
-            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))//coverage)
+            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))/(coverage - globals()["init_coverage"]))
         if not silent:
             print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()}  is safe", "red"))
@@ -1238,11 +1246,12 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
             return f"interval {region} too small, skipped"
 
     ## Stop if the the current coverage is above the given thresholds
-    if space.get_coverage() >= coverage:
+    space_coverage = space.get_coverage()
+    if space_coverage >= coverage:
         globals()["que"] = Queue()
 
-        print(colored(f"coverage {space.get_coverage()} is above the threshold", "blue"))
-        return f"coverage {space.get_coverage()} is above the threshold"
+        print(colored(f"coverage {space_coverage} is above the threshold", "blue"))
+        return f"coverage {space_coverage} is above the threshold"
 
     ## Resolving if the region safe/unsafe/unknown
     ## If both example and counterexample are None
@@ -1273,7 +1282,8 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
     if example is True:
         space.remove_white(region)
         if progress:
-            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))//coverage)
+            # progress(False, (((get_rectangle_volume(region) / space.get_volume()) / globals()["init_white_rectangles"]) / (coverage - globals()["init_coverage"])))
+            progress(False, (get_rectangle_volume(region) / space.get_volume())/(coverage - globals()["init_coverage"]))
         if not silent:
             print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} is unsafe", "red"))
@@ -1281,7 +1291,7 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
     elif counterexample is True:
         space.remove_white(region)
         if progress:
-            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))//coverage)
+            progress(False, (get_rectangle_volume(region) / space.get_volume())/(coverage - globals()["init_coverage"]))
         if not silent:
             print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()}  is safe", "green"))
@@ -1687,18 +1697,19 @@ def private_check_deeper_interval(region, constraints, intervals, recursion_dept
             return f"interval {region} too small, skipped"
 
     ## Stop if the the current coverage is above the given thresholds
-    if space.get_coverage() >= coverage:
+    space_coverage = space.get_coverage()
+    if space_coverage >= coverage:
         globals()["que"] = Queue()
 
-        print(colored(f"coverage {space.get_coverage()} is above the threshold", "blue"))
-        return f"coverage {space.get_coverage()} is above the threshold"
+        print(colored(f"coverage {space_coverage} is above the threshold", "blue"))
+        return f"coverage {space_coverage} is above the threshold"
 
     ## Resolve the result
     # print("gonna check region: ", region)
     if check_interval_out(region, constraints, intervals, silent=silent, called=False, debug=debug) is True:
         result = "unsafe"
         if progress:
-            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))/coverage)
+            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))/(coverage - globals()["init_coverage"]))
         if not silent:
             print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} {result} \n", "red"))
@@ -1706,7 +1717,7 @@ def private_check_deeper_interval(region, constraints, intervals, recursion_dept
     elif check_interval_in(region, constraints, intervals, silent=silent, called=False, debug=debug) is True:
         result = "safe"
         if progress:
-            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))//coverage)
+            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))/(coverage - globals()["init_coverage"]))
         if not silent:
             print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} {result} \n", "green"))
