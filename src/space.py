@@ -242,7 +242,7 @@ class RefinedSpace:
             region = copy.deepcopy(self.region)
             if len(self.region) == 1:
                 if region[0][1] - region[0][0] < 0.1:
-                     region[0] = (region[0][0] - 0.2, region[0][1] + 0.2)
+                    region[0] = (region[0][0] - 0.2, region[0][1] + 0.2)
                 pic.axis([region[0][0], region[0][1], 0, 1])
             max_region_size = region[0][1] - region[0][0]
 

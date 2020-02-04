@@ -92,18 +92,18 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
             sim_length = 2
         data[model_type] = {}
         experiments[model_type] = {}
-        for N in populations:
+        for population_size in populations:
             if not silent:
-                print("population size: ", N)
+                print("population size: ", population_size)
             if "semisynchronous" in model_type and not sim_length:
-                sim_length = 2 * N
+                sim_length = 2 * population_size
             if "asynchronous" in model_type and not sim_length:
-                sim_length = 2 * N
+                sim_length = 2 * population_size
 
-            model = os.path.join(model_path, (model_type + str(N) + ".pm"))
+            model = os.path.join(model_path, (model_type + str(population_size) + ".pm"))
             # A bad way how to deal with model without N
-            if isinstance(N, str):
-                N = 0
+            if isinstance(population_size, str):
+                population_size = 0
             if not silent:
                 print("model: ", model)
 
@@ -121,11 +121,11 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
                 print("parameter space: ")
                 print(param_space)
 
-            experiments[model_type][N] = {}
-            data[model_type][N] = {}
+            experiments[model_type][population_size] = {}
+            data[model_type][population_size] = {}
             for n_sample in n_samples:
-                experiments[model_type][N][n_sample] = {}
-                data[model_type][N][n_sample] = {}
+                experiments[model_type][population_size][n_sample] = {}
+                data[model_type][population_size][n_sample] = {}
 
             # print(len(param_space[0]))
             for column in range(len(param_space[0])):
@@ -136,8 +136,8 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
                 if not silent:
                     print("parametrisation: ", column_values)
                 for n_sample in n_samples:
-                    experiments[model_type][N][n_sample][column_values] = []
-                    data[model_type][N][n_sample][column_values] = []
+                    experiments[model_type][population_size][n_sample][column_values] = []
+                    data[model_type][population_size][n_sample][column_values] = []
                 # file = open("path_{}_{}_{}_{}_{}.txt".format(model_type,N,max_sample,v_p,v_q),"w+")
                 # file.close()
                 for sample in range(1, max_sample + 1):
@@ -155,7 +155,7 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
 
                     ## More profound path name here
                     ## path_file = f"path_{model_type}{N}_{max_sample}_{parameter_values}.txt"
-                    path_file = os.path.join(tmp, "dump_file_{}_{}_{}_{}.txt".format(model_type, N, max_sample, str(time.time()).replace(".", "")))
+                    path_file = os.path.join(tmp, "dump_file_{}_{}_{}_{}.txt".format(model_type, population_size, max_sample, str(time.time()).replace(".", "")))
                     # print(path_file)
 
                     ## Here is the PRISM called
@@ -174,8 +174,8 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
 
                     ## If some error occurred
                     ## A bad way how to deal with files without N
-                    if N is not 0:
-                        if state > N or debug or "2" in last_line.split(" ")[2:-1]:
+                    if population_size is not 0:
+                        if state > population_size or debug or "2" in last_line.split(" ")[2:-1]:
                             print(last_line[:-1])
                             print("state: ", state)
                             print()
@@ -183,13 +183,13 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
                             os.remove(path_file)
                         for n_sample in n_samples:
                             if sample <= n_sample:
-                                experiments[model_type][N][n_sample][column_values].append(state)
+                                experiments[model_type][population_size][n_sample][column_values].append(state)
                 for n_sample in n_samples:
                     ## A bad way how to deal with files without N
-                    for i in range(N + 1):
-                        data[model_type][N][n_sample][column_values].append(len(list(
-                            filter(lambda x: x == i, experiments[model_type][N][n_sample][column_values]))) / n_sample)
-                print("states: ", experiments[model_type][N][max_sample][column_values])
+                    for i in range(population_size + 1):
+                        data[model_type][population_size][n_sample][column_values].append(len(list(
+                            filter(lambda x: x == i, experiments[model_type][population_size][n_sample][column_values]))) / n_sample)
+                print("states: ", experiments[model_type][population_size][max_sample][column_values])
 
     print(f"  It took {socket.gethostname()} {time.time() - start_time} seconds to run")
     return experiments, data

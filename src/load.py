@@ -184,24 +184,24 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
 
     no_files = True
     ## Choosing files with the given pattern
-    for file in glob.glob(str(path)):
+    for functions_file in glob.glob(str(path)):
         try:
-            N = int(re.findall('\d+', file)[0])
+            population_size = int(re.findall('\d+', functions_file)[0])
         except IndexError:
-            N = 0
+            population_size = 0
         ## Parsing only selected agents quantities
         if agents_quantities:
-            if N not in agents_quantities:
+            if population_size not in agents_quantities:
                 continue
             else:
                 no_files = False
-                print("parsing ", os.path.join(os.getcwd(), file))
+                print("parsing ", os.path.join(os.getcwd(), functions_file))
         # print(os.getcwd(), file)
-        with open(file, "r") as file:
+        with open(functions_file, "r") as file:
             i = -1
             here = ""
-            f[N] = []
-            rewards[N] = []
+            f[population_size] = []
+            rewards[population_size] = []
             ## PARSING PRISM/STORM OUTPUT
             line_index = 0
             if tool is "unknown":
@@ -256,24 +256,24 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
                         # print(f"pop: {N}, formula: {i+1}", line)
                         if factorize:
                             try:
-                                rewards[N].append(str(factor(line)))
+                                rewards[population_size].append(str(factor(line)))
                             except TypeError:
                                 print("Error while factorising rewards, used not factorised instead")
-                                rewards[N].append(line)
+                                rewards[population_size].append(line)
                                 # os.chdir(cwd)
                         else:
-                            rewards[N].append(line)
+                            rewards[population_size].append(line)
                     elif not here == "r" and not rewards_only:
                         # print(f"pop: {N}, formula: {i+1}", line[:-1])
                         if factorize:
                             try:
-                                f[N].append(str(factor(line)))
+                                f[population_size].append(str(factor(line)))
                             except TypeError:
-                                print(f"Error while factorising polynomial f[{N}][{i + 1}], used not factorised instead")
-                                f[N].append(line)
+                                print(f"Error while factorising polynomial f[{population_size}][{i + 1}], used not factorised instead")
+                                f[population_size].append(line)
                                 # os.chdir(cwd)
                         else:
-                            f[N].append(line)
+                            f[population_size].append(line)
                 line_index = line_index + 1
     os.chdir(default_directory)
     if no_files and agents_quantities:
@@ -530,6 +530,7 @@ def find_param_old(polynomial, debug: bool = False):
 
     Args:
         polynomial : polynomial as string
+        debug (bool): if True extensive print will be used
 
     Returns:
         set of strings - parameters
@@ -559,6 +560,7 @@ def find_param_older(polynomial, debug: bool = False):
 
     Args:
         polynomial : polynomial as string
+        debug (bool): if True extensive print will be used
     
     Returns:
          set of strings - parameters

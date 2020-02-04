@@ -1,3 +1,4 @@
+import pickle
 import unittest
 
 from sympy import Interval
@@ -460,15 +461,13 @@ class MyTestCase(unittest.TestCase):
         alpha, n_samples, max_depth, min_rect_size, N, algorithm, v_p, v_q = 0.95, 100, 10, 1e-05, 2, 4, 0.028502714675268215, 0.03259111103419188
 
         ## Z3
-        spacee = check_deeper([(0, 1), (0, 0.9)], ineq_to_constraints(f[N],
-                             create_intervals(alpha, n_samples, D3[("synchronous_", N, n_samples, v_p, v_q)])),
-                             max_depth, min_rect_size, coverage_thresh, False, algorithm, show_space=show_space)
+        spacee = check_deeper([(0, 1), (0, 0.9)], ineq_to_constraints(f[N], create_intervals(alpha, n_samples, D3[("synchronous_", N, n_samples, v_p, v_q)])),
+                              max_depth, min_rect_size, coverage_thresh, False, algorithm, show_space=show_space)
         ## Dreal
         solver = "z3"
         delta = 0.001
-        spacee = check_deeper([(0, 1), (0, 0.9)], ineq_to_constraints(f[N],
-                             create_intervals(alpha, n_samples, D3[("synchronous_", N, n_samples, v_p, v_q)])),
-                             max_depth, min_rect_size, coverage_thresh, False, algorithm, solver=solver, delta=delta, show_space=show_space)
+        spacee = check_deeper([(0, 1), (0, 0.9)], ineq_to_constraints(f[N], create_intervals(alpha, n_samples, D3[("synchronous_", N, n_samples, v_p, v_q)])),
+                              max_depth, min_rect_size, coverage_thresh, False, algorithm, solver=solver, delta=delta, show_space=show_space)
 
         ## Interval algorithmic
         algorithm = 5
@@ -570,7 +569,9 @@ class MyTestCase(unittest.TestCase):
         space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
 
         print("space", space)
-        check_deeper(space, ineq_to_constraints(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 15, 0, 0.95, silent=False, version=5, size_q=3, show_space=show_space)
+
+        ## check_deeper(region, constraints,                                  recursion_depth, epsilon, coverage, silent, version, sample_size=False, debug=False, save=False, title="", where=False, show_space=True, solver="z3", delta=0.001, gui=False):
+        check_deeper(space, ineq_to_constraints(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 15, 0, 0.95, silent=False, version=5, sample_size=3, show_space=show_space)
         print("space", space)
         print(space.get_coverage())
 
@@ -585,7 +586,7 @@ class MyTestCase(unittest.TestCase):
 
         # check_deeper([[0, 1], [2, 2.5]], ineq_to_constraints(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 20, 0, 0.95, silent=False, version=5, show_space=show_space)
 
-        check_deeper([(0, 1), (2, 3)], ineq_to_constraints(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 15, 0, 0.95, silent=False, version=5, size_q=11, show_space=show_space)
+        check_deeper([(0, 1), (2, 3)], ineq_to_constraints(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 15, 0, 0.95, silent=False, version=5, sample_size=11, show_space=show_space)
 
         # check_deeper([(0, 0.5), (0, 0.5)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), 5, 0, 0.95, silent=False, version=5, show_space=show_space)
 

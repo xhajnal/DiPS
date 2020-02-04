@@ -99,7 +99,7 @@ def sample(space, constraints, sample_size, compress=False, silent=True, save=Fa
 
         satisfied_list = []
         ## For each constraint (inequality - interval bound)
-        for index, constraint in enumerate(constraints):
+        for constraint_index, constraint in enumerate(constraints):
             # print(constraint)
             # print("type(constraint[index])", type(constraint))
             # for param in range(len(space.params)):
@@ -108,8 +108,8 @@ def sample(space, constraints, sample_size, compress=False, silent=True, save=Fa
             #     print("type(parameter_value[param])", type(parameter_value[param]))
 
             if debug:
-                print(f"constraints[{index}]", constraint)
-                print(f"eval(constraints[{index}])", eval(constraint))
+                print(f"constraints[{constraint_index}]", constraint)
+                print(f"eval(constraints[{constraint_index}])", eval(constraint))
 
             satisfied_list.append(eval(constraint))
 

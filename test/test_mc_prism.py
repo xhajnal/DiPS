@@ -52,15 +52,13 @@ class MyTestCase(unittest.TestCase):
         ## Model checking
         print(colored('Testing simple model checking', 'blue'))
         for population in agents_quantities:
-            call_prism(f"{os.path.join(cwd,'models/asynchronous_2.pm')} {os.path.join(cwd,'properties/prop_2.pctl')} -param p=0:1,q=0:1,alpha=0:1"
-                       .format(population, population), seq=False, std_output_path=os.path.join(cwd, "prism_results"))
+            call_prism(f"{os.path.join(cwd,'models/asynchronous_2.pm')} {os.path.join(cwd,'properties/prop_2.pctl')} -param p=0:1,q=0:1,alpha=0:1".format(population, population), seq=False, std_output_path=os.path.join(cwd, "prism_results"))
 
     def test_call_prism_files(self):
         agents_quantities = [2, 3]
         ## call_prism_files
         print(colored('Call_prism_files', 'blue'))
         call_prism_files("asyn*_", agents_quantities, model_path=os.path.join(cwd, "models"), output_path=os.path.join(cwd, "prism_results"))
-
 
     def test_prism_heavy_load(self):
         agents_quantities = [20, 40]

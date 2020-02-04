@@ -16,7 +16,7 @@ print(f"  It took {socket.gethostname()} {time.time() - start_time} seconds to l
 
 ## LOAD POLYNOMIALS
 start_time = time.time()
-functions = get_all_f("./sem*[0-9].txt", True)
+functions = get_all_f("./sem*[0-9].txt", "prism", True)
 print(f"  It took {socket.gethostname()} {time.time() - start_time} seconds to load polynomials")
 
 ## GET TO THE RIGHT DIRECTORY

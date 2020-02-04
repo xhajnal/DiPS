@@ -245,7 +245,7 @@ class Gui(Tk):
         ## OTHER SETTINGS
         self.button_pressed = BooleanVar()  ## Inner variable to close created window
         self.python_recursion_depth = 1000  ## Inner python setting
-        self.space_colapsed = True
+        self.space_collapsed = True
 
         ## Other variables
         self.progress = StringVar()
@@ -294,8 +294,8 @@ class Gui(Tk):
         center_frame.grid(row=0, column=1, sticky="nsew")
 
         Label(center_frame, text=f"Data intervals file:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, padx=4)
-        self.data_intevals_label = Label(center_frame, textvariable=self.data_intervals_file, anchor=W, justify=LEFT)
-        self.data_intevals_label.grid(row=1, column=1, sticky=W, padx=4)
+        self.data_intervals_label = Label(center_frame, textvariable=self.data_intervals_file, anchor=W, justify=LEFT)
+        self.data_intervals_label.grid(row=1, column=1, sticky=W, padx=4)
 
         Label(center_frame, text=f"Constraints file:", anchor=W, justify=LEFT).grid(row=2, column=0, sticky=W, padx=4)
         self.constraints_label = Label(center_frame, textvariable=self.constraints_file, anchor=W, justify=LEFT)
@@ -486,9 +486,9 @@ class Gui(Tk):
         self.data_text.grid(row=2, column=0, columnspan=16, sticky=W, padx=4, pady=4)
 
         ## SET THE INTERVAL COMPUTATION SETTINGS
-        buton41 = Button(frame_left, text='Optimize parameters', command=self.optimize)
-        buton41.grid(row=3, column=0, sticky=W, padx=4, pady=4)
-        createToolTip(buton41, text='using regression')
+        button41 = Button(frame_left, text='Optimize parameters', command=self.optimize)
+        button41.grid(row=3, column=0, sticky=W, padx=4, pady=4)
+        createToolTip(button41, text='using regression')
 
         label42 = Label(frame_left, text="Set alpha, the confidence:", anchor=W, justify=LEFT)
         label42.grid(row=4)
@@ -1242,8 +1242,10 @@ class Gui(Tk):
                 try:
                     self.status_set("Factorising functions ...")
                     self.cursor_toggle_busy(True)
+
+                    ## Progress Bar
                     self.new_window = Toplevel(self)
-                    Label(self.new_window, text="Factorising functions in progress", anchor=W, justify=LEFT).pack()
+                    Label(self.new_window, text="Factorising functions progress:", anchor=W, justify=LEFT).pack()
                     Label(self.new_window, textvar=self.progress, anchor=W, justify=LEFT).pack()
                     self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
                     self.progress_bar.pack()
@@ -1688,16 +1690,16 @@ class Gui(Tk):
                 print("space: ", self.space)
                 print()
                 print("Space nice print:")
-                print(self.space.nice_print(full_print=not self.space_colapsed))
+                print(self.space.nice_print(full_print=not self.space_collapsed))
 
             self.space_text.configure(state='normal')
             self.space_text.delete('1.0', END)
             if not clear:
-                self.space_text.insert('end', self.space.nice_print(full_print=not self.space_colapsed))
+                self.space_text.insert('end', self.space.nice_print(full_print=not self.space_collapsed))
             # self.space_text.configure(state='disabled')
 
     def collapse_space_text(self):
-        self.space_colapsed = not self.space_colapsed
+        self.space_collapsed = not self.space_collapsed
         self.print_space()
 
     def show_space(self, show_refinement, show_samples, show_true_point, clear=False, show_all=False):
@@ -2273,16 +2275,16 @@ class Gui(Tk):
 
     def show_funs_in_single_point(self):
         """ Plots rational functions in a given point. """
-        print("Ploting rational functions in a given point ...")
-        self.status_set("Ploting rational functions in a given point.")
+        print("Plotting rational functions in a given point ...")
+        self.status_set("Plotting rational functions in a given point.")
 
         if self.functions == "":
-            messagebox.showwarning("Ploting rational functions in a given point.", "Load the functions first, please.")
+            messagebox.showwarning("Plotting rational functions in a given point.", "Load the functions first, please.")
             return
 
         ## Disable overwriting the plot by show_funs_in_all_points
         if self.page3_figure_in_use.get():
-            if not askyesno("Ploting rational functions in a given point",
+            if not askyesno("Plotting rational functions in a given point",
                             "The result plot is currently in use. Do you want override?"):
                 return
         self.page3_figure_in_use.set("1")
@@ -2392,8 +2394,7 @@ class Gui(Tk):
         self.validate_parameters(where=self.functions)
 
         if len(self.parameters) is not 2:
-            messagebox.showerror("Plot heatmap",
-                                 f"Could not show this 2D heatmap. Parsed function(s) contain {len(self.parameters)} parameter(s), expected 2.")
+            messagebox.showerror("Plot heatmap", f"Could not show this 2D heatmap. Parsed function(s) contain {len(self.parameters)} parameter(s), expected 2.")
             return
 
         self.page3_figure_in_use.set("3")
@@ -2418,7 +2419,7 @@ class Gui(Tk):
         # self.Next_sample_button.config(state="disabled")
         # self.page3_figure_locked.set(False)
         # self.update()
-        self.status_set("Ploting sampled rational functions finished.")
+        self.status_set("Plotting sampled rational functions finished.")
 
     def optimize(self):
         """ Search for parameter values minimizing the distance of function to data. """
@@ -2440,12 +2441,14 @@ class Gui(Tk):
 
         try:
             self.cursor_toggle_busy(True)
+
+            ## Progress Bar
             ## TODO - tweak - update this to actually show the progress
             self.new_window = Toplevel(self)
-            Label(self.new_window, text="Optimisation in progress", anchor=W, justify=LEFT).pack()
-            pb_hD = ttk.Progressbar(self.new_window, orient='horizontal', mode='indeterminate')
-            pb_hD.pack(expand=True, fill=BOTH, side=TOP)
-            pb_hD.start(50)
+            Label(self.new_window, text="Optimisation progress:", anchor=W, justify=LEFT).pack()
+            pb_hd = ttk.Progressbar(self.new_window, orient='horizontal', mode='indeterminate')
+            pb_hd.pack(expand=True, fill=BOTH, side=TOP)
+            pb_hd.start(50)
             self.update()
 
             result = optimize(self.functions, self.parameters, self.parameter_domains, self.data)
@@ -2596,8 +2599,9 @@ class Gui(Tk):
         try:
             self.cursor_toggle_busy(True)
 
+            ## Progress Bar
             self.new_window = Toplevel(self)
-            Label(self.new_window, text="Sampling progress", anchor=W, justify=LEFT).pack()
+            Label(self.new_window, text="Sampling progress:", anchor=W, justify=LEFT).pack()
             Label(self.new_window, textvar=self.progress, anchor=W, justify=LEFT).pack()
             self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
             self.progress_bar.pack()
@@ -2670,8 +2674,9 @@ class Gui(Tk):
         try:
             self.cursor_toggle_busy(True)
 
+            ## Progress Bar
             self.new_window = Toplevel(self)
-            Label(self.new_window, text="Metropolis hastings progress", anchor=W, justify=LEFT).pack()
+            Label(self.new_window, text="Metropolis hastings progress:", anchor=W, justify=LEFT).pack()
             Label(self.new_window, textvar=self.progress, anchor=W, justify=LEFT).pack()
             self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
             self.progress_bar.pack()
@@ -2780,9 +2785,9 @@ class Gui(Tk):
         try:
             self.cursor_toggle_busy(True)
 
-            ## TODO - tweak - update this to actually show the progress
+            ## Progress Bar
             self.new_window = Toplevel(self)
-            Label(self.new_window, text="Refinement in progress", anchor=W, justify=LEFT).pack()
+            Label(self.new_window, text="Refinement progress:", anchor=W, justify=LEFT).pack()
             Label(self.new_window, textvar=self.progress, anchor=W, justify=LEFT).pack()
             self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
             self.progress_bar.pack(expand=True, fill=BOTH, side=TOP)
@@ -2971,8 +2976,8 @@ class Gui(Tk):
                 return
             self.status_set("Please select folder to store the space in.")
             save_space_text_file = filedialog.asksaveasfilename(initialdir=self.refinement_results,
-                                                           title="Saving the textual representation of space - Select file",
-                                                           filetypes=(("text files", "*.txt"), ("all files", "*.*")))
+                                                                title="Saving the textual representation of space - Select file",
+                                                                filetypes=(("text files", "*.txt"), ("all files", "*.*")))
             if save_space_text_file == "":
                 self.status_set("No file selected to store Saving the textual representation of space in.")
                 return
@@ -3234,8 +3239,9 @@ class Gui(Tk):
             self.progress.set(f"{100*change_to}%")
         if change_by is not False:
             self.progress_bar['value'] = self.progress_bar['value'] + 100*change_by
-            self.progress.set(f"{self.progress_bar['value'] + 100*change_by}%")
+            self.progress.set(f"{self.progress_bar['value']}%")
         self.update()
+        pass
 
     def ask_quit(self):
         """ x button handler """
