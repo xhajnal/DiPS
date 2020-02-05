@@ -7,9 +7,7 @@ from matplotlib import collections as mc
 from matplotlib.ticker import MaxNLocator
 from termcolor import colored
 
-# workspace = os.path.dirname(__file__)
-# sys.path.append(os.path.join(workspace, '../src/'))
-
+## Importing my code
 from common.z3 import is_this_z3_function, translate_z3_function
 from load import find_param
 from common.document_wrapper import DocumentWrapper

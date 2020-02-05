@@ -4,8 +4,9 @@ from socket import gethostname
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
-
 from common.document_wrapper import DocumentWrapper
+
+## Importing my code
 from space import RefinedSpace
 from common.config import load_config
 

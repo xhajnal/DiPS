@@ -10,8 +10,8 @@ from termcolor import colored
 from math import log
 from mpmath import mpi
 from matplotlib.patches import Rectangle
-# workspace = os.path.dirname(__file__)
-# sys.path.append(workspace)
+
+## Importing my code
 from load import find_param
 from sample_space import sample
 from space import RefinedSpace

@@ -1,21 +1,21 @@
 import platform
+import pickle
+import os
+import webbrowser
 from copy import deepcopy
 from tkinter import *
 from tkinter import scrolledtext, messagebox
-import webbrowser
-import pickle
-import os
 from sympy import factor
 from pathlib import Path
 from os.path import basename
 from tkinter import filedialog, ttk
 from tkinter.messagebox import askyesno
 from tkinter.ttk import Progressbar
-
 import matplotlib.pyplot as pyplt
 import matplotlib
 from termcolor import colored
 
+## Importing my code
 from common.convert import ineq_to_constraints
 from common.z3 import is_this_z3_function, translate_z3_function, is_this_exponential_function
 

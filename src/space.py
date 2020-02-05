@@ -1,17 +1,16 @@
+import os
 import socket
+import copy
+from numpy import prod
 from collections import Iterable
 from time import localtime, strftime
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
-from numpy import prod
-import copy
 from termcolor import colored  ## Colored output
 
-## ONLY FOR SAVING FILES
-import os
-
+## Importing my code
 from common.math import get_rectangle_volume
 from sample_n_visualise import visualise_by_param  ## Multidimensional refinement proxy
 from common.document_wrapper import DocumentWrapper  ## Text wrapper for figure tight layout
@@ -340,7 +339,7 @@ class RefinedSpace:
                         ax.plot(x_axis, sample)
                     ax.set_xlabel("param indices")
                     ax.set_ylabel("parameter value")
-                    whole_title = "\n".join(self.wrapper.wrap(f"Sat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}, \n{self.title} \n {title}"))
+                    whole_title = "\n".join(self.wrapper.wrap(f"Sat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}. Last sampling took {socket.gethostname()} {round(self.time_last_sampling, 2)} of {round(self.time_samplingt, 2)} sec. whole time. \n{self.title} \n {title}"))
                     ax.set_title(whole_title)
                     ax.autoscale()
                     ax.margins(0.1)
@@ -386,7 +385,7 @@ class RefinedSpace:
                         ax.plot(x_axis, sample)
                     ax.set_xlabel("param indices")
                     ax.set_ylabel("parameter value")
-                    whole_title = "\n".join(self.wrapper.wrap(f"Unsat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}, \n{self.title} \n{title}"))
+                    whole_title = "\n".join(self.wrapper.wrap(f"Unsat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}. Last sampling took {socket.gethostname()} {round(self.time_last_sampling, 2)} of {round(self.time_samplingt, 2)} sec. whole time. \n{self.title} \n{title}"))
                     ax.set_title(whole_title)
                     ax.autoscale()
                     ax.margins(0.1)
