@@ -2476,17 +2476,17 @@ class Gui(Tk):
         Label(window, text=f"Distance: ").grid(row=3)
 
         var = StringVar()
-        var.set(result[0])
+        var.set(str(result[0]))
         ent = Entry(window, state='readonly', textvariable=var, width=width, relief='flat', readonlybackground='white', fg='black')
         ent.grid(row=1, column=1)
 
         var = StringVar()
-        var.set(result[1])
+        var.set(str(result[1]))
         ent = Entry(window, state='readonly', textvariable=var, width=width, relief='flat', readonlybackground='white', fg='black')
         ent.grid(row=2, column=1)
 
         var = StringVar()
-        var.set(result[2])
+        var.set(str(result[2]))
         ent = Entry(window, state='readonly', textvariable=var, width=width, relief='flat', readonlybackground='white', fg='black')
         ent.grid(row=3, column=1)
 

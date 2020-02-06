@@ -69,4 +69,4 @@ def optimize(functions: [list], params: [list], param_intervals: [list], data_po
         function_values.append(eval(polynome))
 
     ## VALUES OF PARAMS, VALUES OF FUNCTIONS, DISTANCE
-    return res.x, function_values,  sum([abs(x - y) for x, y in zip(function_values, data_point)])
+    return list(res.x), function_values,  sum([abs(x - y) for x, y in zip(function_values, data_point)])
