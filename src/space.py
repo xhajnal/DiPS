@@ -320,11 +320,7 @@ class RefinedSpace:
                     else:
                         fig, ax = plt.subplots()
                     ## Creates values of the horizontal axis
-                    x_axis = []
-                    i = 0
-                    for dimension in self.sat_samples[0]:
-                        i = i + 1
-                        x_axis.append(i)
+                    x_axis = list(range(1, len(self.sat_samples[0])+1))
                     if self.true_point and true_point:
                         ax.scatter(x_axis, self.true_point, marker='x', label="true_point")
                         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
