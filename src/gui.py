@@ -220,7 +220,7 @@ class Gui(Tk):
         self.show_true_point = None  ## flag telling whether to show true point
 
         ## Settings
-        self.version = "1.9.3"  ## Version of the gui
+        self.version = "1.10.0"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 

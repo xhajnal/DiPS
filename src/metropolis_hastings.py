@@ -3,6 +3,7 @@ from time import time
 from socket import gethostname
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 import pickle
 from common.document_wrapper import DocumentWrapper
 
@@ -87,21 +88,51 @@ class HastingsResults:
         if show is not False and show > 0:
             self.show = show
 
-        if where:
-            plt.hist2d(self.accepted[self.show:, 0], self.accepted[self.show:, 1], bins=self.bins)
-            plt.xlabel(self.params[0])
-            plt.ylabel(self.params[1])
-            plt.title("\n".join(wrapper.wrap(self.title)))
-            where[1] = plt.colorbar()
-            return where[0], where[1]
+        print("self.accepted", self.accepted)
+        print("self.accepted[self.show:, 0]", self.accepted[self.show:, 0])
+
+        ## Multidimensional case
+        if len(self.accepted[0]) > 2:
+            if where:
+                fig = where[0]
+                ax = where[1]
+                plt.autoscale()
+                ax.autoscale()
+            else:
+                fig, ax = plt.subplots()
+            ## Creates values of the horizontal axis
+            x_axis = list(range(1, len(self.accepted[0]) + 1))
+            ## Get values of the vertical axis for respective line
+            for sample in self.accepted[self.show:]:
+                ax.scatter(x_axis, sample)
+                ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+                ax.plot(x_axis, sample)
+            ax.set_xlabel("param indices")
+            ax.set_ylabel("parameter value")
+            ax.set_title("\n".join(wrapper.wrap(self.title)))
+            ax.autoscale()
+            ax.margins(0.1)
+
+            if where:
+                return fig, ax
+            else:
+                plt.show()
         else:
-            plt.figure(figsize=(12, 6))
-            plt.hist2d(self.accepted[self.show:, 0], self.accepted[self.show:, 1], bins=self.bins)
-            plt.colorbar()
-            plt.xlabel(self.params[0])
-            plt.ylabel(self.params[1])
-            plt.title(self.title)
-            plt.show()
+            if where:
+                plt.hist2d(self.accepted[self.show:, 0], self.accepted[self.show:, 1], bins=self.bins)
+                plt.xlabel(self.params[0])
+                plt.ylabel(self.params[1])
+                plt.title("\n".join(wrapper.wrap(self.title)))
+                where[1] = plt.colorbar()
+                return where[0], where[1]
+            else:
+                plt.figure(figsize=(12, 6))
+                plt.hist2d(self.accepted[self.show:, 0], self.accepted[self.show:, 1], bins=self.bins)
+                plt.colorbar()
+                plt.xlabel(self.params[0])
+                plt.ylabel(self.params[1])
+                plt.title(self.title)
+                plt.show()
 
 
 def sample(functions, data_means):
