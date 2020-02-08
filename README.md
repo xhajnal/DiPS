@@ -36,10 +36,9 @@ Feel free to leave response either via issues or email.
   * otherwise go [here](https://tkdocs.com/tutorial/install.html) 
 * other missing python packages 
   * in the main directory `MyDiPS` run `pip3 install -v .`
-* (Unix, Mac) - install dreal (for more info click [here](https://github.com/dreal/dreal4))
+* (Unix, Mac) - install dreal
   * `pip3 install dreal`
-  * `git clone https://github.com/dreal/dreal4 && cd dreal4`
-  * `sudo ./setup/ubuntu/`lsb_release -r -s`/install_prereqs.sh`
+  * build dreal - info [here](https://github.com/dreal/dreal4#how-to-build)
 * [Jupyter Notebook](https://jupyter.org/install) (optional)
 * [Storm](http://www.stormchecker.org/) (optional, advanced) 
 * [Prophesy](https://moves.rwth-aachen.de/research/tools/prophesy/) (optional, advanced)
