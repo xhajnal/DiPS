@@ -28,8 +28,8 @@ def load_functions(file_path, tool="unknown", factorize=True, rewards_only=False
     Args:
         file_path (string):
         factorize (bool): if true it will factorise polynomial results
-        rewards_only (bool): if true it compute only rewards
-        f_only (bool): if true it will compute only standard properties
+        rewards_only (bool): if true it parse only rewards
+        f_only (bool): if true it will parse only standard properties
         tool (string): a tool of which is the output from (PRISM/STORM)
 
     Returns:
@@ -152,9 +152,9 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
     Args:
         path (string): file name regex
         factorize (bool): if true it will factorise polynomial results
-        rewards_only (bool): if true it compute only rewards
-        f_only (bool): if true it will compute only standard properties
-        agents_quantities (list): of population sizes to be used
+        rewards_only (bool): if true it parse only rewards
+        f_only (bool): if true it will parse only standard properties
+        agents_quantities (list of numbers or False): of population sizes to be used, if False, the whole path used
         tool (string): a tool of which is the output from (PRISM/STORM)
 
     Returns:
@@ -284,12 +284,26 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
 
 
 def get_all_f(path, tool, factorize, agents_quantities=False):
-    """ Loads all nonreward results of parameter synthesis from *path* folder """
+    """ Loads all nonreward results of parameter synthesis from *path* folder
+
+    Args:
+        path (string): file name regex
+        tool (string): a tool of which is the output from (PRISM/STORM)
+        factorize (bool): if true it will factorise polynomial results
+        agents_quantities (list of numbers or False): of population sizes to be used, if False, the whole path used
+    """
     return load_all_functions(path, tool, factorize, agents_quantities=agents_quantities, rewards_only=False, f_only=True)[0]
 
 
 def get_all_rewards(path, tool, factorize, agents_quantities=False):
-    """ Loads all reward results of parameter synthesis from *path* folder """
+    """ Loads all reward results of parameter synthesis from *path* folder
+
+    Args:
+        path (string): file name regex
+        tool (string): a tool of which is the output from (PRISM/STORM)
+        factorize (bool): if true it will factorise polynomial results
+        agents_quantities (list of numbers or False): of population sizes to be used, if False, the whole path used
+    """
     return load_all_functions(path, tool, factorize, agents_quantities=agents_quantities, rewards_only=True, f_only=False)[1]
 
 
@@ -300,7 +314,6 @@ def save_functions(dic, name):
         dic (dict): to be exported
         name (string): name of the dictionary (used for the file name)
     """
-
     for key in dic.keys():
         ## If value not empty list
         if dic[key]:

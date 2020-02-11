@@ -88,6 +88,7 @@ class HastingsResults:
         if show is not False and show > 0:
             self.show = show
 
+        print("self.show", self.show)
         print("self.accepted", self.accepted)
         print("self.accepted[self.show:, 0]", self.accepted[self.show:, 0])
 
@@ -235,7 +236,7 @@ def metropolis_hastings(likelihood_computer, prior, transition_model, param_init
         observations (list of numbers): observations that we wish to model
         acceptance_rule (function(x, x_new)): decides whether to accept or reject the new sample
         parameter_intervals (list of pairs): boundaries of parameters
-        progress (Tkinter element): progress bar
+        progress (False or Tkinter_element): progress bar
         timeout (int): timeout in seconds
         debug (bool): if True extensive print will be used
 
@@ -292,7 +293,7 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
         space (Refined space):
         theta (list): parameter values
         functions (list of strings):
-        observations (list of numbers):
+        observations (list of ints):
         eps (number): very small value used as probability of non-feasible values in prior
 
     Returns:
@@ -346,7 +347,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     """ Initialisation method for Metropolis Hastings
     Args:
         space (RefinedSpace):
-        observations (list of numbers): either experiment or data(experiment result frequency)
+        observations (list of ints): either experiment or data(experiment result frequency)
         functions (list of strings):
         observations_count (int): total number of observations
         observations_samples_size (int): sample size from the observations

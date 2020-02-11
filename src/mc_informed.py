@@ -227,10 +227,7 @@ def call_storm(population, parameters, data, alpha, n_samples, multiparam):
 
         if data[population][i] - margin(alpha, n_samples, data[population][i]) > 0:
             suffix = "{}-low".format(i)
-            sys.stdout.write('./storm-pars --prism /{}/{}_{}.pm --prop "P>{}'.format(storm_models, model, population,
-                                                                                     data[population][i] - margin(alpha,
-                                                                                                                  n_samples,
-                                                                                                                  data[population][i])))
+            sys.stdout.write('./storm-pars --prism /{}/{}_{}.pm --prop "P>{}'.format(storm_models, model, population, data[population][i] - margin(alpha, n_samples, data[population][i])))
             if i > 0:
                 sys.stdout.write("[ F (a0=1)")
             else:
@@ -244,18 +241,13 @@ def call_storm(population, parameters, data, alpha, n_samples, multiparam):
             for param in parameters[1:]:
                 sys.stdout.write(',0.01<={}<=0.99'.format(param))
             sys.stdout.write(
-                '" --refine --printfullresult >> /{}/{}_{}_{}_{}_seq_{}.txt 2>&1'.format(storm_output, model, population, alpha,
-                                                                                         n_samples, suffix))
-
+                '" --refine --printfullresult >> /{}/{}_{}_{}_{}_seq_{}.txt 2>&1'.format(storm_output, model, population, alpha, n_samples, suffix))
             print()
             print()
 
         if data[population][i] + margin(alpha, n_samples, data[population][i]) < 1:
             suffix = "{}-high".format(i)
-            sys.stdout.write('./storm-pars --prism /{}/{}_{}.pm --prop "P<{}'.format(storm_models, model, population,
-                                                                                     data[population][i] + margin(alpha,
-                                                                                                                  n_samples,
-                                                                                                                  data[population][i])))
+            sys.stdout.write('./storm-pars --prism /{}/{}_{}.pm --prop "P<{}'.format(storm_models, model, population, data[population][i] + margin(alpha, n_samples, data[population][i])))
             if i > 0:
                 sys.stdout.write("[ F (a0=1)")
             else:
@@ -269,14 +261,12 @@ def call_storm(population, parameters, data, alpha, n_samples, multiparam):
             for param in parameters[1:]:
                 sys.stdout.write(',0.01<={}<=0.99'.format(param))
             sys.stdout.write(
-                '" --refine --printfullresult >> /{}/{}_{}_{}_{}_seq_{}.txt 2>&1'.format(storm_output, model, population, alpha,
-                                                                                         n_samples, suffix))
+                '" --refine --printfullresult >> /{}/{}_{}_{}_{}_seq_{}.txt 2>&1'.format(storm_output, model, population, alpha, n_samples, suffix))
 
             print()
             print()
         print("---")
         print()
     print("end=$SECONDS")
-    print('echo "It took: $((end-start)) seconds." >> /{}/{}_{}_{}_{}_seq_{}.txt 2>&1'.format(storm_output, model, population,
-                                                                                              alpha, n_samples, suffix))
+    print('echo "It took: $((end-start)) seconds." >> /{}/{}_{}_{}_{}_seq_{}.txt 2>&1'.format(storm_output, model, population, alpha, n_samples, suffix))
     print()

@@ -10,9 +10,9 @@ class MyTestCase(unittest.TestCase):
         # if not admin.isUserAdmin():
         #   admin.runAsAdmin()
         if sys.platform.startswith("win"):
-            a = (set_javaheap_win("9g"))
+            a = (set_java_heap_win("9g"))
             print("previous memory:", a)
-            set_javaheap_win(a)
+            set_java_heap_win(a)
         else:
             print("Skipping this test since not on windows")
 

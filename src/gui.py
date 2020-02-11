@@ -2001,7 +2001,7 @@ class Gui(Tk):
         """ Saves data as a pickled file.
 
         Args:
-            file (string):  file to save the data
+            file (string or False):  file to save the data
         """
         self.parse_data_from_window()
 
@@ -2037,7 +2037,7 @@ class Gui(Tk):
         """ Saves data intervals as a pickled file.
 
         Args:
-            file (string):  file to save the data intervals
+            file (string or False):  file to save the data intervals
         """
 
         data_intervals = self.scrap_TextBox(self.data_intervals_text)
@@ -2074,7 +2074,7 @@ class Gui(Tk):
         """ Saves constraints as a pickled file.
 
         Args:
-            file (string):  file to save the constraints
+            file (string or False):  file to save the constraints
         """
         constraints = self.scrap_TextBox(self.constraints_text)
 
@@ -2107,7 +2107,7 @@ class Gui(Tk):
         """ Saves space as a pickled file.
 
         Args:
-            file (string):  file to save the space
+            file (string or False):  file to save the space
         """
         if file:
             save_space_file = file
@@ -2138,7 +2138,7 @@ class Gui(Tk):
         """ Saves Metropolis hastings results a pickled file.
 
         Args:
-            file (string):  file to save Metropolis hastings results
+            file (string or False):  file to save Metropolis hastings results
         """
 
         if file:
@@ -2199,7 +2199,7 @@ class Gui(Tk):
                 if self.program.get().lower() == "prism":
                     self.cursor_toggle_busy(True)
                     self.status_set("Parameter synthesis is running ...")
-                    call_prism_files(self.model_file.get(), [], param_intervals=False, seq=False, noprobchecks=False,
+                    call_prism_files(self.model_file.get(), [], param_intervals=False, seq=False, no_prob_checks=False,
                                      memory="", model_path="", properties_path=self.property_dir,
                                      property_file=self.property_file.get(), output_path=self.prism_results,
                                      gui=show_message, silent=self.silent.get())
@@ -2504,7 +2504,7 @@ class Gui(Tk):
         """ Stores optimisation results as a file
 
         Args:
-            file (string):  file to store the optimisation results
+            file (string or False):  file to store the optimisation results
         """
         if file:
             save_opt_result_file = file
@@ -2549,7 +2549,7 @@ class Gui(Tk):
         self.parse_data_from_window()
 
         self.status_set("Intervals are being created ...")
-        self.data_intervals = create_intervals(float(self.alpha_entry.get()), float(self.n_samples_entry.get()), self.data)
+        self.data_intervals = create_intervals(float(self.alpha_entry.get()), int(self.n_samples_entry.get()), self.data)
 
         intervals = ""
         if not self.silent.get():
@@ -2920,8 +2920,7 @@ class Gui(Tk):
 
             ## Check if the number of functions and intervals is equal
             if len(self.functions) != len(self.data_intervals):
-                messagebox.showerror(position,
-                                     "The number of rational functions and data points (or intervals) is not equal")
+                messagebox.showerror(position, "The number of rational functions and data points (or intervals) is not equal")
                 return
 
             if self.functions_changed:
@@ -2965,7 +2964,11 @@ class Gui(Tk):
         self.status_set("Space refreshed.")
 
     def export_space_text(self, file=False):
-        """ Exports textual representation of space into a text file."""
+        """ Exports textual representation of space into a text file.
+
+        Args:
+            file (string or False):  file to export space text
+        """
         if file:
             save_space_text_file = file
         else:
@@ -2983,7 +2986,7 @@ class Gui(Tk):
                 return
 
         if "." not in basename(save_space_text_file):
-            save_space_file = save_space_text_file + ".txt"
+            save_space_text_file = save_space_text_file + ".txt"
 
         if not self.silent.get():
             print("Saving the textual representation of space as a file:", save_space_text_file)
@@ -3036,8 +3039,8 @@ class Gui(Tk):
                 messagebox.showwarning(position, "Using previously created space with new constraints. Consider using fresh new space.")
                 ## Check if the properties and data are valid
                 globals()["parameters"] = set()
-                for polynome in self.constraints:
-                    globals()["parameters"].update(find_param(polynome))
+                for polynomial in self.constraints:
+                    globals()["parameters"].update(find_param(polynomial))
                 globals()["parameters"] = sorted(list(globals()["parameters"]))
                 self.parameters = globals()["parameters"]
 

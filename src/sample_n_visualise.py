@@ -22,7 +22,7 @@ def get_param_values(parameters, sample_size, intervals=False, debug: bool = Fal
     Args:
         parameters (list): of parameters to sample
         sample_size (int): sample size in each parameter
-        intervals (bool): if False (0,1) interval is used
+        intervals (list of tuples or False): if False (0,1) interval is used
         debug (bool): if debug extensive output is provided
     """
     parameter_values = []
@@ -46,13 +46,13 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
 
     Args:
         functions (list of strings): list of rational functions
-        parameter_value: (list of floats) array of param values
+        parameter_value: (list of numbers) array of param values
         parameters (list of strings): parameter names (used for faster eval)
-        data (list): Data comparison next to respective function
-        data_intervals (list): intervals obtained from the data to check if the function are within the intervals
+        data (list of floats): Data comparison next to respective function
+        data_intervals (list of tuples): intervals obtained from the data to check if the function are within the intervals
         cumulative (bool): if True cdf instead of pdf is visualised
         debug (bool): if debug extensive output is provided
-        where (tuple/list): output matplotlib sources to output created figure
+        where (tuple or list): output matplotlib sources to output created figure
     """
 
     ## Convert z3 functions
@@ -62,8 +62,8 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
 
     if not parameters:
         parameters = set()
-        for polynome in functions:
-            parameters.update(find_param(polynome, debug))
+        for polynomial in functions:
+            parameters.update(find_param(polynomial, debug))
         parameters = sorted(list(parameters))
     if debug:
         print("Parameters: ", parameters)
@@ -80,11 +80,11 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
     title = title[:-1]
 
     title = f"{title}\n function(s) values: "
-    for polynome in functions:
-        expression = eval(polynome)
+    for polynomial in functions:
+        expression = eval(polynomial)
         if debug:
-            print(polynome)
-            print("Eval ", polynome, expression)
+            print(polynomial)
+            print("Eval ", polynomial, expression)
         if cumulative:
             ## Add sum of all values
             add = add + expression
@@ -193,21 +193,21 @@ def sample_list_funs(functions, sample_size, parameters=False, intervals=False, 
         print("List_fun: ", functions)
         print("Intervals: ", intervals)
 
-    for index, polynome in enumerate(functions):
-        if is_this_z3_function(polynome):
-            functions[index] = translate_z3_function(polynome)
+    for index, polynomial in enumerate(functions):
+        if is_this_z3_function(polynomial):
+            functions[index] = translate_z3_function(polynomial)
         if debug:
-            print("Polynome: ", polynome)
+            print("Polynomial: ", polynomial)
 
         if parameters:
             fun_parameters = parameters
         else:
             fun_parameters = set()
-            fun_parameters.update(find_param(polynome, debug))
+            fun_parameters.update(find_param(polynomial, debug))
 
             ## THIS THING IS WORKING ONLY FOR THE CASE STUDY
             # if len(parameters) < N:
-            #     parameters.update(find_param(polynome, debug))
+            #     parameters.update(find_param(polynomial, debug))
             if debug:
                 print("Parameters: ", fun_parameters)
             fun_parameters = sorted(list(fun_parameters))
@@ -220,7 +220,7 @@ def sample_list_funs(functions, sample_size, parameters=False, intervals=False, 
         for parameter_value in parameter_values:
             if debug:
                 print("Parameter_value: ", parameter_value)
-            a = [functions.index(polynome)]
+            a = [functions.index(polynomial)]
             for param_index in range(len(fun_parameters)):
                 a.append(parameter_value[param_index])
                 if debug:
@@ -228,11 +228,11 @@ def sample_list_funs(functions, sample_size, parameters=False, intervals=False, 
                     print("Parameter_value[param]: ", parameter_value[param_index])
                 locals()[fun_parameters[param_index]] = float(parameter_value[param_index])
 
-            print("polynome", polynome)
+            print("polynomial", polynomial)
 
-            value = eval(polynome)
+            value = eval(polynomial)
             if debug:
-                print("Eval ", polynome, value)
+                print("Eval ", polynomial, value)
             a.append(value)
             arr.append(a)
     return arr
@@ -242,28 +242,28 @@ def visualise(dic_fun, agents_quantities, sample_size, cumulative=False, debug: 
     """ Creates bar plot of probabilities of i successes for sampled parametrisation
 
     Args:
-        dic_fun (dictionary N -> list of rational functions)
+        dic_fun (dictionary population_size -> list of rational functions)
         sample_size (int): sample size in each parameter
-        agents_quantities (int): pop sizes to be used
+        agents_quantities (list of ints): pop sizes to be used
         cumulative (bool): if True cdf instead of pdf is visualised
         debug (bool): if debug extensive output is provided
         show_all_in_one (bool): if True all plots are put into one window
         where (tuple/list): output matplotlib sources to output created figure
     """
 
-    for N in agents_quantities:
+    for population_size in agents_quantities:
         parameters = set()
-        for index, polynome in enumerate(dic_fun[N]):
-            if is_this_z3_function(polynome):
-                dic_fun[N][index] = translate_z3_function(polynome)
+        for index, polynomial in enumerate(dic_fun[population_size]):
+            if is_this_z3_function(polynomial):
+                dic_fun[population_size][index] = translate_z3_function(polynomial)
 
             if debug:
-                print("Polynome: ", polynome)
-            parameters.update(find_param(polynome, debug))
+                print("Polynomial: ", polynomial)
+            parameters.update(find_param(polynomial, debug))
 
             ## THIS THING IS WORKING ONLY FOR THE CASE STUDY
-            # if len(parameters) < N:
-            #    parameters.update(find_param(polynome, debug))
+            # if len(parameters) < population_size:
+            #    parameters.update(find_param(polynomial, debug))
         if debug:
             print("Parameters: ", parameters)
         parameters = sorted(list(parameters))
@@ -276,11 +276,11 @@ def visualise(dic_fun, agents_quantities, sample_size, cumulative=False, debug: 
             if debug:
                 print("Parameter_value: ", parameter_value)
             add = 0
-            a = [N, dic_fun[N].index(polynome)]
-            if N == 0:
+            a = [population_size, dic_fun[population_size].index(polynomial)]
+            if population_size == 0:
                 title = f"Rational functions sampling \n parameters:"
             else:
-                title = f"Rational functions sampling \n N={N}, parameters:"
+                title = f"Rational functions sampling \n population_size={population_size}, parameters:"
             for param in range(len(parameters)):
                 a.append(parameter_value[param])
                 if debug:
@@ -290,9 +290,9 @@ def visualise(dic_fun, agents_quantities, sample_size, cumulative=False, debug: 
                 title = "{} {}={},".format(title, parameters[param], parameter_value[param])
             title = title[:-1]
             if debug:
-                print("Eval ", polynome, eval(polynome))
-            for polynome in dic_fun[N]:
-                value = eval(polynome)
+                print("Eval ", polynomial, eval(polynomial))
+            for polynomial in dic_fun[population_size]:
+                value = eval(polynomial)
                 if cumulative:
                     ## Add sum of all values
                     add = add + value
@@ -308,7 +308,7 @@ def visualise(dic_fun, agents_quantities, sample_size, cumulative=False, debug: 
             ax.set_xlabel('Rational function indices')
             ax.set_title(wraper.fill(title))
             # print(title)
-            rects1 = ax.bar(range(len(dic_fun[N])), a[len(parameters) + 2:], width, color='b')
+            rects1 = ax.bar(range(len(dic_fun[population_size])), a[len(parameters) + 2:], width, color='b')
             plt.show()
 
 
@@ -373,7 +373,7 @@ def heatmap(function, region, sampling_sizes, posttitle="", where=False, paramet
     Args:
         function (string): function to be analysed
         region (list of intervals): boundaries of parameter space to be sampled
-        sampling_sizes (int): tuple of sample size of respective parameter
+        sampling_sizes (list of ints): tuple of sample size of respective parameter
         posttitle (string): A string to be put after the title
         where (tuple/list): output matplotlib sources to output created figure
         parameters (list):: list of parameters

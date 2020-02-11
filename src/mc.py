@@ -32,7 +32,7 @@ if "prism" not in os.environ["PATH"]:
         os.environ["PATH"] = os.environ["PATH"] + ":" + prism_path
 
 
-def set_javaheap_win(size):
+def set_java_heap_win(size):
     """  Changing the java heap size for the PRISM on Windows
 
     Args:
@@ -183,7 +183,7 @@ def call_prism(args, seq=False, silent: bool = False, model_path=model_path, pro
                             args.append("-property")
                             args.append(str(i))
                             if sys.platform.startswith("win"):
-                                previous_memory = set_javaheap_win(f"{memory}g")
+                                previous_memory = set_java_heap_win(f"{memory}g")
                             if not silent:
                                 print("calling \"", " ".join(args), "\"")
                             output = subprocess.run(args, stdout=subprocess.PIPE,
@@ -192,14 +192,14 @@ def call_prism(args, seq=False, silent: bool = False, model_path=model_path, pro
                                 write_to_file(output_file_path, output, silent, append=True)
                                 print(colored(f"A memory error occurred while seq even after increasing the memory, close some programs and try again", "red"))
                                 if sys.platform.startswith("win"):
-                                    set_javaheap_win(previous_memory)
+                                    set_java_heap_win(previous_memory)
                                 return "memory_fail", "A memory error occurred while seq even after increasing the memory, close some programs and try again"
                         else:
                             write_to_file(output_file_path, output, silent, append=True)
                             print(colored(f"A memory error occurred while seq with given amount of memory", "red"))
                             ## Changing the memory setting back
                             if sys.platform.startswith("win"):
-                                set_javaheap_win(previous_memory)
+                                set_java_heap_win(previous_memory)
                             return "memory", "A memory error occurred while seq with given amount of memory"
 
                     write_to_file(output_file_path, output, silent, append=True)
@@ -241,32 +241,32 @@ def call_prism(args, seq=False, silent: bool = False, model_path=model_path, pro
 
 
 ## TODO rewrite this without the paths, just files
-def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq=False, noprobchecks=False, memory="",
+def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq=False, no_prob_checks=False, memory="",
                      model_path=model_path, properties_path=properties_path, property_file=False, output_path=prism_results, gui=False, silent=False):
     """  Calls prism for each file matching the prefix
 
     Args:
         model_prefix (string): file prefix to be matched
-        agents_quantities (int): pop_sizes to be used
+        agents_quantities (list of ints): pop_sizes to be used
         param_intervals (list of pairs): list of intervals to be used for respective parameter (default all intervals are from 0 to 1)
         seq (bool): if true it will take properties one by one and append the results (helps to deal with memory)
-        noprobchecks (bool): True if no noprobchecks option is to be used for prism
+        no_prob_checks (bool or string): True if no noprobchecks option is to be used for prism
         model_path (string): path to load  models from
         properties_path (string): path to load properties from
         param_intervals (list of pairs): parameter intervals
         property_file (string): file name of single property files to be used for all models
         output_path (string): path for the output
         memory (int): sets maximum memory in GB, see https://www.prismmodelchecker.org/manual/ConfiguringPRISM/OtherOptions
-        gui (bool): callback function to be used
+        gui (function or False): callback function to be used
         silent (bool): if True the output is put to minimum
     """
     # print("model_path ", model_path)
     # print("model_prefix ", model_prefix)
     # os.chdir(config.get("mandatory_paths","cwd"))
-    if noprobchecks:
-        noprobchecks = '-noprobchecks '
+    if no_prob_checks:
+        no_prob_checks = '-noprobchecks '
     else:
-        noprobchecks = ""
+        no_prob_checks = ""
 
     if memory == "":
         memory = ""
@@ -327,13 +327,13 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
             ## Calling the PRISM using our function
 
             if not property_file:
-                error = call_prism("{} prop_{}.pctl {}{}-param {}".format(file, N, memory, noprobchecks, params),
+                error = call_prism("{} prop_{}.pctl {}{}-param {}".format(file, N, memory, no_prob_checks, params),
                                    seq=seq, model_path=model_path, properties_path=properties_path,
                                    std_output_path=output_path)
             else:
                 # print("output_path", output_path)
                 # print("file", file.stem)
-                error = call_prism("{} {} {}{}-param {}".format(file, property_file, memory, noprobchecks, params),
+                error = call_prism("{} {} {}{}-param {}".format(file, property_file, memory, no_prob_checks, params),
                                    seq=seq, model_path=model_path, properties_path=properties_path, std_output_path=output_path,
                                    std_output_file="{}_{}.txt".format(str(file.stem).split(".")[0], str(Path(property_file).stem).split(".")[0]),
                                    silent=silent)
@@ -365,7 +365,7 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
                     os.remove(os.path.join(output_path, "{}.txt".format(file.stem)))
                     memory = round(psutil.virtual_memory()[0] / 1024 / 1024 / 1024)  ## total memory converted to GB
                     if sys.platform.startswith("win"):
-                        previous_memory = set_javaheap_win(f"{memory}g")
+                        previous_memory = set_java_heap_win(f"{memory}g")
                     print(colored(f"A memory error occurred while seq, max memory increased to {memory}GB", "red"))
                     if gui:
                         gui(3, "Parameter synthesis", f"A memory error occurred while seq, max memory increased to {memory}GB")
@@ -378,9 +378,9 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
 
             ## Check if there was problem with sum of probabilities
             if error[0] == "noprobchecks":
-                if noprobchecks == "":
+                if no_prob_checks == "":
                     print(colored("Outgoing transitions checksum error occurred. Running with noprobchecks option", "red"))
-                    noprobchecks = '-noprobchecks '
+                    no_prob_checks = '-noprobchecks '
                     if gui:
                         gui(3, "Parameter synthesis", "Outgoing transitions checksum error occurred. Running with noprobchecks option")
                 else:
@@ -433,14 +433,14 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
                 print()
                 # print("seq",seq)
                 # print("noprobchecks", noprobchecks)
-                call_prism_files(model_prefix, [N], seq=seq, noprobchecks=noprobchecks, memory=memory, model_path=model_path,
+                call_prism_files(model_prefix, [N], seq=seq, no_prob_checks=no_prob_checks, memory=memory, model_path=model_path,
                                  properties_path=properties_path, property_file=property_file, output_path=prism_results)
             print()
 
     ## Setting the previous memory on windows
     if sys.platform.startswith("win"):
         try:
-            set_javaheap_win(previous_memory)
+            set_java_heap_win(previous_memory)
         except UnboundLocalError:
             pass
 

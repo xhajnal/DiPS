@@ -23,34 +23,35 @@ del spam
 
 
 class RefinedSpace:
-    """ Class to represent space. The space can be sampled or refined into sat(green), unsat(red), and unknown(white) regions
+    """ Class to represent space. The space can be sampled or refined into sat(green), unsat(red), and unknown(white) regions.
+    (hyper)rectangles is a list of intervals, point is a list of numbers
 
     Args:
         region (list of intervals): whole space
-        params (list of strings):: parameter names
-        types (list of string):: parameter types (Real, Int, Bool, ...)
-        rectangles_sat (list of intervals): sat (green) space
-        rectangles_unsat (list of intervals): unsat (red) space
-        rectangles_unknown (list of intervals): unknown (white) space
+        params (list of strings): parameter names
+        types (list of string): parameter types (Real, Int, Bool, ...)
+        rectangles_sat (list of (hyper)rectangles): sat (green) space
+        rectangles_unsat (list of (hyper)rectangles): unsat (red) space
+        rectangles_unknown (list of (hyper)rectangles): unknown (white) space
         sat_samples: (list of points): satisfying points
         unsat_samples: (list of points): unsatisfying points
-        true_point (list of numbers):: The true value in the parameter space
-        title (string):: text to be added in the end of the Figure titles
+        true_point (point): The true value in the parameter space
+        title (string): text to added in the end of the Figure titles, CASE STUDY STANDARD: f"model: {model_type}, population = {population}, sample_size = {sample_size},  \n Dataset = {dataset}, alpha={alpha}, #samples={n_samples}"
     """
 
     def __init__(self, region, params, types=None, rectangles_sat=False, rectangles_unsat=False, rectangles_unknown=None, sat_samples=None, unsat_samples=None, true_point=False, title=False):
-        """
+        """ (hyper)rectangles is a list of intervals, point is a list of numbers
         Args:
             region (list of intervals): whole space
-            params (list of strings):: parameter names
-            types (list of string):: parameter types (Real, Int, Bool, ...)
-            rectangles_sat (list of intervals): sat (green) space
-            rectangles_unsat (list of intervals): unsat (red) space
-            rectangles_unknown (list of intervals): unknown (white) space
+            params (list of strings): parameter names
+            types (list of string, None, or False): parameter types (Real, Int, Bool, ...), None or False means all Real
+            rectangles_sat (list of (hyper)rectangles): sat (green) space
+            rectangles_unsat (list of (hyper)rectangles): unsat (red) space
+            rectangles_unknown (list of (hyper)rectangles): unknown (white) space
             sat_samples: (list of points): satisfying points
             unsat_samples: (list of points): unsatisfying points
-            true_point (list of numbers):: The true value in the parameter space
-            title (string):: text to added in the end of the Figure titles, CASE STUDY STANDARD: f"model: {model_type}, population = {population}, sample_size = {sample_size},  \n Dataset = {dataset}, alpha={alpha}, #samples={n_samples}"
+            true_point (point): The true value in the parameter space
+            title (string): text to added in the end of the Figure titles, CASE STUDY STANDARD: f"model: {model_type}, population = {population}, sample_size = {sample_size},  \n Dataset = {dataset}, alpha={alpha}, #samples={n_samples}"
         """
 
         ## REGION
@@ -94,8 +95,10 @@ class RefinedSpace:
                 raise Exception("Given types is not iterable")
             if isinstance(types, tuple):
                 self.types = [types]
-            else:
+            elif isinstance(types, list):
                 self.types = types
+            else:
+                raise Exception("Space - Could not parse types: ", types)
 
             if not len(self.types) == len(self.region):
                 print(colored(
@@ -114,8 +117,10 @@ class RefinedSpace:
             self.rectangles_sat = [rectangles_sat]
         elif rectangles_sat is False:
             self.rectangles_sat = []
-        else:
+        elif isinstance(rectangles_sat, list):
             self.rectangles_sat = rectangles_sat
+        else:
+            raise Exception("Space - Could not parse rectangles_sat:", rectangles_sat)
         self.rectangles_sat_to_show = copy.copy(self.rectangles_sat)
 
         ## UNSAT RECTANGLES
@@ -128,8 +133,10 @@ class RefinedSpace:
             self.rectangles_unsat = [rectangles_unsat]
         elif rectangles_unsat is False:
             self.rectangles_unsat = []
-        else:
+        elif isinstance(rectangles_unsat, list):
             self.rectangles_unsat = rectangles_unsat
+        else:
+            raise Exception("Space - Could not parse rectangles_unsat:", rectangles_unsat)
         self.rectangles_unsat_to_show = copy.copy(self.rectangles_unsat)
 
         ## UNKNOWN RECTANGLES
@@ -562,7 +569,7 @@ class RefinedSpace:
         self.rectangles_sat.remove(green)
         try:
             self.rectangles_sat_to_show.remove(green)
-        except:
+        except ValueError:
             pass
 
     def remove_red(self, red):
@@ -570,7 +577,7 @@ class RefinedSpace:
         self.rectangles_unsat.remove(red)
         try:
             self.rectangles_unsat_to_show.remove(red)
-        except:
+        except ValueError:
             pass
 
     def remove_white(self, white):
@@ -684,7 +691,6 @@ class RefinedSpace:
                 y_size = self.region[1][1] - self.region[1][0]
                 x_size_correction = min(1 / (len(self.sat_samples) + len(self.unsat_samples)) ** (1 / len(self.region)), 0.01 * x_size)
                 y_size_correction = min(1 / (len(self.sat_samples) + len(self.unsat_samples)) ** (1 / len(self.region)), 0.01 * y_size)
-
             except:
                 print("len(self.sat_samples)", len(self.sat_samples))
                 print("len(self.unsat_samples)", len(self.unsat_samples))
@@ -713,16 +719,16 @@ class RefinedSpace:
 
         rectangles_unknown = self.get_white_rectangles()
 
-        spam = str(f"params: {self.params}\n")
-        spam = spam + str(f"region: {self.region}\n")
-        spam = spam + str(f"types: {self.types}\n")
-        spam = spam + str(f"rectangles_sat: {(f'{self.rectangles_sat[:5]} ... {len(self.rectangles_sat)-5} more', self.rectangles_sat)[len(self.rectangles_sat) <= 30 or full_print]} \n")
-        spam = spam + str(f"rectangles_unsat: {(f'{self.rectangles_unsat[:5]} ... {len(self.rectangles_unsat)-5} more', self.rectangles_unsat)[len(self.rectangles_unsat) <= 30 or full_print]} \n")
-        spam = spam + str(f"rectangles_unknown: {(f'{rectangles_unknown[:5]} ... {len(rectangles_unknown)-5} more', rectangles_unknown)[len(rectangles_unknown) <= 30 or full_print]} \n")
-        spam = spam + str(f"sat_samples: {(f'{self.sat_samples[:5]} ... {len(self.sat_samples)-5} more', self.sat_samples)[len(self.sat_samples) <= 30 or full_print]} \n")
-        spam = spam + str(f"unsat_samples: {(f'{self.unsat_samples[:5]} ... {len(self.unsat_samples)-5} more', self.unsat_samples)[len(self.unsat_samples) <= 30 or full_print]} \n")
-        spam = spam + str(f"true_point: {self.true_point}\n")
-        return spam
+        text = str(f"params: {self.params}\n")
+        text = text + str(f"region: {self.region}\n")
+        text = text + str(f"types: {self.types}\n")
+        text = text + str(f"rectangles_sat: {(f'{self.rectangles_sat[:5]} ... {len(self.rectangles_sat)-5} more', self.rectangles_sat)[len(self.rectangles_sat) <= 30 or full_print]} \n")
+        text = text + str(f"rectangles_unsat: {(f'{self.rectangles_unsat[:5]} ... {len(self.rectangles_unsat)-5} more', self.rectangles_unsat)[len(self.rectangles_unsat) <= 30 or full_print]} \n")
+        text = text + str(f"rectangles_unknown: {(f'{rectangles_unknown[:5]} ... {len(rectangles_unknown)-5} more', rectangles_unknown)[len(rectangles_unknown) <= 30 or full_print]} \n")
+        text = text + str(f"sat_samples: {(f'{self.sat_samples[:5]} ... {len(self.sat_samples)-5} more', self.sat_samples)[len(self.sat_samples) <= 30 or full_print]} \n")
+        text = text + str(f"unsat_samples: {(f'{self.unsat_samples[:5]} ... {len(self.unsat_samples)-5} more', self.unsat_samples)[len(self.unsat_samples) <= 30 or full_print]} \n")
+        text = text + str(f"true_point: {self.true_point}\n")
+        return text
 
     def sampling_took(self, time):
         """ Manages the time the sampling took

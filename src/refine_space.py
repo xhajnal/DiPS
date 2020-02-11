@@ -26,12 +26,12 @@ from common.space_stuff import refine_by
 if "wind" not in platform.system().lower():
     from dreal import logical_and, logical_or, logical_not, Variable, CheckSatisfiability
 
-spam = load_config()
-results_dir = spam["results"]
-refinement_results = spam["refinement_results"]
-refine_timeout = spam["refine_timeout"]
-z3_path = spam["z3_path"]
-del spam
+config = load_config()
+results_dir = config["results"]
+refinement_results = config["refinement_results"]
+refine_timeout = config["refine_timeout"]
+z3_path = config["z3_path"]
+del config
 
 # import struct
 # print("You are running "+ str(struct.calcsize("P") * 8)+"bit Python, please verify that installed z3 is compatible")
@@ -57,6 +57,7 @@ except ImportError:
     elif '\\' in z3_path:
         z3_path_short = '\\'.join(z3_path.split("\\")[:-1])
     else:
+        z3_path_short = ""
         print("Warning: Could not set path to add to the PATH, please add it manually")
 
     if "PATH" not in os.environ:
@@ -136,8 +137,8 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
     if called:
         globals()["parameters"] = set()
         parameters = globals()["parameters"]
-        for polynome in constraints:
-            parameters.update(find_param(polynome))
+        for polynomial in constraints:
+            parameters.update(find_param(polynomial))
         globals()["parameters"] = sorted(list(globals()["parameters"]))
         ## EXAMPLE:  parameters >> ['p','q']
         for param in globals()["parameters"]:
@@ -193,6 +194,7 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
     elif solver == "dreal":
         ## Adding regional restrictions to dreal solver
         j = 0
+        f_sat = None
         for param in globals()["parameters"]:
             if debug:
                 print(f"globals()[param] {globals()[param]}")
@@ -252,8 +254,8 @@ def check_safe(region, constraints, silent: bool = False, called=False, solver="
     if called:
         globals()["parameters"] = set()
         parameters = globals()["parameters"]
-        for polynome in constraints:
-            parameters.update(find_param(polynome))
+        for polynomial in constraints:
+            parameters.update(find_param(polynomial))
         globals()["parameters"] = sorted(list(globals()["parameters"]))
         ## EXAMPLE:  parameters >> ['p','q']
 
@@ -320,6 +322,7 @@ def check_safe(region, constraints, silent: bool = False, called=False, solver="
     elif solver == "dreal":
         ## Adding regional restrictions to solver
         j = 0
+        f_sat = None
         for param in globals()["parameters"]:
             if debug:
                 print(f"globals()[param] {globals()[param]}")
@@ -383,7 +386,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         if debug:
             print(save)
 
-    ## Store the recursion_dpth
+    ## Store the recursion_depth
     globals()["init_recursion_depth"] = recursion_depth
 
     ## If the given region is space
@@ -415,11 +418,11 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         globals()["parameters"] = set()
 
         if isinstance(constraints[0], list):
-            for polynome in constraints[0]:
-                globals()["parameters"].update(find_param(polynome))
+            for polynomial in constraints[0]:
+                globals()["parameters"].update(find_param(polynomial))
         else:
-            for polynome in constraints:
-                globals()["parameters"].update(find_param(polynome))
+            for polynomial in constraints:
+                globals()["parameters"].update(find_param(polynomial))
         globals()["parameters"] = sorted(list(globals()["parameters"]))
         parameters = globals()["parameters"]
         if debug:
@@ -483,9 +486,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
             return
 
         # globals()["space"] = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
-
         # funcs, intervals = constraints_to_ineq(constraints)
-
         to_be_searched = sample(space, constraints, sample_size, compress=True, silent=not debug, save=save)
 
         if debug:
@@ -511,7 +512,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
             print("satisfying points: ", sat_points)
 
         if debug and save:
-            print("I am showing sampling_sat_"+str(save))
+            print("I am showing sampling_sat_" + str(save))
         if not where:
             space.show(red=False, green=False, sat_samples=True, unsat_samples=False, save=save, where=where, show_all=not gui)
 
@@ -549,15 +550,15 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                 ## SPLIT THE WHITE REGION INTO 3-5 AREAS (in 2D) (DEPENDING ON THE POSITION OF THE HULL)
 
                 ## THIS FIXING WORKS ONLY FOR THE UNIFORM SAMPLING
-                spam = to_interval([sat_min, sat_max])
-                for interval_index in range(len(spam)):
+                bordering_intervals = to_interval([sat_min, sat_max])
+                for interval_index in range(len(bordering_intervals)):
                     ## increase the space to the left
-                    spam[interval_index][0] = max(region[interval_index][0], spam[interval_index][0] - (region[interval_index][1]-region[interval_index][0])/(sample_size-1))
+                    bordering_intervals[interval_index][0] = max(region[interval_index][0], bordering_intervals[interval_index][0] - (region[interval_index][1]-region[interval_index][0])/(sample_size-1))
                     ## increase the space to the right
-                    spam[interval_index][1] = min(region[interval_index][1], spam[interval_index][1] + (region[interval_index][1] - region[interval_index][0]) / (sample_size - 1))
-                print(f"Intervals bordering the sat hull are: {spam}")
+                    bordering_intervals[interval_index][1] = min(region[interval_index][1], bordering_intervals[interval_index][1] + (region[interval_index][1] - region[interval_index][0]) / (sample_size - 1))
+                print(f"Intervals bordering the sat hull are: {bordering_intervals}")
                 space.remove_white(region)
-                regions = refine_by(region, spam, debug)
+                regions = refine_by(region, bordering_intervals, debug)
                 for subregion in regions:
                     space.add_white(subregion)
         else:
@@ -692,37 +693,29 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         else:
             print(colored("Chosen version not found", "red"))
     else:
+        ## Prerefined space with more white hyperectangles
+
         ## Copied so it is not changed while iteration
         copy_white_space = copy.deepcopy(space.get_white())
         keys = list(copy_white_space.keys())
         keys.sort(reverse=True)
 
+        ## To get more similar result substituting the number of splits from the max_depth
+        ## Setting the depth as a proportion
+        next_depth = max(0, recursion_depth - (int(log(numb_of_white_rectangles, 2))))
+        if debug:
+            print("max_depth = ", next_depth)
+
+        ## Iterating hyperectangles
         for volume in keys:
             if volume < epsilon:
                 print(colored("Following rectangles are too small, skipping them", "blue"))
                 break
             else:
                 for index, rectangle in enumerate(copy_white_space[volume]):
-                    ## To get more similar result substituting the number of splits from the max_depth
-                    if debug:
-                        print("max_depth = ", max(1, recursion_depth - (int(log(numb_of_white_rectangles, 2)))))
-                        print("refining", rectangle)
-
-                    ## THE PROBLEM IS THAT COVERAGE IS COMPUTED FOR THE WHOLE SPACE NOT ONLY FOR THE GIVEN REGION
-
-                    # print("rectangle", rectangle, " constraints", constraints, "silent", silent)
-                    # print("current coverage", space_coverage)
-                    # print("whole area", space.get_volume())
-                    # print("rectangle_size", rectangle_size)
-
+                    # OLD Stuff
                     # ## Setting the coverage as lower value between desired coverage and the proportional expected coverage
                     # next_coverage = min(coverage, (space_coverage + (volume / space.get_volume()) * coverage))
-                    ## Setting the depth as a proportion
-                    next_depth = max(0, recursion_depth - (int(log(numb_of_white_rectangles, 2))))
-
-                    if debug:
-                        print("region", rectangle)
-                        print("constraints", constraints)
 
                     ## Check if the que created (if alg1 used before it is not)
                     try:
@@ -731,6 +724,9 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                         globals()["que"] = Queue()
 
                     if version == 1:
+                        if debug:
+                            print("refining", rectangle)
+                            print("with constraints", constraints)
                         single_rectangle_start_time = time()
                         if not silent:
                             print(f"Using DFS method with {('dreal', 'z3')[solver == 'z3']} solver to solve spliced rectangle number {index + 1} of {numb_of_white_rectangles}")
@@ -749,9 +745,15 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                             break
                     elif version in [2, 3, 4]:
                         ## Add call to the Queue
+                        if debug:
+                            print("Adding ", rectangle, "to queue")
+                            print("with constraints", constraints)
                         globals()["que"].enqueue([rectangle, constraints, next_depth, epsilon, coverage, silent, None, solver, delta, debug, gui])
                     elif version == 5:
-                        ## If already feed with funcs, intervals
+                        if debug:
+                            print("Adding ", rectangle, "to queue")
+                            print("with constraints", constraints)
+                        ## If already feed with (funcs, intervals)
                         if isinstance(constraints[0], list):
                             egg = constraints
                         else:
@@ -776,7 +778,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
             elif version == 5:
                 print(colored(f"Using interval arithmetic to solve {numb_of_white_rectangles} white rectangles", "blue"))
 
-            # print(colored(f"with proportional coverage: {next_coverage} and proportional depth {next_depth}", "blue"))
+            # print(colored(f"with proportional coverage: {next_coverage} and proportional depth {next_depth}", "blue")) ## old stuff
             print(colored(f"with proportional depth: {next_depth}", "blue"))
 
         while globals()["que"].size() > 0:
@@ -792,9 +794,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
 
             space_coverage = space.get_coverage()
             if not where:
-                space_shown = space.show(
-                    f"max_recursion_depth:{next_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version} \n Refinement took {socket.gethostname()} {round(time() - single_rectangle_start_time)} second(s)",
-                    save=save, where=where, show_all=not gui)
+                space_shown = space.show(f"max_recursion_depth:{next_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version} \n Refinement took {socket.gethostname()} {round(time() - single_rectangle_start_time)} second(s)", save=save, where=where, show_all=not gui)
             if not silent:
                 print()
             if space_coverage >= coverage:
@@ -831,7 +831,7 @@ def private_check_deeper(region, constraints, recursion_depth, epsilon, coverage
         solver (string):: specified solver, allowed: z3, dreal
         delta (number):: used for delta solving using dreal
         debug (bool): if True extensive print will be used
-        progress (function): function(update_to, update_by) to update progress
+        progress (function or False): function(update_to, update_by) to update progress
     """
     if debug:
         silent = False
@@ -951,7 +951,7 @@ def private_check_deeper_queue(region, constraints, recursion_depth, epsilon, co
         solver (string):: specified solver, allowed: z3, dreal
         delta (number):: used for delta solving using dreal
         debug (bool): if True extensive print will be used
-        progress (function): function(update_to, update_by) to update progress
+        progress (function or False): function(update_to, update_by) to update progress
     """
     if debug:
         silent = False
@@ -1068,7 +1068,7 @@ def private_check_deeper_queue_checking(region, constraints, recursion_depth, ep
         solver (string):: specified solver, allowed: z3, dreal
         delta (number):: used for delta solving using dreal
         debug (bool): if True extensive print will be used
-        progress (function): function(update_to, update_by) to update progress
+        progress (function or False): function(update_to, update_by) to update progress
     """
     if debug:
         silent = False
@@ -1135,12 +1135,12 @@ def private_check_deeper_queue_checking(region, constraints, recursion_depth, ep
             print(recursion_depth, region,  colored(f"{space.get_coverage()}, {example}, is unknown", "grey"))
 
     ## Parse example
-    spam = str(example)
-    spam = spam[1:-1]
-    spam = spam.split(",")
-    spam.sort()
+    parsed_example = str(example)
+    parsed_example = parsed_example[1:-1]
+    parsed_example = parsed_example.split(",")
+    parsed_example.sort()
     example_points = []
-    for value in spam:
+    for value in parsed_example:
         example_points.append(float(eval(value.split("=")[1])))
     # example_points = re.findall(r'[0-9./]+', str(example))
     # print(example_points)
@@ -1220,7 +1220,7 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
         solver (string):: specified solver, allowed: z3, dreal
         delta (number):: used for delta solving using dreal
         debug (bool): if True extensive print will be used
-        progress (function): function(update_to, update_by) to update progress
+        progress (function or False): function(update_to, update_by) to update progress
     """
 
     ## TODO check consistency
@@ -1302,25 +1302,25 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
             print(recursion_depth, region, colored(f"{space.get_coverage()} {(example, counterexample)} is unknown", "grey"))
 
     ## Parse example
-    spam = str(example)
-    spam = spam[1:-1]
-    spam = spam.split(",")
-    spam.sort()
+    parsed_example = str(example)
+    parsed_example = parsed_example[1:-1]
+    parsed_example = parsed_example.split(",")
+    parsed_example.sort()
     example_points = []
-    # if spam is [""]:
+    # if parsed_example is [""]:
     #    print("hello")
-    for value in spam:
+    for value in parsed_example:
         # print("value", value)
-        # print("spam", spam)
+        # print("parsed_example", parsed_example)
         example_points.append(float(eval(value.split("=")[1])))
 
     ## Parse counterexample
-    spam = str(counterexample)
-    spam = spam[1:-1]
-    spam = spam.split(",")
-    spam.sort()
+    parsed_counterexample = str(counterexample)
+    parsed_counterexample = parsed_counterexample[1:-1]
+    parsed_counterexample = parsed_counterexample.split(",")
+    parsed_counterexample.sort()
     counterexample_points = []
-    for value in spam:
+    for value in parsed_counterexample:
         counterexample_points.append(float(eval(value.split("=")[1])))
 
     # print("example", example)
@@ -1423,27 +1423,21 @@ def color_margins(greater, smaller):
     if len(smaller) == 1:
         ## Color 2 regions, to the left, to the right
         ## To the left
-        globals()["rectangles_unsat_added"].append(
-            Rectangle([greater[0][0], 0], smaller[0][0] - greater[0][0], 1, fc='r'))
+        globals()["rectangles_unsat_added"].append(Rectangle([greater[0][0], 0], smaller[0][0] - greater[0][0], 1, fc='r'))
         ## To the right
-        globals()["rectangles_unsat_added"].append(
-            Rectangle([smaller[0][1], 0], greater[0][1] - smaller[0][1], 1, fc='r'))
+        globals()["rectangles_unsat_added"].append(Rectangle([smaller[0][1], 0], greater[0][1] - smaller[0][1], 1, fc='r'))
 
     ## Else 2 dimensional coloring
     elif len(smaller) == 2:
         ## Color 4 regions, to the left, to the right, below, and above
         ## TODO
-        globals()["rectangles_unsat_added"].append(
-            Rectangle([greater[0][0], 0], smaller[0][0] - greater[0][0], 1, fc='r'))
+        globals()["rectangles_unsat_added"].append(Rectangle([greater[0][0], 0], smaller[0][0] - greater[0][0], 1, fc='r'))
         ## TODO
-        globals()["rectangles_unsat_added"].append(
-            Rectangle([smaller[0][1], 0], greater[0][1] - smaller[0][1], 1, fc='r'))
+        globals()["rectangles_unsat_added"].append(Rectangle([smaller[0][1], 0], greater[0][1] - smaller[0][1], 1, fc='r'))
         ## TODO
-        globals()["rectangles_unsat_added"].append(
-            Rectangle([smaller[0][0], 0], smaller[0][1] - smaller[0][0], smaller[1][0], fc='r'))
+        globals()["rectangles_unsat_added"].append(Rectangle([smaller[0][0], 0], smaller[0][1] - smaller[0][0], smaller[1][0], fc='r'))
         ## TODO
-        globals()["rectangles_unsat_added"].append(
-            Rectangle([smaller[0][0], smaller[1][1]], smaller[0][1] - smaller[0][0], 1 - smaller[1][0], fc='r'))
+        globals()["rectangles_unsat_added"].append(Rectangle([smaller[0][0], smaller[1][1]], smaller[0][1] - smaller[0][0], 1 - smaller[1][0], fc='r'))
     else:
         print("Error, trying to color more than 2 dimensional hyperrectangle")
 
@@ -1535,8 +1529,8 @@ def check_interval_in(region, constraints, intervals, silent: bool = False, call
             print("CALLED")
         globals()["parameters"] = set()
         parameters = globals()["parameters"]
-        for polynome in constraints:
-            parameters.update(find_param(polynome))
+        for polynomial in constraints:
+            parameters.update(find_param(polynomial))
         parameters = sorted(list(parameters))
         space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
     else:
@@ -1601,8 +1595,8 @@ def check_interval_out(region, constraints, intervals, silent: bool = False, cal
             print("CALLED")
         globals()["parameters"] = set()
         parameters = globals()["parameters"]
-        for polynome in constraints:
-            parameters.update(find_param(polynome))
+        for polynomial in constraints:
+            parameters.update(find_param(polynomial))
         parameters = sorted(list(parameters))
         space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
     else:
@@ -1663,7 +1657,7 @@ def private_check_deeper_interval(region, constraints, intervals, recursion_dept
         coverage (float): coverage threshold to stop computation
         silent (bool): if silent printed output is set to minimum
         debug (bool): if True extensive print will be used
-        progress (function): function(update_to, update_by) to update progress
+        progress (function or False): function(update_to, update_by) to update progress
     """
     if debug:
         silent = False

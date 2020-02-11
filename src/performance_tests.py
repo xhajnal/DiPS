@@ -6,6 +6,7 @@ import pickle
 import socket
 
 ## Importing my code
+from common.convert import ineq_to_constraints
 from refine_space import check_deeper
 from load import get_all_f, load_pickled_data
 from common.math import create_intervals
@@ -122,7 +123,8 @@ for alpha in alphas:
                                     print("Now computing, current time is: ", datetime.datetime.now())
                                     for run in range(0, sample_size):
                                         start_time = time.time()
-                                        space = check_deeper([(0, 1), (0, 1)], functions[N], create_intervals(alpha, n_samples, D3[("synchronous_parallel_", N, n_samples, v_p, v_q)]), depth, epsilon, coverage_thresh, True, method)
+                                        ##      check_deeper(      region,                    constraints,                                                                                         recursion_depth, epsilon,   coverage,    silent,version, sample_size=False, debug=False, save=False, title="", where=False, show_space=True, solver="z3", delta=0.001, gui=False)
+                                        space = check_deeper([(0, 1), (0, 1)], ineq_to_constraints(functions[N], create_intervals(alpha, n_samples, D3[("synchronous_parallel_", N, n_samples, v_p, v_q)])), depth, epsilon, coverage_thresh, True, method)
                                         time_foo = round(time.time() - start_time, 2)
                                         runs.append(time_foo)
 
