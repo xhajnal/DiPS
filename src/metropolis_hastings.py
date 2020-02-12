@@ -370,8 +370,8 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     globals()["start_time"] = start_time
 
     observations_samples_size = min(observations_count, observations_samples_size)
-    ##                     HastingsResults ( params, param_intervals, theta_init, accepted, observations_count, observations_samples_count, MH_sampling_iterations, eps, show, pretitle, title, bins, last_iter,  timeout,        time_it_took, rescale):
-    globals()["results"] = HastingsResults(space.params, space.region, theta_init, False, observations_count, observations_samples_size, MH_sampling_iterations, eps, show=show, title="", bins=bins, last_iter=0, timeout=timeout)
+    ##                     HastingsResults ( params, theta_init, accepted, observations_count, observations_samples_count, MH_sampling_iterations, eps, show,      pretitle, title, bins, last_iter,  timeout, time_it_took, rescale):
+    globals()["results"] = HastingsResults(space.params, theta_init, False, observations_count, observations_samples_size, MH_sampling_iterations, eps, show=show, title="", bins=bins, last_iter=0, timeout=timeout)
 
     # ## Convert z3 functions
     # for index, function in enumerate(functions):

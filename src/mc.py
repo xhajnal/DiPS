@@ -248,7 +248,7 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
     Args:
         model_prefix (string): file prefix to be matched
         agents_quantities (list of ints): pop_sizes to be used
-        param_intervals (list of pairs): list of intervals to be used for respective parameter (default all intervals are from 0 to 1)
+        param_intervals (list of pairs or False): list of intervals to be used for respective parameter (default all intervals are from 0 to 1)
         seq (bool): if true it will take properties one by one and append the results (helps to deal with memory)
         no_prob_checks (bool or string): True if no noprobchecks option is to be used for prism
         model_path (string): path to load  models from
@@ -256,7 +256,7 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
         param_intervals (list of pairs): parameter intervals
         property_file (string): file name of single property files to be used for all models
         output_path (string): path for the output
-        memory (int): sets maximum memory in GB, see https://www.prismmodelchecker.org/manual/ConfiguringPRISM/OtherOptions
+        memory (string or int): sets maximum memory in GB, see https://www.prismmodelchecker.org/manual/ConfiguringPRISM/OtherOptions
         gui (function or False): callback function to be used
         silent (bool): if True the output is put to minimum
     """
@@ -563,7 +563,7 @@ def call_storm_files(model_prefix, agents_quantities, param_intervals=False, mod
 
     Args:
         model_prefix: file prefix to be matched
-        agents_quantities (int): pop_sizes to be used
+        agents_quantities (list of ints or False): pop_sizes to be used
         model_path (string): path to load  models from
         param_intervals (list of pairs): list of intervals to be used for respective parameter (default all intervals are from 0 to 1)
         properties_path (string): path to load properties from

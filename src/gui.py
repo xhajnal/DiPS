@@ -3213,6 +3213,7 @@ class Gui(Tk):
 
     def initialise_plot3(self, what=False):
         """ Plots the what (figure) into where (Tkinter object - Window/Frame/....) """
+        ## Old
         # try:
         #     self.page3_canvas.get_tk_widget().destroy()
         #     self.page3_toolbar.get_tk_widget().destroy()
@@ -3252,6 +3253,7 @@ class Gui(Tk):
             self.quit()
 
     def autoload(self, yes=False):
+        """ loads tmp files """
         if yes:
             self.update()
             return
@@ -3269,6 +3271,7 @@ class Gui(Tk):
             self.load_mh_results(file=os.path.join(self.tmp_dir, "mh_results.p"))
 
     def set_lower_figure(self, clear=False):
+        """ Configures lower figure on tab 6 (MH results) """
         ##################################################### LOWER PLOT ###############################################
         if clear:
             self.page6_plotframe2.destroy()
