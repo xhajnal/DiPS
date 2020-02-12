@@ -2254,6 +2254,7 @@ class Gui(Tk):
 
         try:
             self.cursor_toggle_busy(True)
+            self.status_set("Sampling functions ...")
             self.sampled_functions = sample_list_funs(self.functions, int(self.fun_sample_size_entry.get()),
                                                       parameters=self.parameters, intervals=self.parameter_domains,
                                                       debug=self.debug.get(), silent=self.silent.get())
@@ -2348,7 +2349,7 @@ class Gui(Tk):
         self.Next_sample_button.config(state="normal")
         self.reinitialise_plot(set_onclick=True)
 
-        for parameter_point in get_param_values(self.parameters, self.fun_sample_size_entry.get(), False):
+        for parameter_point in get_param_values(self.parameters, int(self.fun_sample_size_entry.get()), False):
             if self.page3_figure_in_use.get() is not "2":
                 return
 

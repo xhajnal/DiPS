@@ -228,7 +228,7 @@ def sample_list_funs(functions, sample_size, parameters=False, intervals=False, 
                     print("Parameter_value[param]: ", parameter_value[param_index])
                 locals()[fun_parameters[param_index]] = float(parameter_value[param_index])
 
-            print("polynomial", polynomial)
+            # print("polynomial", polynomial)
 
             value = eval(polynomial)
             if debug:
