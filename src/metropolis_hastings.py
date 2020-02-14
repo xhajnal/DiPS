@@ -78,9 +78,9 @@ class HastingsResults:
         """
         if self.title is "":
             if self.last_iter > 0:
-                self.title = f'Estimate of MH algorithm, {self.last_iter} iterations, sample size = {self.observations_samples_count} \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
+                self.title = f'Estimate of MH algorithm, {self.last_iter} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n showing last {-self.show} of {self.accepted.shape[0]} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
             else:
-                self.title = f'Estimate of MH algorithm, {self.MH_sampling_iterations} iterations, sample size = {self.observations_samples_count} \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
+                self.title = f'Estimate of MH algorithm, {self.MH_sampling_iterations} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n showing last {-self.show} of {self.accepted.shape[0]} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
 
         if bins is not False:
             self.bins = bins
@@ -290,10 +290,10 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
     """ TODO @Tanja
 
     Args:
-        space (Refined space):
+        space (Refined space): supporting structure
         theta (list): parameter values
-        functions (list of strings):
-        observations (list of ints):
+        functions (list of strings): functions to be evaluated in theta
+        observations (list of ints): list of function indices which are being observed
         eps (number): very small value used as probability of non-feasible values in prior
 
     Returns:
@@ -320,7 +320,6 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
         # print("y=", globals()["y"])
         # print(eval("x+y"))
 
-        ## TODO this line can be optimised by storing already computed values
         if data_point in evaled_functions.keys():
             temp = evaled_functions[data_point]
         else:
