@@ -23,7 +23,7 @@ class HastingsResults:
     """ Class to represent Metropolis Hastings results"""
 
     def __init__(self, params, theta_init, accepted, observations_count: int, observations_samples_count: int,
-                 MH_sampling_iterations: int, eps, show=0, pretitle="", title="", bins=20, last_iter=0, timeout=0, time_it_took=0):
+                 MH_sampling_iterations: int, eps, show=75, pretitle="", title="", bins=20, last_iter=0, timeout=0, time_it_took=0):
         """
         Args:
             params (list of strings): parameter names
@@ -50,14 +50,6 @@ class HastingsResults:
         self.MH_sampling_iterations = MH_sampling_iterations
         self.eps = eps
 
-        ## Visualisation setting
-        # ## Conversion into percents
-        # if show is False:
-        #     self.show = int(-0.75 * accepted.shape[0])
-        # elif 0 < show < 1:
-        #     self.show = int(-show * accepted.shape[0])
-        # else:
-        #     self.show = int(-show/100 * accepted.shape[0])
         self.show = show
         self.title = title
         self.pretitle = pretitle
@@ -68,29 +60,40 @@ class HastingsResults:
         self.timeout = timeout
         self.time_it_took = time_it_took
 
-    def show_mh_heatmap(self, where=False, bins=False, show=False):
+    def show_mh_heatmap(self, where=False, bins=False, show=None, debug=False):
         """ Visualises the result of Metropolis Hastings as a heatmap
 
         Args:
             where (tuple/list): output matplotlib sources to output created figure
             bins (int): number of segments in the plot
-            show (number): show last x percents of the accepted values
+            show (int or False or None): show last x percents of the accepted values, None - use class value
+            debug (bool): if True extensive print will be used
         """
+
+        if debug:
+            print("show", show)
+            print("self.accepted", self.accepted)
+
+        if show is None:
+            show = self.show
+
         if self.title is "":
             if self.last_iter > 0:
-                self.title = f'Estimate of MH algorithm, {self.last_iter} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n showing last {-self.show} of {self.accepted.shape[0]} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
+                self.title = f'Estimate of MH algorithm, {self.last_iter} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n showing last {show}% of {self.accepted.shape[0]} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
             else:
-                self.title = f'Estimate of MH algorithm, {self.MH_sampling_iterations} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n showing last {-self.show} of {self.accepted.shape[0]} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
+                self.title = f'Estimate of MH algorithm, {self.MH_sampling_iterations} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n showing last {show}% of {self.accepted.shape[0]} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
+
+        ## Convert percents / fraction to show into exact number
+        if 0 < show < 1:
+            show = int(-show * self.accepted.shape[0])
+        else:
+            show = int(-show / 100 * self.accepted.shape[0])
+
+        if debug:
+            print("self.accepted[show:, 0]", self.accepted[show:, 0])
 
         if bins is not False:
             self.bins = bins
-
-        if show is not False and show > 0:
-            self.show = show
-
-        print("self.show", self.show)
-        print("self.accepted", self.accepted)
-        print("self.accepted[self.show:, 0]", self.accepted[self.show:, 0])
 
         ## Multidimensional case
         if len(self.accepted[0]) > 2:
@@ -104,7 +107,7 @@ class HastingsResults:
             ## Creates values of the horizontal axis
             x_axis = list(range(1, len(self.accepted[0]) + 1))
             ## Get values of the vertical axis for respective line
-            for sample in self.accepted[self.show:]:
+            for sample in self.accepted[show:]:
                 ax.scatter(x_axis, sample)
                 ax.xaxis.set_major_locator(MaxNLocator(integer=True))
                 ax.plot(x_axis, sample)
@@ -120,7 +123,7 @@ class HastingsResults:
                 plt.show()
         else:
             if where:
-                plt.hist2d(self.accepted[self.show:, 0], self.accepted[self.show:, 1], bins=self.bins)
+                plt.hist2d(self.accepted[show:, 0], self.accepted[show:, 1], bins=self.bins)
                 plt.xlabel(self.params[0])
                 plt.ylabel(self.params[1])
                 plt.title("\n".join(wrapper.wrap(self.title)))
@@ -128,7 +131,7 @@ class HastingsResults:
                 return where[0], where[1]
             else:
                 plt.figure(figsize=(12, 6))
-                plt.hist2d(self.accepted[self.show:, 0], self.accepted[self.show:, 1], bins=self.bins)
+                plt.hist2d(self.accepted[show:, 0], self.accepted[show:, 1], bins=self.bins)
                 plt.colorbar()
                 plt.xlabel(self.params[0])
                 plt.ylabel(self.params[1])
@@ -138,6 +141,10 @@ class HastingsResults:
 
 def sample(functions, data_means):
     """ Will sample according to the pdf as given by the polynomials
+
+    Args:
+        functions TODO @Tanja
+        data_means TODO @Tanja
 
     Returns:
          ## TODO @Tanja
@@ -372,6 +379,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     ##                     HastingsResults ( params, theta_init, accepted, observations_count, observations_samples_count, MH_sampling_iterations, eps, show,      pretitle, title, bins, last_iter,  timeout, time_it_took, rescale):
     globals()["results"] = HastingsResults(space.params, theta_init, False, observations_count, observations_samples_size, MH_sampling_iterations, eps, show=show, title="", bins=bins, last_iter=0, timeout=timeout)
 
+    ## TODO check this
     # ## Convert z3 functions
     # for index, function in enumerate(functions):
     #     if is_this_z3_function(function):
@@ -486,17 +494,17 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         ax.legend()
         plt.show()
 
-    if show is False:
-        show = int(-0.75 * accepted.shape[0])
-    elif 0 < show < 1:
-        show = int(-show * accepted.shape[0])
-    else:
-        show = int(-show / 100 * accepted.shape[0])
-
     globals()["results"].show = show
 
     ## Create TODO add name plot @Tanja
     if not where:
+        if show is False:
+            show = int(-0.75 * accepted.shape[0])
+        elif 0 < show < 1:
+            show = int(-show * accepted.shape[0])
+        else:
+            show = int(-show / 100 * accepted.shape[0])
+
         fig = plt.figure(figsize=(20, 10))
         ax = fig.add_subplot(1, 2, 1)
         ax.plot(accepted[show:, 0])

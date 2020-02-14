@@ -220,7 +220,7 @@ class Gui(Tk):
         self.show_true_point = None  ## flag telling whether to show true point
 
         ## Settings
-        self.version = "1.10.0"  ## Version of the gui
+        self.version = "1.11.0"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -705,6 +705,8 @@ class Gui(Tk):
         Button(frame_right, text='Load MH Results', command=self.load_mh_results).grid(row=5, column=0, padx=(4, 4), pady=7)
         Button(frame_right, text='Save MH Results', command=self.save_mh_results).grid(row=6, column=0, padx=(4, 4), pady=7)
         Button(frame_right, text='Delete MH Results', command=self.refresh_mh).grid(row=7, column=0, padx=(4, 4), pady=7)
+
+        Button(frame_right, text='Costumize Plot', command=self.costumize_mh_results).grid(row=8, column=0, padx=(4, 4), pady=0)
 
         frame_right.columnconfigure(0, weight=1)
         frame_right.rowconfigure(0, weight=1)
@@ -3016,6 +3018,67 @@ class Gui(Tk):
         self.page6_figure2.canvas.flush_events()
 
         self.status_set("MH results refreshed.")
+
+    def costumize_mh_results(self):
+        """ Costumizes MH Plot"""
+        if self.mh_results:
+            if not askyesno("Sample & Refine", "Data of the metropolis hastings and the plot will be lost. Do you want to proceed?"):
+                return
+        else:
+            messagebox.showinfo("Metropolis-Hastings", "There is no plot to costumire")
+            return
+
+        self.new_window = Toplevel(self)
+        label = Label(self.new_window, text="Costumize MH Plot")
+        label.grid(row=0)
+
+        Label(self.new_window, text="Set grid size", anchor=W, justify=LEFT).grid(row=1, column=0)
+        self.grid_size_entry = Entry(self.new_window)
+        self.grid_size_entry.grid(row=1, column=1)
+        self.grid_size_entry.insert(END, str(self.mh_results.bins))
+
+        Label(self.new_window, text="Show from", anchor=W, justify=LEFT).grid(row=2, column=0)
+        self.show_entry = Entry(self.new_window)
+        self.show_entry.grid(row=2, column=1)
+        self.show_entry.insert(END, str(self.mh_results.show))
+
+        ## To be used to wait until the button is pressed
+        self.button_pressed.set(False)
+        costumize_mh_results_button = Button(self.new_window, text="OK", command=self.change_MH_Plot)
+        costumize_mh_results_button.grid(row=3)
+        costumize_mh_results_button.focus()
+        costumize_mh_results_button.bind('<Return>', self.change_MH_Plot)
+
+        costumize_mh_results_button.wait_variable(self.button_pressed)
+
+    def change_MH_Plot(self):
+        """ Parses window changing MH Plot"""
+        try:
+            bins = int(self.grid_size_entry.get())
+            show = float(self.show_entry.get())
+
+            ## Clear figure
+            self.page6_figure2.clf()
+            self.page6_b = self.page6_figure2.add_subplot(111)
+            self.page6_figure2.canvas.draw()
+            self.page6_figure2.canvas.flush_events()
+
+            spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b], bins=bins, show=show)
+
+            if spam[0] is not False:
+                self.page6_figure2, self.page6_b = spam
+                self.page6_figure2.tight_layout()
+                self.page6_figure2.canvas.draw()
+                self.page6_figure2.canvas.flush_events()
+                self.update()
+            else:
+                pass
+        finally:
+            self.new_window.destroy()
+            del self.new_window
+            self.cursor_toggle_busy(False)
+            self.progress.set("0%")
+
 
     def validate_space(self, position=False):
         """ Validates space.
