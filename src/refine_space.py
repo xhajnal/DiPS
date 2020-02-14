@@ -174,7 +174,12 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
         for i in range(0, len(constraints)):
             if debug:
                 print(f"constraints[{i}] {constraints[i]}")
-            s.add(eval(constraints[i]))
+            try:
+                s.add(eval(constraints[i]))
+            except Z3Exception as err:
+                print(err)
+                print(f"constraints[{i}] {constraints[i]}")
+                print(f"evaled constraints[{i}] {eval(constraints[i])}")
 
         check = s.check()
         ## If there is no example of satisfaction, hence all unsat, hence unsafe, hence red
@@ -376,8 +381,11 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
     """
 
     ## INITIALISATION
+    itialisation_start_time = time()
+
     if debug:
         silent = False
+
     ## Save file
     if save is True:
         # save = f"{},{n},{epsilon},{coverage},{version}"
@@ -395,13 +403,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         space = region
         globals()["space"] = space
         del region
-        # print(type(space))
         region = space.region
-        # print(region)
-
-        ## Not required since space with no parameters cannot be created
-        # if not space.params:
-        #     space.params = parameters
 
         ## Check whether the the set of params is equal
         print("space parameters: ", space.params)
@@ -460,6 +462,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         print(colored(f"Space refinement - The coverage threshold already reached: {space_coverage} >= {coverage}", "green"))
         return space
 
+    print(colored(f"Initialisation took {socket.gethostname()} {round(time() - itialisation_start_time, 2)} seconds", "blue"))
     start_time = time()
 
     if debug:

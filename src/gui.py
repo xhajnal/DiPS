@@ -2797,6 +2797,7 @@ class Gui(Tk):
             Label(self.new_window, textvar=self.progress, anchor=W, justify=LEFT).pack()
             self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
             self.progress_bar.pack(expand=True, fill=BOTH, side=TOP)
+            self.update_progress_bar(change_to=0, change_by=False)
             self.update()
 
             ## RETURNS TUPLE -- (SPACE,(NONE, ERROR TEXT)) or (SPACE, )
