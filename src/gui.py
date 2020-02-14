@@ -1950,8 +1950,7 @@ class Gui(Tk):
             if line is "":
                 continue
             ## Getting rid of last comma
-            re.sub(r',\s+$', '', line)
-            scrap.append(line)
+            scrap.append(re.sub(r',\s*$', '', line))
         return scrap
 
     def save_functions(self, file=False):
