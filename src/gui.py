@@ -220,7 +220,7 @@ class Gui(Tk):
         self.show_true_point = None  ## flag telling whether to show true point
 
         ## Settings
-        self.version = "1.11.0"  ## Version of the gui
+        self.version = "1.11.1"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -3319,6 +3319,10 @@ class Gui(Tk):
     def ask_quit(self):
         """ x button handler """
         if askyesno("Quit", "Do you want to quit the application?"):
+            try:
+                self.new_window.destroy()
+            except:
+                pass
             self.quit()
 
     def autoload(self, yes=False):
