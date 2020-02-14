@@ -5,7 +5,7 @@ import webbrowser
 from copy import deepcopy
 from tkinter import *
 from tkinter import scrolledtext, messagebox
-from sympy import factor
+from sympy import factor, Interval
 from pathlib import Path
 from os.path import basename
 from tkinter import filedialog, ttk
@@ -16,7 +16,7 @@ import matplotlib
 from termcolor import colored
 
 ## Importing my code
-from common.convert import ineq_to_constraints
+from common.convert import ineq_to_constraints, parse_numbers
 from common.z3 import is_this_z3_function, translate_z3_function, is_this_exponential_function
 
 error_occurred = None
@@ -72,7 +72,7 @@ except Exception as error:
 try:
     from mc_informed import general_create_data_informed_properties
     from load import load_functions, find_param, load_data, find_param_old
-    from common.math import create_intervals
+    from common.mathematics import create_intervals
     import space
     from refine_space import check_deeper
     from mc import call_prism_files, call_storm_files
@@ -1949,8 +1949,8 @@ class Gui(Tk):
         for line in text:
             if line is "":
                 continue
-            ## Getting rid of comma
-            line = line.split(",")[0]
+            ## Getting rid of last comma
+            re.sub(r',\s+$', '', line)
             scrap.append(line)
         return scrap
 
@@ -2041,6 +2041,11 @@ class Gui(Tk):
         """
 
         data_intervals = self.scrap_TextBox(self.data_intervals_text)
+        ## Converting strings to intervals
+        for index, interval in enumerate(data_intervals):
+            print(data_intervals[index])
+            print(type(data_intervals[index]))
+            data_intervals[index] = Interval(*parse_numbers(data_intervals[index]))
 
         if file:
             save_data_intervals_file = file
@@ -2567,7 +2572,7 @@ class Gui(Tk):
         self.data_intervals_changed = True
 
         ## Autosave
-        self.save_data_intervals(os.path.join(self.tmp_dir, "intervals"))
+        self.save_data_intervals(os.path.join(self.tmp_dir, "data_intervals"))
 
         self.status_set("Intervals created.")
 
@@ -3266,7 +3271,7 @@ class Gui(Tk):
             # self.load_functions(file=os.path.join(self.tmp_dir, "functions_prism.txt"))
             # self.load_functions(file=os.path.join(self.tmp_dir, "functions_storm.txt"))
             self.load_data(file=os.path.join(self.tmp_dir, "data.p"))
-            self.load_data_intervals(file=os.path.join(self.tmp_dir, "intervals.p"))
+            self.load_data_intervals(file=os.path.join(self.tmp_dir, "data_intervals.p"))
             self.load_constraints(file=os.path.join(self.tmp_dir, "constraints.p"))
             self.load_space(file=os.path.join(self.tmp_dir, "space.p"))
             self.load_mh_results(file=os.path.join(self.tmp_dir, "mh_results.p"))

@@ -1,6 +1,6 @@
 import unittest
 from termcolor import colored
-from src.common.math import *
+from src.common.mathematics import *
 
 
 class MyTestCase(unittest.TestCase):

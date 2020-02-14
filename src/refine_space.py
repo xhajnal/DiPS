@@ -16,7 +16,7 @@ from load import find_param
 from sample_space import sample
 from space import RefinedSpace
 from space import get_rectangle_volume
-from common.math import is_in
+from common.mathematics import is_in
 from common.convert import to_interval
 from common.convert import constraints_to_ineq
 from common.queue import Queue

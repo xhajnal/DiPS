@@ -11,7 +11,7 @@ from matplotlib.ticker import MaxNLocator
 from termcolor import colored  ## Colored output
 
 ## Importing my code
-from common.math import get_rectangle_volume
+from common.mathematics import get_rectangle_volume
 from sample_n_visualise import visualise_by_param  ## Multidimensional refinement proxy
 from common.document_wrapper import DocumentWrapper  ## Text wrapper for figure tight layout
 from common.config import load_config

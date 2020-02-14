@@ -1,6 +1,6 @@
 import math
 from pathlib import Path
-import common.math as mymath
+import common.mathematics as mymath
 from common.config import load_config
 
 spam = load_config()

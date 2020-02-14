@@ -9,7 +9,7 @@ import socket
 from common.convert import ineq_to_constraints
 from refine_space import check_deeper
 from load import get_all_f, load_pickled_data
-from common.math import create_intervals
+from common.mathematics import create_intervals
 
 ## LOAD DATA
 start_time = time.time()

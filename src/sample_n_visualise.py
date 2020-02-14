@@ -11,7 +11,7 @@ from termcolor import colored
 from common.z3 import is_this_z3_function, translate_z3_function
 from load import find_param
 from common.document_wrapper import DocumentWrapper
-from common.math import cartesian_product
+from common.mathematics import cartesian_product
 
 wraper = DocumentWrapper(width=60)
 

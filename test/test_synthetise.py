@@ -448,7 +448,7 @@ class MyTestCase(unittest.TestCase):
         show_space = True
 
         ## NORMAL TEST
-        from common.math import create_intervals
+        from common.mathematics import create_intervals
         from load import get_all_f
 
         agents_quantities = [2, 3, 5, 10]
@@ -485,7 +485,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_refine_multi_param(self):
         print(colored("Multi-param refinement here", 'blue'))
-        from common.math import create_intervals
+        from common.mathematics import create_intervals
         show_space = True
 
         ## MULTIPARAM TEST

@@ -2,6 +2,16 @@ from termcolor import colored
 from sympy import Interval
 
 
+def parse_numbers(text: str):
+    """ Converts string into a list of numbers
+
+    Args:
+        text (string): input string
+    """
+    newstr = ''.join((ch if ch in '0123456789.-e' else ' ') for ch in text)
+    return [float(i) for i in newstr.split()]
+
+
 def ineq_to_constraints(functions: list, intervals: list, silent: bool = True):
     """ Converts expressions and intervals into constraints
         list of expressions, list of intervals -> constraints

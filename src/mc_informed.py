@@ -5,7 +5,7 @@ from pathlib import Path
 from sympy import Interval
 
 ## Importing my code
-from common.math import margin
+from common.mathematics import margin
 from common.config import load_config
 
 spam = load_config()

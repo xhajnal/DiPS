@@ -1,6 +1,6 @@
 import copy
 import numpy as np
-from common.math import is_in, cartesian_product
+from common.mathematics import is_in, cartesian_product
 
 
 def refine_by(region1, region2, debug: bool = False):
