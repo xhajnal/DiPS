@@ -707,6 +707,7 @@ class Gui(Tk):
         Button(frame_right, text='Delete MH Results', command=self.refresh_mh).grid(row=7, column=0, padx=(4, 4), pady=7)
 
         Button(frame_right, text='Costumize Plot', command=self.costumize_mh_results).grid(row=8, column=0, padx=(4, 4), pady=0)
+        Button(frame_right, text='Export Acc points', command=self.export_acc_points).grid(row=9, column=0, padx=(4, 4), pady=0)
 
         frame_right.columnconfigure(0, weight=1)
         frame_right.rowconfigure(0, weight=1)
@@ -3079,6 +3080,35 @@ class Gui(Tk):
             self.cursor_toggle_busy(False)
             self.progress.set("0%")
 
+    def export_acc_points(self, file=False):
+        """ Exports accepted points of metropolis hastings
+
+        Args:
+            file (string or False):  file to export accepted points of MH
+        """
+        if not self.mh_results:
+            return
+        else:
+            print("Exporting accepted points of MH ...")
+            self.status_set("Please select folder to store the export in.")
+            acc_mh_export_text_file = filedialog.asksaveasfilename(initialdir=self.refinement_results,
+                                                                   title="Exporting accepted points of MH - Select file",
+                                                                   filetypes=(("text files", "*.txt"), ("all files", "*.*")))
+            if acc_mh_export_text_file == "":
+                self.status_set("No file selected for the textual representation of accepted points of MH in.")
+                return
+
+        if "." not in basename(acc_mh_export_text_file):
+            acc_mh_export_text_file = acc_mh_export_text_file + ".txt"
+
+        if not self.silent.get():
+            print("Saving the textual representation of accepted points of MH as a file:", acc_mh_export_text_file)
+
+        acc_mh_export_text_file = open(acc_mh_export_text_file, "w")
+        acc_mh_export_text_file.write(str(self.mh_results.accepted))
+
+        if not file:
+            self.status_set("Textual representation of space saved.")
 
     def validate_space(self, position=False):
         """ Validates space.
