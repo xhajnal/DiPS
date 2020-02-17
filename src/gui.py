@@ -3091,11 +3091,11 @@ class Gui(Tk):
         else:
             print("Exporting accepted points of MH ...")
             self.status_set("Please select folder to store the export in.")
-            acc_mh_export_text_file = filedialog.asksaveasfilename(initialdir=self.refinement_results,
+            acc_mh_export_text_file = filedialog.asksaveasfilename(initialdir=self.mh_results_dir,
                                                                    title="Exporting accepted points of MH - Select file",
                                                                    filetypes=(("text files", "*.txt"), ("all files", "*.*")))
             if acc_mh_export_text_file == "":
-                self.status_set("No file selected for the textual representation of accepted points of MH in.")
+                self.status_set("No file selected for the textual representation of accepted points of MH to save in.")
                 return
 
         if "." not in basename(acc_mh_export_text_file):
@@ -3104,11 +3104,12 @@ class Gui(Tk):
         if not self.silent.get():
             print("Saving the textual representation of accepted points of MH as a file:", acc_mh_export_text_file)
 
-        acc_mh_export_text_file = open(acc_mh_export_text_file, "w")
-        acc_mh_export_text_file.write(str(self.mh_results.accepted))
+        with open(acc_mh_export_text_file, "w") as file:
+            for item in self.mh_results.get_acc_as_a_list():
+                file.write(str(item)+",\n")
 
         if not file:
-            self.status_set("Textual representation of space saved.")
+            self.status_set("Textual representation of accepted points of MH saved.")
 
     def validate_space(self, position=False):
         """ Validates space.

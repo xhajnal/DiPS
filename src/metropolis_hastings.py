@@ -138,6 +138,9 @@ class HastingsResults:
                 plt.title(self.title)
                 plt.show()
 
+    def get_acc_as_a_list(self):
+        return self.accepted.tolist()
+
 
 def sample(functions, data_means):
     """ Will sample according to the pdf as given by the polynomials
