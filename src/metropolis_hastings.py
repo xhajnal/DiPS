@@ -35,10 +35,10 @@ class HastingsResults:
             observations_samples_count (int): sample size from the observations
             MH_sampling_iterations (int): number of iterations/steps in searching in space
             eps (number): very small value used as probability of non-feasible values in prior
-            show (number): show from
+            show (number): shows last given percent of accepted points (trim burn-in period)
             pretitle (string): title to be put in front of title
             title (string): title of the plot
-            bins (int): number of segments in the plot
+            bins (int): number of segments in the heatmap plot (used only for 2D param space)
         """
         ## Inside variables
         self.params = params
@@ -68,10 +68,13 @@ class HastingsResults:
 
         Args:
             where (tuple/list): output matplotlib sources to output created figure
-            bins (int): number of segments in the plot
-            show (int or False or None): show last x percents of the accepted values, None - use class value
+            bins (int): number of segments in the plot (used only for heatmap - 2D param space)
+            show (int or False or None): show last x percents of the accepted values, None - use class value (to trim burn-in period)
             as_scatter (bool): Sets the plot to scatter plot even for 2D output
             debug (bool): if True extensive print will be used
+
+        @author: xhajnal
+        @edit: denis
         """
 
         if debug:
@@ -186,13 +189,14 @@ def sample(functions, data_means):
 
 def transition_model_a(theta, parameter_intervals):
     """" Defines how to walk around the parameter space
+        using normal distribution around old point
 
     Args:
-        theta (list): parameter values
-        parameter_intervals (list of tuples) parameter intervals
+        theta (list): old parameter point
+        parameter_intervals (list of tuples) domains of parameters
 
     Returns:
-         new parameter space point
+        theta_new (list): new parameter point
 
     @author: tpetrov
     @edit: xhajnal, denis
@@ -231,11 +235,11 @@ def prior(x, eps):
 
 
 def acceptance(x, x_new):
-    """ Decides whether to accept new sample or not
+    """ Decides whether to accept new point or not
 
     Args:
-        x: old parameter point
-        x_new: new parameter points
+        x: likelihood of the old parameter point
+        x_new: likelihood of the new parameter points
 
     Returns:
          True if the new points is accepted
@@ -263,23 +267,21 @@ def metropolis_hastings(likelihood_computer, prior, transition_model, param_init
         likelihood_computer (function(x, data)): returns the likelihood that these parameters generated the data
         prior (function(x, eps)): prior function
         transition_model (function(x)): a function that draws a sample from a symmetric distribution and returns it
-        param_init  (pair of numbers): a starting sample
+        param_init  (pair of numbers): starting parameter point
         iterations (int): number of accepted to generated
         observations (list of numbers): observations that we wish to model
         acceptance_rule (function(x, x_new)): decides whether to accept or reject the new sample
-        parameter_intervals (list of pairs): boundaries of parameters
-        progress (False or Tkinter_element): progress bar
+        parameter_intervals (list of pairs): parameter domains
+        progress (Tkinter_element or False): progress bar
         timeout (int): timeout in seconds
         debug (bool): if True extensive print will be used
 
     Returns:
-         tuple of accepted and rejected parameter points
+        accepted, rejected (tuple of np.arrays): tuple of accepted and rejected parameter points
 
     @author: tpetrov
     @edit: xhajnal
     """
-    # print("acceptance_rule", acceptance_rule)
-
     x = param_init
     accepted = []
     rejected = []
@@ -322,8 +324,8 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
     """ TODO @Tanja
 
     Args:
-        space (Refined space): supporting structure
-        theta (list): parameter values
+        space (Refined space): supporting structure, defining parameters, their domains and types
+        theta (list): parameter point
         functions (list of strings): functions to be evaluated in theta
         observations (list of ints): list of function indices which are being observed
         eps (number): very small value used as probability of non-feasible values in prior
@@ -376,18 +378,19 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
                         observations_samples_size: int, MH_sampling_iterations: int, eps,
                         theta_init=False, where=False, progress=False, show=False, bins=20, timeout=False, debug=False):
     """ Initialisation method for Metropolis Hastings
+
     Args:
-        space (RefinedSpace):
+        space (RefinedSpace): supporting structure, defining parameters, their domains and types
         observations (list of ints): either experiment or data(experiment result frequency)
         functions (list of strings):
         observations_count (int): total number of observations
         observations_samples_size (int): sample size from the observations
         MH_sampling_iterations (int): number of iterations/steps in searching in space
         eps (number): very small value used as probability of non-feasible values in prior
-        theta_init (list of numbers): initial point in parameter space
+        theta_init (list of numbers): initial parameter point
         where (tuple/list): output matplotlib sources to output created figure
-        progress (Tkinter element): progress bar
-        show (number): show last x percents of the accepted values
+        progress (Tkinter element or False): progress bar
+        show (number): show last x percents of the accepted values (trim burn-in period)
         bins (int): number of segments in the plot
         timeout (int): timeout in seconds
         debug (bool): if True extensive print will be used
