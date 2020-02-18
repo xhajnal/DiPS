@@ -220,9 +220,10 @@ class Gui(Tk):
         self.show_true_point = None  ## flag telling whether to show true point
 
         ## Settings
-        self.version = "1.11.1"  ## Version of the gui
+        self.version = "1.12.1"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
+        self.show_mh_as_scatter = BooleanVar() ## Sets the MH plot to scatter plot (even for 2D)
 
         ## Settings/data
         # self.alpha = ""  ## Confidence
@@ -3043,10 +3044,14 @@ class Gui(Tk):
         self.show_entry.grid(row=2, column=1)
         self.show_entry.insert(END, str(self.mh_results.show))
 
+        # Label(self.new_window, text="Show 2D MH plot as scatter line plot", anchor=W, justify=LEFT).grid(row=3, column=0)
+        show_mh_as_scatter_checkbutton = Checkbutton(self.new_window, text="Show 2D MH plot as scatter line plot", variable=self.show_mh_as_scatter)
+        show_mh_as_scatter_checkbutton.grid(row=3, column=0)
+
         ## To be used to wait until the button is pressed
         self.button_pressed.set(False)
         costumize_mh_results_button = Button(self.new_window, text="OK", command=self.change_MH_Plot)
-        costumize_mh_results_button.grid(row=3)
+        costumize_mh_results_button.grid(row=4)
         costumize_mh_results_button.focus()
         costumize_mh_results_button.bind('<Return>', self.change_MH_Plot)
 
@@ -3057,6 +3062,7 @@ class Gui(Tk):
         try:
             bins = int(self.grid_size_entry.get())
             show = float(self.show_entry.get())
+            as_scatter = bool(self.show_mh_as_scatter.get())
 
             ## Clear figure
             self.page6_figure2.clf()
@@ -3064,7 +3070,7 @@ class Gui(Tk):
             self.page6_figure2.canvas.draw()
             self.page6_figure2.canvas.flush_events()
 
-            spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b], bins=bins, show=show)
+            spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b], bins=bins, show=show, as_scatter=as_scatter)
 
             if spam[0] is not False:
                 self.page6_figure2, self.page6_b = spam

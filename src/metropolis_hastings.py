@@ -5,6 +5,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import pickle
+
+# from termcolor import colored
+
 from common.document_wrapper import DocumentWrapper
 
 ## Importing my code
@@ -60,13 +63,14 @@ class HastingsResults:
         self.timeout = timeout
         self.time_it_took = time_it_took
 
-    def show_mh_heatmap(self, where=False, bins=False, show=None, debug=False):
+    def show_mh_heatmap(self, where=False, bins=False, show=None, as_scatter=False, debug=False):
         """ Visualises the result of Metropolis Hastings as a heatmap
 
         Args:
             where (tuple/list): output matplotlib sources to output created figure
             bins (int): number of segments in the plot
             show (int or False or None): show last x percents of the accepted values, None - use class value
+            as_scatter (bool): Sets the plot to scatter plot even for 2D output
             debug (bool): if True extensive print will be used
         """
 
@@ -77,17 +81,22 @@ class HastingsResults:
         if show is None:
             show = self.show
 
-        if self.title is "":
-            if self.last_iter > 0:
-                self.title = f'Estimate of MH algorithm, {self.last_iter} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n showing last {show}% of {self.accepted.shape[0]} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
-            else:
-                self.title = f'Estimate of MH algorithm, {self.MH_sampling_iterations} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n showing last {show}% of {self.accepted.shape[0]} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
-
         ## Convert percents / fraction to show into exact number
         if 0 < show < 1:
+            self.show = show * 100
             show = int(-show * self.accepted.shape[0])
+        elif show < 0:
+            self.show = show
+            show = 75
         else:
+            self.show = show
             show = int(-show / 100 * self.accepted.shape[0])
+
+        if self.title is "":
+            if self.last_iter > 0:
+                self.title = f'Estimate of MH algorithm, {self.last_iter} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n showing last {self.show}% of {self.accepted.shape[0]} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
+            else:
+                self.title = f'Estimate of MH algorithm, {self.MH_sampling_iterations} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n showing last {self.show}% of {self.accepted.shape[0]} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
 
         if debug:
             print("self.accepted[show:, 0]", self.accepted[show:, 0])
@@ -96,7 +105,7 @@ class HastingsResults:
             self.bins = bins
 
         ## Multidimensional case
-        if len(self.accepted[0]) > 2:
+        if len(self.accepted[0]) > 2 or as_scatter:
             if where:
                 fig = where[0]
                 ax = where[1]
@@ -104,18 +113,31 @@ class HastingsResults:
                 ax.autoscale()
             else:
                 fig, ax = plt.subplots()
+
             ## Creates values of the horizontal axis
-            x_axis = list(range(1, len(self.accepted[0]) + 1))
+            # x_axis = list(range(1, len(self.accepted[0]) + 1))
+
+            ## Time check
+            # from time import time
+            # import socket
+            # start_time = time()
+
             ## Get values of the vertical axis for respective line
-            for sample in self.accepted[show:]:
-                ax.scatter(x_axis, sample)
-                ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-                ax.plot(x_axis, sample)
+            ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+            ## Thanks to Den for optimisation
+            egg = self.accepted[show:].T
+            ax.plot(egg, '.-', markersize=15)
+
+            # for sample in self.accepted[show:]:
+            #    ax.scatter(x_axis, sample)
+            #    ax.plot(x_axis, sample)
+
             ax.set_xlabel("param indices")
             ax.set_ylabel("parameter value")
             ax.set_title("\n".join(wrapper.wrap(self.title)))
             ax.autoscale()
             ax.margins(0.1)
+            # print(colored(f"  It took {socket.gethostname()}, {time() - start_time} seconds to run", "blue"))
 
             if where:
                 return fig, ax
