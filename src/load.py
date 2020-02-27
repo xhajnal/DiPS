@@ -450,10 +450,10 @@ def load_pickled_data(file):
 
 
 def parse_params_from_model(file, silent: bool = False):
-    """ Parses the parameters from a given file
+    """ Parses the parameters from a given prism file
 
     Args:
-        file: ((path/string)) a model file to be parsed
+        file: ((path/string)) a prism model file to be parsed
         silent (bool): if silent command line output is set to minimum
     """
     params = []
@@ -558,6 +558,7 @@ def find_param_old(polynomial, debug: bool = False):
     ## replace python expressions
     parameters = parameters.replace("if", " ").replace("else", " ").replace("elif", " ")
     parameters = parameters.replace("not", " ").replace("or", " ").replace("and", " ")
+    parameters = parameters.replace("min", " ").replace("max", " ")
     ## Replace z3 expression
     parameters = parameters.replace("Not", " ").replace("Or", " ").replace("And", " ").replace("Implies", " ")
     parameters = parameters.replace("If", " ").replace(',', ' ')

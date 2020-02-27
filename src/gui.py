@@ -17,7 +17,7 @@ from termcolor import colored
 
 ## Importing my code
 from common.convert import ineq_to_constraints, parse_numbers
-from common.z3 import is_this_z3_function, translate_z3_function, is_this_exponential_function
+from common.my_z3 import is_this_z3_function, translate_z3_function, is_this_exponential_function
 
 error_occurred = None
 matplotlib.use("TKAgg")
@@ -1064,17 +1064,25 @@ class Gui(Tk):
         # print("self.functions_changed", self.functions_changed)
 
         # print("self.factor", self.factor.get())
-        if self.factorise.get():
-            self.status_set("Loading selected file ...")
-        else:
-            self.status_set("Loading selected file and factorising...")
-        self.functions, rewards = load_functions(os.path.abspath(self.functions_file.get()), tool=self.program.get(),
-                                                 factorize=self.factorise.get(), rewards_only=False, f_only=False)
-        ## Merge functions and rewards
-        # print("self.functions", self.functions)
-        # print("rewards", rewards)
-        for expression in rewards:
-            self.functions.append(expression)
+        try:
+            self.cursor_toggle_busy(True)
+            if self.factorise.get():
+                self.status_set("Loading selected file ...")
+                if not self.silent.get():
+                    print("Loading selected file ...")
+            else:
+                self.status_set("Loading selected file and factorising...")
+                if not self.silent.get():
+                    print("Loading selected file and factorising...")
+            self.functions, rewards = load_functions(os.path.abspath(self.functions_file.get()), tool=self.program.get(),
+                                                     factorize=self.factorise.get(), rewards_only=False, f_only=False)
+            ## Merge functions and rewards
+            # print("self.functions", self.functions)
+            # print("rewards", rewards)
+            for expression in rewards:
+                self.functions.append(expression)
+        finally:
+            self.cursor_toggle_busy(False)
 
         if not self.silent.get():
             print("Unparsed functions: ", self.functions)

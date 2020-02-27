@@ -12,6 +12,7 @@ from mpmath import mpi
 from matplotlib.patches import Rectangle
 
 ## Importing my code
+from common.my_z3 import parse_model_values
 from load import find_param
 from sample_space import sample
 from space import RefinedSpace
@@ -119,7 +120,7 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
         region (list of pairs of numbers): list of intervals, low and high bound, defining the parameter space to be refined
         constraints  (list of strings): array of functions (rational functions in the case of Markov Chains)
         silent (bool): if silent printed output is set to minimum
-        called (bool): if called updates the global variables (use when calling it directly)
+        called (bool): True for standalone call - it updates the global variables and creates new space
         solver (string):: specified solver, allowed: z3, dreal
         delta (number):: used for delta solving using dreal
         debug (bool): if True extensive print will be used
@@ -155,12 +156,15 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
 
         space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
     else:
+        ## The parameters are stored as globals
         space = globals()["space"]
 
+    ## Choosing solver
     if solver == "z3":
+        set_param(max_lines=1, max_width=1000000)
         s = Solver()
 
-        ## Adding regional restrictions to solver
+        ## Adding regional restrictions to solver (hyperrectangle boundaries)
         j = 0
         for param in globals()["parameters"]:
             if debug:
@@ -197,7 +201,7 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
             return s.model()
 
     elif solver == "dreal":
-        ## Adding regional restrictions to dreal solver
+        ## Adding regional restrictions to solver (hyperrectangle boundaries)
         j = 0
         f_sat = None
         for param in globals()["parameters"]:
@@ -242,7 +246,7 @@ def check_safe(region, constraints, silent: bool = False, called=False, solver="
         region (list of pairs of numbers): list of intervals, low and high bound, defining the parameter space to be refined
         constraints  (list of strings): array of properties
         silent (bool): if silent printed output is set to minimum
-        called (bool): if called updates the global variables (use when calling it directly)
+        called (bool): True for standalone call - it updates the global variables and creates new space
         solver (string):: specified solver, allowed: z3, dreal
         delta (number):: used for delta solving using dreal
         debug (bool): if True extensive print will be used
@@ -275,21 +279,20 @@ def check_safe(region, constraints, silent: bool = False, called=False, solver="
                 except:
                     raise Exception(
                         "Unknown solver.")
-            ## EXAMPLE: p = Real(p)
         ## EXAMPLE: p = Real(p)
 
         space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
     else:
+        ## The parameters are stored as globals
         space = globals()["space"]
 
-    # if not silent:
-    #    print("with parameters", globals()["parameters"])
-
+    ## Choosing solver
     if solver == "z3":
+        set_param(max_lines=1, max_width=1000000)
         ## Initialisation of z3 solver
         s = Solver()
 
-        ## Adding regional restrictions to z3 solver
+        ## Adding regional restrictions to solver (hyperrectangle boundaries)
         j = 0
         for param in globals()["parameters"]:
             if debug:
@@ -325,7 +328,7 @@ def check_safe(region, constraints, silent: bool = False, called=False, solver="
             return True
 
     elif solver == "dreal":
-        ## Adding regional restrictions to solver
+        ## Adding regional restrictions to solver (hyperrectangle boundaries)
         j = 0
         f_sat = None
         for param in globals()["parameters"]:
@@ -683,7 +686,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
             if isinstance(constraints[0], list):
                 egg = constraints
             else:
-                egg = constraints_to_ineq(constraints, debug=debug)
+                egg = constraints_to_ineq(constraints, silent=silent, debug=debug)
 
             if not egg:
                 return space
@@ -760,7 +763,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                         if isinstance(constraints[0], list):
                             egg = constraints
                         else:
-                            egg = constraints_to_ineq(constraints, debug=debug)
+                            egg = constraints_to_ineq(constraints, silent=silent, debug=debug)
                         if not egg:
                             return space
                         globals()["que"].enqueue([rectangle, egg[0], egg[1], next_depth, epsilon, coverage, silent, debug, gui])
@@ -1138,13 +1141,8 @@ def private_check_deeper_queue_checking(region, constraints, recursion_depth, ep
             print(recursion_depth, region,  colored(f"{space.get_coverage()}, {example}, is unknown", "grey"))
 
     ## Parse example
-    parsed_example = str(example)
-    parsed_example = parsed_example[1:-1]
-    parsed_example = parsed_example.split(",")
-    parsed_example.sort()
-    example_points = []
-    for value in parsed_example:
-        example_points.append(float(eval(value.split("=")[1])))
+    example_points = parse_model_values(str(example))
+
     # example_points = re.findall(r'[0-9./]+', str(example))
     # print(example_points)
 
@@ -1305,35 +1303,14 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
             print(recursion_depth, region, colored(f"{space.get_coverage()} {(example, counterexample)} is unknown", "grey"))
 
     ## Parse example
-    parsed_example = str(example)
-    parsed_example = parsed_example[1:-1]
-    parsed_example = parsed_example.split(",")
-    parsed_example.sort()
-    example_points = []
-    # if parsed_example is [""]:
-    #    print("hello")
-    for value in parsed_example:
-        # print("value", value)
-        # print("parsed_example", parsed_example)
-        example_points.append(float(eval(value.split("=")[1])))
+    example_points = parse_model_values(str(example))
 
     ## Parse counterexample
-    parsed_counterexample = str(counterexample)
-    parsed_counterexample = parsed_counterexample[1:-1]
-    parsed_counterexample = parsed_counterexample.split(",")
-    parsed_counterexample.sort()
-    counterexample_points = []
-    for value in parsed_counterexample:
-        counterexample_points.append(float(eval(value.split("=")[1])))
+    counterexample_points = parse_model_values(str(counterexample))
 
-    # print("example", example)
-    # example_points = re.findall(r'[0-9./]+', str(example))
-    # counterexample_points = re.findall(r'[0-9./]+', str(counterexample))
     if solver == "dreal":
         del example_points[::2]
         del counterexample_points[::2]
-    # print("example_points", example_points)
-    # print(counterexample_points)
 
     ## Find maximum dimension and split
     index, maximum = 0, 0
@@ -1518,7 +1495,7 @@ def check_interval_in(region, constraints, intervals, silent: bool = False, call
         constraints  (list of strings): array of properties
         intervals (list of pairs/ sympy.Intervals): array of interval to constrain constraints
         silent (bool): if silent printed output is set to minimum
-        called (bool): if called updates the global variables (use when calling it directly)
+        called (bool): True for standalone call - it updates the global variables and creates new space
         debug (bool): if True extensive print will be used
     """
     if debug:
@@ -1584,7 +1561,7 @@ def check_interval_out(region, constraints, intervals, silent: bool = False, cal
         constraints  (list of strings): of functions
         intervals (list of pairs/ sympy.Intervals): array of interval to constrain constraints
         silent (bool): if silent printed output is set to minimum
-        called (bool): if called updates the global variables (use when calling it directly)
+        called (bool): True for standalone call - it updates the global variables and creates new space
         debug (bool): if True extensive print will be used
     """
     if debug:

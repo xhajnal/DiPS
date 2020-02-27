@@ -3,7 +3,7 @@ import numpy as np
 from scipy.optimize import least_squares
 
 ## Importing my code
-from common.z3 import is_this_z3_function, translate_z3_function
+from common.my_z3 import is_this_z3_function, translate_z3_function
 
 
 def dist(x):

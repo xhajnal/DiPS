@@ -81,8 +81,8 @@ def constraints_to_ineq(constraints: list, silent: bool = True, debug: bool = Fa
         if debug:
             print(f"property {index + 1} before splitting", prop)
         try:
-            prop = prop.replace("<=", "<").replace(">=", "<").replace("=>", "<").replace("=<", "<").replace(">", "<")
-            spam = prop.split("<")
+            spam = prop.replace("<=", "<").replace(">=", "<").replace("=>", "<").replace("=<", "<").replace(">", "<")
+            spam = spam.split("<")
         except AttributeError:
             print()
         if debug:
@@ -94,33 +94,60 @@ def constraints_to_ineq(constraints: list, silent: bool = True, debug: bool = Fa
         elif len(spam) > 2:
             if not silent:
                 print(colored(f"Property {index+1} has more than one inequality sign", "red"))
-            return False
-        else:
-            try:
-                ## The right-hand-side is number
-                float(spam[1])
-                if debug:
-                    print("right-hand-side ", float(spam[1]))
-            except ValueError:
-                spam = [f"{spam[0]} -( {spam[1]})", 0]
-
-            ## If we are at odd position check
-            if is_odd:
-                if debug:
-                    print("is odd")
-                    print("funcs[-1]", funcs[-1])
-                    print("spam[0]", spam[0])
-                ## whether the previous function is the same as the new one
-                if funcs[-1] == spam[0]:
-                    # if yes, add the other value of the interval
-                    if debug:
-                        print("Adding value")
-                        print("len(funcs)", len(funcs))
-                        print("[intervals[len(funcs)-1], spam[1]]", [intervals[len(funcs)-1], spam[1]])
-                    intervals[len(funcs)-1] = [intervals[len(funcs)-1], spam[1]]
+            if spam[0].replace('.', '', 1).isdigit():
+                egg = [spam[0], spam[1]]
+                for indexx in range(2, len(spam)):
+                    egg[1] = egg[1] + "".join(filter(lambda x: x in ["=", "<", ">"], prop[len(egg[0]):len(egg[0]) + 2])) + spam[indexx]
+                spam = egg
+                print(spam)
+            elif spam[-1].replace('.', '', 1).isdigit():
+                egg = [spam[0]]
+                for indexx in range(1, len(spam)-1):
+                    egg[0] = egg[0] + "".join(filter(lambda x: x in ["=", "<", ">"], prop[len(egg[0]):len(egg[0]) + 2])) + spam[indexx]
+                egg.append(spam[-1])
+                spam = egg
+                print(spam)
             else:
-                funcs.append(spam[0])
-                intervals.append(spam[1])
+                return False
+            # ## Searching for < > which were in brackets
+            # brackets = []
+            # for part in spam:
+            #     brackets.append(part.count("(") - part.count(")"))
+            # brackets_count = 0
+            # ## more right brackets in the first part
+            # if brackets[0] < 0:
+            #     return False
+            # ## sum the brackets until I find balance
+            # for index, part in enumerate(brackets):
+            #     brackets_count = brackets_count + part
+            #     ## found the split
+            #     if brackets_count == 0 and sum(brackets[index +1:]):
+            #         TODO
+        try:
+            ## The right-hand-side is number
+            float(spam[1])
+            if debug:
+                print("right-hand-side ", float(spam[1]))
+        except ValueError:
+            spam = [f"{spam[0]} -( {spam[1]})", 0]
+
+        ## If we are at odd position check
+        if is_odd:
+            if debug:
+                print("is odd")
+                print("funcs[-1]", funcs[-1])
+                print("spam[0]", spam[0])
+            ## whether the previous function is the same as the new one
+            if funcs[-1] == spam[0]:
+                # if yes, add the other value of the interval
+                if debug:
+                    print("Adding value")
+                    print("len(funcs)", len(funcs))
+                    print("[intervals[len(funcs)-1], spam[1]]", [intervals[len(funcs)-1], spam[1]])
+                intervals[len(funcs)-1] = [intervals[len(funcs)-1], spam[1]]
+        else:
+            funcs.append(spam[0])
+            intervals.append(spam[1])
         is_odd = not is_odd
         index = index + 1
 

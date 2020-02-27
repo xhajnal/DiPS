@@ -85,3 +85,26 @@ def translate_to_z3_function(function: str):
         function (string): expression to be translated
     """
     pass
+
+
+def parse_model_values(model: str):
+    """ Parses z3.solver.model() into list of values"""
+    ## Delete brackets
+    model = model[1:-1]
+    ## Delete /0 part
+    if "/0" in model:
+        model = model.split("/0")[0]
+        ## Delete spaces
+        model = re.sub(r', +', ",", model)
+        ## Delete last comma
+        if model[-1] == ",":
+            model = model[:-1]
+    model = model.split(",")
+    model.sort()
+
+    ## Parse the values
+    values = []
+    for value in model:
+        values.append(float(eval(value.split("=")[1])))
+
+    return values

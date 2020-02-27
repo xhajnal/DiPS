@@ -8,7 +8,7 @@ from matplotlib.ticker import MaxNLocator
 from termcolor import colored
 
 ## Importing my code
-from common.z3 import is_this_z3_function, translate_z3_function
+from common.my_z3 import is_this_z3_function, translate_z3_function
 from load import find_param
 from common.document_wrapper import DocumentWrapper
 from common.mathematics import cartesian_product
