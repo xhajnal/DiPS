@@ -59,6 +59,7 @@ def is_this_general_function(function: str):
     return not(is_this_python_function(function) or is_this_python_function(function))
 
 
+## TODO check whether I got all
 def translate_z3_function(function: str):
     """ Translates z3 expression into python expression
 
@@ -77,18 +78,32 @@ def translate_z3_function(function: str):
     return function
 
 
-## TODO
+## TODO check whether I got all
 def translate_to_z3_function(function: str):
     """ Translates python expression into z3 expression
 
     Args:
         function (string): expression to be translated
     """
-    pass
+    ## TODO wrong if the expressions contains expression with () inside
+    ## necessity to use syntactic trees
+    if "if" in function:
+        function = re.sub(r"([^(]*?) +if +(.*?) +else +([^)]*)", r"If(\g<2>, \g<1>, \g<3>)", function)
+    if "and" in function:
+        function = re.sub(r"([^(]*?) +and +([^)]*?)", r"And(\g<1>, \g<2>)", function)
+    if "or" in function:
+        function = re.sub(r"([^(]*?) +or +([^)]*?)", r"Or(\g<1>, \g<2>)", function)
+    if "not" in function:
+        function = re.sub(r"not +(.*?) +", r" Not(\g<1>) ", function)
+    return function
 
 
 def parse_model_values(model: str):
-    """ Parses z3.solver.model() into list of values"""
+    """ Parses z3.solver.model() into list of values
+        Ignores /0
+
+    Example: [r_0 = 1/8, r_1 = 9/16, /0 = [(7/16, 7/8) -> 1/2, else -> 0]] -> [0.125, 0.5625]
+    """
     ## Delete brackets
     model = model[1:-1]
     ## Delete /0 part

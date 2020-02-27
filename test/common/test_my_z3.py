@@ -39,7 +39,10 @@ class MyTestCase(unittest.TestCase):
 
     def test_translate_to_z3_function(self):
         ## TODO
-        pass
+        function = "(-210)*If(r_0 + 4*delta > 1, 1, r_0 + 4*delta )**6*r_0**4+840*If(r_0 + 4*delta > 1, 1, r_0 + 4*delta )"
+        print(function)
+        print(translate_z3_function(function))
+        print(translate_to_z3_function(translate_z3_function(function)))
 
     def test_parse_model_values(self):
         model = '[r_0 = 1/8, r_1 = 9/16, /0 = [(7/16, 7/8) -> 1/2, else -> 0]]'
