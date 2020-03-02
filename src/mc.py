@@ -447,7 +447,7 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
 
 ## TODO rewrite this without the paths, just files
 def call_storm(args, silent: bool = False, model_path=model_path, properties_path=properties_path,
-               storm_output_path=storm_results, std_output_path=storm_results, std_output_file=False, time=False):
+               output_folder=storm_results, storm_file_name="tmp.cmd", time=False):
     """  Prints calls for storm model checking.
 
     Args:
@@ -455,35 +455,25 @@ def call_storm(args, silent: bool = False, model_path=model_path, properties_pat
         silent (bool): if silent command line output is set to minimum
         model_path (string): path to load  models from
         properties_path (string): path to load properties from
-        storm_output_path (string): path to save the files inside the command
-        std_output_path (string): path to save the results of the command
-        std_output_file (string): file name to save the output
+        output_folder (string): folder to save results
+        storm_file_name (string): file name to save the output
         time (bool): if True time measurement is added
     """
-    # print("std_output_path", std_output_path)
-    # print("storm_results", storm_results)
-    # print("std_output_file", std_output_file)
 
-    if std_output_path is not None:
-        output_file_path = Path(args.split()[0]).stem
-        if not std_output_file:
-            output_file_path = os.path.join(std_output_path, Path(str(output_file_path) + ".txt"))
-        else:
-            output_file_path = os.path.join(storm_results, Path(str(std_output_file)))
-            # print("new output_file_path", output_file_path)
+    print(colored(f"arguments {args}", "blue"))
+
+    command_file_path = os.path.join(output_folder, storm_file_name)  ## Path to .cmd file
+    if ".cmd" in storm_file_name:
+        storm_file_path = os.path.join(output_folder, storm_file_name.replace(".cmd", ".txt"))  ## Path to .txt file
     else:
-        output_file_path = ""
+        storm_file_path = os.path.join(output_folder, f"{storm_file_name}.txt")  ## Path to .txt file
 
-    # print(std_output_file)
+    print(f"{command_file_path} {colored('found', 'blue')}")
 
-    # os.chdir(config.get("mandatory_paths","cwd"))
-    # print(os.getcwd())
     storm_args = []
-
-    # print(args.split(" "))
     args = args.split(" ")
 
-    with open(output_file_path.split(".")[0]+".cmd", "a+") as command_file_path:
+    with open(command_file_path, "a+") as command_file_path:
         # print(args)
         for arg in args:
             # print(arg)
@@ -495,7 +485,8 @@ def call_storm(args, silent: bool = False, model_path=model_path, properties_pat
                     command_file_path.write(f"file {model_file_path} not found -- skipped \n")
                     print(f"{colored('file', 'red')} {model_file_path} {colored('not found -- skipped', 'red')}")
                     return 404
-                storm_args.append(model_file_path)
+                print(f"{model_file_path} {colored('found', 'blue')}")
+                storm_args.append(f"/DiPS/{os.path.relpath(model_file_path, os.path.join(model_path,'..'))}")
             elif re.compile('\.pctl').search(arg) is not None:
                 property_file_path = os.path.join(properties_path, arg)
                 # print(property_file)
@@ -506,31 +497,22 @@ def call_storm(args, silent: bool = False, model_path=model_path, properties_pat
                 # storm_args.append(property_file_path)
                 storm_args.append("my_super_cool_string")
             elif re.compile('\.txt').search(arg) is not None:
-                command_file_path.write(f"storm_output_path {storm_output_path} \n")
-                print("storm_output_path", storm_output_path)
-                if not os.path.isabs(storm_output_path):
-                    storm_output_path = os.path.join(Path(storm_results), Path(storm_output_path))
-
-                if not os.path.isdir(storm_output_path):
-                    if not silent:
-                        command_file_path.write(f"The path {storm_output_path} not found, this may cause trouble \n")
-                        print(
-                            f"{colored('The path', 'red')} {storm_output_path} {colored('not found, this may cause trouble', 'red')}")
-
-                storm_output_file_path = os.path.join(storm_output_path, arg)
-                command_file_path.write(f"storm_output_file_path {storm_output_file_path} \n")
-                print("storm_output_file_path", storm_output_file_path)
-                storm_args.append(storm_output_file_path)
+                storm_file_path = os.path.join(properties_path, arg)
+                if not os.path.isabs(storm_file_path):
+                    storm_file_path = os.path.join(Path(storm_results), Path(storm_file_path))
+                command_file_path.write(f"storm_output_path {storm_file_path} \n")
+                print("storm_output_path", storm_file_path)
             else:
                 storm_args.append(arg)
 
-        args = ["./storm-pars --prism"]
+        args = ["./storm-pars --prism "]
         args.extend(storm_args)
         if time:
             args.append(")")
-        if output_file_path is not "":
+        if storm_file_path is not "":
             args.append(">>")
-            args.append(output_file_path)
+            print(colored(storm_file_path, "blue"))
+            args.append(f"/DiPS/{os.path.relpath(storm_file_path, os.path.join(model_path, '..'))}")
             args.append("2>&1 \n")
 
         if time:
@@ -558,7 +540,7 @@ def call_storm(args, silent: bool = False, model_path=model_path, properties_pat
 
 
 ## TODO rewrite this without the paths, just files
-def call_storm_files(model_prefix, agents_quantities, param_intervals=False, model_path=model_path, properties_path=properties_path, property_file=False, output_path=storm_results, time=False):
+def call_storm_files(model_prefix, agents_quantities, param_intervals=False, model_path=model_path, properties_path=properties_path, property_file=False, command_output_file=False, output_path=storm_results, time=False):
     """  Calls storm for each file matching the prefix
 
     Args:
@@ -571,32 +553,28 @@ def call_storm_files(model_prefix, agents_quantities, param_intervals=False, mod
         output_path (string): path for the output
         time (bool): if True time measurement is added
     """
+    ## print(colored(f"model prefixx {model_prefix}", "blue"))
+    ## print(colored(f"model pathhhhh {model_path}", "blue"))
+
     root = output_path
 
-    # print("output_path ", output_path)
-    # print("type(output_path) ", type(output_path))
-
-    # print("model_prefix ", model_prefix)
-    # print("type(model_prefix) ", type(model_prefix))
-
-    # print("property_file ", property_file)
-    # print("type(property_file) ", type(property_file))
-
     if not agents_quantities:
-        # print("I was here")
         agents_quantities = [""]
 
-    output_file = f"{os.path.join(output_path, str(strftime('%d-%b-%Y-%H-%M-%S', localtime())+'.cmd'))}"
+    if command_output_file:
+        print(f"command file here: {command_output_file}")
+    else:
+        command_output_file = f"{os.path.join(output_path, str(strftime('%d-%b-%Y-%H-%M-%S', localtime())+'.cmd'))}"
+        print(f"command file here: {command_output_file}")
 
-    # print(output_file)
-    with open(output_file, "w") as output_filee:
-        output_filee.write(f"cd /{root} \n")
-        print(f"cd /{root}")
+    with open(command_output_file, "w") as output_filee:
+        output_filee.write(f"cd {os.path.join(model_path, '..')} \n")
+        print(f"cd {os.path.join(model_path, '..')}")
 
-        output_filee.write("sudo docker pull movesrwth/storm:travis \n")
-        print("sudo docker pull movesrwth/storm:travis")
-        output_filee.write(f'sudo docker run --mount type=bind,source="$(pwd)",target=/{root} -w /opt/storm/build/bin --rm -it --name storm movesrwth/storm:travis \n')
-        print(f'sudo docker run --mount type=bind,source="$(pwd)",target=/{root} -w /opt/storm/build/bin --rm -it --name storm movesrwth/storm:travis')
+        # output_filee.write("sudo docker pull movesrwth/storm:travis \n")
+        # print("sudo docker pull movesrwth/storm:travis")
+        output_filee.write(f'sudo docker run --mount type=bind,source="$(pwd)",target=/DiPS -w /opt/storm/build/bin --rm -it --name storm movesrwth/storm:travis \n')
+        print(f'sudo docker run --mount type=bind,source="$(pwd)",target=/DiPS -w /opt/storm/build/bin --rm -it --name storm movesrwth/storm:travis')
 
     # print("model_path", model_path)
     # print("model_prefix", model_prefix)
@@ -607,7 +585,7 @@ def call_storm_files(model_prefix, agents_quantities, param_intervals=False, mod
             files = glob.glob(os.path.join(model_path, model_prefix + str(N) + ".pm"))
         # print("files", files)
         if not files:
-            with open(output_file, "w") as output_filee:
+            with open(command_output_file, "w") as output_filee:
                 output_filee.write("No model files for N="+str(N)+" found")
                 print(colored("No model files for N="+str(N)+" found", "red"))
             continue
@@ -621,6 +599,6 @@ def call_storm_files(model_prefix, agents_quantities, param_intervals=False, mod
                 # print("file", file)
                 # print("file stem", file.resolve().stem)
                 # print("{}_{}.txt".format(str(file.stem).split(".")[0], property_file.split(".")[0]))
-                call_storm("{} {}".format(file, property_file), model_path=model_path, properties_path=properties_path, std_output_path=output_path, std_output_file=output_file)
+                call_storm("{} {}".format(file, property_file), model_path=model_path, properties_path=properties_path, output_folder=output_path, storm_file_name=command_output_file)
             else:
-                call_storm("{} prop_{}.pctl".format(file, N), model_path=model_path, properties_path=properties_path, std_output_path=output_path, std_output_file=output_file)
+                call_storm("{} prop_{}.pctl".format(file, N), model_path=model_path, properties_path=properties_path, output_folder=output_path, storm_file_name=command_output_file)

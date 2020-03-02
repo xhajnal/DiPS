@@ -2229,12 +2229,13 @@ class Gui(Tk):
                 elif self.program.get().lower() == "storm":
                     self.cursor_toggle_busy(True)
                     self.status_set("Parameter synthesis running ...")
-                    call_storm_files(self.model_file.get(), [], model_path="", properties_path=self.property_dir,
-                                     property_file=self.property_file.get(), output_path=self.storm_results, time=False)
                     ## Deriving output file
                     self.functions_file.set(str(os.path.join(Path(self.storm_results),
                                                              str(Path(self.model_file.get()).stem) + "_" + str(
                                                                  Path(self.property_file.get()).stem) + ".cmd")))
+                    call_storm_files(os.path.relpath(self.model_file.get(), self.model_dir), [], model_path=self.model_dir, properties_path=self.property_dir,
+                                     property_file=self.property_file.get(), command_output_file=self.functions_file.get(), output_path=self.storm_results, time=False)
+
                     self.status_set("Command to run the parameter synthesis saved here: {}", self.functions_file.get())
                     self.load_mc_output_file(self.functions_file.get())
                 else:
