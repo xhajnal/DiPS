@@ -1493,9 +1493,9 @@ def create_bee_multiparam_semisynchronous_model(file, population_size):
     states = gen_semisync_statespace(population_size)
 
     for state in states:
+        # print(state)
         ## skipping initial state
-        ## TODO correct this in huy script (should be if 3 in state)
-        if population_size - 1 in state:
+        if 3 in state:
             continue
         ## skipping all ones state
         if all(map(lambda x: x == 1, state)):
@@ -1534,24 +1534,34 @@ def create_bee_multiparam_semisynchronous_model(file, population_size):
 
         ## Probabilities and successor nodes
         for index, fail_value in enumerate(distinct_fails):
+            ## Current state value of the be to be updated
             fail_value = abs(fail_value)
+            ## Number of the bees with the same state
+            fail_value_count = state.count(fail_value)
+
             for successes in [True, False]:
+                ## When more bees have DIFFERENT state it can be any of them
+                ## Putting equal probability of update for all possible updates
+                if len(distinct_fails) > 1:
+                    file.write(f"1/{len(distinct_fails)} * ")
+                ## When more bees have THE SAME state it can be any of them
+                ## since we pick just one it is C(fail_value_count, 1) = fail_value_count
+                if fail_value_count > 1:
+                    file.write(f"{fail_value_count} * ")
+
+                ## The bee either stings (success) or not, hence 2 outgoing states
                 if successes:
-                    if len(distinct_fails) > 1:
-                        file.write(f"1/{len(distinct_fails)} * ")
                     file.write(f"((r_{ones:0{decimals}d} - r_{fail_value:0{decimals}d})/(1 - r_{fail_value:0{decimals}d}))")
                     new_state = list(state)
                     new_state[new_state.index(-fail_value)] = 1
                     new_state.sort(reverse=True)
-                    print("new state", new_state)
+                    # print("new state", new_state)
                 else:
-                    if len(distinct_fails) > 1:
-                        file.write(f"1/{len(distinct_fails)} * ")
                     file.write(f"(1-(r_{ones:0{decimals}d} - r_{fail_value:0{decimals}d})/(1 - r_{fail_value:0{decimals}d}))")
                     new_state = list(state)
                     new_state[new_state.index(-fail_value)] = - ones
                     new_state.sort(reverse=True)
-                    print("new state", new_state)
+                    # print("new state", new_state)
                 file.write(f": ")
 
                 for indexx, bee in enumerate(new_state):
@@ -1562,7 +1572,7 @@ def create_bee_multiparam_semisynchronous_model(file, population_size):
 
                 if successes:
                     file.write(f" + ")
-            ## If the last outgoing state
+            ## If the last possible state update
             if index == len(distinct_fails) - 1:
                 file.write(f";\n")
             else:
@@ -1592,8 +1602,8 @@ def create_bee_multiparam_semisynchronous_model(file, population_size):
 
     file.close()
 
-# population_size = 4
-# create_bee_multiparam_semisynchronous_model(f"bee_multiparam_semisynchronous_{population_size}", population_size)
+population_size = 3
+create_bee_multiparam_semisynchronous_model(f"bee_multiparam_semisynchronous_{population_size}", population_size)
 
 
 def create_properties(population_size):

@@ -5,7 +5,7 @@ start with ones and then follows from 0 to population_size - 1 list of states
 
 
 def gen_state_encoding(population_size):
-    """ @author = Huy"""
+    """ @author = Huy """
     state_encoding = [0, ]
     for i in range(1, population_size):
         state_encoding.extend([i, -i])
@@ -13,12 +13,12 @@ def gen_state_encoding(population_size):
 
 
 def map_state_code(state, state_encoding):
-    """ @author = Huy"""
+    """ @author = Huy """
     return [state_encoding[item] for item in state]
 
 
 def backtrack(i, population_size, state, state_encoding) -> list:
-    """ @author = Huy"""
+    """ @author = Huy """
     results = []
     for v in range(len(state_encoding)):
         state[i] = v
@@ -31,15 +31,18 @@ def backtrack(i, population_size, state, state_encoding) -> list:
 
 
 def gen_full_statespace(population_size):
-    """ @author = Huy"""
+    """ @author = Huy """
     start_state = [0] * population_size
     results = backtrack(0, population_size, start_state, gen_state_encoding(population_size))
     return results
 
 
+k_init_state_encoding = 3
+
+
 def gen_semisync_statespace(population_size):
-    """ @author = Huy"""
-    state_space = [tuple([population_size - 1] * population_size), [1] * population_size]
+    """ @author = Huy """
+    state_space = [tuple([k_init_state_encoding] * population_size), [1] * population_size]
     for i in range(population_size):
         init_state = [0] * (population_size - i)
         state_encoding = range(-i, 1)
@@ -50,6 +53,23 @@ def gen_semisync_statespace(population_size):
             state_space.append(state)
     state_space = set(tuple(sorted(l, reverse=True)) for l in state_space)
 
+    return state_space
+
+
+def gen_async_statespace(population_size):
+    """ @author = Huy """
+    state_space = [tuple([k_init_state_encoding] * population_size), tuple([1] * population_size)]
+    for i in range(population_size):
+        init_state = [0] * (population_size - i)
+        state_encoding = list(range(-i, 1))
+        state_encoding.append(k_init_state_encoding)
+        sub_statespace = backtrack(0, population_size - i, init_state, state_encoding)
+        set_sub_statespace = set(tuple(sorted(l)) for l in sub_statespace)
+        for s in set_sub_statespace:
+            state = [1] * i + list(s)
+            state_space.append(state)
+    state_space = set(tuple(sorted(l, reverse=True)) for l in state_space)
+    state_space = sorted(list(state_space))
     return state_space
 
 
