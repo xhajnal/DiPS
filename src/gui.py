@@ -1317,7 +1317,7 @@ class Gui(Tk):
             self.status_set("Please select the data to be loaded.")
 
             spam = filedialog.askopenfilename(initialdir=self.data_dir, title="Data loading - Select file",
-                                              filetypes=(("pickled files", "*.p"), ("comma separated values", "*.csv"), ("all files", "*.*")))
+                                              filetypes=(("pickled files/comma separated values", "*.p *.csv"), ("all files", "*.*")))
         ## If no file selected
         if spam == "":
             self.status_set("No file selected.")
@@ -1500,7 +1500,7 @@ class Gui(Tk):
                     return
             self.status_set("Please select the constraints to be loaded.")
             spam = filedialog.askopenfilename(initialdir=self.constraints_dir, title="constraints loading - Select file",
-                                              filetypes=(("pickled files", "*.p"), ("text files", "*.txt"), ("all files", "*.*")))
+                                              filetypes=(("pickled/text files", "*.p *.txt"), ("all files", "*.*")))
 
         if self.debug.get():
             print("old constraints", self.constraints)
