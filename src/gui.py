@@ -71,7 +71,7 @@ except Exception as error:
 
 try:
     from mc_informed import general_create_data_informed_properties
-    from load import load_functions, find_param, load_data, find_param_old
+    from load import load_functions, find_param, load_data, find_param_old, parse_constraints
     from common.mathematics import create_intervals
     import space
     from refine_space import check_deeper
@@ -1500,7 +1500,7 @@ class Gui(Tk):
                     return
             self.status_set("Please select the constraints to be loaded.")
             spam = filedialog.askopenfilename(initialdir=self.constraints_dir, title="constraints loading - Select file",
-                                              filetypes=(("text files", "*.p"), ("all files", "*.*")))
+                                              filetypes=(("pickled files", "*.p"), ("text files", "*.txt"), ("all files", "*.*")))
 
         if self.debug.get():
             print("old constraints", self.constraints)
@@ -1516,23 +1516,29 @@ class Gui(Tk):
             self.constraints_file.set(spam)
             self.z3_constraints = ""
 
-            if append:
-                if self.constraints == "":
-                    self.constraints = []
-                spam = pickle.load(open(self.constraints_file.get(), "rb"))
-                self.constraints.extend(spam)
+            if os.path.splitext(self.constraints_file.get())[1] == ".txt":
+                if append:
+                    self.constraints.extend(parse_constraints(self.constraints_file.get()))
+                else:
+                    self.constraints = parse_constraints(self.constraints_file.get())
             else:
-                try:
-                    self.constraints = pickle.load(open(self.constraints_file.get(), "rb"))
-                except pickle.UnpicklingError:
-                    messagebox.showerror("Loading constraints", "Error, no constraints loaded")
-                    return
-                # self.constraints = []
-                #
-                # with open(self.constraints_file.get(), 'r') as file:
-                #     for line in file:
-                #         print(line[:-1])
-                #         self.constraints.append(line[:-1])
+                if append:
+                    if self.constraints == "":
+                        self.constraints = []
+                    spam = pickle.load(open(self.constraints_file.get(), "rb"))
+                    self.constraints.extend(spam)
+                else:
+                    try:
+                        self.constraints = pickle.load(open(self.constraints_file.get(), "rb"))
+                    except pickle.UnpicklingError:
+                        messagebox.showerror("Loading constraints", "Error, no constraints loaded")
+                        return
+                    # self.constraints = []
+                    #
+                    # with open(self.constraints_file.get(), 'r') as file:
+                    #     for line in file:
+                    #         print(line[:-1])
+                    #         self.constraints.append(line[:-1])
             if self.debug.get():
                 print("self.constraints", self.constraints)
 

@@ -349,7 +349,7 @@ def load_data(path, silent: bool = False, debug: bool = False):
         debug (bool): if debug extensive print will be used
 
     Returns:
-    D: dictionary N -> list of probabilities for respective property
+    data: dictionary N -> list of probabilities for respective property
     """
     cwd = os.getcwd()
     if not Path(path).is_absolute():
@@ -588,3 +588,25 @@ def find_param_older(polynomial, debug: bool = False):
     parameters.discard("")
     # print("hello",set(parameters))
     return set(parameters)
+
+
+def parse_constraints(file, silent=True, debug=False):
+    """ Loads constraints from text file, returns as list of strings "constraints"
+
+    Args:
+        file (string/Path): file path to parse constraints
+        silent (bool): if silent printed output is set to minimum
+        debug (bool): if debug extensive print will be used
+
+    Returns:
+    constraints: (list of string) constraints
+    """
+    with open(file) as f:
+        constraints = []
+        content = f.readlines()
+        for line in content:
+            line = re.sub(r', *\n', '', line)
+            constraints.append(line)
+    return constraints
+
+
