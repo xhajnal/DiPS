@@ -71,7 +71,7 @@ except Exception as error:
 
 try:
     from mc_informed import general_create_data_informed_properties
-    from load import load_functions, find_param, load_data, find_param_old, parse_constraints
+    from load import load_functions, find_param, load_data, find_param_old, parse_constraints, parse_functions
     from common.mathematics import create_intervals
     import space
     from refine_space import check_deeper
@@ -1226,7 +1226,7 @@ class Gui(Tk):
 
             spam = filedialog.askopenfilename(initialdir=initial_dir,
                                               title="Rational functions saving - Select file",
-                                              filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
+                                              filetypes=(("pickle files / text files", "*.p *.txt"), ("all files", "*.*")))
 
         ## If no file selected
         if spam == "":
@@ -1238,7 +1238,9 @@ class Gui(Tk):
             self.functions_file.set(spam)
             self.z3_functions = ""
 
-            if ".p" in self.functions_file.get():
+            if os.path.splitext(self.functions_file.get())[1] == ".txt":
+                self.functions = parse_functions(self.functions_file.get())
+            elif os.path.splitext(self.functions_file.get())[1] == ".p":
                 self.functions = pickle.load(open(self.functions_file.get(), "rb"))
 
             ## Check whether functions not empty

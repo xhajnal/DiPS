@@ -610,3 +610,16 @@ def parse_constraints(file, silent=True, debug=False):
     return constraints
 
 
+def parse_functions(file, silent=True, debug=False):
+    """ Loads functions from text file, returns as list of strings "functions"
+
+    Args:
+        file (string/Path): file path to parse functions
+        silent (bool): if silent printed output is set to minimum
+        debug (bool): if debug extensive print will be used
+
+    Returns:
+    (list of string) functions
+    """
+    return parse_constraints(file, silent, debug)
+
