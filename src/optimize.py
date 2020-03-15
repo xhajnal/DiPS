@@ -64,9 +64,13 @@ def optimize(functions: [list], params: [list], param_intervals: [list], data_po
     res = scipy.optimize.least_squares(dist, x0, bounds=bounds)
     # print(res.x)
 
-    function_values = []
-    for polynome in functions:
-        function_values.append(eval(polynome))
-
     ## VALUES OF PARAMS, VALUES OF FUNCTIONS, DISTANCE
-    return list(res.x), function_values,  sum([abs(x - y) for x, y in zip(function_values, data_point)])
+    # print("point", list(res.x))
+    function_values = res.fun
+    for index, item in enumerate(function_values):
+        function_values[index] = function_values[index] + data_point[index]
+    # print("function values", function_values)
+    # print("distance values", list(res.fun))
+    # print("total distance", res.cost)
+    # return list(res.x), function_values,  sum([abs(x - y) for x, y in zip(function_values, data_point)])
+    return list(res.x), list(function_values), res.cost
