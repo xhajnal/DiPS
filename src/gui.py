@@ -341,6 +341,7 @@ class Gui(Tk):
                                                                                    pady=4)  # pack(anchor=W)
 
         self.model_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_width()/2))
+        self.model_text.bind("<FocusOut>", self.refresh_model)
         # self.model_text.config(state="disabled")
         self.model_text.grid(row=2, column=0, columnspan=16, rowspan=2, sticky=W, padx=4, pady=4)  # pack(anchor=W, fill=X, expand=True)
 
@@ -357,6 +358,7 @@ class Gui(Tk):
                                                                                        pady=4)  # pack(anchor=W)
 
         self.property_text = scrolledtext.ScrolledText(frame_right, width=int(self.winfo_width() / 2), height=int(self.winfo_width()/2))
+        self.property_text.bind("<FocusOut>", self.refresh_properties)
         # self.property_text.config(state="disabled")
         self.property_text.grid(row=2, column=1, columnspan=16, rowspan=2, sticky=W, pady=4)  # pack(anchor=W, fill=X)
 
@@ -406,6 +408,7 @@ class Gui(Tk):
 
         Label(frame_right, text=f"Parsed function(s):", anchor=W, justify=LEFT).grid(row=4, column=1, sticky=W, padx=4, pady=4)
         self.functions_parsed_text = scrolledtext.ScrolledText(frame_right, width=int(self.winfo_width() / 2), height=int(self.winfo_width() / 2), state=DISABLED)
+        self.functions_parsed_text.bind("<FocusOut>", self.refresh_parsed_functions)
         self.functions_parsed_text.grid(row=5, column=1, columnspan=16, rowspan=2, sticky=W, pady=4)
 
         ######################################### TAB SAMPLE AND VISUALISE #############################################
@@ -484,6 +487,7 @@ class Gui(Tk):
         ## self.data_text.bind("<FocusOut>", self.parse_data)
         # self.data_text = Text(page4, height=12, state=DISABLED)  # , height=10, width=30
         # self.data_text.config(state="disabled")
+        self.data_text.bind("<FocusOut>", self.refresh_data)
         self.data_text.grid(row=2, column=0, columnspan=16, sticky=W, padx=4, pady=4)
 
         ## SET THE INTERVAL COMPUTATION SETTINGS
@@ -515,6 +519,7 @@ class Gui(Tk):
 
         self.data_intervals_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_height() * 0.8 / 40), state=DISABLED)  # height=10, width=30
         # self.data_intervals_text.config(state="disabled")
+        self.data_intervals_text.bind("<FocusOut>", self.refresh_data_intervals)
         self.data_intervals_text.grid(row=8, column=0, rowspan=2, columnspan=16, sticky=W, padx=4, pady=4)
         # ttk.Separator(frame_left, orient=VERTICAL).grid(row=0, column=17, rowspan=10, sticky='ns', padx=50, pady=10)
 
@@ -523,6 +528,7 @@ class Gui(Tk):
 
         self.property_text2 = scrolledtext.ScrolledText(frame_right, width=int(self.winfo_width() / 2), height=int(self.winfo_height() * 0.8 / 40), state=DISABLED)
         # self.property_text2.config(state="disabled")
+        self.property_text2.bind("<FocusOut>", self.refresh_data)
         self.property_text2.grid(row=2, column=1, columnspan=16, rowspan=2, sticky=W + E + N + S, padx=5, pady=4)
         Button(frame_right, text='Generate data informed properties', command=self.generate_data_informed_properties).grid(row=4, column=1, sticky=W, padx=5, pady=4)
 
@@ -545,6 +551,7 @@ class Gui(Tk):
         button.grid(sticky=W, padx=12, pady=12)
 
         self.constraints_text = scrolledtext.ScrolledText(page5)
+        self.constraints_text.bind("<FocusOut>", self.refresh_constraints)
         self.constraints_text.grid(row=1, column=0, columnspan=9, rowspan=4, padx=5, sticky=E+W+S+N)
 
         label = Label(page5, text=f"Import/Export:", anchor=W, justify=LEFT)
@@ -2551,6 +2558,87 @@ class Gui(Tk):
             file.write(f"parameter point {self.optimised_param_point} \n")
             file.write(f"function values {self.optimised_function_value} \n")
             file.write(f"distance {self.optimised_distance} \n")
+
+    ## TODO this can be written as a single method with one more argument
+    ## first it asks whether it is, then selects (text, file, text) accordingly
+    def refresh_model(self, x):
+        if len(self.model_text.get('1.0', END)) > 1:
+            if self.model_file.get() is not "":
+                if not askyesno("Editing model", "Do you wanna apply these changes?"):
+                    return
+                self.save_model(self.model_file.get())
+                self.load_model(self.model_file.get())
+            else:
+                if not askyesno("Editing model", "Do you wanna save these changes as a model?"):
+                    return
+                self.save_model()
+                self.load_model(self.model_file.get())
+
+    def refresh_properties(self, x):
+        if len(self.property_text.get('1.0', END)) > 1:
+            if self.property_file.get() is not "":
+                if not askyesno("Editing properties", "Do you wanna apply these changes?"):
+                    return
+                self.save_property(self.property_file.get())
+                self.load_property(self.property_file.get())
+            else:
+                if not askyesno("Editing properties", "Do you wanna save these changes as a file?"):
+                    return
+                self.save_property()
+                self.load_property(self.property_file.get())
+
+    def refresh_parsed_functions(self, x):
+        if len(self.parsed_functions_text.get('1.0', END)) > 1:
+            if self.parsed_functions_file.get() is not "":
+                if not askyesno("Editing functions", "Do you wanna apply these changes?"):
+                    return
+                self.save_parsed_functionsy(self.parsed_functions_file.get())
+                self.load_parsed_functionsy(self.parsed_functions_file.get())
+            else:
+                if not askyesno("Editing functions", "Do you wanna save these changes as a file?"):
+                    return
+                self.save_parsed_functions()
+                self.load_parsed_functions(self.parsed_functions_file.get())
+
+    def refresh_data(self, x):
+        if len(self.data_text.get('1.0', END)) > 1:
+            if self.data_file.get() is not "":
+                if not askyesno("Editing data", "Do you wanna apply these changes?"):
+                    return
+                self.save_data(self.data_file.get())
+                self.load_data(self.data_file.get())
+            else:
+                if not askyesno("Editing data", "Do you wanna save these changes as a data?"):
+                    return
+                self.save_data()
+                self.load_data(self.data_file.get())
+
+    def refresh_data_intervals(self, x):
+        if len(self.data_intervals_text.get('1.0', END)) > 1:
+            if self.data_intervals_file.get() is not "":
+                if not askyesno("Editing data_intervals", "Do you wanna apply these changes?"):
+                    return
+                self.save_data_intervals(self.data_intervals_file.get())
+                self.load_data_intervals(self.data_intervals_file.get())
+            else:
+                if not askyesno("Editing data_intervals", "Do you wanna save these changes as a data_intervals?"):
+                    return
+                self.save_data_intervals()
+                self.load_data_intervals(self.data_intervals_file.get())
+
+    def refresh_constraints(self, x):
+        if len(self.constraints_text.get('1.0', END)) > 1:
+            if self.constraints_file.get() is not "":
+                if not askyesno("Editing constraints", "Do you wanna apply these changes?"):
+                    return
+                self.save_constraints(self.constraints_file.get())
+                self.load_constraints(self.constraints_file.get())
+            else:
+                if not askyesno("Editing constraints", "Do you wanna save these changes as a constraints?"):
+                    return
+                self.save_constraints()
+                self.load_constraints(self.constraints_file.get())
+
 
     def compute_data_intervals(self):
         """ Creates intervals from data. """
