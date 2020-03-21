@@ -1,6 +1,7 @@
 import platform
 import pickle
 import os
+import time
 import webbrowser
 from copy import deepcopy
 from tkinter import *
@@ -193,6 +194,14 @@ class Gui(Tk):
         self.space_changed = False
         self.mh_results_changed = False
 
+        ## Flags for modification
+        self.model_text_modified = BooleanVar()
+        self.properties_text_modified = BooleanVar()
+        self.parsed_functions_text_modified = BooleanVar()
+        self.data_text_modified = BooleanVar()
+        self.data_intervals_text_modified = BooleanVar()
+        self.constraints_text_modified = BooleanVar()
+
         ## True Variables
         # self.model = ""
         # self.property = ""
@@ -220,7 +229,7 @@ class Gui(Tk):
         self.show_true_point = None  ## flag telling whether to show true point
 
         ## Settings
-        self.version = "1.12.1"  ## Version of the gui
+        self.version = "1.12.2"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
         self.show_mh_as_scatter = BooleanVar() ## Sets the MH plot to scatter plot (even for 2D)
@@ -333,15 +342,13 @@ class Gui(Tk):
         frame_left.columnconfigure(6, weight=1)
         frame_left.pack(side=LEFT, fill=X)
 
-        Button(frame_left, text='Open model', command=self.load_model).grid(row=0, column=0, sticky=W, padx=4,
-                                                                            pady=4)  # pack(anchor=W)
-        Button(frame_left, text='Save model', command=self.save_model).grid(row=0, column=1, sticky=W, padx=4,
-                                                                            pady=4)  # pack(anchor=W)
-        Label(frame_left, text=f"Loaded model file:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, padx=4,
-                                                                                   pady=4)  # pack(anchor=W)
+        Button(frame_left, text='Open model', command=self.load_model).grid(row=0, column=0, sticky=W, padx=4, pady=4)  # pack(anchor=W)
+        Button(frame_left, text='Save model', command=self.save_model).grid(row=0, column=1, sticky=W, padx=4, pady=4)  # pack(anchor=W)
+        Label(frame_left, text=f"Loaded model file:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, padx=4, pady=4)  # pack(anchor=W)
 
         self.model_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_width()/2))
-        self.model_text.bind("<FocusOut>", self.refresh_model)
+        # self.model_text.bind("<FocusOut>", self.refresh_model)
+        self.model_text.bind("<Key>", lambda x: self.model_text_modified.set(True) if x.char is not "" else None)
         # self.model_text.config(state="disabled")
         self.model_text.grid(row=2, column=0, columnspan=16, rowspan=2, sticky=W, padx=4, pady=4)  # pack(anchor=W, fill=X, expand=True)
 
@@ -358,7 +365,8 @@ class Gui(Tk):
                                                                                        pady=4)  # pack(anchor=W)
 
         self.property_text = scrolledtext.ScrolledText(frame_right, width=int(self.winfo_width() / 2), height=int(self.winfo_width()/2))
-        self.property_text.bind("<FocusOut>", self.refresh_properties)
+        # self.property_text.bind("<FocusOut>", self.refresh_properties)
+        self.property_text.bind("<Key>", lambda x: self.properties_text_modified.set(True) if x.char is not "" else None)
         # self.property_text.config(state="disabled")
         self.property_text.grid(row=2, column=1, columnspan=16, rowspan=2, sticky=W, pady=4)  # pack(anchor=W, fill=X)
 
@@ -404,11 +412,12 @@ class Gui(Tk):
 
         Label(frame_right, text=f"Rational functions section.", anchor=W, justify=LEFT).grid(row=1, column=1, sticky=W, padx=4, pady=4)
         Button(frame_right, text='Open functions', command=self.load_parsed_functions).grid(row=3, column=1, sticky=W, padx=4, pady=4)
-        Button(frame_right, text='Save functions', command=self.save_functions).grid(row=3, column=2, sticky=W, pady=4)
+        Button(frame_right, text='Save functions', command=self.save_parsed_functions).grid(row=3, column=2, sticky=W, pady=4)
 
         Label(frame_right, text=f"Parsed function(s):", anchor=W, justify=LEFT).grid(row=4, column=1, sticky=W, padx=4, pady=4)
         self.functions_parsed_text = scrolledtext.ScrolledText(frame_right, width=int(self.winfo_width() / 2), height=int(self.winfo_width() / 2), state=DISABLED)
-        self.functions_parsed_text.bind("<FocusOut>", self.refresh_parsed_functions)
+        # self.functions_parsed_text.bind("<FocusOut>", self.refresh_parsed_functions)
+        self.functions_parsed_text.bind("<Key>", lambda x: self.parsed_functions_text_modified.set(True) if x.char is not "" else None)
         self.functions_parsed_text.grid(row=5, column=1, columnspan=16, rowspan=2, sticky=W, pady=4)
 
         ######################################### TAB SAMPLE AND VISUALISE #############################################
@@ -487,7 +496,8 @@ class Gui(Tk):
         ## self.data_text.bind("<FocusOut>", self.parse_data)
         # self.data_text = Text(page4, height=12, state=DISABLED)  # , height=10, width=30
         # self.data_text.config(state="disabled")
-        self.data_text.bind("<FocusOut>", self.refresh_data)
+        # self.data_text.bind("<FocusOut>", self.refresh_data)
+        self.data_text.bind("<Key>", lambda x: self.data_text_modified.set(True) if x.char is not "" else None)
         self.data_text.grid(row=2, column=0, columnspan=16, sticky=W, padx=4, pady=4)
 
         ## SET THE INTERVAL COMPUTATION SETTINGS
@@ -519,7 +529,8 @@ class Gui(Tk):
 
         self.data_intervals_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_height() * 0.8 / 40), state=DISABLED)  # height=10, width=30
         # self.data_intervals_text.config(state="disabled")
-        self.data_intervals_text.bind("<FocusOut>", self.refresh_data_intervals)
+        # self.data_intervals_text.bind("<FocusOut>", self.refresh_data_intervals)
+        self.data_intervals_text.bind("<Key>", lambda x: self.data_intervals_text_modified.set(True) if x.char is not "" else None)
         self.data_intervals_text.grid(row=8, column=0, rowspan=2, columnspan=16, sticky=W, padx=4, pady=4)
         # ttk.Separator(frame_left, orient=VERTICAL).grid(row=0, column=17, rowspan=10, sticky='ns', padx=50, pady=10)
 
@@ -528,7 +539,8 @@ class Gui(Tk):
 
         self.property_text2 = scrolledtext.ScrolledText(frame_right, width=int(self.winfo_width() / 2), height=int(self.winfo_height() * 0.8 / 40), state=DISABLED)
         # self.property_text2.config(state="disabled")
-        self.property_text2.bind("<FocusOut>", self.refresh_data)
+        # self.property_text2.bind("<FocusOut>", self.refresh_data)
+        self.property_text2.bind("<Key>", lambda x: self.properties_text_modified.set(True) if x.char is not "" else None)
         self.property_text2.grid(row=2, column=1, columnspan=16, rowspan=2, sticky=W + E + N + S, padx=5, pady=4)
         Button(frame_right, text='Generate data informed properties', command=self.generate_data_informed_properties).grid(row=4, column=1, sticky=W, padx=5, pady=4)
 
@@ -551,7 +563,8 @@ class Gui(Tk):
         button.grid(sticky=W, padx=12, pady=12)
 
         self.constraints_text = scrolledtext.ScrolledText(page5)
-        self.constraints_text.bind("<FocusOut>", self.refresh_constraints)
+        # self.constraints_text.bind("<FocusOut>", self.refresh_constraints)
+        self.constraints_text.bind("<Key>", lambda x: self.constraints_text_modified.set(True) if x.char is not "" else None)
         self.constraints_text.grid(row=1, column=0, columnspan=9, rowspan=4, padx=5, sticky=E+W+S+N)
 
         label = Label(page5, text=f"Import/Export:", anchor=W, justify=LEFT)
@@ -931,11 +944,12 @@ class Gui(Tk):
 
     ## LOGIC
     ## FILE - LOAD, PARSE, SHOW, AND SAVE
-    def load_model(self, file=False):
+    def load_model(self, file=False, ask=True):
         """ Loads model from a text file.
 
         Args:
             file (path/string): direct path to load the function file
+            ask (Bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -944,7 +958,7 @@ class Gui(Tk):
         else:
             print("Loading model ...")
             ## If some model previously loaded
-            if len(self.model_text.get('1.0', END)) > 1:
+            if len(self.model_text.get('1.0', END)) > 1 and ask:
                 if not askyesno("Loading model", "Previously obtained model will be lost. Do you want to proceed?"):
                     return
             self.status_set("Please select the model to be loaded.")
@@ -971,10 +985,11 @@ class Gui(Tk):
             if not file:
                 self.save_model(os.path.join(self.tmp_dir, "model"))
 
-    def load_property(self, file=False):
+    def load_property(self, file=False, ask=True):
         """ Loads temporal properties from a text file.
         Args:
             file (path/string): direct path to load the function file
+            ask (Bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -983,7 +998,7 @@ class Gui(Tk):
         else:
             print("Loading properties ...")
             ## If some property previously loaded
-            if len(self.property_text.get('1.0', END)) > 1:
+            if len(self.property_text.get('1.0', END)) > 1 and ask:
                 if not askyesno("Loading properties",
                                 "Previously obtained properties will be lost. Do you want to proceed?"):
                     return
@@ -1016,11 +1031,12 @@ class Gui(Tk):
             if not file:
                 self.save_property(os.path.join(self.tmp_dir, "properties"))
 
-    def load_mc_output_file(self, file=False):
+    def load_mc_output_file(self, file=False, ask=True):
         """ Loads parameter synthesis output text file
 
         Args:
             file (path/string): direct path to load the function file
+            ask (Bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -1036,7 +1052,7 @@ class Gui(Tk):
         else:
             print("Loading functions ...")
 
-            if self.functions_changed:
+            if self.functions_changed and ask:
                 if not askyesno("Loading functions", "Previously obtained functions will be lost. Do you want to proceed?"):
                     return
 
@@ -1203,10 +1219,11 @@ class Gui(Tk):
         self.functions_window.destroy()
         self.unfold_functions()
 
-    def load_parsed_functions(self, file=False):
+    def load_parsed_functions(self, file=False, ask=True):
         """ Loads parsed rational functions from a pickled file.
         Args:
             file (path/string): direct path to load the function file
+            ask (Bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -1214,7 +1231,7 @@ class Gui(Tk):
             spam = file
         else:
             print("Loading parsed rational functions ...")
-            if self.data_changed:
+            if self.data_changed and ask:
                 if not askyesno("Loading parsed rational functions",
                                 "Previously obtained functions will be lost. Do you want to proceed?"):
                     return
@@ -1304,14 +1321,15 @@ class Gui(Tk):
 
             ## Autosave
             if not file:
-                self.save_functions(os.path.join(self.tmp_dir, f"functions.p"))
+                self.save_parsed_functions(os.path.join(self.tmp_dir, f"functions.p"))
 
             self.status_set("Parsed rational functions loaded.")
 
-    def load_data(self, file=False):
+    def load_data(self, file=False, ask=True):
         """ Loads data from a file. Either pickled list or comma separated values in one line
         Args:
             file (path/string): direct path to load the data file
+            ask (Bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -1319,7 +1337,7 @@ class Gui(Tk):
             spam = file
         else:
             print("Loading data ...")
-            if self.data_changed:
+            if self.data_changed and ask:
                 if not askyesno("Loading data", "Previously obtained data will be lost. Do you want to proceed?"):
                     return
 
@@ -1423,10 +1441,11 @@ class Gui(Tk):
         self.new_window.destroy()
         self.unfold_data()
 
-    def load_data_intervals(self, file=False):
+    def load_data_intervals(self, file=False, ask=True):
         """ Loads data intervals from a given file
         Args:
             file (path/string): direct path to load the data intervals file
+            ask (Bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -1435,7 +1454,7 @@ class Gui(Tk):
         else:
             print("Loading data intervals ...")
 
-            if self.data_intervals:
+            if self.data_intervals and ask:
                 if not askyesno("Loading data intervals", "Previously obtained space will be lost. Do you want to proceed?"):
                     return
 
@@ -1477,6 +1496,10 @@ class Gui(Tk):
 
     def recalculate_constraints(self):
         """ Merges rational functions and intervals into constraints. Shows it afterwards. """
+        print("Checking the inputs.")
+        self.check_changes("functions")
+        self.check_changes("data_intervals")
+
         ## If there is some constraints
         if len(self.constraints_text.get('1.0', END)) > 1:
             proceed = messagebox.askyesno("Recalculate constraints",
@@ -1491,11 +1514,12 @@ class Gui(Tk):
             self.save_constraints(os.path.join(self.tmp_dir, "constraints"))
         self.status_set("constraints recalculated and shown.")
 
-    def load_constraints(self, append=False, file=False):
+    def load_constraints(self, append=False, file=False, ask=True):
         """ Loads constraints from a pickled file.
         Args:
             append (bool): if True, loaded constraints are appended to previous
             file (path/string): direct path to load the constraint file
+            ask (Bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -1504,7 +1528,7 @@ class Gui(Tk):
         else:
             print("Loading constraints ...")
 
-            if self.constraints_changed and not append:
+            if self.constraints_changed and not append and ask:
                 if not askyesno("Loading constraints", "Previously obtained constraints will be lost. Do you want to proceed?"):
                     return
             self.status_set("Please select the constraints to be loaded.")
@@ -1588,10 +1612,11 @@ class Gui(Tk):
         self.load_constraints(append=True)
         self.status_set("constraints appended.")
 
-    def load_space(self, file=False):
+    def load_space(self, file=False, ask=True):
         """ Loads space from a pickled file.
         Args:
             file (path/string): direct path to load the space file
+            ask (Bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -1600,7 +1625,7 @@ class Gui(Tk):
         else:
             print("Loading space ...")
 
-            if self.space:
+            if self.space and ask:
                 if not askyesno("Loading space", "Previously obtained space will be lost. Do you want to proceed?"):
                     return
             ## Delete previous space
@@ -1655,11 +1680,12 @@ class Gui(Tk):
             finally:
                 self.cursor_toggle_busy(False)
 
-    def load_mh_results(self, file=False):
+    def load_mh_results(self, file=False, ask=True):
         """ loads Metropolis hastings results (accepted) and plots them
 
         Args:
             file (path/string): direct path to load the pickled file
+            ask (Bool): if False it will not ask questions
         """
 
         if file:
@@ -1669,7 +1695,7 @@ class Gui(Tk):
         else:
             print("Loading Metropolis Hasting results ...")
 
-            if self.space:
+            if self.mh_results_changed and ask:
                 if not askyesno("Loading Metropolis Hasting results", "Previously obtained plot will be lost. Do you want to proceed?"):
                     return
             ## Delete previous plot
@@ -1808,6 +1834,7 @@ class Gui(Tk):
         # if len(self.model_text.get('1.0', END)) <= 1:
         #    self.status_set("There is no model to be saved.")
         #    return
+        self.model_text_modified.set(True)
 
         if file:
             save_model_file = file
@@ -1865,6 +1892,9 @@ class Gui(Tk):
 
     def generate_data_informed_properties(self):
         """ Generates Data informed property from temporal properties and data. Prints it. """
+        print("Checking the inputs.")
+        self.check_changes("properties")
+
         if self.property_file.get() is "":
             messagebox.showwarning("Data informed property generation", "No property file loaded.")
             return False
@@ -1980,7 +2010,7 @@ class Gui(Tk):
             scrap.append(re.sub(r',\s*$', '', line))
         return scrap
 
-    def save_functions(self, file=False):
+    def save_parsed_functions(self, file=False):
         """ Saves parsed rational functions as a pickled file.
 
         Args:
@@ -2200,6 +2230,10 @@ class Gui(Tk):
     ## ANALYSIS
     def synth_params(self):
         """ Computes rational functions from model and temporal properties. Saves output as a text file. """
+        print("Checking the inputs.")
+        self.check_changes("model")
+        self.check_changes("properties")
+
         print("Synthesising parameters ...")
         self.status_set("Synthesising parameters.")
         proceed = True
@@ -2272,6 +2306,9 @@ class Gui(Tk):
 
     def sample_fun(self):
         """ Samples rational functions. Prints the result. """
+        print("Checking the inputs.")
+        self.check_changes("functions")
+
         print("Sampling rational functions ...")
         self.status_set("Sampling rational functions. - checking inputs")
         if self.fun_sample_size_entry.get() == "":
@@ -2308,6 +2345,9 @@ class Gui(Tk):
 
     def show_funs_in_single_point(self):
         """ Plots rational functions in a given point. """
+        print("Checking the inputs.")
+        self.check_changes("functions")
+
         print("Plotting rational functions in a given point ...")
         self.status_set("Plotting rational functions in a given point.")
 
@@ -2358,6 +2398,9 @@ class Gui(Tk):
 
     def show_funs_in_all_points(self):
         """ Shows sampled rational functions in all sampled points. """
+        print("Checking the inputs.")
+        self.check_changes("functions")
+
         print("Plotting sampled rational functions ...")
         self.status_set("Plotting sampled rational functions.")
 
@@ -2409,6 +2452,9 @@ class Gui(Tk):
 
     def show_heatmap(self):
         """ Shows heatmap - sampling of a rational function in all sampled points. """
+        print("Checking the inputs.")
+        self.check_changes("functions")
+
         print("Plotting heatmap of rational functions ...")
         self.status_set("Plotting heatmap of rational functions.")
 
@@ -2456,6 +2502,10 @@ class Gui(Tk):
 
     def optimize(self):
         """ Search for parameter values minimizing the distance of function to data. """
+        print("Checking the inputs.")
+        self.check_changes("functions")
+        self.check_changes("data")
+
         print("Optimizing the distance between functions and data ...")
         self.status_set("Optimizing the distance between functions and data.")
 
@@ -2561,87 +2611,115 @@ class Gui(Tk):
 
     ## TODO this can be written as a single method with one more argument
     ## first it asks whether it is, then selects (text, file, text) accordingly
-    def refresh_model(self, x):
-        if len(self.model_text.get('1.0', END)) > 1:
-            if self.model_file.get() is not "":
-                if not askyesno("Editing model", "Do you wanna apply these changes?"):
-                    return
-                self.save_model(self.model_file.get())
-                self.load_model(self.model_file.get())
-            else:
-                if not askyesno("Editing model", "Do you wanna save these changes as a model?"):
-                    return
-                self.save_model()
-                self.load_model(self.model_file.get())
+    def check_changes(self, what):
+        """ Checks whether a changed occurred and it is necessary to reload
 
-    def refresh_properties(self, x):
-        if len(self.property_text.get('1.0', END)) > 1:
-            if self.property_file.get() is not "":
-                if not askyesno("Editing properties", "Do you wanna apply these changes?"):
-                    return
-                self.save_property(self.property_file.get())
-                self.load_property(self.property_file.get())
-            else:
-                if not askyesno("Editing properties", "Do you wanna save these changes as a file?"):
-                    return
-                self.save_property()
-                self.load_property(self.property_file.get())
+        ARGS
+        ------
+            what (string): "model", "properties", "parsed_functions", "data"
+            "data_intervals", or "constraints" choosing what to check
+        """
+        ## SWITCH contains triples:  (text widget, file path, text, modifiedflag, save_function , load_function)
+        switch = {"model": (self.model_text_modified, self.model_file.get(), "model", self.save_model, self.load_model),
+                  "properties": (self.properties_text_modified, self.property_file.get(), "properties", self.save_property, self.load_property),
+                  "functions": (self.parsed_functions_text_modified, self.functions_file.get(), "functions", self.save_parsed_functions, self.load_parsed_functions),
+                  "data": (self.data_text_modified, self.data_file, "data", self.save_data, self.load_data),
+                  "data_intervals": (self.data_intervals_text_modified, self.data_intervals_file.get(), "data_intervals", self.save_data_intervals, self.load_data_intervals),
+                  "constraints": (self.constraints_text_modified, self.constraints_file.get(), "model", self.save_constraints, self.load_constraints),
+                  }
+        option = switch[what]
 
-    def refresh_parsed_functions(self, x):
-        if len(self.parsed_functions_text.get('1.0', END)) > 1:
-            if self.parsed_functions_file.get() is not "":
-                if not askyesno("Editing functions", "Do you wanna apply these changes?"):
+        ## old check:  len(self.model_text.get('1.0', END)) > 1 and
+        if option[0].get():
+            if option[1] is not "":
+                if not askyesno(f"In the meanwhile the {option[2]} was changed", f"Do you wanna apply these changes? \n It will overwrite the {option[2]} file."):
+                    option[0].set(False)   ## Set as not changed
                     return
-                self.save_parsed_functionsy(self.parsed_functions_file.get())
-                self.load_parsed_functionsy(self.parsed_functions_file.get())
+                option[3](option[1])  ## save the thing as a file
+                option[4](option[1])  ## load that thing as a file
+                option[0].set(False)  ## Set as not changed
             else:
-                if not askyesno("Editing functions", "Do you wanna save these changes as a file?"):
+                if not askyesno(f"In the meanwhile the {option[2]} was changed", f"Do you wanna save these changes as a {option[2]}?"):
+                    option[0].set(False)  ## Set as not changed
                     return
-                self.save_parsed_functions()
-                self.load_parsed_functions(self.parsed_functions_file.get())
+                option[3]()  ## save the thing as a file
+                option[4](option[1])  ## load the thing as a file
+                option[0].set(False)  ## Set as not changed
 
-    def refresh_data(self, x):
-        if len(self.data_text.get('1.0', END)) > 1:
-            if self.data_file.get() is not "":
-                if not askyesno("Editing data", "Do you wanna apply these changes?"):
-                    return
-                self.save_data(self.data_file.get())
-                self.load_data(self.data_file.get())
-            else:
-                if not askyesno("Editing data", "Do you wanna save these changes as a data?"):
-                    return
-                self.save_data()
-                self.load_data(self.data_file.get())
-
-    def refresh_data_intervals(self, x):
-        if len(self.data_intervals_text.get('1.0', END)) > 1:
-            if self.data_intervals_file.get() is not "":
-                if not askyesno("Editing data_intervals", "Do you wanna apply these changes?"):
-                    return
-                self.save_data_intervals(self.data_intervals_file.get())
-                self.load_data_intervals(self.data_intervals_file.get())
-            else:
-                if not askyesno("Editing data_intervals", "Do you wanna save these changes as a data_intervals?"):
-                    return
-                self.save_data_intervals()
-                self.load_data_intervals(self.data_intervals_file.get())
-
-    def refresh_constraints(self, x):
-        if len(self.constraints_text.get('1.0', END)) > 1:
-            if self.constraints_file.get() is not "":
-                if not askyesno("Editing constraints", "Do you wanna apply these changes?"):
-                    return
-                self.save_constraints(self.constraints_file.get())
-                self.load_constraints(self.constraints_file.get())
-            else:
-                if not askyesno("Editing constraints", "Do you wanna save these changes as a constraints?"):
-                    return
-                self.save_constraints()
-                self.load_constraints(self.constraints_file.get())
-
+    # def refresh_properties(self):
+    #     if self.property_text_modified.get():
+    #         if self.property_file.get() is not "":
+    #             if not askyesno("Editing properties", "Do you wanna apply these changes?"):
+    #                 self.property_text_modified.set(False)
+    #                 return
+    #             self.save_property(self.property_file.get())
+    #             self.load_property(self.property_file.get())
+    #             self.property_text_modified.set(False)
+    #         else:
+    #             if not askyesno("Editing properties", "Do you wanna save these changes as a file?"):
+    #                 self.property_text_modified.set(False)
+    #                 return
+    #             self.save_property()
+    #             self.load_property(self.property_file.get())
+    #             self.property_text_modified.set(False)
+    #
+    # def refresh_parsed_functions(self, event):
+    #     if self.parsed_functions_text_modified.get():
+    #         if self.parsed_functions_file.get() is not "":
+    #             if not askyesno("Editing functions", "Do you wanna apply these changes?"):
+    #                 return
+    #             self.save_parsed_functionsy(self.parsed_functions_file.get())
+    #             self.load_parsed_functionsy(self.parsed_functions_file.get())
+    #         else:
+    #             if not askyesno("Editing functions", "Do you wanna save these changes as a file?"):
+    #                 return
+    #             self.save_parsed_functions()
+    #             self.load_parsed_functions(self.parsed_functions_file.get())
+    #
+    # def refresh_data(self, event):
+    #     if self.data_text_modified.get():
+    #         if self.data_file.get() is not "":
+    #             if not askyesno("Editing data", "Do you wanna apply these changes?"):
+    #                 return
+    #             self.save_data(self.data_file.get())
+    #             self.load_data(self.data_file.get())
+    #         else:
+    #             if not askyesno("Editing data", "Do you wanna save these changes as a data?"):
+    #                 return
+    #             self.save_data()
+    #             self.load_data(self.data_file.get())
+    #
+    # def refresh_data_intervals(self, event):
+    #     if self.data_intervals_text_modified.get():
+    #         if self.data_intervals_file.get() is not "":
+    #             if not askyesno("Editing data_intervals", "Do you wanna apply these changes?"):
+    #                 return
+    #             self.save_data_intervals(self.data_intervals_file.get())
+    #             self.load_data_intervals(self.data_intervals_file.get())
+    #         else:
+    #             if not askyesno("Editing data_intervals", "Do you wanna save these changes as a data_intervals?"):
+    #                 return
+    #             self.save_data_intervals()
+    #             self.load_data_intervals(self.data_intervals_file.get())
+    #
+    # def refresh_constraints(self, event):
+    #     if self.constraints_text_modified.get():
+    #         if self.constraints_file.get() is not "":
+    #             if not askyesno("Editing constraints", "Do you wanna apply these changes?"):
+    #                 return
+    #             self.save_constraints(self.constraints_file.get())
+    #             self.load_constraints(self.constraints_file.get())
+    #         else:
+    #             if not askyesno("Editing constraints", "Do you wanna save these changes as a constraints?"):
+    #                 return
+    #             self.save_constraints()
+    #             self.load_constraints(self.constraints_file.get())
 
     def compute_data_intervals(self):
         """ Creates intervals from data. """
+        print("Checking the inputs.")
+        self.check_changes("data")
+
         print("Creating intervals ...")
         self.status_set("Create interval - checking inputs")
         if self.alpha_entry.get() == "":
@@ -2686,6 +2764,9 @@ class Gui(Tk):
 
     def sample_space(self):
         """ Samples (Parameter) Space. Plots the results. """
+        print("Checking the inputs.")
+        self.check_changes("constraints")
+
         print("Sampling space ...")
         self.status_set("Space sampling - checking inputs")
         ## Getting values from entry boxes
@@ -2693,11 +2774,11 @@ class Gui(Tk):
 
         ## Checking if all entries filled
         if self.sample_size == "":
-            messagebox.showwarning("Sample space", "Choose grid size, number of samples before sampling.")
+            messagebox.showwarning("Sample space", "Choose grid size, number of samples before space sampling.")
             return
 
         if self.constraints == "":
-            messagebox.showwarning("Sample space", "Load or calculate constraints before refinement.")
+            messagebox.showwarning("Sample space", "Load or calculate constraints before space sampling.")
             return
 
         ## Check space
@@ -2743,6 +2824,10 @@ class Gui(Tk):
 
     def hastings(self):
         """ Samples (Parameter) Space using Metropolis hastings """
+        print("Checking the inputs.")
+        self.check_changes("functions")
+        self.check_changes("data")
+
         print("Space Metropolis-Hastings ...")
         self.status_set("Space Metropolis-Hastings - checking inputs")
 
@@ -2839,6 +2924,12 @@ class Gui(Tk):
 
     def refine_space(self):
         """ Refines (Parameter) Space. Plots the results. """
+        print("Checking the inputs.")
+        self.check_changes("constraints")
+        self.check_changes("data_intervals")
+        self.check_changes("functions")
+
+
         print("Refining space ...")
         self.status_set("Space refinement - checking inputs")
 
