@@ -78,7 +78,10 @@ def margin(alpha, n_samples, data_point):
         n_samples (int): number of samples to compute margin
         data_point (float): the value to be margined
     """
-    return st.norm.ppf(1 - (1 - alpha) / 2) * math.sqrt(data_point * (1 - data_point) / n_samples) + 0.5 / n_samples
+    try:
+        return st.norm.ppf(1 - (1 - alpha) / 2) * math.sqrt(data_point * (1 - data_point) / n_samples) + 0.5 / n_samples
+    except ValueError as error:
+        raise Exception("Unable to compute the margins. Please, check whether each data point in domain [0,1]")
 
 
 def margin_experimental(alpha, n_samples, data_point):

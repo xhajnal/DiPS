@@ -115,10 +115,14 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
         if data_intervals:
             functions_inside_of_intervals = []
             for index in range(len(data)):
-                if values[index] in data_intervals[index]:
-                    functions_inside_of_intervals.append(True)
-                else:
-                    functions_inside_of_intervals.append(False)
+                try:
+                    if values[index] in data_intervals[index]:
+                        functions_inside_of_intervals.append(True)
+                    else:
+                        functions_inside_of_intervals.append(False)
+                except IndexError as error:
+                    raise Exception(f"Unable to show the data on the plot. Data intervals do not share the size.")
+
             title = f"{title} \n Function value within the respective interval:\n {functions_inside_of_intervals} \n Intervals: {data_intervals}"
     else:
         ax.set_xlabel('Rational function indices')
