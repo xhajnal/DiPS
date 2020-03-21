@@ -410,17 +410,19 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
                     if not seq:
                         seq = True
                     else:
-                        print(colored(f"A memory error occurred while seq, close some programs and try again with more memory", "red"))
+                        print(colored(f"A memory error occurred while seq, close some programs and try again with more memory.", "red"))
                         if gui:
-                            gui(2, "Parameter synthesis", f"A memory error occurred while seq, close some programs and try again with more memory")
+                            gui(2, "Parameter synthesis", f"A memory error occurred while seq, close some programs and try again with more memory.")
                 elif "Type error" in error[1]:
                     print(colored("A type error occurred, please check input files or manual", "red"))
                     if gui:
                         gui(2, "Parameter synthesis", "A type error occurred, please check input files or manual")
+                    continue
                 elif "Syntax error" in error[1]:
-                    print(colored("A syntax error occurred, please check input files or manual", "red"))
+                    print(colored("A syntax error occurred, please check input files or manual.", "red"))
                     if gui:
-                        gui(2, "Parameter synthesis", "A syntax error occurred, please check input files or manual")
+                        gui(2, "Parameter synthesis", "A syntax error occurred, please check input files or manual.")
+                    continue
                 else:
                     print("Unrecognised error occurred:")
                     print(colored(error[1], "red"))
