@@ -453,6 +453,11 @@ class RefinedSpace:
         """ Returns white space as dictionary """
         return self.rectangles_unknown
 
+    def get_flat_white(self):
+        """ Returns white space as a flat list"""
+        ## https://stackoverflow.com/questions/952914/how-to-make-a-flat-list-out-of-list-of-lists
+        return [item for sublist in self.rectangles_unknown.values() for item in sublist]
+
     def get_white_rectangles(self):
         """ Returns white (hyper)rectangles """
         rectangles_unknown = []

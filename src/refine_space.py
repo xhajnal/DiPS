@@ -361,7 +361,9 @@ def check_safe(region, constraints, silent: bool = False, called=False, solver="
             return result
 
 
-def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent, version, sample_size=False, debug=False, save=False, title="", where=False, show_space=True, solver="z3", delta=0.001, gui=False):
+def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent, version, sample_size=False,
+                 debug=False, save=False, title="", where=False, show_space=True, solver="z3", delta=0.001, gui=False):
+
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
 
     Args:
@@ -473,6 +475,9 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
 
     ## PRESAMPLING HERE
     if sample_size:
+        if not([region] == space.get_flat_white()):
+            raise Exception("Presampling of prerefined space is not implemented yet.")
+
         if version == 1:
             print("Using presampled DFS method")
         elif version == 2:
@@ -496,34 +501,38 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         to_be_searched = sample(space, constraints, sample_size, compress=True, silent=not debug, save=save)
 
         if debug:
-            print(type(to_be_searched))
-            print("sampled space: ", to_be_searched)
+            print("Sampled space type (should be array): ", type(to_be_searched))
+            print("Sampled space as array: ", to_be_searched)
 
-        ## PARSE SAT POINTS
-        sat_points = []
-
+        ## CONVERT SAMPLED SPACE TO LIST
         print(to_be_searched)
         while not isinstance(to_be_searched[0][1], type(True)):
             to_be_searched = list(itertools.chain.from_iterable(to_be_searched))
 
         if debug:
-            print(type(to_be_searched))
-            print("unfolded sampled space: ", to_be_searched)
-            print("an element from sampled space:", to_be_searched[0])
+            print("Sampled space type (should be list): ", type(to_be_searched))
+            print("Unfolded sampled space: ", to_be_searched)
+            print("An element from sampled space:", to_be_searched[0])
 
+        ## PARSE SAT and UNSAT POINTS
+        sat_points = []
+        unsat_points = []
         for point in to_be_searched:
+            ## If the point is True
             if point[1] is True:
                 sat_points.append(point[0])
+            else:
+                unsat_points.append(point[0])
         if debug:
-            print("satisfying points: ", sat_points)
-
+            print("Satisfying points: ", sat_points)
+            print("Unsatisfying points: ", unsat_points)
         if debug and save:
             print("I am showing sampling_sat_" + str(save))
         if not where:
             space.show(red=False, green=False, sat_samples=True, unsat_samples=False, save=save, where=where, show_all=not gui)
 
         ## COMPUTING THE ORTHOGONAL HULL OF SAT POINTS
-        ## Initializing the min point and max point as the first point
+        ## Initializing the min point and max point as the first point from the list
         if sat_points:
             sat_min = copy.deepcopy(sat_points[0])
             if debug:
@@ -553,8 +562,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
             if is_in(region, to_interval([sat_min, sat_max])):
                 print("The orthogonal hull of sat points actually covers the whole region")
             else:
-                ## SPLIT THE WHITE REGION INTO 3-5 AREAS (in 2D) (DEPENDING ON THE POSITION OF THE HULL)
-
+                ## Expanding the hull in each dimension by value of 1 sample distance
                 ## THIS FIXING WORKS ONLY FOR THE UNIFORM SAMPLING
                 bordering_intervals = to_interval([sat_min, sat_max])
                 for interval_index in range(len(bordering_intervals)):
@@ -563,6 +571,8 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                     ## increase the space to the right
                     bordering_intervals[interval_index][1] = min(region[interval_index][1], bordering_intervals[interval_index][1] + (region[interval_index][1] - region[interval_index][0]) / (sample_size - 1))
                 print(f"Intervals bordering the sat hull are: {bordering_intervals}")
+
+                ## SPLIT THE WHITE REGION INTO 3-5 AREAS (in 2D) (DEPENDING ON THE POSITION OF THE HULL)
                 space.remove_white(region)
                 regions = refine_by(region, bordering_intervals, debug)
                 for subregion in regions:
@@ -570,23 +580,16 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         else:
             print("No sat points in the samples")
 
-        ## PARSE UNSAT POINTS
-        unsat_points = []
-        for point in to_be_searched:
-            if point[1] is False:
-                unsat_points.append(point[0])
-        if debug:
-            print("unsatisfying points: ", unsat_points)
+        ## SHOW UNSAT POINTS
         if debug and save:
             print("I am showing sampling_unsat_"+str(save))
         if not where:
             space.show(red=False, green=False, sat_samples=False, unsat_samples=True, save=save, where=where, show_all=not gui)
 
         ## If there is only the default region to be refined in the whitespace
-        if len(space.get_white()) == 1:
+        if len(space.get_flat_white()) == 1:
             ## COMPUTING THE ORTHOGONAL HULL OF UNSAT POINTS
-            ## Initializing the min point and max point as the first point
-
+            ## Initializing the min point and max point as the first point in the list
             if unsat_points:
                 unsat_min = copy.deepcopy(unsat_points[0])
                 if debug:
@@ -616,29 +619,26 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                 if is_in(region, to_interval([unsat_min, unsat_max])):
                     print("The orthogonal hull of unsat points actually covers the whole region")
                 else:
+                    ## Expanding the hull in each dimension by value of 1 sample distance
+                    ## THIS FIXING WORKS ONLY FOR THE UNIFORM SAMPLING
+                    bordering_intervals = to_interval([unsat_min, unsat_max])
+                    for interval_index in range(len(bordering_intervals)):
+                        ## increase the space to the left
+                        bordering_intervals[interval_index][0] = max(region[interval_index][0], bordering_intervals[interval_index][0] - (region[interval_index][1] - region[interval_index][0]) / (sample_size - 1))
+                        ## increase the space to the right
+                        bordering_intervals[interval_index][1] = min(region[interval_index][1], bordering_intervals[interval_index][1] + (region[interval_index][1] - region[interval_index][0]) / (sample_size - 1))
+                    print(f"Intervals bordering the unsat hull are: {bordering_intervals}")
+
                     ## SPLIT THE WHITE REGION INTO 3-5 AREAS (in 2D) (DEPENDING ON THE POSITION OF THE HULL)
-                    if debug:
-                        # print(colored("I was here", 'red'))
-                        print("space white", space.get_white())
                     space.remove_white(region)
-                    regions = refine_by(region, to_interval([unsat_min, unsat_max]))
+                    regions = refine_by(region, bordering_intervals, debug)
                     for subregion in regions:
                         space.add_white(subregion)
             else:
                 print("No unsat points in the samples")
 
-        ## Make a copy of white space
-        white_space = space.get_white()
-
-        # print(globals()["parameters"])
-        # print(space.params)
-        ## Setting the param back to z3 definition
-        if debug:
-            print("region now", region)
-            print("space white", white_space)
-
-        print("Presampling resulted in splicing the region into these subregions: ", white_space)
-        print(f"Refinement took {socket.gethostname()} {round(time() - start_time)} second(s)")
+        print("Presampling resulted in splicing the region into these subregions: ", space.get_white())
+        print(f"Presampling took {socket.gethostname()} {round(time() - start_time)} second(s)")
         print()
 
     ## Choosing version/algorithm here
@@ -811,6 +811,10 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
     ## VISUALISATION
     if not sample_size:
         ## If the visualisation of the space did not succeed space_shown = (None, error message)
+        if show_space:
+            space.refinement_took(time() - start_time)
+            space_shown = space.show(f"max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version} \n Last refinement took {socket.gethostname()} {round(time() - start_time, 2)} of {round(space.time_refinement, 2)} second(s)", sat_samples=gui and len(space.params) <= 2, unsat_samples=gui and len(space.params) <= 2, save=save, where=where, show_all=not gui)
+    else:  ## TODO THIS IS A HOTFIX
         if show_space:
             space.refinement_took(time() - start_time)
             space_shown = space.show(f"max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version} \n Last refinement took {socket.gethostname()} {round(time() - start_time, 2)} of {round(space.time_refinement, 2)} second(s)", sat_samples=gui and len(space.params) <= 2, unsat_samples=gui and len(space.params) <= 2, save=save, where=where, show_all=not gui)

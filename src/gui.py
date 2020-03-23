@@ -229,7 +229,7 @@ class Gui(Tk):
         self.show_true_point = None  ## flag telling whether to show true point
 
         ## Settings
-        self.version = "1.12.2"  ## Version of the gui
+        self.version = "1.13.0"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
         self.show_mh_as_scatter = BooleanVar() ## Sets the MH plot to scatter plot (even for 2D)
@@ -242,6 +242,8 @@ class Gui(Tk):
         self.coverage = ""  ## Coverage threshold
         self.epsilon = ""  ## Rectangle size threshold
         self.alg = ""  ## Refinement alg. number
+        self.presampled_refinement = BooleanVar()  ## Refinement flag
+        self.iterative_refinement = BooleanVar()  ## Refinement flag
 
         self.solver = ""  ## SMT solver - z3 or dreal
         self.delta = 0.01  ## dreal setting
@@ -607,7 +609,7 @@ class Gui(Tk):
         self.sample_size_entry.grid(row=1, column=1)
         self.sample_size_entry.insert(END, '5')
 
-        Button(frame_left, text='Grid sampling', command=self.sample_space).grid(row=7, column=0, columnspan=2, padx=10, pady=4)
+        Button(frame_left, text='Grid sampling', command=self.sample_space).grid(row=9, column=0, columnspan=2, padx=10, pady=4)
 
         ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=2, rowspan=7, sticky='ns', padx=25, pady=25)
 
@@ -653,7 +655,7 @@ class Gui(Tk):
         self.mh_timeout.grid(row=6, column=8)
         self.mh_timeout.insert(END, '3600')
 
-        Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=7, column=7, columnspan=2, pady=4)
+        Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=9, column=7, columnspan=2, pady=4)
 
         ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=5, rowspan=7, sticky='ns', padx=25, pady=25)
 
@@ -679,6 +681,12 @@ class Gui(Tk):
         label67.grid(row=6, column=3, padx=0)
         createToolTip(label67, text='When using dreal solver, delta is used to set solver error boundaries for satisfiability.')
 
+        presampled_refinement_checkbutton = Checkbutton(frame_left, text="Use presampled refinement", variable=self.presampled_refinement)
+        presampled_refinement_checkbutton.grid(row=7, column=3, padx=0)
+
+        iterative_refinement_checkbutton = Checkbutton(frame_left, text="Use iterative refinement (TBD)", variable=self.iterative_refinement)
+        iterative_refinement_checkbutton.grid(row=8, column=3, padx=0)
+
         self.max_dept_entry = Entry(frame_left)
         self.coverage_entry = Entry(frame_left)
         self.epsilon_entry = Entry(frame_left)
@@ -702,11 +710,11 @@ class Gui(Tk):
         self.solver.current(0)
         self.delta_entry.insert(END, '0.01')
 
-        Button(frame_left, text='Refine space', command=self.refine_space).grid(row=7, column=3, columnspan=2, pady=4, padx=0)
+        Button(frame_left, text='Refine space', command=self.refine_space).grid(row=9, column=3, columnspan=2, pady=4, padx=0)
 
-        ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=8, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
+        ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=10, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
 
-        Label(frame_left, text="Textual representation of space", anchor=CENTER, justify=CENTER, padx=10).grid(row=9, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
+        Label(frame_left, text="Textual representation of space", anchor=CENTER, justify=CENTER, padx=10).grid(row=11, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
         self.space_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_height() * 0.8/19), state=DISABLED)
         self.space_text.grid(row=13, column=0, columnspan=9, rowspan=2, sticky=W, padx=10)
         Button(frame_left, text='Extend / Collapse text', command=self.collapse_space_text).grid(row=15, column=3, sticky=S, padx=4, pady=(10, 10))
@@ -2623,7 +2631,7 @@ class Gui(Tk):
         switch = {"model": (self.model_text_modified, self.model_file.get(), "model", self.save_model, self.load_model),
                   "properties": (self.properties_text_modified, self.property_file.get(), "properties", self.save_property, self.load_property),
                   "functions": (self.parsed_functions_text_modified, self.functions_file.get(), "functions", self.save_parsed_functions, self.load_parsed_functions),
-                  "data": (self.data_text_modified, self.data_file, "data", self.save_data, self.load_data),
+                  "data": (self.data_text_modified, self.data_file.get(), "data", self.save_data, self.load_data),
                   "data_intervals": (self.data_intervals_text_modified, self.data_intervals_file.get(), "data_intervals", self.save_data_intervals, self.load_data_intervals),
                   "constraints": (self.constraints_text_modified, self.constraints_file.get(), "model", self.save_constraints, self.load_constraints),
                   }
@@ -2929,7 +2937,6 @@ class Gui(Tk):
         self.check_changes("data_intervals")
         self.check_changes("functions")
 
-
         print("Refining space ...")
         self.status_set("Space refinement - checking inputs")
 
@@ -3008,12 +3015,12 @@ class Gui(Tk):
             #                         solver=str(self.solver.get()), delta=self.delta, gui=self.update_progress_bar)
             if str(self.solver.get()) == "z3" and self.z3_constraints:
                 spam = check_deeper(self.space, self.z3_constraints, self.max_depth, self.epsilon, self.coverage,
-                                    silent=self.silent.get(), version=int(self.alg.get()), sample_size=False,
+                                    silent=self.silent.get(), version=int(self.alg.get()), sample_size=(20 if self.presampled_refinement.get() else False),
                                     debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
                                     solver=str(self.solver.get()), delta=self.delta, gui=self.update_progress_bar)
             else:
                 spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
-                                    silent=self.silent.get(), version=int(self.alg.get()), sample_size=False,
+                                    silent=self.silent.get(), version=int(self.alg.get()), sample_size=(20 if self.presampled_refinement.get() else False),
                                     debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
                                     solver=str(self.solver.get()), delta=self.delta, gui=self.update_progress_bar)
         finally:
