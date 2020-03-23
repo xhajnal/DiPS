@@ -498,31 +498,39 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
 
         # globals()["space"] = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
         # funcs, intervals = constraints_to_ineq(constraints)
-        to_be_searched = sample(space, constraints, sample_size, compress=True, silent=not debug, save=save)
 
-        if debug:
-            print("Sampled space type (should be array): ", type(to_be_searched))
-            print("Sampled space as array: ", to_be_searched)
+        ## If there are some samples already
+        samples = space.get_sat_samples() + space.get_unsat_samples()
+        if samples:
+            sat_points = space.get_sat_samples()
+            unsat_points = space.get_unsat_samples()
+            sample_size = int(len(samples)**(1/len(region)))
+        else:
+            to_be_searched = sample(space, constraints, sample_size, compress=True, silent=not debug, save=save)
 
-        ## CONVERT SAMPLED SPACE TO LIST
-        print(to_be_searched)
-        while not isinstance(to_be_searched[0][1], type(True)):
-            to_be_searched = list(itertools.chain.from_iterable(to_be_searched))
+            if debug:
+                print("Sampled space type (should be array): ", type(to_be_searched))
+                print("Sampled space as array: ", to_be_searched)
 
-        if debug:
-            print("Sampled space type (should be list): ", type(to_be_searched))
-            print("Unfolded sampled space: ", to_be_searched)
-            print("An element from sampled space:", to_be_searched[0])
+            ## CONVERT SAMPLED SPACE TO LIST
+            print(to_be_searched)
+            while not isinstance(to_be_searched[0][1], type(True)):
+                to_be_searched = list(itertools.chain.from_iterable(to_be_searched))
 
-        ## PARSE SAT and UNSAT POINTS
-        sat_points = []
-        unsat_points = []
-        for point in to_be_searched:
-            ## If the point is True
-            if point[1] is True:
-                sat_points.append(point[0])
-            else:
-                unsat_points.append(point[0])
+            if debug:
+                print("Sampled space type (should be list): ", type(to_be_searched))
+                print("Unfolded sampled space: ", to_be_searched)
+                print("An element from sampled space:", to_be_searched[0])
+
+            ## PARSE SAT and UNSAT POINTS
+            sat_points = []
+            unsat_points = []
+            for point in to_be_searched:
+                ## If the point is True
+                if point[1] is True:
+                    sat_points.append(point[0])
+                else:
+                    unsat_points.append(point[0])
         if debug:
             print("Satisfying points: ", sat_points)
             print("Unsatisfying points: ", unsat_points)

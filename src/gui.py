@@ -2992,6 +2992,10 @@ class Gui(Tk):
                         return
                     break
 
+        if self.presampled_refinement.get() and not(self.space.get_sat_samples() + self.space.get_unsat_samples()):
+            messagebox.showwarning("Refine space", "No sampling to be used, please run it before Presampled refinement.")
+            return
+
         self.status_set("Space refinement is running ...")
         # print(colored(f"self.space, {self.space.nice_print()}]", "blue"))
         try:
@@ -3015,14 +3019,16 @@ class Gui(Tk):
             #                         solver=str(self.solver.get()), delta=self.delta, gui=self.update_progress_bar)
             if str(self.solver.get()) == "z3" and self.z3_constraints:
                 spam = check_deeper(self.space, self.z3_constraints, self.max_depth, self.epsilon, self.coverage,
-                                    silent=self.silent.get(), version=int(self.alg.get()), sample_size=(20 if self.presampled_refinement.get() else False),
-                                    debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
-                                    solver=str(self.solver.get()), delta=self.delta, gui=self.update_progress_bar)
+                                    silent=self.silent.get(), version=int(self.alg.get()),
+                                    sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
+                                    where=[self.page6_figure, self.page6_a], solver=str(self.solver.get()),
+                                    delta=self.delta, gui=self.update_progress_bar)
             else:
                 spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
-                                    silent=self.silent.get(), version=int(self.alg.get()), sample_size=(20 if self.presampled_refinement.get() else False),
-                                    debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
-                                    solver=str(self.solver.get()), delta=self.delta, gui=self.update_progress_bar)
+                                    silent=self.silent.get(), version=int(self.alg.get()),
+                                    sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
+                                    where=[self.page6_figure, self.page6_a], solver=str(self.solver.get()),
+                                    delta=self.delta, gui=self.update_progress_bar)
         finally:
             self.cursor_toggle_busy(False)
             self.new_window.destroy()
