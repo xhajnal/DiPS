@@ -698,6 +698,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
             private_check_deeper_interval(rectangle, egg[0], egg[1], recursion_depth, epsilon, coverage, silent, debug=debug, progress=gui)
         else:
             print(colored("Chosen version not found", "red"))
+        space_coverage = space.get_coverage()
     else:
         ## Prerefined space with more white hyperectangles
 
