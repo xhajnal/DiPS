@@ -2633,7 +2633,7 @@ class Gui(Tk):
                   "functions": (self.parsed_functions_text_modified, self.functions_file.get(), "functions", self.save_parsed_functions, self.load_parsed_functions),
                   "data": (self.data_text_modified, self.data_file.get(), "data", self.save_data, self.load_data),
                   "data_intervals": (self.data_intervals_text_modified, self.data_intervals_file.get(), "data_intervals", self.save_data_intervals, self.load_data_intervals),
-                  "constraints": (self.constraints_text_modified, self.constraints_file.get(), "model", self.save_constraints, self.load_constraints),
+                  "constraints": (self.constraints_text_modified, self.constraints_file.get(), "constraints", self.save_constraints, self.load_constraints),
                   }
         option = switch[what]
 
