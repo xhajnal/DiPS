@@ -1522,11 +1522,11 @@ class Gui(Tk):
             self.save_constraints(os.path.join(self.tmp_dir, "constraints"))
         self.status_set("constraints recalculated and shown.")
 
-    def load_constraints(self, append=False, file=False, ask=True):
+    def load_constraints(self, file=False, append=False, ask=True):
         """ Loads constraints from a pickled file.
         Args:
-            append (bool): if True, loaded constraints are appended to previous
             file (path/string): direct path to load the constraint file
+            append (bool): if True, loaded constraints are appended to previous
             ask (Bool): if False it will not ask questions
         """
         if file:
