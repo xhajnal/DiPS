@@ -79,21 +79,21 @@ def constraints_to_ineq(constraints: list, silent: bool = True, debug: bool = Fa
     for prop in constraints:
         spam = "None"
         if debug:
-            print(f"property {index + 1} before splitting", prop)
+            print(f"Constraint {index + 1} before splitting", prop)
         try:
             spam = prop.replace("<=", "<").replace(">=", "<").replace("=>", "<").replace("=<", "<").replace(">", "<")
             spam = spam.split("<")
         except AttributeError:
             print()
         if debug:
-            print(f"property {index+1} after splitting", spam)
+            print(f"Constraint {index+1} after splitting", spam)
         if len(spam) <= 1:
             if not silent:
-                print(colored(f"Property {index+1} is not in a form of inequality", "red"))
+                print(colored(f"Constraint {index+1} is not in a form of inequality", "red"))
             return False
         elif len(spam) > 2:
             if not silent:
-                print(colored(f"Property {index+1} has more than one inequality sign", "red"))
+                print(colored(f"Constraint {index+1} has more than one inequality sign", "red"))
             if spam[0].replace('.', '', 1).isdigit():
                 egg = [spam[0], spam[1]]
                 for indexx in range(2, len(spam)):
@@ -156,7 +156,8 @@ def constraints_to_ineq(constraints: list, silent: bool = True, debug: bool = Fa
     for interval_index in range(len(intervals)):
         if len(intervals[interval_index]) is not 2:
             if not silent:
-                print(colored(f"Property {index + 1} does not have proper number of boundaries", "red"))
+                print(colored(f"Constraint {index + 1} does not have proper number of boundaries", "red"))
+            raise Exception(f"Constraint {index + 1} does not have proper number of boundaries")
             return False
         if debug:
             print("sorted([float(intervals[interval_index][0]), float(intervals[interval_index][1])])", sorted([float(intervals[interval_index][0]), float(intervals[interval_index][1])]))
