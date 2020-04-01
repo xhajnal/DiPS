@@ -12,4 +12,9 @@
 
 3. custom installation, 
 	if the problem still remains, please create an issue, or contact us.
-	
+
+<!---
+The Z3 Python frontend directory must be in your PYTHONPATH environment variable. Z3Py will automatically search for the Z3 library (z3.dll (Windows), libz3.so (Linux), or libz3.dylib (OSX)). You may also initialize Z3Py manually using the command:
+
+# init("z3.dll")
+-->
