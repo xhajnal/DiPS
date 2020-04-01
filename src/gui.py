@@ -1279,6 +1279,7 @@ class Gui(Tk):
             self.functions_changed = True
             self.functions_file.set(spam)
             self.z3_functions = ""
+            self.functions_text.delete('1.0', END)
 
             if os.path.splitext(self.functions_file.get())[1] == ".txt":
                 self.functions = parse_functions(self.functions_file.get())
