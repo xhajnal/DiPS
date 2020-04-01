@@ -1041,24 +1041,21 @@ class Gui(Tk):
             if not file:
                 self.save_property(os.path.join(self.tmp_dir, "properties"))
 
-    def load_mc_output_file(self, file=False, ask=True):
+    def load_mc_output_file(self, file=False, ask=True, program=False):
         """ Loads parameter synthesis output text file
 
         Args:
             file (path/string): direct path to load the function file
             ask (Bool): if False it will not ask questions
+            program (string): overrides the sel.program setting
         """
+        if program is False:
+            program = self.program.get()
+
         if file:
             if not os.path.isfile(file):
                 return
             spam = file
-            if "prism" in str(file):
-                self.program.set("prism")
-            elif "storm" in str(file):
-                self.program.set("storm")
-            else:
-                print(f"Error while loading file {file}")
-                return
         else:
             print("Loading functions ...")
 
@@ -1069,10 +1066,10 @@ class Gui(Tk):
             self.status_set("Loading functions - checking inputs")
 
             if not self.silent.get():
-                print("Used program: ", self.program.get())
-            if self.program.get() == "prism":
+                print("Used program: ", program)
+            if program == "prism":
                 initial_dir = self.prism_results
-            elif self.program.get() == "storm":
+            elif program == "storm":
                 initial_dir = self.storm_results
             else:
                 messagebox.showwarning("Load functions", "Select a program for which you want to load data.")
@@ -1107,7 +1104,7 @@ class Gui(Tk):
                 self.status_set("Loading selected file and factorising...")
                 if not self.silent.get():
                     print("Loading selected file and factorising...")
-            self.functions, rewards = load_functions(os.path.abspath(self.functions_file.get()), tool=self.program.get(),
+            self.functions, rewards = load_functions(os.path.abspath(self.functions_file.get()), tool=program,
                                                      factorize=self.factorise.get(), rewards_only=False, f_only=False)
             ## Merge functions and rewards
             # print("self.functions", self.functions)
@@ -1158,7 +1155,7 @@ class Gui(Tk):
             ## Autosave
             ## TODO
             # if not file:
-            #   self.save_functions(os.path.join(self.tmp_dir, f"functions_{self.program.get()}"))
+            #   self.save_functions(os.path.join(self.tmp_dir, f"functions_{program}"))
 
     def store_z3_functions(self):
         """ Stores a copy of functions as a self.z3_functions """
@@ -1267,6 +1264,17 @@ class Gui(Tk):
             self.status_set("No file selected.")
             return
         else:
+            ## Checking the valid type of the loaded file
+            ## If loaded PRISM/Storm output instead, redirecting the load
+            if os.path.splitext(spam)[1] == ".txt":
+                egg = parse_functions(spam)
+                if egg[0].startswith("PRISM"):
+                    self.load_mc_output_file(file=spam, program="prism")
+                    return
+                elif egg[0].startswith("Storm"):
+                    self.load_mc_output_file(file=spam, program="storm")
+                    return
+
             self.functions = []
             self.functions_changed = True
             self.functions_file.set(spam)
