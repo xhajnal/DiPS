@@ -307,7 +307,7 @@ def metropolis_hastings(likelihood_computer, prior, transition_model, param_init
             if debug:
                 print(f"new point: {x_new} rejected")
         if progress:
-            progress(iteration/iterations)
+            progress(iteration/iterations, False, int(time() - globals()["start_time"]), timeout)
 
         ## Finish iterations after timeout
         if (time() - globals()["start_time"]) > timeout >= 0:

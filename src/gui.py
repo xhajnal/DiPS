@@ -262,6 +262,8 @@ class Gui(Tk):
         ## Other variables
         self.progress = StringVar()
         self.progress.set("0%")
+        self.progress_time = StringVar()
+        self.progress_time.set("0")
 
     def gui_init(self):
         ## GUI INIT
@@ -2839,8 +2841,8 @@ class Gui(Tk):
         print("Space Metropolis-Hastings ...")
         self.status_set("Space Metropolis-Hastings - checking inputs")
 
-        if self.constraints:
-            messagebox.showwarning("Metropolis Hastings", "Data and functions are being used to run Metropolis Hasting, make sure they are in accordance with computed constrains.")
+        # if self.constraints:
+        #     messagebox.showwarning("Metropolis Hastings", "Data and functions are being used to run Metropolis Hasting, make sure they are in accordance with computed constrains.")
 
         ## TODO transformation back to data and functions from constraints #Hard_task
         if self.functions == "":
@@ -2886,6 +2888,7 @@ class Gui(Tk):
             Label(self.new_window, text="Metropolis hastings progress:", anchor=W, justify=LEFT).pack()
             Label(self.new_window, textvar=self.progress, anchor=W, justify=LEFT).pack()
             self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
+            Label(self.new_window, textvar=self.progress_time, anchor=W, justify=LEFT).pack()
             self.progress_bar.pack()
             self.update()
 
@@ -3546,12 +3549,14 @@ class Gui(Tk):
         self.page3_toolbar.update()
         self.page3_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
 
-    def update_progress_bar(self, change_to=False, change_by=False):
+    def update_progress_bar(self, change_to=False, change_by=False, set_time=False, timeout=False):
         """ Updates progress bar
 
         Args:
-            change_to (number): value to set the progress
-            change_by (number): value to add to the progress
+            change_to (number): value to set the progress:  change_to %
+            change_by (number): value to add to the progress:  current progress + change_by %
+            set_time (str/number): value to set current running time: set_time / timeout s
+            timeout (str/number): value to set max running time: set_time / timeout s
         """
         if change_to is not False:
             self.progress_bar['value'] = 100*change_to
@@ -3559,6 +3564,8 @@ class Gui(Tk):
         if change_by is not False:
             self.progress_bar['value'] = self.progress_bar['value'] + 100*change_by
             self.progress.set(f"{self.progress_bar['value']}%")
+        if set_time is not False:
+            self.progress_time.set(f"{set_time}/{timeout} s")
         self.update()
         pass
 
