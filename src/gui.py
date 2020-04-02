@@ -686,8 +686,6 @@ class Gui(Tk):
         presampled_refinement_checkbutton = Checkbutton(frame_left, text="Use presampled refinement", variable=self.presampled_refinement)
         presampled_refinement_checkbutton.grid(row=7, column=3, padx=0)
 
-        iterative_refinement_checkbutton = Checkbutton(frame_left, text="Use iterative refinement (TBD)", variable=self.iterative_refinement)
-        iterative_refinement_checkbutton.grid(row=8, column=3, padx=0)
 
         self.max_dept_entry = Entry(frame_left)
         self.coverage_entry = Entry(frame_left)
@@ -3061,13 +3059,13 @@ class Gui(Tk):
                                     silent=self.silent.get(), version=int(self.alg.get()),
                                     sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
                                     where=[self.page6_figure, self.page6_a], solver=str(self.solver.get()),
-                                    delta=self.delta, gui=self.update_progress_bar)
+                                    delta=self.delta, gui=self.update_progress_bar, iterative=self.iterative_refinement.get())
             else:
                 spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
                                     silent=self.silent.get(), version=int(self.alg.get()),
                                     sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
                                     where=[self.page6_figure, self.page6_a], solver=str(self.solver.get()),
-                                    delta=self.delta, gui=self.update_progress_bar)
+                                    delta=self.delta, gui=self.update_progress_bar, iterative=self.iterative_refinement.get())
         finally:
             try:
                 self.cursor_toggle_busy(False)
@@ -3396,6 +3394,8 @@ class Gui(Tk):
 
             self.space = space.RefinedSpace(self.parameter_domains, self.parameters)
         else:
+            if position == "Space Metropolis-Hastings":
+                return True
             if self.constraints_changed:
                 messagebox.showwarning(position, "Using previously created space with new constraints. Consider using fresh new space.")
                 ## Check if the properties and data are valid
