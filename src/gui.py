@@ -229,7 +229,7 @@ class Gui(Tk):
         self.show_true_point = None  ## flag telling whether to show true point
 
         ## Settings
-        self.version = "1.13.0"  ## Version of the gui
+        self.version = "1.13.1"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
         self.show_mh_as_scatter = BooleanVar() ## Sets the MH plot to scatter plot (even for 2D)
@@ -1112,7 +1112,10 @@ class Gui(Tk):
             for expression in rewards:
                 self.functions.append(expression)
         finally:
-            self.cursor_toggle_busy(False)
+            try:
+                self.cursor_toggle_busy(False)
+            except TclError:
+                return
 
         if not self.silent.get():
             print("Unparsed functions: ", self.functions)
@@ -1312,9 +1315,12 @@ class Gui(Tk):
                         self.functions[index] = str(factor(self.functions[index]))
                         self.update_progress_bar(change_to=(index+1)/len(self.functions))
                 finally:
-                    self.cursor_toggle_busy(False)
-                    self.new_window.destroy()
-                    del self.new_window
+                    try:
+                        self.cursor_toggle_busy(False)
+                        self.new_window.destroy()
+                        del self.new_window
+                    except TclError:
+                        return
 
             ## Check for z3 expressions
             for function in self.functions:
@@ -1697,7 +1703,10 @@ class Gui(Tk):
                         self.save_space(os.path.join(self.tmp_dir, "space"))
                     self.status_set("Space loaded.")
             finally:
-                self.cursor_toggle_busy(False)
+                try:
+                    self.cursor_toggle_busy(False)
+                except TclError:
+                    return
 
     def load_mh_results(self, file=False, ask=True):
         """ loads Metropolis hastings results (accepted) and plots them
@@ -1809,7 +1818,10 @@ class Gui(Tk):
                     self.page6_figure.canvas.draw()
                     self.page6_figure.canvas.flush_events()
         finally:
-            self.cursor_toggle_busy(False)
+            try:
+                self.cursor_toggle_busy(False)
+            except TclError:
+                return
 
     def set_true_point(self):
         """ Sets the true point of the space """
@@ -2312,7 +2324,10 @@ class Gui(Tk):
                     messagebox.showwarning("Synthesise", "Select a program for parameter synthesis first.")
                     return
             finally:
-                self.cursor_toggle_busy(False)
+                try:
+                    self.cursor_toggle_busy(False)
+                except TclError:
+                    return
 
             self.model_changed = False
             self.property_changed = False
@@ -2347,7 +2362,10 @@ class Gui(Tk):
                                                       parameters=self.parameters, intervals=self.parameter_domains,
                                                       debug=self.debug.get(), silent=self.silent.get())
         finally:
-            self.cursor_toggle_busy(False)
+            try:
+                self.cursor_toggle_busy(False)
+            except TclError:
+                return
         self.sampled_functions_text.configure(state='normal')
         self.sampled_functions_text.delete('1.0', END)
         self.sampled_functions_text.insert('1.0', "rational function index, [parameter values], function value: \n")
@@ -2559,8 +2577,11 @@ class Gui(Tk):
             raise error
             return
         finally:
-            self.cursor_toggle_busy(False)
-            self.new_window.destroy()
+            try:
+                self.cursor_toggle_busy(False)
+                self.new_window.destroy()
+            except TclError:
+                return
 
         self.optimised_param_point = result[0]
         self.optimised_function_value = result[1]
@@ -2824,10 +2845,13 @@ class Gui(Tk):
             ## This progress is passed as whole to update the thing inside the called function
             self.space.grid_sample(self.constraints, self.sample_size, silent=self.silent.get(), save=False, progress=self.update_progress_bar)
         finally:
-            self.new_window.destroy()
-            del self.new_window
-            self.cursor_toggle_busy(False)
-            self.progress.set("0%")
+            try:
+                self.new_window.destroy()
+                del self.new_window
+                self.cursor_toggle_busy(False)
+                self.progress.set("0%")
+            except TclError:
+                return
 
         self.print_space()
 
@@ -2926,10 +2950,13 @@ class Gui(Tk):
                 self.page6_figure2.canvas.flush_events()
                 self.update()
         finally:
-            self.new_window.destroy()
-            del self.new_window
-            self.cursor_toggle_busy(False)
-            self.progress.set("0%")
+            try:
+                self.new_window.destroy()
+                del self.new_window
+                self.cursor_toggle_busy(False)
+                self.progress.set("0%")
+            except TclError:
+                return
 
         ## Autosave
         self.save_mh_results(os.path.join(self.tmp_dir, "mh_results"))
@@ -3042,9 +3069,13 @@ class Gui(Tk):
                                     where=[self.page6_figure, self.page6_a], solver=str(self.solver.get()),
                                     delta=self.delta, gui=self.update_progress_bar)
         finally:
-            self.cursor_toggle_busy(False)
-            self.new_window.destroy()
-            self.progress.set("0%")
+            try:
+                self.cursor_toggle_busy(False)
+                self.new_window.destroy()
+                self.progress.set("0%")
+            except TclError:
+                return
+
         ## If the visualisation of the space did not succeed
         if isinstance(spam, tuple):
             self.space = spam[0]
@@ -3302,10 +3333,13 @@ class Gui(Tk):
             else:
                 pass
         finally:
-            self.new_window.destroy()
-            del self.new_window
-            self.cursor_toggle_busy(False)
-            self.progress.set("0%")
+            try:
+                self.new_window.destroy()
+                del self.new_window
+                self.cursor_toggle_busy(False)
+                self.progress.set("0%")
+            except TclError:
+                return
 
     def export_acc_points(self, file=False):
         """ Exports accepted points of metropolis hastings
@@ -3567,24 +3601,23 @@ class Gui(Tk):
             set_time (str/number): value to set current running time: set_time / timeout s
             timeout (str/number): value to set max running time: set_time / timeout s
         """
-        if change_to is not False:
-            self.progress_bar['value'] = 100*change_to
-            self.progress.set(f"{100*change_to}%")
-        if change_by is not False:
-            self.progress_bar['value'] = self.progress_bar['value'] + 100*change_by
-            self.progress.set(f"{self.progress_bar['value']}%")
-        if set_time is not False:
-            self.progress_time.set(f"{set_time}/{timeout} s")
-        self.update()
-        pass
+        try:
+            if change_to is not False:
+                self.progress_bar['value'] = 100*change_to
+                self.progress.set(f"{100*change_to}%")
+            if change_by is not False:
+                self.progress_bar['value'] = self.progress_bar['value'] + 100*change_by
+                self.progress.set(f"{self.progress_bar['value']}%")
+            if set_time is not False:
+                self.progress_time.set(f"{set_time}/{timeout} s")
+            self.update()
+        except TclError:
+            return
 
     def ask_quit(self):
         """ x button handler """
-        if askyesno("Quit", "Do you want to quit the application?"):
-            try:
-                self.new_window.destroy()
-            except:
-                pass
+        if messagebox.askokcancel("Quit", "Do you want to quit the application?"):
+            self.destroy()
             self.quit()
 
     def autoload(self, yes=False):
