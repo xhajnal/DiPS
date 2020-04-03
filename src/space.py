@@ -227,7 +227,7 @@ class RefinedSpace:
 
         # print("self.true_point", self.true_point)
         if save is True:
-            save = str(strftime("%d-%b-%Y-%H:%M:%S", localtime()))+".png"
+            save = str(strftime("%d-%b-%Y-%H-%M-%S", localtime()))+".png"
 
         if len(self.region) == 1 or len(self.region) == 2:
             # colored(globals()["default_region"], self.region)
@@ -295,8 +295,6 @@ class RefinedSpace:
 
             whole_title = "\n".join(self.wrapper.wrap(f"{pretitle} \n{self.title} \n {title}"))
             pic.set_title(whole_title)
-            with open(os.path.join(refinement_results, "figure_to_title.txt"), "a+") as file:
-                file.write(f"{save} : {whole_title}\n")
 
             ## Save the figure
             if save:

@@ -229,7 +229,7 @@ class Gui(Tk):
         self.show_true_point = None  ## flag telling whether to show true point
 
         ## Settings
-        self.version = "1.13.1"  ## Version of the gui
+        self.version = "1.14.0"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
         self.show_mh_as_scatter = BooleanVar() ## Sets the MH plot to scatter plot (even for 2D)
@@ -252,7 +252,8 @@ class Gui(Tk):
 
         self.factorise = BooleanVar()  ## Flag for factorising rational functions
         self.sample_size = ""  ## Number of samples
-        self.save = ""  ## True if saving on
+        self.save = BooleanVar()  ## True if saving on
+        self.save.set(True)
 
         ## OTHER SETTINGS
         self.button_pressed = BooleanVar()  ## Inner variable to close created window
@@ -323,10 +324,12 @@ class Gui(Tk):
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
 
+        autosave_figures_button = Checkbutton(center_frame, text="Autosave figures", variable=self.save)
+        autosave_figures_button.grid(row=4, column=0, sticky=E, padx=4)
         show_print_checkbutton = Checkbutton(center_frame, text="Hide print in command line", variable=self.silent)
-        show_print_checkbutton.grid(row=4, column=0, sticky=E, padx=4)
+        show_print_checkbutton.grid(row=4, column=1, sticky=E, padx=4)
         debug_checkbutton = Checkbutton(center_frame, text="Extensive command line print", variable=self.debug)
-        debug_checkbutton.grid(row=4, column=1, sticky=E, padx=4)
+        debug_checkbutton.grid(row=4, column=2, sticky=E, padx=4)
         # print("self.silent", self.silent.get())
 
         ################################################################################################################
@@ -686,6 +689,8 @@ class Gui(Tk):
         presampled_refinement_checkbutton = Checkbutton(frame_left, text="Use presampled refinement", variable=self.presampled_refinement)
         presampled_refinement_checkbutton.grid(row=7, column=3, padx=0)
 
+        # iterative_refinement_checkbutton = Checkbutton(frame_left, text="Use iterative refinement (TBD)", variable=self.iterative_refinement)
+        # iterative_refinement_checkbutton.grid(row=8, column=3, padx=0)
 
         self.max_dept_entry = Entry(frame_left)
         self.coverage_entry = Entry(frame_left)
@@ -1799,7 +1804,6 @@ class Gui(Tk):
                     figure, axis = self.space.show(green=show_refinement, red=show_refinement, sat_samples=show_samples,
                                                    unsat_samples=show_samples, true_point=show_true_point, save=False,
                                                    where=[self.page6_figure, self.page6_a], show_all=show_all)
-
                     ## If no plot provided
                     if figure is None:
                         messagebox.showinfo("Load Space", axis)
@@ -2427,9 +2431,23 @@ class Gui(Tk):
             self.page3_figure.canvas.draw()
             self.page3_figure.canvas.flush_events()
 
+            ## Autosave figure
+            if self.save.get():
+                self.save_functions_plot("Single_point_functions")
+
         if not self.silent.get():
             print(f"Using point", self.parameter_point)
         self.status_set("Sampling rational functions done.")
+
+    def save_functions_plot(self, plot_type):
+        time_stamp = str(time.strftime("%d-%b-%Y-%H-%M-%S", time.localtime())) + ".png"
+        self.page3_figure.savefig(os.path.join(self.figures_dir, f"{plot_type}_{time_stamp}"), bbox_inches='tight')
+        print("Figure stored here: ", os.path.join(self.figures_dir, f"{plot_type}_{time_stamp}"))
+        with open(os.path.join(self.figures_dir, "figure_to_title.txt"), "a+") as file:
+            file.write(f"{plot_type}_{time_stamp} :\n")
+            file.write(f"      functions: {self.functions_file.get()}\n")
+            if self.data:
+                file.write(f"      data: {self.data_file.get()}\n")
 
     def show_funs_in_all_points(self):
         """ Shows sampled rational functions in all sampled points. """
@@ -2528,6 +2546,10 @@ class Gui(Tk):
                                         posttitle=f"Function number {i}: {function}", where=True,
                                         parameters=self.parameters)
             self.initialise_plot3(what=self.page3_figure)
+
+            ## Autosave figure
+            if self.save.get():
+                self.save_functions_plot(f"Heatmap_function_{i}_of_{len(self.functions)}_")
 
             self.Next_sample_button.wait_variable(self.button_pressed)
         # self.Next_sample_button.config(state="disabled")
@@ -2855,6 +2877,16 @@ class Gui(Tk):
 
         self.show_space(show_refinement=False, show_samples=True, show_true_point=self.show_true_point)
 
+        ## Autosave figure
+        if self.save.get():
+            time_stamp = str(time.strftime("%d-%b-%Y-%H-%M-%S", time.localtime())) + ".png"
+            self.page6_figure.savefig(os.path.join(self.refinement_results, f"Space_sampling_{time_stamp}"), bbox_inches='tight')
+            print("Figure stored here: ", os.path.join(self.refinement_results, f"Space_sampling_{time_stamp}"))
+            with open(os.path.join(self.refinement_results, "figure_to_title.txt"), "a+") as file:
+                file.write(f"Space_sampling_{time_stamp} :\n")
+                file.write(f"      grid_size: {self.sample_size}\n")
+                file.write(f"      constraints: {self.constraints_file.get()}\n")
+
         self.space_changed = False
         self.constraints_changed = False
 
@@ -2959,7 +2991,17 @@ class Gui(Tk):
         ## Autosave
         self.save_mh_results(os.path.join(self.tmp_dir, "mh_results"))
 
-        # try:
+        ## Autosave figure
+        if self.save.get():
+            time_stamp = str(time.strftime("%d-%b-%Y-%H-%M-%S", time.localtime())) + ".png"
+            self.page6_figure2.savefig(os.path.join(self.mh_results, f"Metropolis-Hastings_{time_stamp}"), bbox_inches='tight')
+            print("Figure stored here: ", os.path.join(self.mh_results, f"Metropolis-Hastings_{time_stamp}"))
+            with open(os.path.join(self.mh_results, "figure_to_title.txt"), "a+") as file:
+                file.write(f"Metropolis-Hastings_{time_stamp} :\n")
+                file.write(f"      data: {self.data_file.get()}\n")
+                file.write(f"      functions: {self.functions_file.get()}\n")
+
+                # try:
         #     self.cursor_toggle_busy(True)
         #     initialise_sampling(self.space, self.data, self.functions, int(self.n_samples_entry.get()), int(self.N_obs_entry.get()), int(self.MH_samples_entry.get()), float(self.eps_entry.get()), where=[self.page6_figure2, self.page6_b])
         # except:
@@ -3084,6 +3126,16 @@ class Gui(Tk):
             self.page6_figure.tight_layout()  ## By huypn
             self.page6_figure.canvas.draw()
             self.page6_figure.canvas.flush_events()
+
+            ## Autosave figure
+            if self.save.get():
+                time_stamp = str(time.strftime("%d-%b-%Y-%H-%M-%S", time.localtime())) + ".png"
+                self.page6_figure.savefig(os.path.join(self.refinement_results, f"Space_refinement_{time_stamp}"),
+                                          bbox_inches='tight')
+                print("Figure stored here: ", os.path.join(self.refinement_results, f"Space_refinement_{time_stamp}"))
+                with open(os.path.join(self.refinement_results, "figure_to_title.txt"), "a+") as file:
+                    file.write(f"Space_refinement_{time_stamp} :\n")
+                    file.write(f"      constraints: {self.constraints_file.get()}\n")
 
         self.print_space()
 
@@ -3626,6 +3678,7 @@ class Gui(Tk):
             self.update()
             return
         if askyesno("Autoload from tmp folder", "Would you like to load autosaved files from tmp folder?"):
+            self.save.set(False)
             print("Loading tmp files from ", self.tmp_dir)
             self.load_model(file=os.path.join(self.tmp_dir, "model.pm"))
             self.load_property(file=os.path.join(self.tmp_dir, "properties.pctl"))
