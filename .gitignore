@@ -148,6 +148,8 @@ test/_trial_*
 
 tmp/*
 
+backup/*
+
 ###############
 # STORM CALLS #
 ###############

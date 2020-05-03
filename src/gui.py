@@ -2682,7 +2682,7 @@ class Gui(Tk):
         ## SWITCH contains triples:  (text widget, file path, text, modifiedflag, save_function , load_function)
         switch = {"model": (self.model_text_modified, self.model_file.get(), "model", self.save_model, self.load_model),
                   "properties": (self.properties_text_modified, self.property_file.get(), "properties", self.save_property, self.load_property),
-                  "functions": (self.parsed_functions_text_modified, self.functions_file.get(), "functions", self.save_parsed_functions, self.load_parsed_functions),
+                  "functions": (self.parsed_functions_text_modified, self.functions_file.get(), "functions", self.save_parsed_functions if os.path.splitext(self.functions_file.get())[1] == ".p" else lambda x: True, self.load_parsed_functions),
                   "data": (self.data_text_modified, self.data_file.get(), "data", self.save_data, self.load_data),
                   "data_intervals": (self.data_intervals_text_modified, self.data_intervals_file.get(), "data_intervals", self.save_data_intervals, self.load_data_intervals),
                   "constraints": (self.constraints_text_modified, self.constraints_file.get(), "constraints", self.save_constraints, self.load_constraints),
