@@ -9,6 +9,10 @@ model_path = spam["models"]
 properties_path = spam["properties"]
 del spam
 
+########################################################################################################################
+##############################################        MODELS - OLD        ##############################################
+########################################################################################################################
+
 
 def create_synchronous_model(file, population_size):
     """ Creates synchronous model of *population_size* agents to a *file* with probabilities p and q in [0,1].
@@ -164,6 +168,15 @@ def create_synchronous_model(file, population_size):
             # print("population_size",population_size,"i",i,"j",j)
             file.write(f" & a{j} = {(0, 1)[i > j]}")
         file.write(f":" + str(i * i) + ";\n")
+    file.write(f"endrewards \n")
+
+    file.write('rewards "mean_cubed" \n')
+    for i in range(population_size + 1):
+        file.write(f"       a0 = {(1, 0)[i == 0]}")
+        for j in range(1, population_size):
+            # print("population_size",population_size,"i",i,"j",j)
+            file.write(f" & a{j} = {(0, 1)[i > j]}")
+        file.write(f":{i * i * i};\n")
     file.write(f"endrewards \n")
 
     file.close()
@@ -341,6 +354,15 @@ def create_semisynchronous_model(file, population_size):
             # print("population_size",population_size,"i",i,"j",j)
             file.write(f" & a{j} = {(0, 1)[i > j]}")
         file.write(f":" + str(i * i) + ";\n")
+    file.write(f"endrewards \n")
+
+    file.write('rewards "mean_cubed" \n')
+    for i in range(population_size + 1):
+        file.write(f"       a0 = {(1, 0)[i == 0]}")
+        for j in range(1, population_size):
+            # print("population_size",population_size,"i",i,"j",j)
+            file.write(f" & a{j} = {(0, 1)[i > j]}")
+        file.write(f":{i * i * i};\n")
     file.write(f"endrewards \n")
 
     file.close()
@@ -619,6 +641,15 @@ def create_asynchronous_model(file, population_size):
         file.write(f":" + str(i * i) + ";\n")
     file.write(f"endrewards \n")
 
+    file.write('rewards "mean_cubed" \n')
+    for i in range(population_size + 1):
+        file.write(f"       a0 = {(1, 0)[i == 0]}")
+        for j in range(1, population_size):
+            # print("population_size",population_size,"i",i,"j",j)
+            file.write(f" & a{j} = {(0, 1)[i > j]}")
+        file.write(f":{i * i * i};\n")
+    file.write(f"endrewards \n")
+
     file.close()
 
 
@@ -777,6 +808,15 @@ def create_multiparam_synchronous_model(file, population_size):
             # print("population_size",population_size,"i",i,"j",j)
             file.write(f" & a{j} = {(0, 1)[i > j]}")
         file.write(f":" + str(i * i) + ";\n")
+    file.write(f"endrewards \n")
+
+    file.write('rewards "mean_cubed" \n')
+    for i in range(population_size + 1):
+        file.write(f"       a0 = {(1, 0)[i == 0]}")
+        for j in range(1, population_size):
+            # print("population_size",population_size,"i",i,"j",j)
+            file.write(f" & a{j} = {(0, 1)[i > j]}")
+        file.write(f":{i * i * i};\n")
     file.write(f"endrewards \n")
 
     file.close()
@@ -959,6 +999,15 @@ def create_multiparam_semisynchronous_model(file, population_size):
             # print("population_size",population_size,"i",i,"j",j)
             file.write(f" & a{j} = {(0, 1)[i > j]}")
         file.write(f":" + str(i * i) + ";\n")
+    file.write(f"endrewards \n")
+
+    file.write('rewards "mean_cubed" \n')
+    for i in range(population_size + 1):
+        file.write(f"       a0 = {(1, 0)[i == 0]}")
+        for j in range(1, population_size):
+            # print("population_size",population_size,"i",i,"j",j)
+            file.write(f" & a{j} = {(0, 1)[i > j]}")
+        file.write(f":{i * i * i};\n")
     file.write(f"endrewards \n")
 
     file.close()
@@ -1251,7 +1300,20 @@ def create_multiparam_asynchronous_model(file, population_size):
         file.write(f":" + str(i * i) + ";\n")
     file.write(f"endrewards \n")
 
+    file.write('rewards "mean_cubed" \n')
+    for i in range(population_size + 1):
+        file.write(f"       a0 = {(1, 0)[i == 0]}")
+        for j in range(1, population_size):
+            # print("population_size",population_size,"i",i,"j",j)
+            file.write(f" & a{j} = {(0, 1)[i > j]}")
+        file.write(f":{i * i * i};\n")
+    file.write(f"endrewards \n")
+
     file.close()
+
+########################################################################################################################
+##############################################        MODELS - NEW        ##############################################
+########################################################################################################################
 
 
 def create_bee_multiparam_synchronous_model(file, population_size):
@@ -1396,6 +1458,15 @@ def create_bee_multiparam_synchronous_model(file, population_size):
             # print(f"population_size",population_size,"i",i,"j",j)
             file.write(f" & a{j} = " + str(1 if i > j else -i))
         file.write(f":{i * i};\n")
+    file.write(f"endrewards \n")
+
+    file.write('rewards "mean_cubed" \n')
+    for i in range(population_size + 1):
+        file.write(f"       a0 = {(1, 0)[i == 0]}")
+        for j in range(1, population_size):
+            # print(f"population_size",population_size,"i",i,"j",j)
+            file.write(f" & a{j} = " + str(1 if i > j else -i))
+        file.write(f":{i * i * i};\n")
     file.write(f"endrewards \n")
 
     file.close()
@@ -1600,10 +1671,20 @@ def create_bee_multiparam_semisynchronous_model(file, population_size):
         file.write(f":{i * i};\n")
     file.write(f"endrewards \n")
 
+    file.write('rewards "mean_cubed" \n')
+    for i in range(population_size + 1):
+        file.write(f"       a0 = {(1, 0)[i == 0]}")
+        for j in range(1, population_size):
+            # print(f"population_size",population_size,"i",i,"j",j)
+            file.write(f" & a{j} = " + str(1 if i > j else -i))
+        file.write(f":{i * i * i};\n")
+    file.write(f"endrewards \n")
+
     file.close()
 
-population_size = 3
-create_bee_multiparam_semisynchronous_model(f"bee_multiparam_semisynchronous_{population_size}", population_size)
+########################################################################################################################
+###############################################        PROPERTIES        ###############################################
+########################################################################################################################
 
 
 def create_properties(population_size):
