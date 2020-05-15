@@ -362,7 +362,7 @@ def check_safe(region, constraints, silent: bool = False, called=False, solver="
 
 
 def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent, version, sample_size=False,
-                 debug=False, save=False, title="", where=False, show_space=True, solver="z3", delta=0.001, gui=False):
+                 debug=False, save=False, title="", where=False, show_space=True, solver="z3", delta=0.001, gui=False, iterative=False):
 
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
 
@@ -383,6 +383,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         solver (string):: specified solver, allowed: z3, dreal
         delta (number):: used for delta solving using dreal
         gui (bool): called from the graphical user interface
+        iterative (bool) : iterative approach, TBD
     """
 
     ## INITIALISATION
