@@ -8,11 +8,11 @@ import pickle
 
 # from termcolor import colored
 
-from common.document_wrapper import DocumentWrapper
-
 ## Importing my code
 from space import RefinedSpace
 from common.config import load_config
+from common.document_wrapper import DocumentWrapper
+from common.convert import niceprint
 
 spam = load_config()
 # results_dir = spam["results"]
@@ -97,9 +97,9 @@ class HastingsResults:
 
         if self.title is "":
             if self.last_iter > 0:
-                self.title = f'Estimate of MH algorithm, {self.last_iter} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n showing last {self.show}% of {self.accepted.shape[0]} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
+                self.title = f'Estimate of MH algorithm, {niceprint(self.last_iter)} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n showing last {self.show}% of {niceprint(self.accepted.shape[0])} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
             else:
-                self.title = f'Estimate of MH algorithm, {self.MH_sampling_iterations} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n showing last {self.show}% of {self.accepted.shape[0]} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
+                self.title = f'Estimate of MH algorithm, {niceprint(self.MH_sampling_iterations)} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n showing last {self.show}% of {niceprint(self.accepted.shape[0])} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
 
         if debug:
             print("self.accepted[show:, 0]", self.accepted[show:, 0])

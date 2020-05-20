@@ -1,5 +1,16 @@
 from termcolor import colored
 from sympy import Interval
+import locale
+locale.setlocale(locale.LC_ALL, '')
+
+
+def niceprint(text: str):
+    """ Converts string into printable text
+
+    Args:
+        text (string): input string
+    """
+    return locale.format_string("%d", text, grouping=True)
 
 
 def parse_numbers(text: str):
