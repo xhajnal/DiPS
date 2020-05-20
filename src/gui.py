@@ -1712,7 +1712,7 @@ class Gui(Tk):
                     return
 
     def load_mh_results(self, file=False, ask=True):
-        """ loads Metropolis hastings results (accepted) and plots them
+        """ loads Metropolis Hastings results (accepted) and plots them
 
         Args:
             file (path/string): direct path to load the pickled file
@@ -1761,7 +1761,7 @@ class Gui(Tk):
             if not file:
                 self.save_mh_results(os.path.join(self.tmp_dir, "mh_results"))
 
-            self.status_set("Metropolis hastings results loaded.")
+            self.status_set("Metropolis Hastings results loaded.")
 
     def print_space(self, clear=False):
         """ Print the niceprint of the space into space text window.
@@ -2229,36 +2229,36 @@ class Gui(Tk):
             self.status_set("Space saved.")
 
     def save_mh_results(self, file=False):
-        """ Saves Metropolis hastings results a pickled file.
+        """ Saves Metropolis Hastings results a pickled file.
 
         Args:
-            file (string or False):  file to save Metropolis hastings results
+            file (string or False):  file to save Metropolis Hastings results
         """
 
         if file:
             save_mh_results_file = file
         else:
-            print("Saving Metropolis hastings results ...")
+            print("Saving Metropolis Hastings results ...")
             if self.mh_results is "":
-                self.status_set("There is no Metropolis hastings results to be saved.")
+                self.status_set("There is no Metropolis Hastings results to be saved.")
                 return
-            self.status_set("Please select folder to store Metropolis hastings results in.")
-            save_mh_results_file = filedialog.asksaveasfilename(initialdir=self.mh_results_dir, title="Metropolis hastings results saving - Select file",
+            self.status_set("Please select folder to store Metropolis Hastings results in.")
+            save_mh_results_file = filedialog.asksaveasfilename(initialdir=self.mh_results_dir, title="Metropolis Hastings results saving - Select file",
                                                                 filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
             if save_mh_results_file == "":
-                self.status_set("No file selected to store Metropolis hastings results in.")
+                self.status_set("No file selected to store Metropolis Hastings results in.")
                 return
 
         if "." not in basename(save_mh_results_file):
             save_mh_results_file = save_mh_results_file + ".p"
 
         if not self.silent.get():
-            print("Saving Metropolis hastings results as a file:", save_mh_results_file)
+            print("Saving Metropolis Hastings results as a file:", save_mh_results_file)
 
         pickle.dump(self.mh_results, open(save_mh_results_file, 'wb'))
         # pickle.dump(self.mh_results, open(os.path.join(self.mh_results_dir, f"mh_results_{strftime('%d-%b-%Y-%H-%M-%S', localtime())}.p"), 'wb'))
         if not file:
-            self.status_set("Metropolis hastings results saved.")
+            self.status_set("Metropolis Hastings results saved.")
 
     ## ANALYSIS
     def synth_params(self):
@@ -2896,7 +2896,7 @@ class Gui(Tk):
         self.status_set("Space sampling finished.")
 
     def hastings(self):
-        """ Samples (Parameter) Space using Metropolis hastings """
+        """ Samples (Parameter) Space using Metropolis Hastings """
         print("Checking the inputs.")
         self.check_changes("functions")
         self.check_changes("data")
@@ -2948,7 +2948,7 @@ class Gui(Tk):
 
             ## Progress Bar
             self.new_window = Toplevel(self)
-            Label(self.new_window, text="Metropolis hastings progress:", anchor=W, justify=LEFT).pack()
+            Label(self.new_window, text="Metropolis Hastings progress:", anchor=W, justify=LEFT).pack()
             Label(self.new_window, textvar=self.progress, anchor=W, justify=LEFT).pack()
             self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
             Label(self.new_window, textvar=self.progress_time, anchor=W, justify=LEFT).pack()
@@ -3312,7 +3312,7 @@ class Gui(Tk):
     def refresh_mh(self):
         """ Refreshes MH results"""
         if self.mh_results:
-            if not askyesno("Sample & Refine", "Data of the metropolis hastings and the plot will be lost. Do you want to proceed?"):
+            if not askyesno("Sample & Refine", "Data of the metropolis Hastings and the plot will be lost. Do you want to proceed?"):
                 return
         self.mh_results_changed = False
         self.mh_results = ""
@@ -3326,7 +3326,7 @@ class Gui(Tk):
     def costumize_mh_results(self):
         """ Costumizes MH Plot"""
         if self.mh_results:
-            if not askyesno("Sample & Refine", "Data of the metropolis hastings and the plot will be lost. Do you want to proceed?"):
+            if not askyesno("Sample & Refine", "Data of the metropolis Hastings and the plot will be lost. Do you want to proceed?"):
                 return
         else:
             messagebox.showinfo("Metropolis-Hastings", "There is no plot to costumire")
@@ -3392,7 +3392,7 @@ class Gui(Tk):
                 return
 
     def export_acc_points(self, file=False):
-        """ Exports accepted points of metropolis hastings
+        """ Exports accepted points of metropolis Hastings
 
         Args:
             file (string or False):  file to export accepted points of MH
@@ -3656,10 +3656,10 @@ class Gui(Tk):
         try:
             if change_to is not False:
                 self.progress_bar['value'] = 100*change_to
-                self.progress.set(f"{100*change_to}%")
+                self.progress.set(f"{round(100*change_to, 2)}%")
             if change_by is not False:
                 self.progress_bar['value'] = self.progress_bar['value'] + 100*change_by
-                self.progress.set(f"{self.progress_bar['value']}%")
+                self.progress.set(f"{round(self.progress_bar['value'], 2)}%")
             if set_time is not False:
                 self.progress_time.set(f"{set_time}/{timeout} s")
             self.update()
