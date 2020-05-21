@@ -25,7 +25,10 @@ from common.config import load_config
 from common.space_stuff import refine_by
 
 if "wind" not in platform.system().lower():
-    from dreal import logical_and, logical_or, logical_not, Variable, CheckSatisfiability
+    try:
+        from dreal import logical_and, logical_or, logical_not, Variable, CheckSatisfiability
+    except ImportError as err:
+        print(f"Error while loading dreal {err}")
 
 config = load_config()
 results_dir = config["results"]
