@@ -1163,9 +1163,6 @@ def private_check_deeper_queue_checking(region, constraints, recursion_depth, ep
     # example_points = re.findall(r'[0-9./]+', str(example))
     # print(example_points)
 
-    if solver == "dreal":
-        del example_points[::2]
-
     ## Find maximum dimension and split
     index, maximum = 0, 0
     for i in range(len(region)):
