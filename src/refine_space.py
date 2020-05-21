@@ -1158,7 +1158,7 @@ def private_check_deeper_queue_checking(region, constraints, recursion_depth, ep
             print(recursion_depth, region,  colored(f"{space.get_coverage()}, {example}, is unknown", "grey"))
 
     ## Parse example
-    example_points = parse_model_values(str(example))
+    example_points = parse_model_values(str(example), solver)
 
     # example_points = re.findall(r'[0-9./]+', str(example))
     # print(example_points)
@@ -1320,14 +1320,10 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
             print(recursion_depth, region, colored(f"{space.get_coverage()} {(example, counterexample)} is unknown", "grey"))
 
     ## Parse example
-    example_points = parse_model_values(str(example))
+    example_points = parse_model_values(str(example), solver)
 
     ## Parse counterexample
-    counterexample_points = parse_model_values(str(counterexample))
-
-    if solver == "dreal":
-        del example_points[::2]
-        del counterexample_points[::2]
+    counterexample_points = parse_model_values(str(counterexample), solver)
 
     ## Find maximum dimension and split
     index, maximum = 0, 0

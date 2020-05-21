@@ -46,7 +46,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_parse_model_values(self):
         model = '[r_0 = 1/8, r_1 = 9/16, /0 = [(7/16, 7/8) -> 1/2, else -> 0]]'
-        self.assertEqual(parse_model_values(model), [0.125, 0.5625])
+        self.assertEqual(parse_model_values(model, "z3"), [0.125, 0.5625])
 
 
 if __name__ == '__main__':
