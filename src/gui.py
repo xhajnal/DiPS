@@ -183,6 +183,7 @@ class Gui(Tk):
         self.functions_file = StringVar()  ## Rational functions file
         self.constraints_file = StringVar()  ## constraints file
         self.space_file = StringVar()  ## Space file
+        self.hastings_file = StringVar()  ## Metropolis-Hastings file
 
         ## Flags for the change
         self.model_changed = False
@@ -320,16 +321,20 @@ class Gui(Tk):
         self.space_label = Label(center_frame, textvariable=self.space_file, anchor=W, justify=LEFT)
         self.space_label.grid(row=3, column=1, sticky=W, padx=4)
 
+        Label(center_frame, text=f"Metropolis-Hastings file:", anchor=W, justify=LEFT).grid(row=4, column=0, sticky=W, padx=4)
+        self.hastings_label = Label(center_frame, textvariable=self.hastings_file, anchor=W, justify=LEFT)
+        self.hastings_label.grid(row=4, column=1, sticky=W, padx=4)
+
         frame.rowconfigure(0, weight=1)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
 
         autosave_figures_button = Checkbutton(center_frame, text="Autosave figures", variable=self.save)
-        autosave_figures_button.grid(row=4, column=0, sticky=E, padx=4)
+        autosave_figures_button.grid(row=5, column=0, sticky=E, padx=4)
         show_print_checkbutton = Checkbutton(center_frame, text="Hide print in command line", variable=self.silent)
-        show_print_checkbutton.grid(row=4, column=1, sticky=E, padx=4)
+        show_print_checkbutton.grid(row=5, column=1, sticky=E, padx=4)
         debug_checkbutton = Checkbutton(center_frame, text="Extensive command line print", variable=self.debug)
-        debug_checkbutton.grid(row=4, column=2, sticky=E, padx=4)
+        debug_checkbutton.grid(row=5, column=2, sticky=E, padx=4)
         # print("self.silent", self.silent.get())
 
         ################################################################################################################
@@ -1712,7 +1717,7 @@ class Gui(Tk):
                     return
 
     def load_mh_results(self, file=False, ask=True):
-        """ loads Metropolis Hastings results (accepted) and plots them
+        """ loads Metropolis-Hastings results (accepted) and plots them
 
         Args:
             file (path/string): direct path to load the pickled file
@@ -1742,6 +1747,7 @@ class Gui(Tk):
         else:
             self.mh_results_changed = True
             self.mh_results = pickle.load(open(spam, "rb"))
+            self.hastings_file.set(spam)
 
             ## Clear figure
             self.page6_figure2.clf()
@@ -1886,6 +1892,7 @@ class Gui(Tk):
 
         with open(save_model_file, "w") as file:
             file.write(self.model_text.get(1.0, END))
+        self.model_file.set(save_model_file)
 
         if not file:
             self.status_set("Model saved.")
@@ -1919,6 +1926,7 @@ class Gui(Tk):
 
         with open(save_property_file, "w") as file:
             file.write(self.property_text.get(1.0, END))
+        self.property_file.set(save_property_file)
 
         if not file:
             self.status_set("Property saved.")
@@ -1979,6 +1987,7 @@ class Gui(Tk):
 
         with open(save_data_informed_property_file, "w") as file:
             file.write(self.data_informed_property_text.get('1.0', END))
+        self.data_informed_property_file.set(save_data_informed_property_file)
 
         if not file:
             self.status_set("Data informed property saved.")
@@ -2025,6 +2034,7 @@ class Gui(Tk):
         with open(save_functions_file, "w") as file:
             for line in self.functions:
                 file.write(line)
+        self.functions_file.set(save_functions_file)
 
         if not file:
             self.status_set("Rational functions saved.")
@@ -2084,6 +2094,7 @@ class Gui(Tk):
             print("Saving parsed functions as a file:", save_functions_file)
 
         pickle.dump(functions, open(save_functions_file, 'wb'))
+        self.functions_file.set(save_functions_file)
         self.status_set("Parsed functions saved.")
 
     def save_data(self, file=False):
@@ -2118,6 +2129,7 @@ class Gui(Tk):
             print("Saving data as a file:", save_data_file)
 
         pickle.dump(self.data, open(save_data_file, 'wb'))
+        self.data_file.set(save_data_file)
 
         if not file:
             self.status_set("Data saved.")
@@ -2160,6 +2172,7 @@ class Gui(Tk):
             print("Saving data intervals as a file:", save_data_intervals_file)
 
         pickle.dump(data_intervals, open(save_data_intervals_file, 'wb'))
+        self.data_intervals_file.set(save_data_intervals_file)
 
         if not file:
             self.status_set("Data intervals saved.")
@@ -2194,6 +2207,8 @@ class Gui(Tk):
             save_constraints_file = save_constraints_file + ".p"
 
         pickle.dump(constraints, open(save_constraints_file, 'wb'))
+        self.constraints_file.set(save_constraints_file)
+
         if not file:
             self.status_set("constraints saved.")
 
@@ -2225,6 +2240,8 @@ class Gui(Tk):
             print("Saving space as a file:", save_space_file)
 
         pickle.dump(self.space, open(save_space_file, 'wb'))
+        self.space_file.set(save_space_file)
+
         if not file:
             self.status_set("Space saved.")
 
@@ -2256,6 +2273,8 @@ class Gui(Tk):
             print("Saving Metropolis Hastings results as a file:", save_mh_results_file)
 
         pickle.dump(self.mh_results, open(save_mh_results_file, 'wb'))
+        self.hastings_file.set(save_mh_results_file)
+
         # pickle.dump(self.mh_results, open(os.path.join(self.mh_results_dir, f"mh_results_{strftime('%d-%b-%Y-%H-%M-%S', localtime())}.p"), 'wb'))
         if not file:
             self.status_set("Metropolis Hastings results saved.")
