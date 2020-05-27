@@ -3013,9 +3013,9 @@ class Gui(Tk):
         ## Autosave figure
         if self.save.get():
             time_stamp = str(time.strftime("%d-%b-%Y-%H-%M-%S", time.localtime())) + ".png"
-            self.page6_figure2.savefig(os.path.join(self.mh_results, f"Metropolis-Hastings_{time_stamp}"), bbox_inches='tight')
-            print("Figure stored here: ", os.path.join(self.mh_results, f"Metropolis-Hastings_{time_stamp}"))
-            with open(os.path.join(self.mh_results, "figure_to_title.txt"), "a+") as file:
+            self.page6_figure2.savefig(os.path.join(self.mh_results_dir, f"Metropolis-Hastings_{time_stamp}"), bbox_inches='tight')
+            print("Figure stored here: ", os.path.join(self.mh_results_dir, f"Metropolis-Hastings_{time_stamp}"))
+            with open(os.path.join(self.mh_results_dir, "figure_to_title.txt"), "a+") as file:
                 file.write(f"Metropolis-Hastings_{time_stamp} :\n")
                 file.write(f"      data: {self.data_file.get()}\n")
                 file.write(f"      functions: {self.functions_file.get()}\n")
