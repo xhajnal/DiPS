@@ -3,7 +3,7 @@
 ## A Tool for Data-informed Parameter Synthesis for Discrete-Time Stochastic Processes from Multiple-Property Specifications
 
 
-DiPS builds upon already created model checkers for probabilistic systems -- [PARAM](https://depend.cs.uni-saarland.de/tools/param/publications/bibitem.php?key=HahnHWZ10), [PRISM](http://www.prismmodelchecker.org), [Prophesy](https://moves.rwth-aachen.de/research/tools/prophesy/), and [Storm](http://www.stormchecker.org/) .
+DiPS builds upon already created model checkers for probabilistic systems -- [PARAM](https://depend.cs.uni-saarland.de/tools/param/publications/bibitem.php?key=HahnHWZ10), [PRISM](http://www.prismmodelchecker.org), [Prophesy](https://moves.rwth-aachen.de/research/tools/prophesy/), and [Storm](http://www.stormchecker.org/).
 It extends those to solve multiple property cases with higher efficiency.
 
 In advance, it provides data-informed analysis to constrain rational functions which are the result of symbolic model checking.
@@ -11,10 +11,10 @@ In advance, it provides data-informed analysis to constrain rational functions w
 The constraints are solved using:
 
 * space refinement - CEGAR like method splitting the parameter space. In each iteration, the result is provided by:
-    * SMT solver - Z3 or dreal
-    * interval arithmetic - scipy
-* space sampling - checking satisfaction of constraints in selected points 
-* optimisation - searching for least violating point and 
+    * SMT solver - [Z3](https://github.com/Z3Prover/z3) or [dreal](http://dreal.github.io/)
+    * interval arithmetic - [scipy](https://www.scipy.org/)
+* space sampling - checking satisfaction of constraints in selected points, 
+* optimisation - searching for least violating point, 
 * Metropolis-Hastings - searching for most probable parameter points.
 
 To have an overview of the rational functions, we provide visualisation based on sampling.
@@ -112,7 +112,7 @@ Manual in progress - see `manual.pdf`
 ## HOW TO CITE US
 
 <a name="one"> </a>
-[1] Hajnal, M., Nouvian, M., Šafránek, D., Petrov, T.: Data-informed parameter synthesis for population markov chains. In: Češka, M., Paoletti, N. (eds.) Hybrid Systems Biology. pp. 147{164. Springer International Publishing, Cham (2019)
+[1] Hajnal, M., Nouvian, M., Šafránek, D., Petrov, T.: Data-informed parameter synthesis for population markov chains. In: Češka, M., Paoletti, N. (eds.) Hybrid Systems Biology. pp. 147-164. Springer International Publishing, Cham (2019)
 
 
 *****
