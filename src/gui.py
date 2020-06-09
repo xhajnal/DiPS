@@ -232,7 +232,9 @@ class Gui(Tk):
         self.version = "1.14.0"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
-        self.show_mh_as_scatter = BooleanVar() ## Sets the MH plot to scatter plot (even for 2D)
+        self.show_red_in_multidim_refinement = BooleanVar()  ## Sets preferenece to show unsafe space over safe space in multidimensional plot
+        self.show_red_in_multidim_refinement.set(False)
+        self.show_mh_as_scatter = BooleanVar()  ## Sets the MH plot to scatter plot (even for 2D)
 
         ## Settings/data
         # self.alpha = ""  ## Confidence
@@ -739,12 +741,13 @@ class Gui(Tk):
         Button(frame_right, text='Open space', command=self.load_space).grid(row=1, column=0, padx=(4, 4), pady=7)
         Button(frame_right, text='Save space', command=self.save_space).grid(row=2, column=0, padx=(4, 4), pady=7)
         Button(frame_right, text='Delete space', command=self.refresh_space).grid(row=3, column=0, padx=(4, 4), pady=7)
+        Button(frame_right, text='Costumize Plot', command=self.customize_refinement_results).grid(row=4, column=0, padx=(4, 4), pady=7)
 
         Button(frame_right, text='Load MH Results', command=self.load_mh_results).grid(row=5, column=0, padx=(4, 4), pady=7)
         Button(frame_right, text='Save MH Results', command=self.save_mh_results).grid(row=6, column=0, padx=(4, 4), pady=7)
         Button(frame_right, text='Delete MH Results', command=self.refresh_mh).grid(row=7, column=0, padx=(4, 4), pady=7)
 
-        Button(frame_right, text='Costumize Plot', command=self.costumize_mh_results).grid(row=8, column=0, padx=(4, 4), pady=0)
+        Button(frame_right, text='Costumize Plot', command=self.customize_mh_results).grid(row=8, column=0, padx=(4, 4), pady=0)
         Button(frame_right, text='Export Acc points', command=self.export_acc_points).grid(row=9, column=0, padx=(4, 4), pady=0)
 
         frame_right.columnconfigure(0, weight=1)
@@ -1697,7 +1700,7 @@ class Gui(Tk):
                 else:
                     self.show_true_point = False
 
-                self.show_space(self.show_refinement, self.show_samples, self.show_true_point, show_all=True)
+                self.show_space(self.show_refinement, self.show_samples, self.show_true_point, show_all=True, prefer_unsafe=self.show_red_in_multidim_refinement.get())
 
                 self.space_changed = True
 
@@ -1791,7 +1794,7 @@ class Gui(Tk):
         self.space_collapsed = not self.space_collapsed
         self.print_space()
 
-    def show_space(self, show_refinement, show_samples, show_true_point, clear=False, show_all=False):
+    def show_space(self, show_refinement, show_samples, show_true_point, clear=False, show_all=False, prefer_unsafe=False):
         """ Visualises the space in the plot.
 
         Args:
@@ -1800,7 +1803,9 @@ class Gui(Tk):
             show_true_point (bool): if True the true point is shown
             clear (bool): if True the plot is cleared
             show_all (bool):  if True, not only newly added rectangles are shown
+            prefer_unsafe: if True unsafe space is shown in multidimensional space instead of safe
         """
+
         try:
             self.cursor_toggle_busy(True)
             self.status_set("Space is being visualised.")
@@ -1808,7 +1813,7 @@ class Gui(Tk):
                 if not clear:
                     figure, axis = self.space.show(green=show_refinement, red=show_refinement, sat_samples=show_samples,
                                                    unsat_samples=show_samples, true_point=show_true_point, save=False,
-                                                   where=[self.page6_figure, self.page6_a], show_all=show_all)
+                                                   where=[self.page6_figure, self.page6_a], show_all=show_all, prefer_unsafe=prefer_unsafe)
                     ## If no plot provided
                     if figure is None:
                         messagebox.showinfo("Load Space", axis)
@@ -1846,7 +1851,7 @@ class Gui(Tk):
 
             self.print_space()
             self.page6_a.cla()
-            self.show_space(self.show_refinement, self.show_samples, True, show_all=True)
+            self.show_space(self.show_refinement, self.show_samples, True, show_all=True, prefer_unsafe=self.show_red_in_multidim_refinement.get())
 
     def parse_data_from_window(self):
         """ Parses data from the window. """
@@ -2895,7 +2900,7 @@ class Gui(Tk):
 
         self.print_space()
 
-        self.show_space(show_refinement=False, show_samples=True, show_true_point=self.show_true_point)
+        self.show_space(show_refinement=False, show_samples=True, show_true_point=self.show_true_point, prefer_unsafe=self.show_red_in_multidim_refinement.get())
 
         ## Autosave figure
         if self.save.get():
@@ -3329,10 +3334,45 @@ class Gui(Tk):
         if not file:
             self.status_set("Textual representation of space saved.")
 
+    def customize_refinement_results(self):
+        """ Customizes refinement Plot"""
+        if self.refinement_results:
+            if not askyesno("Sample & Refine", "Sample & Refinem plot will be lost. Do you want to proceed?"):
+                return
+
+        self.new_window = Toplevel(self)
+        label = Label(self.new_window, text="Costumize Refinement Plot")
+        label.grid(row=0)
+
+        show_red_in_multidim_refinement_chekbutton = Checkbutton(self.new_window, text="Show unsafe space instead of safe space in multidimensional plot.", variable=self.show_red_in_multidim_refinement)
+        show_red_in_multidim_refinement_chekbutton.grid(row=1, column=0)
+
+        ## To be used to wait until the button is pressed
+        self.button_pressed.set(False)
+        costumize_mh_results_button = Button(self.new_window, text="OK", command=self.change_refinement_plot)
+        costumize_mh_results_button.grid(row=4)
+        costumize_mh_results_button.focus()
+        costumize_mh_results_button.bind('<Return>', self.change_refinement_plot)
+
+        costumize_mh_results_button.wait_variable(self.button_pressed)
+
+    def change_refinement_plot(self):
+        """ Parses window changing for refinement plot"""
+        try:
+            self.show_space(self.show_refinement, self.show_samples, self.show_true_point, show_all=True, prefer_unsafe=self.show_red_in_multidim_refinement.get())
+        finally:
+            try:
+                self.new_window.destroy()
+                del self.new_window
+                self.cursor_toggle_busy(False)
+                self.progress.set("0%")
+            except TclError:
+                return
+
     def refresh_mh(self):
         """ Refreshes MH results"""
         if self.mh_results:
-            if not askyesno("Sample & Refine", "Data of the metropolis Hastings and the plot will be lost. Do you want to proceed?"):
+            if not askyesno("Sample & Refine", "Data and the plot of the Metropolis-Hastings will be lost. Do you want to proceed?"):
                 return
         self.mh_results_changed = False
         self.mh_results = ""
@@ -3343,10 +3383,10 @@ class Gui(Tk):
 
         self.status_set("MH results refreshed.")
 
-    def costumize_mh_results(self):
-        """ Costumizes MH Plot"""
+    def customize_mh_results(self):
+        """ Customizes MH Plot"""
         if self.mh_results:
-            if not askyesno("Sample & Refine", "Data of the metropolis Hastings and the plot will be lost. Do you want to proceed?"):
+            if not askyesno("Metropolis-Hastings", "Metropolis-Hastings plot will be lost. Do you want to proceed?"):
                 return
         else:
             messagebox.showinfo("Metropolis-Hastings", "There is no plot to costumire")

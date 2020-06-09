@@ -39,7 +39,7 @@ class RefinedSpace:
         title (string): text to added in the end of the Figure titles, CASE STUDY STANDARD: f"model: {model_type}, population = {population}, sample_size = {sample_size},  \n Dataset = {dataset}, alpha={alpha}, #samples={n_samples}"
     """
 
-    def __init__(self, region, params, types=None, rectangles_sat=False, rectangles_unsat=False, rectangles_unknown=None, sat_samples=None, unsat_samples=None, true_point=False, title=False):
+    def __init__(self, region, params, types=None, rectangles_sat=False, rectangles_unsat=False, rectangles_unknown=None, sat_samples=None, unsat_samples=None, true_point=False, title=False, prefer_unsafe=False):
         """ (hyper)rectangles is a list of intervals, point is a list of numbers
         Args:
             region (list of intervals): whole space
@@ -52,6 +52,8 @@ class RefinedSpace:
             unsat_samples: (list of points): unsatisfying points
             true_point (point): The true value in the parameter space
             title (string): text to added in the end of the Figure titles, CASE STUDY STANDARD: f"model: {model_type}, population = {population}, sample_size = {sample_size},  \n Dataset = {dataset}, alpha={alpha}, #samples={n_samples}"
+            prefer_unsafe: if True unsafe space is shown in multidimensional space instead of safe
+
         """
 
         ## REGION
@@ -207,10 +209,12 @@ class RefinedSpace:
         self.time_last_refinement = 0
         self.time_refinement = 0
 
+        self.prefer_unsafe = prefer_unsafe
+
         ## TEXT WRAPPER
         self.wrapper = DocumentWrapper(width=70)
 
-    def show(self, title="", green=True, red=True, sat_samples=False, unsat_samples=False, true_point=True, save=False, where=False, show_all=True):
+    def show(self, title="", green=False, red=True, sat_samples=False, unsat_samples=False, true_point=True, save=False, where=False, show_all=True, prefer_unsafe=None):
         """ Visualises the space
 
         Args:
@@ -223,7 +227,12 @@ class RefinedSpace:
             save (bool): if True, the output is saved
             where (tuple/list): output matplotlib sources to output created figure
             show_all (bool): if True, not only newly added rectangles are shown
+            prefer_unsafe: if True unsafe space is shown in multidimensional space instead of safe
         """
+        if prefer_unsafe is None:
+            prefer_unsafe = self.prefer_unsafe
+        else:
+            self.prefer_unsafe = prefer_unsafe
 
         # print("self.true_point", self.true_point)
         if save is True:
@@ -413,23 +422,43 @@ class RefinedSpace:
 
             if red or green:
                 if where:  ## Return the plot
-                    if self.rectangles_sat:  ## If any rectangles to be visualised
-                        fig = where[0]
-                        ax = where[1]
-                        plt.autoscale()
-                        ax.autoscale()
-                        title = "\n".join(self.wrapper.wrap(f"Refinement,\n Domains of respective parameter of safe subspace.\nLast refinement took {socket.gethostname()} {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole time."))
-                        fig, ax = visualise_by_param(self.rectangles_sat, title=title, where=[fig, ax])
-                        return fig, ax
+                    if not prefer_unsafe:
+                        if self.rectangles_sat:  ## If any rectangles to be visualised
+                            fig = where[0]
+                            ax = where[1]
+                            plt.autoscale()
+                            ax.autoscale()
+                            title = "\n".join(self.wrapper.wrap(f"Refinement,\n Domains of respective parameter of safe subspace.\nLast refinement took {socket.gethostname()} {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole time."))
+                            fig, ax = visualise_by_param(self.rectangles_sat, title=title, where=[fig, ax])
+                            return fig, ax
+                        else:
+                            return None, "While refining multidimensional space no green area found, no reasonable plot to be shown."
                     else:
-                        return None, "While refining multidimensional space no green area found, no reasonable plot to be shown."
+                        if self.rectangles_unsat:  ## If any rectangles to be visualised
+                            fig = where[0]
+                            ax = where[1]
+                            plt.autoscale()
+                            ax.autoscale()
+                            title = "\n".join(self.wrapper.wrap(f"Refinement,\n Domains of respective parameter of unsafe subspace.\nLast refinement took {socket.gethostname()} {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole time."))
+                            fig, ax = visualise_by_param(self.rectangles_unsat, title=title, where=[fig, ax])
+                            return fig, ax
+                        else:
+                            return None, "While refining multidimensional space no red area found, no reasonable plot to be shown."
                 else:
-                    if self.rectangles_sat:
-                        ## TODO maybe add the title
-                        fig = visualise_by_param(self.rectangles_sat)
-                        plt.show()
+                    if not prefer_unsafe:
+                        if self.rectangles_sat:
+                            title = "\n".join(self.wrapper.wrap(f"Refinement,\n Domains of respective parameter of safe subspace.\nLast refinement took {socket.gethostname()} {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole time."))
+                            fig = visualise_by_param(self.rectangles_sat, title=title)
+                            plt.show()
+                        else:
+                            print("No sat rectangles so far, nothing to show")
                     else:
-                        print("No sat rectangles so far, nothing to show")
+                        if self.rectangles_unsat:
+                            title = "\n".join(self.wrapper.wrap(f"Refinement,\n Domains of respective parameter of unsafe subspace.\nLast refinement took {socket.gethostname()} {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole time."))
+                            fig = visualise_by_param(self.rectangles_unsat, title=title)
+                            plt.show()
+                        else:
+                            print("No unsat rectangles so far, nothing to show")
 
     def get_region(self):
         """ Returns whole domain """
