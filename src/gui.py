@@ -179,7 +179,6 @@ class Gui(Tk):
         self.data_informed_property_file = StringVar()  ## Data informed property file
         self.data_file = StringVar()  ## Data file
         self.data_intervals_file = StringVar()  ## Data intervals file
-        # self.data_intervals_file.set("hello")
         self.functions_file = StringVar()  ## Rational functions file
         self.constraints_file = StringVar()  ## constraints file
         self.space_file = StringVar()  ## Space file
@@ -1892,9 +1891,9 @@ class Gui(Tk):
 
         with open(save_model_file, "w") as file:
             file.write(self.model_text.get(1.0, END))
-        self.model_file.set(save_model_file)
 
         if not file:
+            self.model_file.set(save_model_file)
             self.status_set("Model saved.")
 
     def save_property(self, file=False):
@@ -1926,9 +1925,9 @@ class Gui(Tk):
 
         with open(save_property_file, "w") as file:
             file.write(self.property_text.get(1.0, END))
-        self.property_file.set(save_property_file)
 
         if not file:
+            self.property_file.set(save_property_file)
             self.status_set("Property saved.")
 
     def generate_data_informed_properties(self):
@@ -1987,9 +1986,9 @@ class Gui(Tk):
 
         with open(save_data_informed_property_file, "w") as file:
             file.write(self.data_informed_property_text.get('1.0', END))
-        self.data_informed_property_file.set(save_data_informed_property_file)
 
         if not file:
+            self.data_informed_property_file.set(save_data_informed_property_file)
             self.status_set("Data informed property saved.")
 
     ## TODO MAYBE IN THE FUTURE
@@ -2034,9 +2033,9 @@ class Gui(Tk):
         with open(save_functions_file, "w") as file:
             for line in self.functions:
                 file.write(line)
-        self.functions_file.set(save_functions_file)
 
         if not file:
+            self.functions_file.set(save_functions_file)
             self.status_set("Rational functions saved.")
 
     @staticmethod
@@ -2094,8 +2093,10 @@ class Gui(Tk):
             print("Saving parsed functions as a file:", save_functions_file)
 
         pickle.dump(functions, open(save_functions_file, 'wb'))
-        self.functions_file.set(save_functions_file)
-        self.status_set("Parsed functions saved.")
+
+        if not file:
+            self.functions_file.set(save_functions_file)
+            self.status_set("Parsed functions saved.")
 
     def save_data(self, file=False):
         """ Saves data as a pickled file.
@@ -2129,9 +2130,9 @@ class Gui(Tk):
             print("Saving data as a file:", save_data_file)
 
         pickle.dump(self.data, open(save_data_file, 'wb'))
-        self.data_file.set(save_data_file)
 
         if not file:
+            self.data_file.set(save_data_file)
             self.status_set("Data saved.")
 
     def save_data_intervals(self, file=False):
@@ -2172,9 +2173,9 @@ class Gui(Tk):
             print("Saving data intervals as a file:", save_data_intervals_file)
 
         pickle.dump(data_intervals, open(save_data_intervals_file, 'wb'))
-        self.data_intervals_file.set(save_data_intervals_file)
 
         if not file:
+            self.data_intervals_file.set(save_data_intervals_file)
             self.status_set("Data intervals saved.")
 
     def save_constraints(self, file=False):
@@ -2207,9 +2208,9 @@ class Gui(Tk):
             save_constraints_file = save_constraints_file + ".p"
 
         pickle.dump(constraints, open(save_constraints_file, 'wb'))
-        self.constraints_file.set(save_constraints_file)
 
         if not file:
+            self.constraints_file.set(save_constraints_file)
             self.status_set("constraints saved.")
 
     def save_space(self, file=False):
@@ -2240,9 +2241,9 @@ class Gui(Tk):
             print("Saving space as a file:", save_space_file)
 
         pickle.dump(self.space, open(save_space_file, 'wb'))
-        self.space_file.set(save_space_file)
 
         if not file:
+            self.space_file.set(save_space_file)
             self.status_set("Space saved.")
 
     def save_mh_results(self, file=False):
@@ -2273,10 +2274,10 @@ class Gui(Tk):
             print("Saving Metropolis Hastings results as a file:", save_mh_results_file)
 
         pickle.dump(self.mh_results, open(save_mh_results_file, 'wb'))
-        self.hastings_file.set(save_mh_results_file)
-
         # pickle.dump(self.mh_results, open(os.path.join(self.mh_results_dir, f"mh_results_{strftime('%d-%b-%Y-%H-%M-%S', localtime())}.p"), 'wb'))
+
         if not file:
+            self.hastings_file.set(save_mh_results_file)
             self.status_set("Metropolis Hastings results saved.")
 
     ## ANALYSIS
