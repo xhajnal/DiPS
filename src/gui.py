@@ -3613,7 +3613,10 @@ class Gui(Tk):
             spam = Entry(self.new_window)
             spam.grid(row=i, column=1)
             ## Insert the middle of respective domain
-            spam.insert(END, str((self.parameter_domains[index][0] + self.parameter_domains[index][1])/2))
+            try:
+                spam.insert(END, str((self.parameter_domains[index][0] + self.parameter_domains[index][1])/2))
+            except IndexError:
+                pass
             self.parameter_point.append(spam)
             i = i + 1
 
