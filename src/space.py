@@ -428,7 +428,7 @@ class RefinedSpace:
                             ax = where[1]
                             plt.autoscale()
                             ax.autoscale()
-                            title = "\n".join(self.wrapper.wrap(f"Refinement,\n Domains of respective parameter of safe subspace.\nLast refinement took {socket.gethostname()} {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole time."))
+                            title = "\n".join(self.wrapper.wrap(f"Refinement,\n Domains of respective parameter of safe subspace.\nparam names: {self.params}\nparam types: {self.types}\nboundaries: {self.region}\nachieved coverage: {self.get_coverage()}.\nLast refinement took {socket.gethostname()} {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole time."))
                             fig, ax = visualise_by_param(self.rectangles_sat, title=title, where=[fig, ax])
                             return fig, ax
                         else:
@@ -439,23 +439,23 @@ class RefinedSpace:
                             ax = where[1]
                             plt.autoscale()
                             ax.autoscale()
-                            title = "\n".join(self.wrapper.wrap(f"Refinement,\n Domains of respective parameter of unsafe subspace.\nLast refinement took {socket.gethostname()} {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole time."))
-                            fig, ax = visualise_by_param(self.rectangles_unsat, title=title, where=[fig, ax])
+                            title = "\n".join(self.wrapper.wrap(f"Refinement,\n Domains of respective parameter of unsafe subspace.\nparam names: {self.params}\nparam types: {self.types}\nboundaries: {self.region}\nachieved coverage: {self.get_coverage()}.\nLast refinement took {socket.gethostname()} {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole time."))
+                            fig, ax = visualise_by_param(self.rectangles_unsat, colour='red', title=title, where=[fig, ax])
                             return fig, ax
                         else:
                             return None, "While refining multidimensional space no red area found, no reasonable plot to be shown."
                 else:
                     if not prefer_unsafe:
                         if self.rectangles_sat:
-                            title = "\n".join(self.wrapper.wrap(f"Refinement,\n Domains of respective parameter of safe subspace.\nLast refinement took {socket.gethostname()} {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole time."))
+                            title = "\n".join(self.wrapper.wrap(f"Refinement,\n Domains of respective parameter of safe subspace.\nparam names: {self.params}\nparam types: {self.types}\nboundaries: {self.region}\nachieved coverage: {self.get_coverage()}.\nLast refinement took {socket.gethostname()} {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole time."))
                             fig = visualise_by_param(self.rectangles_sat, title=title)
                             plt.show()
                         else:
                             print("No sat rectangles so far, nothing to show")
                     else:
                         if self.rectangles_unsat:
-                            title = "\n".join(self.wrapper.wrap(f"Refinement,\n Domains of respective parameter of unsafe subspace.\nLast refinement took {socket.gethostname()} {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole time."))
-                            fig = visualise_by_param(self.rectangles_unsat, title=title)
+                            title = "\n".join(self.wrapper.wrap(f"Refinement,\n Domains of respective parameter of unsafe subspace.\nparam names: {self.params}\nparam types: {self.types}\nboundaries: {self.region}\nachieved coverage: {self.get_coverage()}.\nLast refinement took {socket.gethostname()} {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole time."))
+                            fig = visualise_by_param(self.rectangles_unsat, colour='red', title=title)
                             plt.show()
                         else:
                             print("No unsat rectangles so far, nothing to show")

@@ -317,7 +317,7 @@ def visualise(dic_fun, agents_quantities, sample_size, cumulative=False, debug: 
 
 
 ## SOURCE: https://stackoverflow.com/questions/21352580/matplotlib-plotting-numerous-disconnected-line-segments-with-different-colors
-def visualise_by_param(hyper_rectangles, title="", where=False):
+def visualise_by_param(hyper_rectangles, colour='g', title="", where=False):
     """
     Visualises domain intervals of each dimension in a plot.
 
@@ -342,7 +342,7 @@ def visualise_by_param(hyper_rectangles, title="", where=False):
                 # print([(i+1, hyper_rectangles_sat[j][i][0]), (i+1, hyper_rectangles_sat[j][i][1])])
         c = np.array([(1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1)])
 
-        lc = mc.LineCollection(lines, color='g', linewidths=2)
+        lc = mc.LineCollection(lines, color=colour, linewidths=2)
 
         if where:
             fig, ax = where
