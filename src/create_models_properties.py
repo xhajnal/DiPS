@@ -1745,15 +1745,15 @@ def create_rewards_prop():
 
 if __name__ == '__main__':
     for population in [2, 3, 5, 10, 15, 20, 30, 40]:
-        create_synchronous_model(f"/old_bee/synchronous/{population}_synchronous", population)
-        create_semisynchronous_model(f"/old_bee/semisynchronous/{population}_semisynchronous", population)
-        create_asynchronous_model(f"/old_bee/asynchronous/{population}_asynchronous", population)
+        create_synchronous_model(f"old_bee/synchronous/{population}_synchronous", population)
+        create_semisynchronous_model(f"old_bee/semisynchronous/{population}_semisynchronous", population)
+        create_asynchronous_model(f"old_bee/asynchronous/{population}_asynchronous", population)
 
-        create_multiparam_synchronous_model(f"/old_bee/synchronous/{population}_multiparam_synchronous", population)
-        create_multiparam_semisynchronous_model(f"/old_bee/semisynchronous/{population}_multiparam_semisynchronous", population)
-        create_multiparam_asynchronous_model(f"/old_bee/asynchronous/{population}_multiparam_asynchronous", population)
+        create_multiparam_synchronous_model(f"old_bee/synchronous/{population}_multiparam_synchronous", population)
+        create_multiparam_semisynchronous_model(f"old_bee/semisynchronous/{population}_multiparam_semisynchronous", population)
+        create_multiparam_asynchronous_model(f"old_bee/asynchronous/{population}_multiparam_asynchronous", population)
 
-        create_bee_multiparam_synchronous_model(f"/bee/synchronous/{population}_synchronous", population)
-        create_bee_multiparam_semisynchronous_model(f"/bee/semisynchronous/{population}_synchronous", population)
+        create_bee_multiparam_synchronous_model(f"bee/synchronous/{population}_synchronous", population)
+        create_bee_multiparam_semisynchronous_model(f"bee/semisynchronous/{population}_synchronous", population)
 
         create_properties(population)
