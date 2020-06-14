@@ -1,4 +1,5 @@
 import math
+import os
 from pathlib import Path
 import common.mathematics as mymath
 from common.config import load_config
@@ -30,9 +31,12 @@ def create_synchronous_model(file, population_size):
     q (float): - probability to succeed in the second attempt
     ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
     """
-    filename = model_path / Path(file.split(".")[0] + ".pm")
-    file = open(filename, "w")
+
+    if ".pm" not in file:
+        file = file + ".pm"
+    filename = os.path.join(model_path, file)
     print(filename)
+    file = open(filename, "w")
 
     ## computing how many zeros to put
     decimals = math.ceil((math.log(population_size, 10)))
@@ -58,7 +62,9 @@ def create_synchronous_model(file, population_size):
 
     # module here
     file.write(f"module two_param_agents_{population_size}\n")
-    file.write(f"       // ai - state of agent i:  -1:init 0:total_failure 1:success 2:failure_after_first_attempt\n")
+    file.write(f"       // ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt\n")
+    file.write(f"       // where success denotes decision to sting, failure the opposite\n")
+    file.write(f"       // b = 1: 'final'/leaf/BSCC state flag\n")
     for i in range(population_size):
         file.write(f"       a{i} : [-1..2] init -1; \n")
     file.write(f"       b : [0..1] init 0; \n")
@@ -197,7 +203,9 @@ def create_semisynchronous_model(file, population_size):
     q (float): - probability to succeed in the second attempt
     ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
     """
-    filename = model_path / Path(file.split(".")[0] + ".pm")
+    if ".pm" not in file:
+        file = file + ".pm"
+    filename = os.path.join(model_path, file)
     file = open(filename, "w")
     print(filename)
 
@@ -225,7 +233,9 @@ def create_semisynchronous_model(file, population_size):
 
     # module here
     file.write(f"module two_param_agents_{population_size}\n")
-    file.write(f"       // ai - state of agent i:  -1:init 0:total_failure 1:success 2:failure_after_first_attempt\n")
+    file.write(f"       // ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt\n")
+    file.write(f"       // where success denotes decision to sting, failure the opposite\n")
+    file.write(f"       // b = 1: 'final'/leaf/BSCC state flag\n")
     for i in range(population_size):
         file.write(f"       a{i} : [-1..2] init -1; \n")
     file.write(f"       b : [0..1] init 0; \n")
@@ -384,7 +394,9 @@ def create_asynchronous_model(file, population_size):
     q (float): - probability to succeed in the second attempt
     ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
     """
-    filename = model_path / Path(file.split(".")[0] + ".pm")
+    if ".pm" not in file:
+        file = file + ".pm"
+    filename = os.path.join(model_path, file)
     file = open(filename, "w")
     print(filename)
 
@@ -399,7 +411,9 @@ def create_asynchronous_model(file, population_size):
 
     # module here
     file.write(f"module two_param_agents_{population_size}\n")
-    file.write(f"       // ai - state of agent i:  -1:init 0:total_failure 1:success 2:failure_after_first_attempt\n")
+    file.write(f"       // ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt\n")
+    file.write(f"       // where success denotes decision to sting, failure the opposite\n")
+    file.write(f"       // b = 1: 'final'/leaf/BSCC state flag\n")
     for i in range(population_size):
         file.write(f"       a{i} : [-1..2] init -1; \n")
     file.write(f"       b : [0..1] init 0; \n")
@@ -669,7 +683,9 @@ def create_multiparam_synchronous_model(file, population_size):
     q (float): - probability to succeed in the second attempt
     ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
     """
-    filename = model_path / Path(file.split(".")[0] + ".pm")
+    if ".pm" not in file:
+        file = file + ".pm"
+    filename = os.path.join(model_path, file)
     file = open(filename, "w")
     print(filename)
 
@@ -699,7 +715,9 @@ def create_multiparam_synchronous_model(file, population_size):
 
     # module here
     file.write(f"module multi_param_agents_{population_size}\n")
-    file.write(f"       // ai - state of agent i:  -1:init 0:total_failure 1:success 2:failure_after_first_attempt\n")
+    file.write(f"       // ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt\n")
+    file.write(f"       // where success denotes decision to sting, failure the opposite\n")
+    file.write(f"       // b = 1: 'final'/leaf/BSCC state flag\n")
     for i in range(population_size):
         file.write(f"       a{i} : [-1..2] init -1; \n")
     file.write(f"       b : [0..1] init 0; \n")
@@ -838,7 +856,9 @@ def create_multiparam_semisynchronous_model(file, population_size):
     q (float): - probability to succeed in the second attempt
     ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
     """
-    filename = model_path / Path(file.split(".")[0] + ".pm")
+    if ".pm" not in file:
+        file = file + ".pm"
+    filename = os.path.join(model_path, file)
     file = open(filename, "w")
     print(filename)
 
@@ -868,7 +888,9 @@ def create_multiparam_semisynchronous_model(file, population_size):
 
     # module here
     file.write(f"module multi_param_agents_{population_size}\n")
-    file.write(f"       // ai - state of agent i:  -1:init 0:total_failure 1:success 2:failure_after_first_attempt\n")
+    file.write(f"       // ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt\n")
+    file.write(f"       // where success denotes decision to sting, failure the opposite\n")
+    file.write(f"       // b = 1: 'final'/leaf/BSCC state flag\n")
     for i in range(population_size):
         file.write(f"       a{i} : [-1..2] init -1; \n")
     file.write(f"       b : [0..1] init 0; \n")
@@ -1029,7 +1051,9 @@ def create_multiparam_asynchronous_model(file, population_size):
     q (float): - probability to succeed in the second attempt
     ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
     """
-    filename = model_path / Path(file.split(".")[0] + ".pm")
+    if ".pm" not in file:
+        file = file + ".pm"
+    filename = os.path.join(model_path, file)
     file = open(filename, "w")
     print(filename)
 
@@ -1059,7 +1083,9 @@ def create_multiparam_asynchronous_model(file, population_size):
 
     # module here
     file.write(f"module multi_param_agents_{population_size}\n")
-    file.write(f"       // ai - state of agent i:  -1:init 0:total_failure 1:success 2:failure_after_first_attempt\n")
+    file.write(f"       // ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt\n")
+    file.write(f"       // where success denotes decision to sting, failure the opposite\n")
+    file.write(f"       // b = 1: 'final'/leaf/BSCC state flag\n")
     for i in range(population_size):
         file.write(f"       a{i} : [-1..2] init -1; \n")
     file.write(f"       b : [0..1] init 0; \n")
@@ -1329,7 +1355,9 @@ def create_bee_multiparam_synchronous_model(file, population_size):
     population_size (int):  number of agents (agents quantity)
     r_i (float): - probability of success of an agent when i amount of pheromone is present
     """
-    filename = model_path / Path(file.split(".")[0] + ".pm")
+    if ".pm" not in file:
+        file = file + ".pm"
+    filename = os.path.join(model_path, file)
     file = open(filename, "w")
     print(filename)
 
@@ -1358,7 +1386,10 @@ def create_bee_multiparam_synchronous_model(file, population_size):
 
     # Module here
     file.write(f"module multi_param_bee_agents_{population_size}\n")
-    file.write(f"       // ai - state of agent i: 3:init 1:success -j: failure when j amount of pheromone present \n")
+    file.write(f"       // Two types of states are present, b=0 and b=1, where b=0 flags inner/decision/nonleaf state and b=1 represents 'final'/leaf/BSCC state\n")
+    file.write(f"       // b = 0 => ai - state of agent i: 3:init, 1:success, (stinging), -j: failure (not stinging) when j amount of pheromone present \n")
+    file.write(f"       // b = 1 => ai - state of the agent i: 0: not stinging, 1:stinging\n")
+    file.write(f"       // this duality of ai meaning serves back-compatibility with properties from the old models\n")
     for i in range(population_size):
         file.write(f"       a{i} : [-{population_size - 1}..3] init 3; \n")
     file.write(f"       b : [0..1] init 0; \n")
@@ -1485,7 +1516,9 @@ def create_bee_multiparam_semisynchronous_model(file, population_size):
     population_size (int):  number of agents (agents quantity)
     r_i (float): - probability of success of an agent when i amount of pheromone is present
     """
-    filename = model_path / Path(file.split(".")[0] + ".pm")
+    if ".pm" not in file:
+        file = file + ".pm"
+    filename = os.path.join(model_path, file)
     file = open(filename, "w")
     print(filename)
 
@@ -1513,7 +1546,10 @@ def create_bee_multiparam_semisynchronous_model(file, population_size):
 
     # Module here
     file.write(f"module multi_param_bee_agents_{population_size}\n")
-    file.write(f"       // ai - state of agent i: 3:init 1:success -j: failure when j amount of pheromone present \n")
+    file.write(f"       // Two types of states are present, b=0 and b=1, where b=0 flags inner/decision/nonleaf state and b=1 represents 'final'/leaf/BSCC state\n")
+    file.write(f"       // b = 0 => ai - state of agent i: 3:init, 1:success, (stinging), -j: failure (not stinging) when j amount of pheromone present \n")
+    file.write(f"       // b = 1 => ai - state of the agent i: 0: not stinging, 1:stinging\n")
+    file.write(f"       // this duality of ai meaning serves back-compatibility with properties from the old models\n")
     for i in range(population_size):
         file.write(f"       a{i} : [-{population_size - 1}..3] init 3; \n")
     file.write(f"       b : [0..1] init 0; \n")
@@ -1724,3 +1760,19 @@ def create_rewards_prop():
     file.write('R{"mean"}=? [ F b=1] \n')
     file.write('R{"mean_squared"}=? [ F b=1] \n')
     file.close()
+
+
+if __name__ == '__main__':
+    for population in [2, 3, 5, 10, 15, 20, 30, 40]:
+        create_synchronous_model(f"/old_bee/synchronous/{population}_synchronous", population)
+        create_semisynchronous_model(f"/old_bee/semisynchronous/{population}_semisynchronous", population)
+        create_asynchronous_model(f"/old_bee/asynchronous/{population}_asynchronous", population)
+
+        create_multiparam_synchronous_model(f"/old_bee/synchronous/{population}_multiparam_synchronous", population)
+        create_multiparam_semisynchronous_model(f"/old_bee/semisynchronous/{population}_multiparam_semisynchronous", population)
+        create_multiparam_asynchronous_model(f"/old_bee/asynchronous/{population}_multiparam_asynchronous", population)
+
+        create_bee_multiparam_synchronous_model(f"/bee/synchronous/{population}_synchronous", population)
+        create_bee_multiparam_semisynchronous_model(f"/bee/semisynchronous/{population}_synchronous", population)
+
+        create_properties(population)
