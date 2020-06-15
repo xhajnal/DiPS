@@ -1457,6 +1457,12 @@ def create_bee_multiparam_synchronous_model(file, population_size):
                         file.write(f" + ")
                 file.write(f";\n")
 
+        # Selfloops in BSCCs
+        file.write(f"\n")
+        file.write(f"       // selfloops in BSCCs\n")
+        file.write(f"       []   b=1 -> 1:(b'=1);\n")
+        file.write(f"\n")
+
         file.write(f"endmodule \n")
         file.write(f"\n")
 
@@ -1604,14 +1610,23 @@ def create_bee_multiparam_semisynchronous_model(file, population_size):
             # print("solving state", state)
 
             ## Number of stinging bees
-            ones = state.count(1)
+            succes_count = state.count(1)
+            ## Number of not stinging bees
+            fails_count = population_size - succes_count
+
+            ## updatable not stinging bees
+            to_be_updated = list(filter(lambda x: x is not 1 and abs(x) < succes_count, state))
+            print("state", state)
+            print("to_be_updated", to_be_updated)
+            to_be_updated_count = len(to_be_updated)
+            print("to_be_updated_count", to_be_updated_count)
 
             ## Distinct bee states which failed
             distinct_fails = list(set(filter(lambda x: x is not 1, state)))
             ## Filter those who can be updated
             # print(distinct_fails)
-            distinct_fails = list(filter(lambda x: abs(x) < ones, distinct_fails))
-            # print(distinct_fails)
+            distinct_fails = list(filter(lambda x: abs(x) < succes_count, distinct_fails))
+            print("distinct_fails", distinct_fails)
 
             ## Double checking if at least one guy can be updated
             if not distinct_fails:
@@ -1627,16 +1642,18 @@ def create_bee_multiparam_semisynchronous_model(file, population_size):
 
             ## Probabilities and successor nodes
             for index, fail_value in enumerate(distinct_fails):
-                ## Current state value of the be to be updated
-                fail_value = abs(fail_value)
-                ## Number of the bees with the same state
+                ## Number of the bees with the value we update now
                 fail_value_count = state.count(fail_value)
+                print("fail_value_count", fail_value_count)
+                ## Current state value of the bee we update now
+                fail_value = abs(fail_value)
+                print("fail_value", fail_value)
 
                 for successes in [True, False]:
                     ## When more bees have DIFFERENT state it can be any of them
                     ## Putting equal probability of update for all possible updates
-                    if len(distinct_fails) > 1:
-                        file.write(f"1/{len(distinct_fails)} * ")
+                    if to_be_updated_count > 1:
+                        file.write(f"1/{to_be_updated_count} * ")
                     ## When more bees have THE SAME state it can be any of them
                     ## since we pick just one it is C(fail_value_count, 1) = fail_value_count
                     if fail_value_count > 1:
@@ -1644,15 +1661,15 @@ def create_bee_multiparam_semisynchronous_model(file, population_size):
 
                     ## The bee either stings (success) or not, hence 2 outgoing states
                     if successes:
-                        file.write(f"((r_{ones:0{decimals}d} - r_{fail_value:0{decimals}d})/(1 - r_{fail_value:0{decimals}d}))")
+                        file.write(f"((r_{succes_count:0{decimals}d} - r_{fail_value:0{decimals}d})/(1 - r_{fail_value:0{decimals}d}))")
                         new_state = list(state)
                         new_state[new_state.index(-fail_value)] = 1
                         new_state.sort(reverse=True)
                         # print("new state", new_state)
                     else:
-                        file.write(f"(1-(r_{ones:0{decimals}d} - r_{fail_value:0{decimals}d})/(1 - r_{fail_value:0{decimals}d}))")
+                        file.write(f"(1-(r_{succes_count:0{decimals}d} - r_{fail_value:0{decimals}d})/(1 - r_{fail_value:0{decimals}d}))")
                         new_state = list(state)
-                        new_state[new_state.index(-fail_value)] = - ones
+                        new_state[new_state.index(-fail_value)] = - succes_count
                         new_state.sort(reverse=True)
                         # print("new state", new_state)
                     file.write(f": ")
@@ -1670,6 +1687,12 @@ def create_bee_multiparam_semisynchronous_model(file, population_size):
                     file.write(f";\n")
                 else:
                     file.write(f"+")
+
+        # Selfloops in BSCCs
+        file.write(f"\n")
+        file.write(f"       // selfloops in BSCCs\n")
+        file.write(f"       []   b=1 -> 1:(b'=1);\n")
+        file.write(f"\n")
 
         file.write(f"endmodule \n")
         file.write(f"\n")
@@ -1754,6 +1777,8 @@ if __name__ == '__main__':
         create_multiparam_asynchronous_model(f"old_bee/asynchronous/{population}_multiparam_asynchronous", population)
 
         create_bee_multiparam_synchronous_model(f"bee/synchronous/{population}_synchronous", population)
-        create_bee_multiparam_semisynchronous_model(f"bee/semisynchronous/{population}_synchronous", population)
+        # This is a time consuming operation:
+        create_bee_multiparam_semisynchronous_model(f"bee/semisynchronous/{population}_semisynchronous", population)
 
         create_properties(population)
+    print("Done")
