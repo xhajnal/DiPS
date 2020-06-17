@@ -323,8 +323,10 @@ def visualise_by_param(hyper_rectangles, colour='g', title="", where=False):
 
     Args:
         hyper_rectangles (list of (hyper)rectangles)
-        title (string):  title used for the Figure
+        colour (string): colour of the lines in the figure
+        title (string): title used for the figure
         where (tuple/list): output matplotlib sources to output created figure
+
     """
     from sympy import Interval
 

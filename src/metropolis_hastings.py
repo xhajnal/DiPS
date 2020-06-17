@@ -26,14 +26,14 @@ class HastingsResults:
     """ Class to represent Metropolis Hastings results"""
 
     def __init__(self, params, theta_init, accepted, observations_count: int, observations_samples_count: int,
-                 MH_sampling_iterations: int, eps, show=75, pretitle="", title="", bins=20, last_iter=0, timeout=0, time_it_took=0):
+                 mh_sampling_iterations: int, eps, show=75, pretitle="", title="", bins=20, last_iter=0, timeout=0, time_it_took=0):
         """
         Args:
             params (list of strings): parameter names
             accepted (np.array): accepted points
             observations_count (int): total number of observations
             observations_samples_count (int): sample size from the observations
-            MH_sampling_iterations (int): number of iterations/steps in searching in space
+            mh_sampling_iterations (int): number of iterations/steps in searching in space
             eps (number): very small value used as probability of non-feasible values in prior
             show (number): shows last given percent of accepted points (trim burn-in period)
             pretitle (string): title to be put in front of title
@@ -46,11 +46,12 @@ class HastingsResults:
 
         ## Results
         self.accepted = accepted
+        # self.rejected = rejected
 
         ## Results setting
         self.observations_count = observations_count
         self.observations_samples_count = observations_samples_count
-        self.MH_sampling_iterations = MH_sampling_iterations
+        self.mh_sampling_iterations = mh_sampling_iterations
         self.eps = eps
 
         self.show = show
@@ -99,7 +100,7 @@ class HastingsResults:
             if self.last_iter > 0:
                 self.title = f'Estimate of MH algorithm, {niceprint(self.last_iter)} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n showing last {self.show}% of {niceprint(self.accepted.shape[0])} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
             else:
-                self.title = f'Estimate of MH algorithm, {niceprint(self.MH_sampling_iterations)} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n showing last {self.show}% of {niceprint(self.accepted.shape[0])} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
+                self.title = f'Estimate of MH algorithm, {niceprint(self.mh_sampling_iterations)} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n showing last {self.show}% of {niceprint(self.accepted.shape[0])} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
 
         if debug:
             print("self.accepted[show:, 0]", self.accepted[show:, 0])
@@ -257,7 +258,7 @@ def acceptance(x_likelihood, x_new_likelihood):
         return accept < (np.exp(x_new_likelihood - x_likelihood))
 
 
-def metropolis_hastings(likelihood_computer, prior, transition_model, param_init, iterations, space, observations,
+def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param_init, iterations, space, observations,
                         acceptance_rule, parameter_intervals, functions, eps, progress=False, timeout=-1, debug=False):
     """ The core method of the Metropolis Hasting
 
@@ -319,7 +320,7 @@ def metropolis_hastings(likelihood_computer, prior, transition_model, param_init
             globals()["results"].time_it_took = time() - globals()["start_time"]
             break
 
-    globals()["results"].time_it_took = time() - globals()["start_time"]
+    globals()["mh_results"].time_it_took = time() - globals()["start_time"]
     return np.array(accepted), np.array(rejected)
 
 
@@ -375,7 +376,7 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
 
 
 def initialise_sampling(space: RefinedSpace, observations, functions, observations_count: int,
-                        observations_samples_size: int, MH_sampling_iterations: int, eps,
+                        observations_samples_size: int, mh_sampling_iterations: int, eps,
                         theta_init=False, where=False, progress=False, show=False, bins=20, timeout=False, debug=False):
     """ Initialisation method for Metropolis Hastings
 
@@ -385,7 +386,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         functions (list of strings):
         observations_count (int): total number of observations
         observations_samples_size (int): sample size from the observations
-        MH_sampling_iterations (int): number of iterations/steps in searching in space
+        mh_sampling_iterations (int): number of iterations/steps in searching in space
         eps (number): very small value used as probability of non-feasible values in prior
         theta_init (list of numbers): initial parameter point
         where (tuple/list): output matplotlib sources to output created figure
@@ -405,7 +406,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
 
     observations_samples_size = min(observations_count, observations_samples_size)
     ##                     HastingsResults ( params, theta_init, accepted, observations_count, observations_samples_count, MH_sampling_iterations, eps, show,      pretitle, title, bins, last_iter,  timeout, time_it_took, rescale):
-    globals()["results"] = HastingsResults(space.params, theta_init, False, observations_count, observations_samples_size, MH_sampling_iterations, eps, show=show, title="", bins=bins, last_iter=0, timeout=timeout)
+    globals()["mh_results"] = HastingsResults(space.params, theta_init, False, observations_count, observations_samples_size, mh_sampling_iterations, eps, show=show, title="", bins=bins, last_iter=0, timeout=timeout)
 
     ## TODO check this
     # ## Convert z3 functions
@@ -488,21 +489,20 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     print("Initial parameter point: ", theta_init)
 
     ##                                      (likelihood_computer,    prior, transition_model,   param_init, iterations,             space,    data, acceptance_rule, parameter_intervals, functions, eps, progress,          timeout,         debug):
-    accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, MH_sampling_iterations, space, observations, acceptance, parameter_intervals, functions, eps, progress=progress, timeout=timeout, debug=debug)
+    accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, mh_sampling_iterations, space, observations, acceptance, parameter_intervals, functions, eps, progress=progress, timeout=timeout, debug=debug)
 
-    globals()["results"].accepted = accepted
+    globals()["mh_results"].accepted = accepted
 
     print("accepted.shape", accepted.shape)
     if len(accepted) == 0:
         return False, False
 
-    ## TODO dump the class instead
-    print(f"Set of accepted and rejected points is stored here: {tmp_dir}")
+    print(f"Set of accepted and rejected points is stored here: {tmp_dir}/[accepted/rejected]_{observations_samples_size}.p")
     pickle.dump(accepted, open(os.path.join(tmp_dir, f"accepted_{observations_samples_size}.p"), 'wb'))
     pickle.dump(rejected, open(os.path.join(tmp_dir, f"rejected_{observations_samples_size}.p"), 'wb'))
 
-    # accepted = pickle.load(open(os.path.join(tmp_dir, f"accepted_{N_obs}.p"), "rb"))
-    # rejected = pickle.load(open(os.path.join(tmp_dir, f"rejected_{N_obs}.p"), "rb"))
+    print(f"Whole class is stored here: {tmp_dir}/mh_class.p")
+    pickle.dump(globals()["mh_results"], open(os.path.join(tmp_dir, f"mh_class.p"), 'wb'))
 
     # print("accepted", accepted)
     # to_show = accepted.shape[0]
@@ -523,7 +523,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         ax.legend()
         plt.show()
 
-    globals()["results"].show = show
+    globals()["mh_results"].show = show
 
     ## Create TODO add name plot @Tanja
     if not where:
@@ -551,6 +551,6 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     ## Option 2 - https://stackoverflow.com/questions/29175093/creating-a-log-linear-plot-in-matplotlib-using-hist2d
     ## No scale
     if where:
-        return globals()["results"]
+        return globals()["mh_results"]
     else:
-        globals()["results"].show_mh_heatmap(where=where)
+        globals()["mh_results"].show_mh_heatmap(where=where)
