@@ -214,7 +214,7 @@ class RefinedSpace:
         ## TEXT WRAPPER
         self.wrapper = DocumentWrapper(width=70)
 
-    def show(self, title="", green=False, red=True, sat_samples=False, unsat_samples=False, true_point=True, save=False, where=False, show_all=True, prefer_unsafe=None):
+    def show(self, title="", green=True, red=True, sat_samples=False, unsat_samples=False, true_point=True, save=False, where=False, show_all=True, prefer_unsafe=None):
         """ Visualises the space
 
         Args:

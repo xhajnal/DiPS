@@ -755,9 +755,8 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                         ## If the visualisation of the space did not succeed space_shown = (None, error message)
                         space_coverage = space.get_coverage()
                         if not where:
-                            space_shown = space.show(
-                                f"max_recursion_depth:{next_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version} \n Refinement took {socket.gethostname()} {round(time() - single_rectangle_start_time)} second(s)",
-                                save=save, where=where, show_all=not gui)
+                            space_shown = space.show(title=f"max_recursion_depth:{next_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version} \n Refinement took {socket.gethostname()} {round(time() - single_rectangle_start_time)} second(s)",
+                                                     green=True, red=True, save=save, where=where, show_all=not gui)
                         if not silent:
                             print()
                         if space_coverage >= coverage:
@@ -813,7 +812,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
 
             space_coverage = space.get_coverage()
             if not where:
-                space_shown = space.show(f"max_recursion_depth:{next_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version} \n Refinement took {socket.gethostname()} {round(time() - single_rectangle_start_time)} second(s)", save=save, where=where, show_all=not gui)
+                space_shown = space.show(title=f"max_recursion_depth:{next_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version} \n Refinement took {socket.gethostname()} {round(time() - single_rectangle_start_time)} second(s)", green=True, red=True, save=save, where=where, show_all=not gui)
             if not silent:
                 print()
             if space_coverage >= coverage:
@@ -825,11 +824,11 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         ## If the visualisation of the space did not succeed space_shown = (None, error message)
         if show_space:
             space.refinement_took(time() - start_time)
-            space_shown = space.show(f"max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version} \n Last refinement took {socket.gethostname()} {round(time() - start_time, 2)} of {round(space.time_refinement, 2)} second(s)", sat_samples=gui and len(space.params) <= 2, unsat_samples=gui and len(space.params) <= 2, save=save, where=where, show_all=not gui)
+            space_shown = space.show(title=f"max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version} \n Last refinement took {socket.gethostname()} {round(time() - start_time, 2)} of {round(space.time_refinement, 2)} second(s)", green=True, red=True, sat_samples=gui and len(space.params) <= 2, unsat_samples=gui and len(space.params) <= 2, save=save, where=where, show_all=not gui)
     else:  ## TODO THIS IS A HOTFIX
         if show_space:
             space.refinement_took(time() - start_time)
-            space_shown = space.show(f"max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version} \n Last refinement took {socket.gethostname()} {round(time() - start_time, 2)} of {round(space.time_refinement, 2)} second(s)", sat_samples=gui and len(space.params) <= 2, unsat_samples=gui and len(space.params) <= 2, save=save, where=where, show_all=not gui)
+            space_shown = space.show(title=f"max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version} \n Last refinement took {socket.gethostname()} {round(time() - start_time, 2)} of {round(space.time_refinement, 2)} second(s)", green=True, red=True, sat_samples=gui and len(space.params) <= 2, unsat_samples=gui and len(space.params) <= 2, save=save, where=where, show_all=not gui)
     print(colored(f"Result coverage is: {space_coverage}", "blue"))
     print(colored(f"Refinement took: {space.time_last_refinement} seconds", "blue"))
     if where:
