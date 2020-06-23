@@ -721,8 +721,8 @@ class RefinedSpace:
             try:
                 x_size = self.region[0][1] - self.region[0][0]
                 y_size = self.region[1][1] - self.region[1][0]
-                x_size_correction = min(1 / (len(self.sat_samples) + len(self.unsat_samples)) ** (1 / len(self.region)), 0.01 * x_size)
-                y_size_correction = min(1 / (len(self.sat_samples) + len(self.unsat_samples)) ** (1 / len(self.region)), 0.01 * y_size)
+                x_size_correction = min(1 / (len(self.sat_samples) + len(self.unsat_samples)) ** (1 / len(self.region)), 0.01) * x_size
+                y_size_correction = min(1 / (len(self.sat_samples) + len(self.unsat_samples)) ** (1 / len(self.region)), 0.01) * y_size
             except:
                 print("len(self.sat_samples)", len(self.sat_samples))
                 print("len(self.unsat_samples)", len(self.unsat_samples))
