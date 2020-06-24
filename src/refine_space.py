@@ -1192,14 +1192,14 @@ def private_check_deeper_queue_checking(region, constraints, recursion_depth, ep
         model_low[0] = None
         model_high[0] = None
     else:
-        if float(eval(example_points[index])) > low + (high - low) / 2:
+        if example_points[index] > low + (high - low) / 2:  ## skipped converting example point to float
             model_low[0] = None
             model_high[0] = example
         else:
             model_low[0] = example
             model_high[0] = None
         ## Overwrite if equal
-        if float(eval(example_points[index])) == low + (high - low) / 2:
+        if example_points[index] == low + (high - low) / 2:  ## skipped converting example point to float
             model_low[0] = None
             model_high[0] = None
 
@@ -1351,14 +1351,14 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
         model_low[0] = None
         model_high[0] = None
     else:
-        if float(example_points[index]) > low + (high - low) / 2:
+        if example_points[index] > low + (high - low) / 2:  ## skipped converting example point to float
             model_low[0] = None
             model_high[0] = example
         else:
             model_low[0] = example
             model_high[0] = None
         ## Overwrite if equal
-        if float(example_points[index]) == low + (high - low) / 2:
+        if example_points[index] == low + (high - low) / 2:  ## skipped converting example point to float
             model_low[0] = None
             model_high[0] = None
 
@@ -1366,7 +1366,7 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
         model_low[1] = None
         model_high[1] = None
     else:
-        if float(counterexample_points[index]) > low + (high - low) / 2:
+        if counterexample_points[index] > low + (high - low) / 2:  ## skipped converting example point to float
             model_low[1] = None
             model_high[1] = counterexample
         else:
@@ -1374,7 +1374,7 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
             model_high[1] = None
 
         ## Overwrite if equal
-        if float(counterexample_points[index]) == low + (high - low) / 2:
+        if counterexample_points[index] == low + (high - low) / 2:  ## skipped converting example point to float
             model_low[1] = None
             model_high[1] = None
 
