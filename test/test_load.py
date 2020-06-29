@@ -1,6 +1,7 @@
 import unittest
 from src.load import *
 cwd = os.getcwd()
+test = cwd
 model_dir = os.path.join(cwd, "models")
 prism_results = os.path.join(cwd, "prism_results")
 storm_results = os.path.join(cwd, "storm_results")
@@ -13,27 +14,33 @@ class MyTestCase(unittest.TestCase):
 
     def test_find_param(self):
         print(colored('Parse parameters from a string', 'blue'))
-        self.assertEqual(find_param("56*4+4**6 +   0.1"), set())
-        self.assertEqual(find_param("x+0.1"), {'x'})
-        self.assertEqual(find_param("p**2-2*p+1"), {'p'})
-        self.assertEqual(find_param("p ** 2 - 2 * p + 1"), {'p'})
-        self.assertEqual(find_param("(-2)*q1*p**2+2*q1*p+2*p"), {'p', 'q1'})
-        self.assertEqual(find_param('-p*(2*p*If(Or(low<1,1<=high),qmin,qmax)-p-2*If(Or(low<1,1<=high),qmin,qmax))'), {'qmin', 'p', 'low', 'qmax', 'high'})
-        self.assertEqual(find_param('10*p*(p - 1)**9*( If ( Or( low < 1 , 1 <= high), qmin, qmax) - 1)**9'), {'p', 'low', "high", "qmin", "qmax"})
-        for polynome in ['p**2-2*p+1>=0.255810035160231', 'p**2-2*p+1<=0.453332821982626', '2*q*p**2-2*p**2-2*q*p+2*p>=0.339105082511199', '2*q*p**2-2*p**2-2*q*p+2*p<=0.543752060345944', '(-2)*q*p**2+p**2+2*q*>=0.120019530949760', '(-2)*q*p**2+p**2+2*q*<=0.287980469050240']:
-            print(find_param(polynome))
+        start_time = time()
+        for i in range(1):
+            self.assertEqual(find_param("56*4+4**6 +   0.1"), set())
+            self.assertEqual(find_param("x+0.1"), {'x'})
+            self.assertEqual(find_param("p**2-2*p+1"), {'p'})
+            self.assertEqual(find_param("p ** 2 - 2 * p + 1"), {'p'})
+            self.assertEqual(find_param("(-2)*q1*p**2+2*q1*p+2*p"), {'p', 'q1'})
+            self.assertEqual(find_param('-p*(2*p*If(Or(low<1,1<=high),qmin,qmax)-p-2*If(Or(low<1,1<=high),qmin,qmax))'), {'qmin', 'p', 'low', 'qmax', 'high'})
+            self.assertEqual(find_param('10*p*(p - 1)**9*( If ( Or( low < 1 , 1 <= high), qmin, qmax) - 1)**9'), {'p', 'low', "high", "qmin", "qmax"})
+            for polynome in ['p**2-2*p+1>=0.255810035160231', 'p**2-2*p+1<=0.453332821982626', '2*q*p**2-2*p**2-2*q*p+2*p>=0.339105082511199', '2*q*p**2-2*p**2-2*q*p+2*p<=0.543752060345944', '(-2)*q*p**2+p**2+2*q*>=0.120019530949760', '(-2)*q*p**2+p**2+2*q*<=0.287980469050240']:
+                print(find_param(polynome))
+        print(time()-start_time)
 
     def test_find_param_old(self):
         print(colored('Parse parameters from a string', 'blue'))
-        self.assertEqual(find_param_old("56*4+4**6 +   0.1"), set())
-        self.assertEqual(find_param_old("x+0.1"), {'x'})
-        self.assertEqual(find_param_old("p**2-2*p+1"), {'p'})
-        self.assertEqual(find_param_old("p ** 2 - 2 * p + 1"), {'p'})
-        self.assertEqual(find_param_old("(-2)*q1*p**2+2*q1*p+2*p"), {'p', 'q1'})
-        self.assertEqual(find_param_old('-p*(2*p*If(Or(low<1,1<=high),qmin,qmax)-p-2*If(Or(low<1,1<=high),qmin,qmax))'), {'qmin', 'p', 'low', 'qmax', 'high'})
-        self.assertEqual(find_param_old('10*p*(p - 1)**9*( If ( Or( low < 1 , 1 <= high), qmin, qmax) - 1)**9'), {'p', 'low', "high", "qmin", "qmax"})
-        for polynome in ['p**2-2*p+1>=0.255810035160231', 'p**2-2*p+1<=0.453332821982626', '2*q*p**2-2*p**2-2*q*p+2*p>=0.339105082511199', '2*q*p**2-2*p**2-2*q*p+2*p<=0.543752060345944', '(-2)*q*p**2+p**2+2*q*>=0.120019530949760', '(-2)*q*p**2+p**2+2*q*<=0.287980469050240']:
-            print(find_param_old(polynome))
+        start_time = time()
+        for i in range(1):
+            self.assertEqual(find_param_old("56*4+4**6 +   0.1"), set())
+            self.assertEqual(find_param_old("x+0.1"), {'x'})
+            self.assertEqual(find_param_old("p**2-2*p+1"), {'p'})
+            self.assertEqual(find_param_old("p ** 2 - 2 * p + 1"), {'p'})
+            self.assertEqual(find_param_old("(-2)*q1*p**2+2*q1*p+2*p"), {'p', 'q1'})
+            self.assertEqual(find_param_old('-p*(2*p*If(Or(low<1,1<=high),qmin,qmax)-p-2*If(Or(low<1,1<=high),qmin,qmax))'), {'qmin', 'p', 'low', 'qmax', 'high'})
+            self.assertEqual(find_param_old('10*p*(p - 1)**9*( If ( Or( low < 1 , 1 <= high), qmin, qmax) - 1)**9'), {'p', 'low', "high", "qmin", "qmax"})
+            for polynome in ['p**2-2*p+1>=0.255810035160231', 'p**2-2*p+1<=0.453332821982626', '2*q*p**2-2*p**2-2*q*p+2*p>=0.339105082511199', '2*q*p**2-2*p**2-2*q*p+2*p<=0.543752060345944', '(-2)*q*p**2+p**2+2*q*>=0.120019530949760', '(-2)*q*p**2+p**2+2*q*<=0.287980469050240']:
+                print(find_param_old(polynome))
+        print(time() - start_time)
 
     def test_get_f(self):
         print(colored('Parse nonrewards from a given file', 'blue'))
@@ -75,30 +82,10 @@ class MyTestCase(unittest.TestCase):
         agents_quantities = [3, 5]
         self.assertEqual(load_all_functions(os.path.join(storm_results, "asynchronous_*.txt"), "storm", False, agents_quantities), (get_all_f(os.path.join(storm_results, "asynchronous_*.txt"), "storm", False, agents_quantities), get_all_rewards(os.path.join(storm_results, "asynchronous_*.txt"), "storm", False, agents_quantities)))
 
-    def test_margins(self):
-        print(colored('Margin/delta computing', 'blue'))
-        ## TODO
-        pass
-
-    def test_create_interval(self):
-        print(colored('Single interval computing', 'blue'))
-        ## TODO
-        pass
-
-    def test_create_intervals(self):
-        print(colored('Multiple intervals computing', 'blue'))
-        ## TODO
-        pass
-
-    def test_catch_data_error(self):
-        print(colored('Catching subzero values in data', 'blue'))
-        ## TODO
-        pass
-
     def test_load_data(self):
         print(colored('Parsing single data file', 'blue'))
-        ## TODO
-        pass
+        self.assertEqual(load_data(os.path.join(test, "data/data.csv")), [0.04, 0.02, 0.94])
+        self.assertEqual(load_pickled_data(os.path.join(test, "data/data.p")), [0.8166666667, 0.1166666667, 0.06666666667])
 
     def test_load_all_data(self):
         print(colored('Parsing multiple data files', 'blue'))

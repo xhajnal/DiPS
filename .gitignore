@@ -131,6 +131,8 @@ properties/*
 data/*
 !data/example/
 
+performance_test/backup*
+
 results/data_intervals/*
 results/constraints/*
 results/prism_results/*
@@ -139,10 +141,13 @@ results/performance_results/*
 results/optimisation_results/*
 results/figures/*
 results/mh_results/*
+results/sampling_results/*
 results/refinement_results/*
 
 src/test/*
 src/other_sources/*
+
+gui_test
 
 test/_trial_*
 

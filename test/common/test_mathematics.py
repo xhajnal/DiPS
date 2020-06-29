@@ -51,6 +51,7 @@ class MyTestCase(unittest.TestCase):
         pass
 
     def test_catch_data_error(self):
+        print(colored('Catching subzero values in data', 'blue'))
         ## upper
         a = {2: [0, 3, 5]}
         catch_data_error(a, 0, 4)
@@ -76,15 +77,19 @@ class MyTestCase(unittest.TestCase):
         catch_data_error(a, 0, 4)
         self.assertEqual(a, [0, 3, 4])
 
-    def test_create_intervals(self):
+    def test_create_interval(self):
+        print(colored('Single interval computing', 'blue'))
         # TODO
         pass
 
-    def test_create_interval(self):
+    def test_create_intervals(self):
+        print(colored('Multiple intervals computing', 'blue'))
+
         # TODO
         pass
 
     def test_margin(self):
+        print(colored('Margin/delta computing', 'blue'))
         # TODO
         pass
 
