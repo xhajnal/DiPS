@@ -4,6 +4,8 @@ import pickle
 import copy
 import re
 from pathlib import Path
+from time import time
+
 from termcolor import colored
 from sympy import factor
 
@@ -37,6 +39,9 @@ def load_functions(file_path, tool="unknown", factorize=True, rewards_only=False
         f (list of strings): rational functions for each property
         rewards (list of strings): rational functions for each reward
     """
+
+    ## Time statistics
+    time_to_factorise = 0
 
     ## Setting the current directory
     if not Path(file_path).is_absolute():
@@ -113,25 +118,34 @@ def load_functions(file_path, tool="unknown", factorize=True, rewards_only=False
                 if here == "r" and not f_only:
                     # print(f"formula: {i+1}", line)
                     if factorize:
+                        start_time = time()
                         try:
                             rewards.append(str(factor(line)))
                         except TypeError:
                             print("Error while factorising rewards, used not factorised instead")
                             rewards.append(line)
                             # os.chdir(cwd)
+                        finally:
+                            time_to_factorise = time_to_factorise + (time() - start_time)
                     else:
                         rewards.append(line)
                 elif not here == "r" and not rewards_only:
                     # print(f"formula: {i+1}", line[:-1])
                     if factorize:
+                        start_time = time()
                         try:
                             f.append(str(factor(line)))
                         except TypeError:
                             print(f"Error while factorising polynomial f[{i + 1}], used not factorised instead")
                             f.append(line)
+                        finally:
+                            time_to_factorise = time_to_factorise + (time() - start_time)
                     else:
                         f.append(line)
             line_index = line_index + 1
+
+    if factorize:
+        print(colored(f"Factorisation took {time_to_factorise} seconds", "blue"))
     return f, rewards
 
 
@@ -441,7 +455,10 @@ def load_pickled_data(file):
     Args:
         file (string): filename of the data to be loaded
     """
-    return pickle.load(open(os.path.join(data_path, file + ".p"), "rb"))
+    if ".p" in file:
+        return pickle.load(open(os.path.join(data_path, file), "rb"))
+    else:
+        return pickle.load(open(os.path.join(data_path, file + ".p"), "rb"))
 
 
 #######################
@@ -556,13 +573,13 @@ def find_param_old(polynomial, debug: bool = False):
 
     parameters = parameters.replace('(', '').replace(')', '').replace('**', '*').replace(' ', '')
     ## replace python expressions
-    parameters = parameters.replace("if", " ").replace("else", " ").replace("elif", " ")
-    parameters = parameters.replace("not", " ").replace("or", " ").replace("and", " ")
-    parameters = parameters.replace("min", " ").replace("max", " ")
+    parameters = re.sub(r"([^a-z, A-Z])(if|else|elif|not|or|and|min|max)", r"\1", parameters)
+    # parameters = parameters.replace("not", " ").replace("or", " ").replace("and", " ")
+    # parameters = parameters.replace("min", " ").replace("max", " ")
+
     ## Replace z3 expression
-    parameters = parameters.replace("Not", " ").replace("Or", " ").replace("And", " ").replace("Implies", " ")
-    parameters = parameters.replace("If", " ").replace(',', ' ')
-    parameters = parameters.replace("<", " ").replace(">", " ").replace("=", " ")
+    parameters = re.sub(r"(Not|Or|And|Implies|If|,|<|>|=)", " ", parameters)
+
     parameters = re.split('\+|\*|\-|/| ', parameters)
     parameters = [i for i in parameters if not i.replace('.', '', 1).isdigit()]
     parameters = set(parameters)

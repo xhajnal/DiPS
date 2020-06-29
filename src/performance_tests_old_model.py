@@ -29,14 +29,6 @@ for population_size in populations:
     functions[population_size] = get_f(os.path.join(test, f"data/synchronous_{population_size}.txt"), "prism", True)
 print(f"  It took {socket.gethostname()} {time.time() - start_time} seconds to load polynomials")
 
-## GET TO THE RIGHT DIRECTORY
-os.chdir("..")
-try:
-    os.mkdir("performance_results")
-except:
-    print("Folder performance_results probably already exists")
-os.chdir("performance_results")
-
 ## LOAD PARAMETER VALUES
 p_values = sorted([0.028502714675268215, 0.45223461506339047, 0.8732745414252937, 0.6855555397734584, 0.13075717833714784])
 q_values = sorted([0.5057623641293089, 0.29577906622244676, 0.8440550299528644, 0.8108008054929994, 0.03259111103419188])
