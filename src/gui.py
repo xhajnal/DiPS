@@ -237,7 +237,7 @@ class Gui(Tk):
         self.show_mh_as_scatter = BooleanVar()  ## Sets the MH plot to scatter plot (even for 2D)
 
         ## Settings/data
-        # self.alpha = ""  ## Confidence
+        # self.C = ""  ## Confidence level
         # self.n_samples = ""  ## Number of samples
         self.program = StringVar()  ## "prism"/"storm"
         self.max_depth = ""  ## Max recursion depth
@@ -518,20 +518,20 @@ class Gui(Tk):
         button41.grid(row=3, column=0, sticky=W, padx=4, pady=4)
         createToolTip(button41, text='using regression')
 
-        label42 = Label(frame_left, text="Set alpha, the confidence:", anchor=W, justify=LEFT)
+        label42 = Label(frame_left, text="Set C, confidence level:", anchor=W, justify=LEFT)
         label42.grid(row=4)
         createToolTip(label42, text='confidence')
         label43 = Label(frame_left, text="Set n_samples, number of samples: ", anchor=W, justify=LEFT)
         label43.grid(row=5)
         createToolTip(label43, text='number of samples')
 
-        self.alpha_entry = Entry(frame_left)
+        self.confidence_entry = Entry(frame_left)
         self.n_samples_entry = Entry(frame_left)
 
-        self.alpha_entry.grid(row=4, column=1)
+        self.confidence_entry.grid(row=4, column=1)
         self.n_samples_entry.grid(row=5, column=1)
 
-        self.alpha_entry.insert(END, '0.90')
+        self.confidence_entry.insert(END, '0.90')
         self.n_samples_entry.insert(END, '60')
 
         Button(frame_left, text='Compute intervals', command=self.compute_data_intervals).grid(row=6, column=0, sticky=W, padx=4, pady=4)
@@ -2807,9 +2807,9 @@ class Gui(Tk):
 
         print("Creating intervals ...")
         self.status_set("Create interval - checking inputs")
-        if self.alpha_entry.get() == "":
+        if self.confidence_entry.get() == "":
             messagebox.showwarning("Creating intervals",
-                                   "Choose alpha, the confidence measure before creating intervals.")
+                                   "Choose C, confidence level, before creating intervals.")
             return
 
         if self.n_samples_entry.get() == "":
@@ -2826,7 +2826,7 @@ class Gui(Tk):
         self.parse_data_from_window()
 
         self.status_set("Intervals are being created ...")
-        self.data_intervals = create_intervals(float(self.alpha_entry.get()), int(self.n_samples_entry.get()), self.data)
+        self.data_intervals = create_intervals(float(self.confidence_entry.get()), int(self.n_samples_entry.get()), self.data)
 
         intervals = ""
         if not self.silent.get():

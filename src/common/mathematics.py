@@ -14,6 +14,8 @@ def nCr(n, k):
         n (int):
         k (int):
     """
+    if n < k:
+        return 0
     f = math.factorial
     return f(n) / f(k) / f(n - k)
 
@@ -22,7 +24,7 @@ def catch_data_error(data, minimum, maximum):
     """ Corrects all data value to be in range min,max
 
     Args:
-        data (dict): structure of data
+        data (dict or list): structure of data
         minimum (float): minimal value in data to be set to
         maximum (float): maximal value in data to be set to
     """
@@ -41,59 +43,133 @@ def catch_data_error(data, minimum, maximum):
                 data[i] = maximum
 
 
-def create_intervals(alpha, n_samples, data):
+def create_intervals(confidence, n_samples, data):
     """ Returns intervals of data_point +- margin
 
     Args:
-        alpha (float): confidence interval to compute margin
+        confidence (float): confidence level, C
         n_samples (int): number of samples to compute margin
         data (list of floats): values to be margined
     """
     intervals = []
     if not isinstance(data, Iterable):
-        return [create_interval(alpha, n_samples, data)]
+        return [create_interval(confidence, n_samples, data)]
     for data_point in data:
-        intervals.append(create_interval(alpha, n_samples, data_point))
+        intervals.append(create_interval(confidence, n_samples, data_point))
     return intervals
 
 
-def create_interval(alpha, n_samples, data_point):
+def create_interval_NEW(confidence, samples=False, n_samples=False, mean=False, s=False, true_std=False, is_prob=False, is_normal=False, side="both"):
+    """ Returns confidence interval of mean based on samples
+
+        Args:
+            confidence (float): confidence level, C
+            samples (list of numbers): samples
+            n_samples (int): number of samples (not necessary if the samples are provided)
+            mean (float): mean of samples (not necessary if the samples are provided)
+            s (float): standard deviation of sample
+            true_std (float): population standard deviation (sigma) (False if not known)
+            is_prob (Bool): marks that the we estimate CI for probability values
+            is_normal (Bool): marks that population follows normal distribution
+            side (string): choose which side estimate you want ("both"/"left"/"right")
+
+        Returns:
+            confidence interval of mean
+        """
+
+    if samples:
+        n_samples = len(samples)
+        mean = float(np.mean(samples))
+        s = float(np.std(samples))
+        std_err = float(st.sem(samples))
+    else:
+        if s is False and n_samples < 30:
+            raise Exception("confidence intervals", "Missing standard deviation to estimate mean with less than 30 samples.")
+        else:
+            std_err = s / math.sqrt(n_samples)
+
+    if side == "both":
+        alpha = (1 - confidence) / 2
+        z = st.norm.ppf(1 - (1 - confidence) / 2)
+        t = st.t.ppf((1 + confidence) / 2, n_samples - 1)
+    else:
+        alpha = (1 - confidence)
+        z = st.norm.ppf(1 - (1 - confidence))
+        t = st.t.ppf((1 + confidence), n_samples - 1)
+
+    if is_prob:  ## CI for probabilities
+        if mean == 0:  ## Rule of three
+            return Interval(0, 3/n_samples)
+        elif mean == 1:  ## Rule of three
+            return Interval(1 - 3/n_samples, 1)
+        elif n_samples >= 30:  ##  Binomial proportion confidence interval: Normal/Gaussian distribution of the proportion: https://machinelearningmastery.com/confidence-intervals-for-machine-learning/
+            h = z * math.sqrt((mean * (1 - mean)) / n_samples)
+        elif n_samples < 30:
+            interval = st.bayes_mvs(samples, confidence)[0][1]  ## 0 is the mean, 1 is the interval estimate
+            return Interval(interval[0], interval[1])
+            ## h = t * math.sqrt((mean * (1 - mean)) / n_samples) ## TODO, check this
+    else:      ## CI for usual values
+        if (n_samples >= 30 or is_normal) and true_std is not False:  ## use Normal Distribution
+            h = z * true_std / math.sqrt(n_samples)
+        elif is_normal:  ## use Student distribution
+            # h = t * s / math.sqrt(n_samples)
+            h = t * std_err
+        else:
+            interval = st.bayes_mvs(samples, confidence)[0][1]  ## 0 is the mean, 1 is the interval estimate
+            return Interval(interval[0], interval[1])
+
+    h = float(h)
+    if side == "both":
+        return Interval(mean - h, mean + h)
+    elif side == "right":
+        if is_prob:
+            return Interval(0, mean + h)
+        else:
+            return Interval(float('-inf'), mean + h)
+    else:
+        if is_prob:
+            return Interval(mean - h, 1)
+        else:
+            return Interval(mean - h, float('inf'))
+
+
+def create_interval(confidence, n_samples, data_point):
     """ Returns interval of data_point +- margin
 
     Args:
-        alpha (float): confidence interval to compute margin
+        confidence (float): confidence level, C
         n_samples (int): number of samples to compute margin
         data_point (float): the value to be margined
     """
-    delta = margin(alpha, n_samples, data_point)
+    delta = margin(confidence, n_samples, data_point)
     return Interval(data_point - delta, data_point + delta)
 
 
 ## TODO shortly describe this type of margin
-def margin(alpha, n_samples, data_point):
+def margin(confidence, n_samples, data_point):
     """ Estimates expected interval with respect to parameters
 
     Args:
-        alpha (float): confidence interval to compute margin
+        confidence (float): confidence level, C
         n_samples (int): number of samples to compute margin
         data_point (float): the value to be margined
     """
     try:
-        return st.norm.ppf(1 - (1 - alpha) / 2) * math.sqrt(data_point * (1 - data_point) / n_samples) + 0.5 / n_samples
+        return st.norm.ppf(1 - (1 - confidence) / 2) * math.sqrt(data_point * (1 - data_point) / n_samples) + 0.5 / n_samples
     except ValueError as error:
         raise Exception("Unable to compute the margins. Please, check whether each data point in domain [0,1]")
 
 
-def margin_experimental(alpha, n_samples, data_point):
+def margin_experimental(confidence, n_samples, data_point):
     """ Estimates expected interval with respect to parameters
     This margin was used to produce the visual outputs for hsb19
 
     Args:
-        alpha (float): confidence interval to compute margin
+        confidence (float): confidence level, C
         n_samples (int): number of samples to compute margin
         data_point (float):, the value to be margined
     """
-    return st.norm.ppf(1 - (1 - alpha) / 2) * math.sqrt(
+    return st.norm.ppf(1 - (1 - confidence) / 2) * math.sqrt(
         data_point * (1 - data_point) / n_samples) + 0.5 / n_samples + 0.005
 
 

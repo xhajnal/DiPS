@@ -42,7 +42,7 @@ class RefinedSpace:
     def __init__(self, region, params, types=None, rectangles_sat=False, rectangles_unsat=False, rectangles_unknown=None, sat_samples=None, unsat_samples=None, true_point=False, title=False, prefer_unsafe=False):
         """ (hyper)rectangles is a list of intervals, point is a list of numbers
         Args:
-            region (list of intervals): whole space
+            region (list or tuple of intervals): whole space
             params (list of strings): parameter names
             types (list of string, None, or False): parameter types (Real, Int, Bool, ...), None or False means all Real
             rectangles_sat (list of (hyper)rectangles): sat (green) space

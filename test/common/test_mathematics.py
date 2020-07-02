@@ -47,8 +47,14 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(mpi(1, 2) not in mpi(1.5, 2), True)
 
     def test_nCr(self):
-        # TODO
-        pass
+        for i in range(10):
+            self.assertEqual(nCr(i, 0), 1)
+            self.assertEqual(nCr(i, 1), i)
+            self.assertEqual(nCr(i, i), 1)
+            if not i == 0:
+                self.assertEqual(nCr(i, i - 1), i)
+        self.assertEqual(nCr(5, 3), 10)
+        self.assertEqual(nCr(5, 2), 10)
 
     def test_catch_data_error(self):
         print(colored('Catching subzero values in data', 'blue'))
@@ -79,12 +85,21 @@ class MyTestCase(unittest.TestCase):
 
     def test_create_interval(self):
         print(colored('Single interval computing', 'blue'))
-        # TODO
-        pass
+        ## TODO solve equality of intervals
+        # self.assertEqual(create_interval(0.95, 60, 0.5), Interval(0.365151535478501, 0.634848464521499))  ## check this
+
+    def test_create_interval_NEW(self):
+        print(colored('Single interval computing extended', 'blue'))
+        ## TODO solve equality of intervals
+        # self.assertTrue(create_interval_NEW(
+        #    samples=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        #             0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2], confidence=0.9) == Interval(0.0826658796286292, 0.317334120371371))
+        # self.assertEqual(create_interval_NEW(
+        #     samples=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        #              0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2], confidence=0.9, is_normal=True), Interval(0.0826658796286293, 0.317334120371371))
 
     def test_create_intervals(self):
         print(colored('Multiple intervals computing', 'blue'))
-
         # TODO
         pass
 
