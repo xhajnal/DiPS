@@ -81,7 +81,7 @@ def constraints_to_ineq(constraints: list, silent: bool = True, debug: bool = Fa
     if len(constraints) % 2:
         if not silent:
             print(colored("Number of properties is not even, some interval will be invalid", "red"))
-        return False
+        raise Exception(f"Number of properties is not even, some interval will be invalid")
     funcs = []
     intervals = []
     is_odd = False
@@ -169,7 +169,6 @@ def constraints_to_ineq(constraints: list, silent: bool = True, debug: bool = Fa
             if not silent:
                 print(colored(f"Constraint {index + 1} does not have proper number of boundaries", "red"))
             raise Exception(f"Constraint {index + 1} does not have proper number of boundaries")
-            return False
         if debug:
             print("sorted([float(intervals[interval_index][0]), float(intervals[interval_index][1])])", sorted([float(intervals[interval_index][0]), float(intervals[interval_index][1])]))
         intervals[interval_index] = sorted([float(intervals[interval_index][0]), float(intervals[interval_index][1])])

@@ -2,6 +2,7 @@ import re
 from z3 import *
 from numpy import mean
 
+
 def z3_eval(function: str):
     """ Returns value of z3 expression
 
@@ -18,6 +19,7 @@ def z3_eval(function: str):
     return value
 
 
+## TODO not fully checked what the z3 parser cannot eat
 def is_this_z3_function(function: str):
     """ Checks whether this is z3 expression
 
@@ -28,14 +30,28 @@ def is_this_z3_function(function: str):
     return ("If" in function) or ("And" in function) or ("Or" in function) or ("Not" in function) or ("Pow" in function)
 
 
-## TODO not fully checked what the z3 parser cannot eat
 def is_this_python_function(function: str):
     """ Checks whether this is python expression
 
     Args:
         function (string): expression to be checked
     """
-    return "if" in function or "and" in function or "or" in function or "not" in function
+    if is_this_z3_function(function):
+        return False
+    go_on = True
+    while go_on:
+        try:
+            eval(function)
+            return True
+        except NameError as err:
+            variable = str(err).split("'")[1]
+            locals()[variable] = 0
+            continue
+        except Exception:
+            return False
+        go_on = False
+    return True
+    # return "if" in function or "and" in function or "or" in function or "not" in function
 
 
 def is_this_exponential_function(function: str):
@@ -56,7 +72,7 @@ def is_this_general_function(function: str):
     Args:
         function (string): expression to be checked
     """
-    return not(is_this_python_function(function) or is_this_python_function(function))
+    return not(is_this_python_function(function) or is_this_z3_function(function))
 
 
 ## TODO check whether I got all

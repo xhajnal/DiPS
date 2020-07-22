@@ -85,36 +85,55 @@ class MyTestCase(unittest.TestCase):
 
     def test_create_interval(self):
         print(colored('Single interval computing', 'blue'))
-        ## TODO solve equality of intervals
-        # self.assertEqual(create_interval(0.95, 60, 0.5), Interval(0.365151535478501, 0.634848464521499))  ## check this
+        self.assertEqual(round(create_interval(0.95, 60, 0.5).start, 15), round(Interval(0.365151535478501, 0.634848464521499).start, 15))
+        self.assertEqual(round(create_interval(0.95, 60, 0.5).end, 15), round(Interval(0.365151535478501, 0.634848464521499).end, 15))
 
     def test_create_interval_NEW(self):
-        print(colored('Single interval computing extended', 'blue'))
-        ## TODO solve equality of intervals
-        # self.assertTrue(create_interval_NEW(
-        #    samples=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        #             0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2], confidence=0.9) == Interval(0.0826658796286292, 0.317334120371371))
-        # self.assertEqual(create_interval_NEW(
-        #     samples=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        #              0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2], confidence=0.9, is_normal=True), Interval(0.0826658796286293, 0.317334120371371))
+        print(colored('Single interval computing NEW', 'blue'))
+        self.assertEqual(round(create_interval_NEW(
+           samples=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2], confidence=0.9).start, 15),
+                         round(Interval(0.0826658796286292, 0.317334120371371).start, 15))
+        self.assertEqual(round(create_interval_NEW(
+           samples=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2], confidence=0.9).end, 15),
+                         round(Interval(0.0826658796286292, 0.317334120371371).end, 15))
+
+        print(colored('Single interval computing normal', 'blue'))
+        self.assertEqual(round(create_interval_NEW(
+           samples=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2], confidence=0.9, is_normal=True).start, 15),
+                         round(Interval(0.0826658796286292, 0.317334120371371).start, 15))
+        self.assertEqual(round(create_interval_NEW(
+           samples=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2], confidence=0.9, is_normal=True).end, 15),
+                         round(Interval(0.0826658796286292, 0.317334120371371).end, 15))
+        ## TODO the other tests
 
     def test_create_intervals(self):
         print(colored('Multiple intervals computing', 'blue'))
-        # TODO
-        pass
+        self.assertEqual(round(create_intervals(0.95, 60, [0.5])[0].start, 15),
+                         round(Interval(0.365151535478501, 0.634848464521499).start, 15))
+        self.assertEqual(round(create_intervals(0.95, 60, [0.5])[0].end, 15),
+                         round(Interval(0.365151535478501, 0.634848464521499).end, 15))
+        # TODO more data points
 
     def test_margin(self):
         print(colored('Margin/delta computing', 'blue'))
-        # TODO
-        pass
+        self.assertEqual(round(margin(0.95, 60, 0.5), 15), round(0.5 - 0.365151535478501, 15))
+        # TODO add more examples
 
     def test_margin_experimental(self):
-        # TODO
-        pass
+        print(colored('Margin/delta computing in HSB computing', 'blue'))
+        self.assertEqual(round(margin_experimental(0.95, 60, 0.5), 15), round(margin(0.95, 60, 0.5) + 0.005, 15))
+        # TODO add more examples
 
     def test_cartesian_product(self):
-        # TODO
-        pass
+        print(colored("Checking cartesian product", 'blue'))
+        self.assertEqual(cartesian_product().shape, (0,))
+        self.assertEqual(cartesian_product(*[np.array([5])]).shape, (1, 1))
+        self.assertEqual(cartesian_product(*[np.array([5]), np.array([50])]).shape, (1, 2))
+        self.assertEqual(cartesian_product(*[np.array([5]), np.array([50]), np.array([9])]).shape, (1, 3))
 
     def test_is_in(self):
         print(colored("Checking if the first region is within the second one here", 'blue'))

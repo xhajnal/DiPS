@@ -178,6 +178,8 @@ def cartesian_product(*arrays):
     """
 
     la = len(arrays)
+    if la == 0:
+        return np.array([])
     dtype = np.result_type(*arrays)
     arr = np.empty([len(a) for a in arrays] + [la], dtype=dtype)
     for i, a in enumerate(np.ix_(*arrays)):
