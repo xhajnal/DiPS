@@ -129,3 +129,6 @@ and I want to thank the following people for user testing and feedback:
 * [Stefano Tognazzi](https://github.com/stefanotognazzi)
 * Morgane Nouvian
 * [Matej Troják](https://github.com/xtrojak)
+
+This project has been supported by the [Centre for the Advanced Study of Collective Behaviour](https://www.exc.uni-konstanz.de/collective-behaviour/), Young Scholar
+Fund (YSF), project no. P83943018F P430 /18, and Max Planck Institute of Animal Behaviour.
