@@ -57,8 +57,8 @@ class RefinedSpace:
         """
 
         ## REGION
-        if isinstance(region, list) or isinstance(region, tuple):
-            raise Exception("Given region is not iterable")
+        if not (isinstance(region, list) or isinstance(region, tuple)):
+            raise Exception("Given region is not iterable", region, type(region))
         if isinstance(region, tuple):
             self.region = list(region)
         else:
