@@ -385,6 +385,7 @@ def load_data(path, silent: bool = False, debug: bool = False):
 
             for value in range(len(data)):
                 try:
+                    assert isinstance(data, list)
                     data[value] = float(data[value])
                 except ValueError:
                     print(colored(f"Warning while parsing line number {value + 1}. Expected number, got {type(data[value])}. Skipping this line: {line}", "red"))

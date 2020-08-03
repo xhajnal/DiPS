@@ -4,11 +4,11 @@ import locale
 locale.setlocale(locale.LC_ALL, '')
 
 
-def niceprint(text: str):
+def niceprint(text):
     """ Converts string into printable text
 
     Args:
-        text (string): input string
+        text (int or string): input string
     """
     return locale.format_string("%d", text, grouping=True)
 
