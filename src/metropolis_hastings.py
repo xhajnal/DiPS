@@ -26,7 +26,6 @@ wrapper = DocumentWrapper(width=75)
 
 class HastingsResults:
     """ Class to represent Metropolis Hastings results"""
-
     def __init__(self, params, theta_init, accepted, observations_count: int, observations_samples_count: int,
                  mh_sampling_iterations: int, eps, not_burn_in=75, pretitle="", title="", bins=20, last_iter=0, timeout=0, time_it_took=0):
         """
@@ -56,7 +55,7 @@ class HastingsResults:
         self.mh_sampling_iterations = mh_sampling_iterations
         self.eps = eps
 
-        self.show = not_burn_in
+        self.not_burn_in = not_burn_in
         self.title = title
         self.pretitle = pretitle
 
@@ -65,6 +64,14 @@ class HastingsResults:
         self.last_iter = last_iter
         self.timeout = timeout
         self.time_it_took = time_it_took
+
+    def get_not_burn_in(self):
+        """ Returns fraction of not burned-in part"""
+        return self.not_burn_in / 100
+
+    def get_burn_in(self):
+        """ Returns fraction of the burned-in part"""
+        return 1 - self.not_burn_in / 100
 
     def show_mh_heatmap(self, where=False, bins=False, not_burn_in=None, as_scatter=False, debug=False):
         """ Visualises the result of Metropolis Hastings as a heatmap
@@ -88,24 +95,24 @@ class HastingsResults:
             print("self.accepted", self.accepted)
 
         if not_burn_in is None:
-            not_burn_in = self.show
+            not_burn_in = self.not_burn_in
 
         ## Convert percents / fraction to show into exact number
         if 0 < not_burn_in < 1:
-            self.show = not_burn_in * 100
+            self.not_burn_in = not_burn_in * 100
             not_burn_in = int(-not_burn_in * self.accepted.shape[0])
         elif not_burn_in < 0:
-            self.show = not_burn_in
+            self.not_burn_in = not_burn_in
             not_burn_in = 75
         else:
-            self.show = not_burn_in
+            self.not_burn_in = not_burn_in
             not_burn_in = int(-not_burn_in / 100 * self.accepted.shape[0])
 
         if self.title is "":
             if self.last_iter > 0:
-                self.title = f'Estimate of MH algorithm, {niceprint(self.last_iter)} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n showing last {self.show}% of {niceprint(self.accepted.shape[0])} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
+                self.title = f'Estimate of MH algorithm, {niceprint(self.last_iter)} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n showing last {self.not_burn_in}% of {niceprint(self.accepted.shape[0])} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
             else:
-                self.title = f'Estimate of MH algorithm, {niceprint(self.mh_sampling_iterations)} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n showing last {self.show}% of {niceprint(self.accepted.shape[0])} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
+                self.title = f'Estimate of MH algorithm, {niceprint(self.mh_sampling_iterations)} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n showing last {self.not_burn_in}% of {niceprint(self.accepted.shape[0])} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
 
         if debug:
             print("self.accepted[show:, 0]", self.accepted[not_burn_in:, 0])
@@ -137,7 +144,7 @@ class HastingsResults:
             egg = self.accepted[not_burn_in:].T
             ax.plot(egg, '.-', markersize=15)
 
-            # for sample in self.accepted[show:]:
+            # for sample in self.accepted[not_burn_in:]:
             #    ax.scatter(x_axis, sample)
             #    ax.plot(x_axis, sample)
 
