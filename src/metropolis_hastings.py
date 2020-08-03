@@ -210,6 +210,7 @@ def transition_model_a(theta, parameter_intervals):
     theta_new = np.zeros(len(theta))  ## New point initialisation
 
     ## For each parameter
+    ## TODO why we change all params and not just one in random?
     for index, param in enumerate(theta):
         temp = parameter_intervals[index][0] - 1  ## Lower bound of first parameter - 1
         while (temp <= parameter_intervals[index][0]) or (temp >= parameter_intervals[index][1]):
@@ -286,6 +287,7 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param
     @edit: xhajnal
     """
     theta = param_init
+    both = []
     accepted = []
     rejected = []
     ## For each MCMC iteration do
@@ -310,10 +312,12 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param
             ## Go to the new point
             theta = theta_new
             accepted.append(theta_new)
+            both.append([theta_new, True])
             if debug:
                 print(f"new point: {theta_new} accepted")
         else:
             rejected.append(theta_new)
+            both.append([theta_new, False])
             if debug:
                 print(f"new point: {theta_new} rejected")
         if progress:
@@ -326,7 +330,7 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param
             break
 
     globals()["mh_results"].time_it_took = time() - globals()["start_time"]
-    return np.array(accepted), np.array(rejected)
+    return np.array(both), np.array(accepted), np.array(rejected)
 
 
 def manual_log_like_normal(space, theta, functions, observations, eps):
@@ -488,7 +492,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     # plt.xticks(range(len(functions)), range(len(functions) + 1))
     ax.set_xlabel("Function index")
     ax.set_ylabel("Number of observations")
-    ax.set_title(f"Figure 1: Distribution of {observations_samples_size} observations (from full sample= {observations_count})")
+    ax.set_title(f"Distribution of {observations_samples_size} observations (from full sample= {observations_count})")
     if not where:
         plt.show()
     else:
@@ -502,7 +506,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     print("Initial parameter point: ", theta_init)
 
     ##                                      (likelihood_computer,    prior, transition_model,   param_init, iterations,             space,    data, acceptance_rule, parameter_intervals, functions, eps, progress,          timeout,         debug):
-    accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, mh_sampling_iterations, space, observations, acceptance, parameter_intervals, functions, eps, progress=progress, timeout=timeout, debug=debug)
+    both, accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, mh_sampling_iterations, space, observations, acceptance, parameter_intervals, functions, eps, progress=progress, timeout=timeout, debug=debug)
 
     globals()["mh_results"].accepted = accepted
 
@@ -526,11 +530,25 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     fig = Figure(figsize=(10, 10))
     for index, param in enumerate(space.get_params()):
         ax = fig.add_subplot(len(space.get_params()), 1, index+1)
-        ax.plot(rejected[:, index], 'rx', label='Rejected', alpha=0.5)
-        ax.plot(accepted[:, index], 'b.', label='Accepted', alpha=0.5)
-        ax.set_xlabel("Index")
-        ax.set_ylabel(param)
-        ax.set_title(f"Figure 2: Accepted and Rejected values of {param}.")
+        ## New code adding information how the accepted and rejected points are connected
+        ## TODO probably can be optimised
+        X_accept, X_reject, Y_accept, Y_reject = [], [], [], []
+        for point_index, point in enumerate(both):
+            if point[1] is False:
+                X_reject.append(point_index)
+                Y_reject.append(point[0][index])
+            else:
+                X_accept.append(point_index)
+                Y_accept.append(point[0][index])
+        ax.scatter(X_reject, Y_reject, marker='x', c="r", label='Rejected', alpha=0.5)
+        ax.scatter(X_accept, Y_accept, marker='.', c="b", label='Accepted', alpha=0.5)
+        ax.set_xlabel("MH Iteration")
+        ## Previous code before that information
+        # ax.plot(rejected[:, index], 'rx', label='Rejected', alpha=0.5)
+        # ax.plot(accepted[:, index], 'b.', label='Accepted', alpha=0.5)
+        # ax.set_xlabel("Index")
+        ax.set_ylabel(f"${param}$")
+        ax.set_title(f"Accepted and Rejected values of ${param}$.")
         ax.grid()
         ax.legend()
     if not where:
@@ -553,7 +571,8 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     for index, param in enumerate(space.get_params()):
         ax = fig.add_subplot(gs[index, 0])
         ax.plot(accepted[:, index])
-        ax.set_title(f"Figure 4: Trace for {param}")
+        ax.set_title(f"Trace of accepted points for ${param}$")
+        ax.set_xlabel(f"Index")
         ax.set_ylabel(f"${param}$")
         ax = fig.add_subplot(gs[index, 1])
 
@@ -567,7 +586,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         ax.hist(accepted[:, index], bins=bins, density=True)
         ax.set_ylabel("Occurrence")
         ax.set_xlabel(f"${param}$")
-        ax.set_title(f"Fig.5: Histogram of ${param}$, {bins} bins.")
+        ax.set_title(f"Histogram of  accepted points for ${param}$, {bins} bins.")
         fig.tight_layout()
     if not where:
         plt.show()
