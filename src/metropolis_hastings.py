@@ -3,8 +3,10 @@ from time import time
 from socket import gethostname
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import gridspec
 from matplotlib.ticker import MaxNLocator
 import pickle
+from matplotlib.figure import Figure
 
 # from termcolor import colored
 
@@ -26,7 +28,7 @@ class HastingsResults:
     """ Class to represent Metropolis Hastings results"""
 
     def __init__(self, params, theta_init, accepted, observations_count: int, observations_samples_count: int,
-                 mh_sampling_iterations: int, eps, show=75, pretitle="", title="", bins=20, last_iter=0, timeout=0, time_it_took=0):
+                 mh_sampling_iterations: int, eps, not_burn_in=75, pretitle="", title="", bins=20, last_iter=0, timeout=0, time_it_took=0):
         """
         Args:
             params (list of strings): parameter names
@@ -35,7 +37,7 @@ class HastingsResults:
             observations_samples_count (int): sample size from the observations
             mh_sampling_iterations (int): number of iterations/steps in searching in space
             eps (number): very small value used as probability of non-feasible values in prior
-            show (number): shows last given percent of accepted points (trim burn-in period)
+            not_burn_in (number): shows last given percent of accepted points (trim burn-in period)
             pretitle (string): title to be put in front of title
             title (string): title of the plot
             bins (int): number of segments in the heatmap plot (used only for 2D param space)
@@ -54,7 +56,7 @@ class HastingsResults:
         self.mh_sampling_iterations = mh_sampling_iterations
         self.eps = eps
 
-        self.show = show
+        self.show = not_burn_in
         self.title = title
         self.pretitle = pretitle
 
@@ -64,37 +66,40 @@ class HastingsResults:
         self.timeout = timeout
         self.time_it_took = time_it_took
 
-    def show_mh_heatmap(self, where=False, bins=False, show=None, as_scatter=False, debug=False):
+    def show_mh_heatmap(self, where=False, bins=False, not_burn_in=None, as_scatter=False, debug=False):
         """ Visualises the result of Metropolis Hastings as a heatmap
 
         Args:
             where (tuple/list): output matplotlib sources to output created figure
             bins (int): number of segments in the plot (used only for heatmap - 2D param space)
-            show (int or False or None): show last x percents of the accepted values, None - use class value (to trim burn-in period)
+            not_burn_in (int or False or None): show last x percents of the accepted values, None - use class value (to trim burn-in period)
             as_scatter (bool): Sets the plot to scatter plot even for 2D output
             debug (bool): if True extensive print will be used
 
         @author: xhajnal
         @edit: denis
         """
+        # import matplotlib as mpl
+        # mpl.rcParams.update(mpl.rcParamsDefault)
+        # plt.style.use('default')
 
         if debug:
-            print("show", show)
+            print("show", not_burn_in)
             print("self.accepted", self.accepted)
 
-        if show is None:
-            show = self.show
+        if not_burn_in is None:
+            not_burn_in = self.show
 
         ## Convert percents / fraction to show into exact number
-        if 0 < show < 1:
-            self.show = show * 100
-            show = int(-show * self.accepted.shape[0])
-        elif show < 0:
-            self.show = show
-            show = 75
+        if 0 < not_burn_in < 1:
+            self.show = not_burn_in * 100
+            not_burn_in = int(-not_burn_in * self.accepted.shape[0])
+        elif not_burn_in < 0:
+            self.show = not_burn_in
+            not_burn_in = 75
         else:
-            self.show = show
-            show = int(-show / 100 * self.accepted.shape[0])
+            self.show = not_burn_in
+            not_burn_in = int(-not_burn_in / 100 * self.accepted.shape[0])
 
         if self.title is "":
             if self.last_iter > 0:
@@ -103,7 +108,7 @@ class HastingsResults:
                 self.title = f'Estimate of MH algorithm, {niceprint(self.mh_sampling_iterations)} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n showing last {self.show}% of {niceprint(self.accepted.shape[0])} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
 
         if debug:
-            print("self.accepted[show:, 0]", self.accepted[show:, 0])
+            print("self.accepted[show:, 0]", self.accepted[not_burn_in:, 0])
 
         if bins is not False:
             self.bins = bins
@@ -129,7 +134,7 @@ class HastingsResults:
             ## Get values of the vertical axis for respective line
             ax.xaxis.set_major_locator(MaxNLocator(integer=True))
             ## Thanks to Den for optimisation
-            egg = self.accepted[show:].T
+            egg = self.accepted[not_burn_in:].T
             ax.plot(egg, '.-', markersize=15)
 
             # for sample in self.accepted[show:]:
@@ -149,7 +154,7 @@ class HastingsResults:
                 plt.show()
         else:
             if where:
-                plt.hist2d(self.accepted[show:, 0], self.accepted[show:, 1], bins=self.bins)
+                plt.hist2d(self.accepted[not_burn_in:, 0], self.accepted[not_burn_in:, 1], bins=self.bins)
                 plt.xlabel(self.params[0])
                 plt.ylabel(self.params[1])
                 plt.title("\n".join(wrapper.wrap(self.title)))
@@ -157,7 +162,7 @@ class HastingsResults:
                 return where[0], where[1]
             else:
                 plt.figure(figsize=(12, 6))
-                plt.hist2d(self.accepted[show:, 0], self.accepted[show:, 1], bins=self.bins)
+                plt.hist2d(self.accepted[not_burn_in:, 0], self.accepted[not_burn_in:, 1], bins=self.bins)
                 plt.colorbar()
                 plt.xlabel(self.params[0])
                 plt.ylabel(self.params[1])
@@ -230,7 +235,7 @@ def prior(theta, parameter_intervals):
     @author: xhajnal
     """
 
-    for value, index in enumerate(theta):
+    for index, value in enumerate(theta):
         ## If inside of param domains
         if (theta[index] < parameter_intervals[index][0]) or (theta[index] > parameter_intervals[index][1]):
             return 0
@@ -263,7 +268,7 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param
     """ The core method of the Metropolis Hasting
 
         likelihood_computer (function(space, theta, functions, observation/data, eps)): function returning the likelihood that functions in theta point generated the data
-        prior (function(theta, eps)): prior function
+        prior_rule (function(theta, eps)): prior function
         transition_model (function(theta)): a function that draws a sample from a symmetric distribution and returns it
         param_init  (pair of numbers): starting parameter point
         iterations (int): number of accepted to generated
@@ -301,7 +306,7 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param
         # print("theta_new_lik + np.log(prior(theta, parameter_intervals))", theta_new_lik + np.log(prior(theta_new, parameter_intervals)))
 
         ## If new point accepted
-        if acceptance_rule(theta_lik + np.log(prior(theta, parameter_intervals)), theta_new_lik + np.log(prior(theta_new, parameter_intervals))):
+        if acceptance_rule(theta_lik + np.log(prior_rule(theta, parameter_intervals)), theta_new_lik + np.log(prior_rule(theta_new, parameter_intervals))):
             ## Go to the new point
             theta = theta_new
             accepted.append(theta_new)
@@ -344,11 +349,11 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
     # print("data", data)
     # print("functions", functions)
 
+    ## Assignment of parameter values
     for index, param in enumerate(theta):
         locals()[space.get_params()[index]] = theta[index]
-    # locals()[space.get_params()[0]] = theta[0]
-    # locals()[space.get_params()[1]] = theta[1]
 
+    ## Dictionary optimising performance - not evaluating the same functions again
     evaled_functions = {}
 
     for data_point in observations:  # observations:
@@ -377,7 +382,7 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
 
 def initialise_sampling(space: RefinedSpace, observations, functions, observations_count: int,
                         observations_samples_size: int, mh_sampling_iterations: int, eps,
-                        theta_init=False, where=False, progress=False, show=False, bins=20, timeout=False, debug=False):
+                        theta_init=False, where=False, progress=False, not_burn_in=False, bins=20, timeout=False, debug=False, draw_plot=False):
     """ Initialisation method for Metropolis Hastings
 
     Args:
@@ -391,22 +396,23 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         theta_init (list of numbers): initial parameter point
         where (tuple/list): output matplotlib sources to output created figure
         progress (Tkinter element or False): progress bar
-        show (number): show last x percents of the accepted values (trim burn-in period)
+        not_burn_in (number): show last x percents of the accepted values (trim burn-in period)
         bins (int): number of segments in the plot
         timeout (int): timeout in seconds
         debug (bool): if True extensive print will be used
-
+        draw_plot (function): function showing intermidiate plots
 
     @author: tpetrov
     @edit: xhajnal
     """
+
     ## Internal settings
     start_time = time()
     globals()["start_time"] = start_time
 
     observations_samples_size = min(observations_count, observations_samples_size)
-    ##                     HastingsResults ( params, theta_init, accepted, observations_count, observations_samples_count, MH_sampling_iterations, eps, show,      pretitle, title, bins, last_iter,  timeout, time_it_took, rescale):
-    globals()["mh_results"] = HastingsResults(space.params, theta_init, False, observations_count, observations_samples_size, mh_sampling_iterations, eps, show=show, title="", bins=bins, last_iter=0, timeout=timeout)
+    ##                     HastingsResults ( params, theta_init, accepted, observations_count, observations_samples_count, MH_sampling_iterations, eps, not_burn_in,      pretitle, title, bins, last_iter,  timeout, time_it_took, rescale):
+    globals()["mh_results"] = HastingsResults(space.params, theta_init, False, observations_count, observations_samples_size, mh_sampling_iterations, eps, not_burn_in=not_burn_in, title="", bins=bins, last_iter=0, timeout=timeout)
 
     ## TODO check this
     # ## Convert z3 functions
@@ -472,16 +478,23 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         observations = np.array(samples)[np.random.randint(0, observations_count, observations_samples_size)]
     print("observations", observations)
 
-    if not where:
-        fig = plt.figure(figsize=(10, 10))
-        ax = fig.add_subplot(1, 1, 1)
-        ax.hist(observations, bins=range(len(functions)))
-        ax.set_xlabel("Value")
-        ax.set_ylabel("Frequency")
-        ax.set_title(f"Figure 1: Distribution of {observations_samples_size} observations (from full sample= {observations_count})")
-        plt.show()
+    Y = []
+    for i in range(len(functions)):
+        Y.append(observations.count(i))
 
-    # theta_new = transition_model_a(theta_true, parameter_intervals)     ## apparently just a print call
+    fig = Figure(figsize=(10, 10))
+    ax = fig.add_subplot(1, 1, 1)
+    ax.bar(list(range(len(functions))), Y)
+    # plt.xticks(range(len(functions)), range(len(functions) + 1))
+    ax.set_xlabel("Function index")
+    ax.set_ylabel("Number of observations")
+    ax.set_title(f"Figure 1: Distribution of {observations_samples_size} observations (from full sample= {observations_count})")
+    if not where:
+        plt.show()
+    else:
+        draw_plot(fig)
+
+    # theta_new = transition_model_a(theta_true, parameter_intervals)  ## apparently just a print call
     # r = prior(theta_true, eps)
     # np.log(r)  ## another print call
     # res = manual_log_like_normal(space, theta_true, functions, np.array(observations), eps)
@@ -509,47 +522,63 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     # print("accepted[100:to_show, 1]", accepted[100:to_show, 1])
     # print("rejected", rejected)
 
-    ## Create TODO add name plot @Tanja
-    if not where:
-        fig = plt.figure(figsize=(10, 10))
-        ax = fig.add_subplot(2, 1, 1)
-        to_show = accepted.shape[0]
-        ax.plot(rejected[(0, 100)[len(rejected) > 200]:to_show, 1], 'rx', label='Rejected', alpha=0.5)
-        ax.plot(accepted[(0, 100)[len(accepted) > 200]:to_show, 1], 'b.', label='Accepted', alpha=0.5)
-        ax.set_xlabel("Step")
-        ax.set_ylabel("Value")
-        ax.set_title(f"Figure 2: MCMC sampling for N={observations_samples_size} with Metropolis-Hastings. Last {to_show}% of samples are shown.")
+    ## Create Scatter plot showing accepted and rejected points in its given order
+    fig = Figure(figsize=(10, 10))
+    for index, param in enumerate(space.get_params()):
+        ax = fig.add_subplot(len(space.get_params()), 1, index+1)
+        ax.plot(rejected[:, index], 'rx', label='Rejected', alpha=0.5)
+        ax.plot(accepted[:, index], 'b.', label='Accepted', alpha=0.5)
+        ax.set_xlabel("Index")
+        ax.set_ylabel(param)
+        ax.set_title(f"Figure 2: Accepted and Rejected values of {param}.")
         ax.grid()
         ax.legend()
-        plt.show()
-
-    globals()["mh_results"].show = show
-
-    ## Create TODO add name plot @Tanja
     if not where:
-        if show is False:
-            show = int(-0.75 * accepted.shape[0])
-        elif 0 < show < 1:
-            show = int(-show * accepted.shape[0])
-        else:
-            show = int(-show / 100 * accepted.shape[0])
+        plt.show()
+    else:
+        draw_plot(fig)
 
-        fig = plt.figure(figsize=(20, 10))
-        ax = fig.add_subplot(1, 2, 1)
-        ax.plot(accepted[show:, 0])
-        ax.set_title(f"Figure 4: Trace for {space.get_params()[0]}")
-        ax.set_ylabel(f"${space.get_params()[0]}$")
-        ax = fig.add_subplot(1, 2, 2)
-        ax.hist(accepted[show:, 0], bins=20, density=True)
-        ax.set_ylabel("Frequency")
-        ax.set_xlabel(f"${space.get_params()[0]}$")
-        ax.set_title(f"Fig.5: Histogram of ${space.get_params()[0]}$")
+    globals()["mh_results"].not_burn_in = not_burn_in
+
+    ## Trace and histogram of accepted points
+    if not_burn_in is False:
+        not_burn_in = int(-0.75 * accepted.shape[0])
+    elif 0 < not_burn_in < 1:
+        not_burn_in = int(-not_burn_in * accepted.shape[0])
+    else:
+        not_burn_in = int(-not_burn_in / 100 * accepted.shape[0])
+
+    fig = Figure(figsize=(20, 10))
+    gs = gridspec.GridSpec(len(space.get_params()), 2, figure=fig)
+    for index, param in enumerate(space.get_params()):
+        ax = fig.add_subplot(gs[index, 0])
+        ax.plot(accepted[:, index])
+        ax.set_title(f"Figure 4: Trace for {param}")
+        ax.set_ylabel(f"${param}$")
+        ax = fig.add_subplot(gs[index, 1])
+
+        # X = sorted(list(set(accepted[:, index])))
+        # Y = []
+        # for i in X:
+        #     Y.append(list(accepted[:, index]).count(i))
+        # ax.bar(X, Y)
+        # plt.xticks(range(len(functions)), range(len(functions) + 1))
+        bins = 20
+        ax.hist(accepted[:, index], bins=bins, density=True)
+        ax.set_ylabel("Occurrence")
+        ax.set_xlabel(f"${param}$")
+        ax.set_title(f"Fig.5: Histogram of ${param}$, {bins} bins.")
         fig.tight_layout()
+    if not where:
+        plt.show()
+    else:
+        draw_plot(fig)
 
     ## TODO make a option to set to see the whole space, not zoomed - freaking hard
     ## "Currently hist2d calculates it's own axis limits, and any limits previously set are ignored." (https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.axes.Axes.hist2d.html)
     ## Option 2 - https://stackoverflow.com/questions/29175093/creating-a-log-linear-plot-in-matplotlib-using-hist2d
     ## No scale
+
     if where:
         return globals()["mh_results"]
     else:

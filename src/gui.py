@@ -2699,7 +2699,7 @@ class Gui(Tk):
     def check_changes(self, what):
         """ Checks whether a changed occurred and it is necessary to reload
 
-        ARGS
+        Args:
         ------
             what (string): "model", "properties", "parsed_functions", "data"
             "data_intervals", or "constraints" choosing what to check
@@ -2986,8 +2986,8 @@ class Gui(Tk):
                                                   float(self.eps_entry.get()), theta_init=self.parameter_point,
                                                   where=[self.page6_figure2, self.page6_b],
                                                   progress=self.update_progress_bar, debug=self.debug.get(),
-                                                  bins=int(self.bins.get()), show=float(self.show.get()),
-                                                  timeout=int(self.mh_timeout.get()))
+                                                  bins=int(self.bins.get()), not_burn_in=float(self.show.get()),
+                                                  timeout=int(self.mh_timeout.get()), draw_plot=self.draw_plot_window)
             spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b])
 
             if spam[0] is not False:
@@ -3599,6 +3599,27 @@ class Gui(Tk):
             sys.setrecursionlimit(self.python_recursion_depth)
 
     ## INNER FUNCTIONS
+    def draw_plot_window(self, figure, axes=False):
+        """ Method to create a new window with a figure inside
+
+        Args:
+            figure (figure): a figure to draw into the new window
+            axes (axes): axes of the figure
+        """
+        new_plot_window = Toplevel(self)
+        new_plot_frame = Frame(new_plot_window)
+        new_plot_frame.pack(fill=BOTH, expand=True)
+
+        new_plot_canvas = FigureCanvasTkAgg(figure, master=new_plot_frame)
+        new_plot_toolbar = NavigationToolbar2Tk(new_plot_canvas, new_plot_frame)
+        new_plot_toolbar.update()
+        new_plot_canvas.get_tk_widget().pack(fill=BOTH, expand=True)
+
+        new_plot_canvas.draw()
+        # canvas.flush_events()
+        # self.new_window.update()
+        # self.update()
+
     def create_window_to_load_param_point(self, parameters):
         """ Creates a window a functionality to load values of parameters"""
         self.new_window = Toplevel(self)
