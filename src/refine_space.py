@@ -183,8 +183,8 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
                 print(f"constraints[{i}] {constraints[i]}")
             try:
                 s.add(eval(constraints[i]))
-            except Z3Exception as err:
-                print(err)
+            except Z3Exception as z3_err:
+                print(z3_err)
                 print(f"constraints[{i}] {constraints[i]}")
                 print(f"evaled constraints[{i}] {eval(constraints[i])}")
 
@@ -385,7 +385,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         show_space (bool): if show_space the refined space will be visualised
         solver (string):: specified solver, allowed: z3, dreal
         delta (number):: used for delta solving using dreal
-        gui (bool): called from the graphical user interface
+        gui (bool or function): called from the graphical user interface
         iterative (bool) : iterative approach, TBD
     """
 
@@ -1412,21 +1412,21 @@ def color_margins(greater, smaller):
     if len(smaller) == 1:
         ## Color 2 regions, to the left, to the right
         ## To the left
-        globals()["rectangles_unsat_added"].append(Rectangle([greater[0][0], 0], smaller[0][0] - greater[0][0], 1, fc='r'))
+        globals()["rectangles_unsat_added"].append(Rectangle((greater[0][0], 0), smaller[0][0] - greater[0][0], 1, fc='r'))
         ## To the right
-        globals()["rectangles_unsat_added"].append(Rectangle([smaller[0][1], 0], greater[0][1] - smaller[0][1], 1, fc='r'))
+        globals()["rectangles_unsat_added"].append(Rectangle((smaller[0][1], 0), greater[0][1] - smaller[0][1], 1, fc='r'))
 
     ## Else 2 dimensional coloring
     elif len(smaller) == 2:
         ## Color 4 regions, to the left, to the right, below, and above
         ## TODO
-        globals()["rectangles_unsat_added"].append(Rectangle([greater[0][0], 0], smaller[0][0] - greater[0][0], 1, fc='r'))
+        globals()["rectangles_unsat_added"].append(Rectangle((greater[0][0], 0), smaller[0][0] - greater[0][0], 1, fc='r'))
         ## TODO
-        globals()["rectangles_unsat_added"].append(Rectangle([smaller[0][1], 0], greater[0][1] - smaller[0][1], 1, fc='r'))
+        globals()["rectangles_unsat_added"].append(Rectangle((smaller[0][1], 0), greater[0][1] - smaller[0][1], 1, fc='r'))
         ## TODO
-        globals()["rectangles_unsat_added"].append(Rectangle([smaller[0][0], 0], smaller[0][1] - smaller[0][0], smaller[1][0], fc='r'))
+        globals()["rectangles_unsat_added"].append(Rectangle((smaller[0][0], 0), smaller[0][1] - smaller[0][0], smaller[1][0], fc='r'))
         ## TODO
-        globals()["rectangles_unsat_added"].append(Rectangle([smaller[0][0], smaller[1][1]], smaller[0][1] - smaller[0][0], 1 - smaller[1][0], fc='r'))
+        globals()["rectangles_unsat_added"].append(Rectangle((smaller[0][0], smaller[1][1]), smaller[0][1] - smaller[0][0], 1 - smaller[1][0], fc='r'))
     else:
         print("Error, trying to color more than 2 dimensional hyperrectangle")
 

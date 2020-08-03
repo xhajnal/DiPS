@@ -3,6 +3,7 @@ import pickle
 import os
 import time
 import webbrowser
+from collections import Iterable
 from copy import deepcopy
 from tkinter import *
 from tkinter import scrolledtext, messagebox
@@ -19,6 +20,7 @@ from termcolor import colored
 ## Importing my code
 from common.convert import ineq_to_constraints, parse_numbers
 from common.my_z3 import is_this_z3_function, translate_z3_function, is_this_exponential_function
+from metropolis_hastings import HastingsResults
 
 error_occurred = None
 matplotlib.use("TKAgg")
@@ -149,7 +151,7 @@ class Gui(Tk):
             print(colored(error_occurred, "red"))
             messagebox.showerror("Loading modules", error_occurred)
             raise error_occurred
-            sys.exit()
+            # sys.exit()
 
         ## Trying to configure pyplot
         # pyplt.autoscale()
@@ -206,16 +208,16 @@ class Gui(Tk):
         # self.model = ""
         # self.property = ""
         self.data = ""
-        self.data_informed_property = ""  ## Property containing the interval boundaries from the data
-        self.functions = ""  ## Parameter synthesis results (rational functions)
-        self.z3_functions = ""  ## functions with z3 expressions inside
-        self.data_intervals = ""  ## Computed intervals
-        self.parameters = ""  ##  Parsed parameters
-        self.parameter_domains = []  ## Parameters domains as intervals
-        self.constraints = ""  ## Computed or loaded constrains
-        self.z3_constraints = ""  ## Constrains with z3 expressions inside
+        self.data_informed_property = ""  ## Property containing the interval boundaries from the data  ##TODO rewrite as [], need to go through checks
+        self.functions = ""  ## Parameter synthesis results (rational functions)  ##TODO rewrite as [], need to go through checks
+        self.z3_functions = ""  ## functions with z3 expressions inside  ##TODO rewrite as [], need to go through checks
+        self.data_intervals = ""  ## Computed intervals  ##TODO rewrite as [], need to go through checks
+        self.parameters = ""  ##  Parsed parameters  ##TODO rewrite as [], need to go through checks
+        self.parameter_domains = []  ## Parameters domains as intervals  ##TODO rewrite as [], need to go through checks
+        self.constraints = ""  ## Computed or loaded constrains  ##TODO rewrite as [], need to go through checks
+        self.z3_constraints = ""  ## Constrains with z3 expressions inside  ##TODO rewrite as [], need to go through checks
         self.space = ""  ## Instance of a RefinedSpace class
-        self.mh_results = ""  ## Instance of HastingsResults class
+        # self.mh_results = HastingsResults()  ## Instance of HastingsResults class
 
         ## Results
         self.sampled_functions = []  ## List of values of sampled functions True/False
@@ -245,11 +247,11 @@ class Gui(Tk):
         self.max_depth = ""  ## Max recursion depth
         self.coverage = ""  ## Coverage threshold
         self.epsilon = ""  ## Rectangle size threshold
-        self.alg = ""  ## Refinement alg. number
+        # self.alg = ""  ## Refinement alg. number
         self.presampled_refinement = BooleanVar()  ## Refinement flag
         self.iterative_refinement = BooleanVar()  ## Refinement flag
 
-        self.solver = ""  ## SMT solver - z3 or dreal
+        # self.solver = ""  ## SMT solver - z3 or dreal
         self.delta = 0.01  ## dreal setting
 
         self.refinement_timeout = 0  ## timeout for refinement
@@ -334,12 +336,14 @@ class Gui(Tk):
 
         autosave_figures_button = Checkbutton(center_frame, text="Autosave figures", variable=self.save)
         autosave_figures_button.grid(row=5, column=0, sticky=E, padx=4)
+        createToolTip(autosave_figures_button, text='Check to autosaves results figures in folder results/figures')
         show_print_checkbutton = Checkbutton(center_frame, text="Hide print in command line", variable=self.silent)
         show_print_checkbutton.grid(row=5, column=1, sticky=E, padx=4)
         debug_checkbutton = Checkbutton(center_frame, text="Extensive command line print", variable=self.debug)
         debug_checkbutton.grid(row=5, column=2, sticky=E, padx=4)
         mh_metadata_button = Checkbutton(center_frame, text="Show MH metadata plots", variable=self.mh_metada)
         mh_metadata_button.grid(row=5, column=3, sticky=E, padx=4)
+        createToolTip(mh_metadata_button, text='Check to plot metadata plots of Metropolis-Hastings')
         # print("self.silent", self.silent.get())
 
         ################################################################################################################
@@ -1178,11 +1182,13 @@ class Gui(Tk):
         """ Stores a copy of functions as a self.z3_functions """
         self.z3_functions = deepcopy(self.functions)
         for index, function in enumerate(self.functions):
+            assert isinstance(self.functions, list)
             self.functions[index] = translate_z3_function(function)
 
     def store_z3_constraints(self):
         """ Stores a copy of constraints as a self.z3_constraints """
         self.z3_constraints = deepcopy(self.constraints)
+        assert isinstance(self.constraints, list)
         for index, constraint in enumerate(self.constraints):
             self.constraints[index] = translate_z3_function(constraint)
 
@@ -1752,7 +1758,7 @@ class Gui(Tk):
             return
         else:
             self.mh_results_changed = True
-            self.mh_results = pickle.load(open(spam, "rb"))
+            self.mh_results : HastingsResults = pickle.load(open(spam, "rb"))
             self.hastings_file.set(spam)
 
             ## Clear figure
@@ -1786,6 +1792,7 @@ class Gui(Tk):
                 print("space: ", self.space)
                 print()
                 print("Space nice print:")
+                assert isinstance(self.space, space.RefinedSpace)
                 print(self.space.nice_print(full_print=not self.space_collapsed))
 
             self.space_text.configure(state='normal')
@@ -1815,6 +1822,7 @@ class Gui(Tk):
             self.status_set("Space is being visualised.")
             if not self.space == "":
                 if not clear:
+                    assert isinstance(self.space, space.RefinedSpace)
                     figure, axis = self.space.show(green=show_refinement, red=show_refinement, sat_samples=show_samples,
                                                    unsat_samples=show_samples, true_point=show_true_point, save=False,
                                                    where=[self.page6_figure, self.page6_a], show_all=show_all, prefer_unsafe=prefer_unsafe)
@@ -1848,6 +1856,7 @@ class Gui(Tk):
             return
         else:
             # print(self.space.nice_print())
+            assert isinstance(self.space, space.RefinedSpace)
             self.parameter_domains = self.space.region
             self.create_window_to_load_param_point(parameters=self.space.params)
             self.space.true_point = self.parameter_point
@@ -1875,7 +1884,7 @@ class Gui(Tk):
     def save_model(self, file=False):
         """ Saves obtained model as a file.
         Args:
-            file: file to save the model
+            file (bool or Path or string): file to save the model
         """
         ## TODO CHECK IF THE MODEL IS NON EMPTY
         # if len(self.model_text.get('1.0', END)) <= 1:
@@ -1909,7 +1918,7 @@ class Gui(Tk):
         """ Saves obtained temporal properties as a file.
 
         Args:
-            file: file to save the property
+            file (bool or str or Path): file to save the property
         """
         print("Saving the property ...")
         ## TODO CHECK IF THE PROPERTY IS NON EMPTY
@@ -1970,7 +1979,7 @@ class Gui(Tk):
         """ Saves computed data informed property as a text file.
 
         Args:
-            file: file to save the data_informed_properties
+            file (bool or str or Path): file to save the data_informed_properties
         """
         print("Saving data informed property ...")
         ## TODO CHECK IF THE PROPERTY IS NON EMPTY
@@ -2005,7 +2014,7 @@ class Gui(Tk):
         """ Saves parsed functions as a pickled file.
 
         Args:
-            file: file to save the functions
+            file (bool or str or Path): file to save the functions
         """
         print("Saving the rational functions ...")
 
@@ -2065,7 +2074,7 @@ class Gui(Tk):
         """ Saves parsed rational functions as a pickled file.
 
         Args:
-            file: file to save the parsed functions
+            file (bool or str or Path): file to save the parsed functions
         """
         functions = self.scrap_TextBox(self.functions_parsed_text)
 
@@ -2111,7 +2120,7 @@ class Gui(Tk):
         """ Saves data as a pickled file.
 
         Args:
-            file (string or False):  file to save the data
+            file (bool or str or Path):  file to save the data
         """
         self.parse_data_from_window()
 
@@ -2148,7 +2157,7 @@ class Gui(Tk):
         """ Saves data intervals as a pickled file.
 
         Args:
-            file (string or False):  file to save the data intervals
+            file (bool or str or Path):  file to save the data intervals
         """
 
         data_intervals = self.scrap_TextBox(self.data_intervals_text)
@@ -2191,7 +2200,7 @@ class Gui(Tk):
         """ Saves constraints as a pickled file.
 
         Args:
-            file (string or False):  file to save the constraints
+            file (bool or str or Path):  file to save the constraints
         """
         constraints = self.scrap_TextBox(self.constraints_text)
 
@@ -2226,7 +2235,7 @@ class Gui(Tk):
         """ Saves space as a pickled file.
 
         Args:
-            file (string or False):  file to save the space
+            file (bool or str or Path):  file to save the space
         """
         if file:
             save_space_file = file
@@ -2259,7 +2268,7 @@ class Gui(Tk):
         """ Saves Metropolis Hastings results a pickled file.
 
         Args:
-            file (string or False):  file to save Metropolis Hastings results
+            file (bool or str or Path):  file to save Metropolis Hastings results
         """
 
         if file:
@@ -2389,6 +2398,7 @@ class Gui(Tk):
         try:
             self.cursor_toggle_busy(True)
             self.status_set("Sampling functions ...")
+            assert isinstance(self.parameters, list)
             self.sampled_functions = sample_list_funs(self.functions, int(self.fun_sample_size_entry.get()),
                                                       parameters=self.parameters, intervals=self.parameter_domains,
                                                       debug=self.debug.get(), silent=self.silent.get())
@@ -2401,6 +2411,7 @@ class Gui(Tk):
         self.sampled_functions_text.delete('1.0', END)
         self.sampled_functions_text.insert('1.0', "rational function index, [parameter values], function value: \n")
         spam = ""
+        assert isinstance(self.sampled_functions, Iterable)
         for item in self.sampled_functions:
             spam = spam + str(item[0]+1) + ", ["
             for index in range(1, len(item)-1):
@@ -2445,6 +2456,10 @@ class Gui(Tk):
         #     self.page3_figure = pyplt.figure()
         #     self.page3_a = self.page3_figure.add_subplot(111)
         # print("self.parameter_values", self.parameter_values)
+        assert isinstance(self.functions, list)
+        assert isinstance(self.parameters, list)
+        assert isinstance(self.data, list)
+        assert isinstance(self.data_intervals, list)
         spam, egg = eval_and_show(self.functions, self.parameter_point, parameters=self.parameters,
                                   data=self.data, data_intervals=self.data_intervals,
                                   debug=self.debug.get(), where=[self.page3_figure, self.page3_a])
@@ -2469,6 +2484,11 @@ class Gui(Tk):
         self.status_set("Sampling rational functions done.")
 
     def save_functions_plot(self, plot_type):
+        """ Saves the plot of visualised functions
+
+        Args:
+            plot_type (str): plot type
+        """
         time_stamp = str(time.strftime("%d-%b-%Y-%H-%M-%S", time.localtime())) + ".png"
         self.page3_figure.savefig(os.path.join(self.figures_dir, f"{plot_type}_{time_stamp}"), bbox_inches='tight')
         print("Figure stored here: ", os.path.join(self.figures_dir, f"{plot_type}_{time_stamp}"))
@@ -2506,12 +2526,17 @@ class Gui(Tk):
         self.Next_sample_button.config(state="normal")
         self.reinitialise_plot(set_onclick=True)
 
+        assert isinstance(self.parameters, list)
         for parameter_point in get_param_values(self.parameters, int(self.fun_sample_size_entry.get()), False):
             if self.page3_figure_in_use.get() is not "2":
                 return
 
             # print("parameter_point", parameter_point)
             self.page3_a.cla()
+            assert isinstance(self.functions, list)
+            assert isinstance(self.parameters, list)
+            assert isinstance(self.data, list)
+            assert isinstance(self.data_intervals, list)
             spam, egg = eval_and_show(self.functions, parameter_point, parameters=self.parameters,
                                       data=self.data, data_intervals=self.data_intervals,
                                       debug=self.debug.get(), where=[self.page3_figure, self.page3_a])
@@ -2570,6 +2595,7 @@ class Gui(Tk):
             if self.page3_figure_in_use.get() is not "3":
                 return
             i = i + 1
+            assert isinstance(self.parameters, list)
             self.page3_figure = heatmap(function, self.parameter_domains,
                                         [int(self.fun_sample_size_entry.get()), int(self.fun_sample_size_entry.get())],
                                         posttitle=f"Function number {i}: {function}", where=True,
@@ -2620,11 +2646,14 @@ class Gui(Tk):
             pb_hd.start(50)
             self.update()
 
+            assert isinstance(self.functions, list)
+            assert isinstance(self.parameters, list)
+            assert isinstance(self.data, list)
             result = optimize(self.functions, self.parameters, self.parameter_domains, self.data)
         except Exception as error:
             messagebox.showerror("Optimize", f"Error occurred during Optimization: {error}")
             raise error
-            return
+            # return
         finally:
             try:
                 self.cursor_toggle_busy(False)
@@ -2830,6 +2859,7 @@ class Gui(Tk):
         self.parse_data_from_window()
 
         self.status_set("Intervals are being created ...")
+        assert isinstance(self.data, list)
         self.data_intervals = create_intervals(float(self.confidence_entry.get()), int(self.n_samples_entry.get()), self.data)
 
         intervals = ""
@@ -2876,6 +2906,7 @@ class Gui(Tk):
 
         self.status_set("Space sampling is running ...")
         if not self.silent.get():
+            assert isinstance(self.space, space.RefinedSpace)
             print("space parameters: ", self.space.params)
             print("constraints: ", self.constraints)
             print("grid size: ", self.sample_size)
@@ -2892,6 +2923,7 @@ class Gui(Tk):
             self.update()
 
             ## This progress is passed as whole to update the thing inside the called function
+            assert isinstance(self.constraints, list)
             self.space.grid_sample(self.constraints, self.sample_size, silent=self.silent.get(), save=False, progress=self.update_progress_bar)
         finally:
             try:
@@ -2957,6 +2989,7 @@ class Gui(Tk):
         if not self.validate_space("Space Metropolis-Hastings"):
             return
 
+        assert isinstance(self.space, space.RefinedSpace)
         self.create_window_to_load_param_point(parameters=self.space.params)
 
         ## Create a warning
@@ -2985,6 +3018,9 @@ class Gui(Tk):
             self.update()
 
             ## This progress is passed as whole to update the thing inside the called function
+            assert isinstance(self.space, space.RefinedSpace)
+            assert isinstance(self.data, list)
+            assert isinstance(self.functions, list)
             self.mh_results = initialise_sampling(self.space, self.data, self.functions, int(self.n_samples_entry.get()),
                                                   int(self.observations_samples_size_entry.get()), int(self.MH_sampling_iterations_entry.get()),
                                                   float(self.eps_entry.get()), theta_init=self.parameter_point,
@@ -3127,12 +3163,14 @@ class Gui(Tk):
             #                         debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
             #                         solver=str(self.solver.get()), delta=self.delta, gui=self.update_progress_bar)
             if str(self.solver.get()) == "z3" and self.z3_constraints:
+                assert isinstance(self.z3_constraints, list)
                 spam = check_deeper(self.space, self.z3_constraints, self.max_depth, self.epsilon, self.coverage,
                                     silent=self.silent.get(), version=int(self.alg.get()),
                                     sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
                                     where=[self.page6_figure, self.page6_a], solver=str(self.solver.get()),
                                     delta=self.delta, gui=self.update_progress_bar, iterative=self.iterative_refinement.get())
             else:
+                assert isinstance(self.constraints, list)
                 spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
                                     silent=self.silent.get(), version=int(self.alg.get()),
                                     sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
@@ -3178,11 +3216,11 @@ class Gui(Tk):
         self.status_set("Space refinement finished.")
 
     ## VALIDATE VARIABLES (PARAMETERS, constraints, SPACE)
-    def validate_parameters(self, where, intervals=True):
+    def validate_parameters(self, where: Iterable, intervals=True):
         """ Validates (functions, constraints, and space) parameters.
 
         Args:
-            where (struct): a structure pars parameters from (e.g. self.functions)
+            where (Iterable): a structure pars parameters from (e.g. self.functions)
             intervals (bool): whether to check also parameter intervals
         """
         if not self.parameters:
@@ -3272,8 +3310,11 @@ class Gui(Tk):
                 self.data_intervals_changed = False
 
             ## Create constraints
+            assert isinstance(self.functions, list)
+            assert isinstance(self.data_intervals, list)
             self.constraints = ineq_to_constraints(self.functions, self.data_intervals, silent=self.silent.get())
             if self.z3_functions:
+                assert isinstance(self.z3_functions, list)
                 self.z3_constraints = ineq_to_constraints(self.z3_functions, self.data_intervals, silent=self.silent.get())
 
             self.constraints_changed = True
@@ -3298,7 +3339,7 @@ class Gui(Tk):
                 return
         self.space_changed = False
         self.print_space(clear=True)
-        self.show_space(None, None, None, clear=True)
+        self.show_space(False, False, False, clear=True)
         self.space_file.set("")
         self.space = ""
         self.parameters = ""
@@ -3334,6 +3375,7 @@ class Gui(Tk):
             print("Saving the textual representation of space as a file:", save_space_text_file)
 
         save_space_text_file = open(save_space_text_file, "w")
+        assert isinstance(self.space, space.RefinedSpace)
         save_space_text_file.write(self.space.nice_print(full_print=True))
 
         if not file:
@@ -3364,7 +3406,10 @@ class Gui(Tk):
     def change_refinement_plot(self):
         """ Parses window changing for refinement plot"""
         try:
-            self.show_space(self.show_refinement, self.show_samples, self.show_true_point, show_all=True, prefer_unsafe=self.show_red_in_multidim_refinement.get())
+            if self.space is not "":
+                assert isinstance(self.space, space.RefinedSpace)
+                if len(self.space.params) > 2:
+                    self.show_space(self.show_refinement, self.show_samples, self.show_true_point, show_all=True, prefer_unsafe=self.show_red_in_multidim_refinement.get())
         finally:
             try:
                 self.new_window.destroy()
@@ -3390,11 +3435,11 @@ class Gui(Tk):
 
     def customize_mh_results(self):
         """ Customizes MH Plot"""
-        if self.mh_results:
+        if isinstance(self.mh_results, HastingsResults):
             if not askyesno("Metropolis-Hastings", "Metropolis-Hastings plot will be lost. Do you want to proceed?"):
                 return
         else:
-            messagebox.showinfo("Metropolis-Hastings", "There is no plot to costumire")
+            messagebox.showinfo("Metropolis-Hastings", "There is no plot to costumise")
             return
 
         self.new_window = Toplevel(self)
@@ -3409,7 +3454,7 @@ class Gui(Tk):
         Label(self.new_window, text="Show from", anchor=W, justify=LEFT).grid(row=2, column=0)
         self.show_entry = Entry(self.new_window)
         self.show_entry.grid(row=2, column=1)
-        self.show_entry.insert(END, str(self.mh_results.show))
+        self.show_entry.insert(END, str(self.mh_results.not_burn_in))
 
         # Label(self.new_window, text="Show 2D MH plot as scatter line plot", anchor=W, justify=LEFT).grid(row=3, column=0)
         show_mh_as_scatter_checkbutton = Checkbutton(self.new_window, text="Show 2D MH plot as scatter line plot", variable=self.show_mh_as_scatter)
@@ -3437,7 +3482,8 @@ class Gui(Tk):
             self.page6_figure2.canvas.draw()
             self.page6_figure2.canvas.flush_events()
 
-            spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b], bins=bins, show=show, as_scatter=as_scatter)
+            assert isinstance(self.mh_results, HastingsResults)
+            spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b], bins=bins, not_burn_in=show, as_scatter=as_scatter)
 
             if spam[0] is not False:
                 self.page6_figure2, self.page6_b = spam
@@ -3481,6 +3527,7 @@ class Gui(Tk):
             print("Saving the textual representation of accepted points of MH as a file:", acc_mh_export_text_file)
 
         with open(acc_mh_export_text_file, "w") as file:
+            assert isinstance(self.mh_results, HastingsResults)
             for item in self.mh_results.get_acc_as_a_list():
                 file.write(str(item)+",\n")
 
@@ -3658,8 +3705,12 @@ class Gui(Tk):
     def load_param_intervals_from_window(self):
         """ Inner function to parse the param intervals from created window """
         region = []
+        assert isinstance(self.parameter_domains, list)
+
         for param_index in range(len(self.parameters)):
             ## Getting the values from each entry, low = [0], high = [1]
+            assert isinstance(self.parameter_domains[param_index][0], Entry)
+            assert isinstance(self.parameter_domains[param_index][1], Entry)
             region.append([float(self.parameter_domains[param_index][0].get()),
                            float(self.parameter_domains[param_index][1].get())])
         if not self.silent.get():
@@ -3675,6 +3726,7 @@ class Gui(Tk):
 
     def load_param_point_from_window(self):
         """ Inner function to parse the param values from created window """
+        assert isinstance(self.parameter_point, list)
         for index, param in enumerate(self.parameter_point):
             self.parameter_point[index] = float(self.parameter_point[index].get())
         self.new_window.destroy()
@@ -3816,4 +3868,3 @@ sys.setrecursionlimit(20000)
 gui.gui_init()
 gui.autoload()
 gui.mainloop()
-
