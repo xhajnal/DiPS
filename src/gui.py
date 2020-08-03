@@ -232,9 +232,11 @@ class Gui(Tk):
         self.version = "1.14.0"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
-        self.show_red_in_multidim_refinement = BooleanVar()  ## Sets preferenece to show unsafe space over safe space in multidimensional plot
+        self.show_red_in_multidim_refinement = BooleanVar()  ## Chooses whether to show unsafe space over safe space in multidimensional plot
         self.show_red_in_multidim_refinement.set(False)
         self.show_mh_as_scatter = BooleanVar()  ## Sets the MH plot to scatter plot (even for 2D)
+        self.mh_metada = BooleanVar()  ## Chooses whether to visualise MH metadata plots or not
+        self.mh_metada.set(True)
 
         ## Settings/data
         # self.C = ""  ## Confidence level
@@ -336,6 +338,8 @@ class Gui(Tk):
         show_print_checkbutton.grid(row=5, column=1, sticky=E, padx=4)
         debug_checkbutton = Checkbutton(center_frame, text="Extensive command line print", variable=self.debug)
         debug_checkbutton.grid(row=5, column=2, sticky=E, padx=4)
+        mh_metadata_button = Checkbutton(center_frame, text="Show MH metadata plots", variable=self.mh_metada)
+        mh_metadata_button.grid(row=5, column=3, sticky=E, padx=4)
         # print("self.silent", self.silent.get())
 
         ################################################################################################################
@@ -2987,7 +2991,8 @@ class Gui(Tk):
                                                   where=[self.page6_figure2, self.page6_b],
                                                   progress=self.update_progress_bar, debug=self.debug.get(),
                                                   bins=int(self.bins.get()), not_burn_in=float(self.show.get()),
-                                                  timeout=int(self.mh_timeout.get()), draw_plot=self.draw_plot_window)
+                                                  timeout=int(self.mh_timeout.get()), draw_plot=self.draw_plot_window,
+                                                  metadata=self.mh_metada.get())
             spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b])
 
             if spam[0] is not False:

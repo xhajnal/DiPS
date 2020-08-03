@@ -385,8 +385,9 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
 
 
 def initialise_sampling(space: RefinedSpace, observations, functions, observations_count: int,
-                        observations_samples_size: int, mh_sampling_iterations: int, eps,
-                        theta_init=False, where=False, progress=False, not_burn_in=False, bins=20, timeout=False, debug=False, draw_plot=False):
+                        observations_samples_size: int, mh_sampling_iterations: int, eps, theta_init=False, where=False,
+                        progress=False, not_burn_in=False, bins=20, timeout=False,
+                        debug=False, metadata=True, draw_plot=False):
     """ Initialisation method for Metropolis Hastings
 
     Args:
@@ -404,6 +405,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         bins (int): number of segments in the plot
         timeout (int): timeout in seconds
         debug (bool): if True extensive print will be used
+        metadata (bool): if True metadata will be plotted
         draw_plot (function): function showing intermidiate plots
 
     @author: tpetrov
@@ -482,26 +484,23 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         observations = np.array(samples)[np.random.randint(0, observations_count, observations_samples_size)]
     print("observations", observations)
 
-    Y = []
-    for i in range(len(functions)):
-        Y.append(observations.count(i))
+    if metadata:
+        ## Plotting the distribution of observations
+        Y = []
+        for i in range(len(functions)):
+            Y.append(observations.count(i))
 
-    fig = Figure(figsize=(10, 10))
-    ax = fig.add_subplot(1, 1, 1)
-    ax.bar(list(range(len(functions))), Y)
-    # plt.xticks(range(len(functions)), range(len(functions) + 1))
-    ax.set_xlabel("Function index")
-    ax.set_ylabel("Number of observations")
-    ax.set_title(f"Distribution of {observations_samples_size} observations (from full sample= {observations_count})")
-    if not where:
-        plt.show()
-    else:
-        draw_plot(fig)
-
-    # theta_new = transition_model_a(theta_true, parameter_intervals)  ## apparently just a print call
-    # r = prior(theta_true, eps)
-    # np.log(r)  ## another print call
-    # res = manual_log_like_normal(space, theta_true, functions, np.array(observations), eps)
+        fig = Figure(figsize=(10, 10))
+        ax = fig.add_subplot(1, 1, 1)
+        ax.bar(list(range(len(functions))), Y)
+        # plt.xticks(range(len(functions)), range(len(functions) + 1))
+        ax.set_xlabel("Function index")
+        ax.set_ylabel("Number of observations")
+        ax.set_title(f"Distribution of {observations_samples_size} observations (from full sample= {observations_count})")
+        if not where:
+            plt.show()
+        else:
+            draw_plot(fig)
 
     print("Initial parameter point: ", theta_init)
 
@@ -526,72 +525,74 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     # print("accepted[100:to_show, 1]", accepted[100:to_show, 1])
     # print("rejected", rejected)
 
-    ## Create Scatter plot showing accepted and rejected points in its given order
-    fig = Figure(figsize=(10, 10))
-    for index, param in enumerate(space.get_params()):
-        ax = fig.add_subplot(len(space.get_params()), 1, index+1)
-        ## New code adding information how the accepted and rejected points are connected
-        ## TODO probably can be optimised
-        X_accept, X_reject, Y_accept, Y_reject = [], [], [], []
-        for point_index, point in enumerate(both):
-            if point[1] is False:
-                X_reject.append(point_index)
-                Y_reject.append(point[0][index])
-            else:
-                X_accept.append(point_index)
-                Y_accept.append(point[0][index])
-        ax.scatter(X_reject, Y_reject, marker='x', c="r", label='Rejected', alpha=0.5)
-        ax.scatter(X_accept, Y_accept, marker='.', c="b", label='Accepted', alpha=0.5)
-        ax.set_xlabel("MH Iteration")
-        ## Previous code before that information
-        # ax.plot(rejected[:, index], 'rx', label='Rejected', alpha=0.5)
-        # ax.plot(accepted[:, index], 'b.', label='Accepted', alpha=0.5)
-        # ax.set_xlabel("Index")
-        ax.set_ylabel(f"${param}$")
-        ax.set_title(f"Accepted and Rejected values of ${param}$.")
-        ax.grid()
-        ax.legend()
-    if not where:
-        plt.show()
-    else:
-        draw_plot(fig)
+    if metadata:
+        ## Create Scatter plot showing accepted and rejected points in its given order
+        fig = Figure(figsize=(10, 10))
+        for index, param in enumerate(space.get_params()):
+            ax = fig.add_subplot(len(space.get_params()), 1, index+1)
+            ## New code adding information how the accepted and rejected points are connected
+            ## TODO probably can be optimised
+            X_accept, X_reject, Y_accept, Y_reject = [], [], [], []
+            for point_index, point in enumerate(both):
+                if point[1] is False:
+                    X_reject.append(point_index)
+                    Y_reject.append(point[0][index])
+                else:
+                    X_accept.append(point_index)
+                    Y_accept.append(point[0][index])
+            ax.scatter(X_reject, Y_reject, marker='x', c="r", label='Rejected', alpha=0.5)
+            ax.scatter(X_accept, Y_accept, marker='.', c="b", label='Accepted', alpha=0.5)
+            ax.set_xlabel("MH Iteration")
+            ## Previous code before that information
+            # ax.plot(rejected[:, index], 'rx', label='Rejected', alpha=0.5)
+            # ax.plot(accepted[:, index], 'b.', label='Accepted', alpha=0.5)
+            # ax.set_xlabel("Index")
+            ax.set_ylabel(f"${param}$")
+            ax.set_title(f"Accepted and Rejected values of ${param}$.")
+            ax.grid()
+            ax.legend()
+        if not where:
+            plt.show()
+        else:
+            draw_plot(fig)
 
     globals()["mh_results"].not_burn_in = not_burn_in
 
-    ## Trace and histogram of accepted points
-    if not_burn_in is False:
-        not_burn_in = int(-0.75 * accepted.shape[0])
-    elif 0 < not_burn_in < 1:
-        not_burn_in = int(-not_burn_in * accepted.shape[0])
-    else:
-        not_burn_in = int(-not_burn_in / 100 * accepted.shape[0])
+    if metadata:
+        ## Trace and histogram of accepted points
+        if not_burn_in is False:
+            not_burn_in = int(-0.75 * accepted.shape[0])
+        elif 0 < not_burn_in < 1:
+            not_burn_in = int(-not_burn_in * accepted.shape[0])
+        else:
+            not_burn_in = int(-not_burn_in / 100 * accepted.shape[0])
 
-    fig = Figure(figsize=(20, 10))
-    gs = gridspec.GridSpec(len(space.get_params()), 2, figure=fig)
-    for index, param in enumerate(space.get_params()):
-        ax = fig.add_subplot(gs[index, 0])
-        ax.plot(accepted[:, index])
-        ax.set_title(f"Trace of accepted points for ${param}$")
-        ax.set_xlabel(f"Index")
-        ax.set_ylabel(f"${param}$")
-        ax = fig.add_subplot(gs[index, 1])
+        fig = Figure(figsize=(20, 10))
+        gs = gridspec.GridSpec(len(space.get_params()), 2, figure=fig)
+        for index, param in enumerate(space.get_params()):
+            ax = fig.add_subplot(gs[index, 0])
+            ax.plot(accepted[:, index])
+            ax.set_title(f"Trace of accepted points for ${param}$")
+            ax.set_xlabel(f"Index")
+            ax.set_ylabel(f"${param}$")
+            ax = fig.add_subplot(gs[index, 1])
 
-        # X = sorted(list(set(accepted[:, index])))
-        # Y = []
-        # for i in X:
-        #     Y.append(list(accepted[:, index]).count(i))
-        # ax.bar(X, Y)
-        # plt.xticks(range(len(functions)), range(len(functions) + 1))
-        bins = 20
-        ax.hist(accepted[:, index], bins=bins, density=True)
-        ax.set_ylabel("Occurrence")
-        ax.set_xlabel(f"${param}$")
-        ax.set_title(f"Histogram of  accepted points for ${param}$, {bins} bins.")
-        fig.tight_layout()
-    if not where:
-        plt.show()
-    else:
-        draw_plot(fig)
+            # X = sorted(list(set(accepted[:, index])))
+            # Y = []
+            # for i in X:
+            #     Y.append(list(accepted[:, index]).count(i))
+            # ax.bar(X, Y)
+            # plt.xticks(range(len(functions)), range(len(functions) + 1))
+            bins = 20
+            ax.hist(accepted[:, index], bins=bins, density=True)
+            ax.set_ylabel("Occurrence")
+            ax.set_xlabel(f"${param}$")
+            ax.set_title(f"Histogram of  accepted points for ${param}$, {bins} bins.")
+            fig.tight_layout()
+        if not where:
+            plt.show()
+        else:
+            draw_plot(fig)
 
     ## TODO make a option to set to see the whole space, not zoomed - freaking hard
     ## "Currently hist2d calculates it's own axis limits, and any limits previously set are ignored." (https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.axes.Axes.hist2d.html)
