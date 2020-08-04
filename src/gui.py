@@ -756,7 +756,9 @@ class Gui(Tk):
         Button(frame_right, text='Delete MH Results', command=self.refresh_mh).grid(row=7, column=0, padx=(4, 4), pady=7)
 
         Button(frame_right, text='Costumize Plot', command=self.customize_mh_results).grid(row=8, column=0, padx=(4, 4), pady=0)
-        Button(frame_right, text='Export Acc points', command=self.export_acc_points).grid(row=9, column=0, padx=(4, 4), pady=0)
+        Button(frame_right, text='Show MH iterations', command=self.show_mh_iterations).grid(row=9, column=0, padx=(4, 4), pady=0)
+        Button(frame_right, text='Show Acc points', command=self.show_mh_acc_points).grid(row=10, column=0, padx=(4, 4), pady=0)
+        Button(frame_right, text='Export Acc points', command=self.export_acc_points).grid(row=11, column=0, padx=(4, 4), pady=0)
 
         frame_right.columnconfigure(0, weight=1)
         frame_right.rowconfigure(0, weight=1)
@@ -3501,6 +3503,22 @@ class Gui(Tk):
                 self.progress.set("0%")
             except TclError:
                 return
+
+    def show_mh_iterations(self):
+        """ Create Scatter plot showing accepted and rejected points in its given order """
+        if not self.mh_results:
+            return
+        else:
+            assert isinstance(self.mh_results, HastingsResults)
+            self.mh_results.show_iterations(where=self.draw_plot_window)
+
+    def show_mh_acc_points(self):
+        """ Shows trace and histogram of accepted points """
+        if not self.mh_results:
+            return
+        else:
+            assert isinstance(self.mh_results, HastingsResults)
+            self.mh_results.show_accepted(where=self.draw_plot_window)
 
     def export_acc_points(self, file=False):
         """ Exports accepted points of metropolis Hastings

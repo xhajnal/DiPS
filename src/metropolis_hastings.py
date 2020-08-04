@@ -27,7 +27,7 @@ wrapper = DocumentWrapper(width=75)
 class HastingsResults:
     """ Class to represent Metropolis Hastings results"""
     def __init__(self, params, theta_init, accepted, observations_count: int, observations_samples_count: int,
-                 mh_sampling_iterations: int, eps, not_burn_in=75, pretitle="", title="", bins=20, last_iter=0, timeout=0, time_it_took=0):
+                 mh_sampling_iterations: int, eps, not_burn_in=75, pretitle="", title="", bins=20, last_iter=0, timeout=0, time_it_took=0, both=False):
         """
         Args:
             params (list of strings): parameter names
@@ -40,6 +40,7 @@ class HastingsResults:
             pretitle (string): title to be put in front of title
             title (string): title of the plot
             bins (int): number of segments in the heatmap plot (used only for 2D param space)
+            both (bool or np.array): both, accepted and rejected, sampled points
         """
         ## Inside variables
         self.params = params
@@ -47,6 +48,14 @@ class HastingsResults:
 
         ## Results
         self.accepted = accepted
+        if (self.accepted is False or self.accepted is []) and both is not False:
+            self.accepted = np.array(filter(lambda x: x[1] is True, both))
+        self.both = both
+        # try:  ## backward compatibility
+        #     self.both = both
+        # except Exception:
+        #     pass
+
         # self.rejected = rejected
 
         ## Results setting
@@ -56,6 +65,11 @@ class HastingsResults:
         self.eps = eps
 
         self.not_burn_in = not_burn_in
+        # try:  ## backward compatibility
+        #     self.not_burn_in = not_burn_in
+        # except AttributeError as exx:
+        #     if "'HastingsResults' object has no attribute 'not_burn_in'" in exx:
+        #         self.not_burn_in = show
         self.title = title
         self.pretitle = pretitle
 
@@ -72,6 +86,17 @@ class HastingsResults:
     def get_burn_in(self):
         """ Returns fraction of the burned-in part"""
         return 1 - self.not_burn_in / 100
+
+    def set_accepted(self, accepted):
+        self.accepted = accepted
+
+    def set_both(self, both, override=False):
+        self.both = both
+        if override or self.accepted is False:
+            self.accepted = np.array(filter(lambda x: x[1] is True, both))
+
+    def get_acc_as_a_list(self):
+        return self.accepted.tolist()
 
     def show_mh_heatmap(self, where=False, bins=False, not_burn_in=None, as_scatter=False, debug=False):
         """ Visualises the result of Metropolis Hastings as a heatmap
@@ -95,7 +120,11 @@ class HastingsResults:
             print("self.accepted", self.accepted)
 
         if not_burn_in is None:
-            not_burn_in = self.not_burn_in
+            try:  ## backward compatibility
+                not_burn_in = self.not_burn_in
+            except AttributeError as exx:
+                if "'HastingsResults' object has no attribute 'not_burn_in'" in str(exx):
+                    not_burn_in = self.show
 
         ## Convert percents / fraction to show into exact number
         if 0 < not_burn_in < 1:
@@ -176,8 +205,84 @@ class HastingsResults:
                 plt.title(self.title)
                 plt.show()
 
-    def get_acc_as_a_list(self):
-        return self.accepted.tolist()
+    def show_iterations(self, where=False):
+        """ Create Scatter plot showing accepted and rejected points in its given order
+
+        Args:
+           where (bool or callable): method to forward the figure
+        """
+        fig = Figure(figsize=(10, 10))
+        for index, param in enumerate(self.params):
+            ax = fig.add_subplot(len(self.params), 1, index + 1)
+            ## TODO decide whether to burn-in both or just accepted samples
+            # ax.axvline(x=self.get_burn_in() * self.mh_sampling_iterations, color='black', linestyle='-',
+            #           label="burn-in threshold")
+            ## TODO probably can be optimised
+            ## New code adding information how the accepted and rejected points are connected
+            X_accept, X_reject, Y_accept, Y_reject = [], [], [], []
+            for point_index, point in enumerate(self.both):
+                if point[1] is False:
+                    X_reject.append(point_index)
+                    Y_reject.append(point[0][index])
+                else:
+                    X_accept.append(point_index)
+                    Y_accept.append(point[0][index])
+            ax.scatter(X_reject, Y_reject, marker='x', c="r", label='Rejected', alpha=0.5)
+            ax.scatter(X_accept, Y_accept, marker='.', c="b", label='Accepted', alpha=0.5)
+
+            ## TODO calculate how many burned samples from burned accepted
+            borderline_index = X_accept[int(self.get_burn_in() * len(self.accepted[:, index]))]
+            ax.axvline(x=borderline_index + 0.5, color='black', linestyle='-', label="burn-in threshold")
+            ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+            ax.set_xlabel("MH Iteration")
+            ## Previous code before that information
+            # ax.plot(rejected[:, index], 'rx', label='Rejected', alpha=0.5)
+            # ax.plot(accepted[:, index], 'b.', label='Accepted', alpha=0.5)
+            # ax.set_xlabel("Index")
+            ax.set_ylabel(f"${param}$")
+            ax.set_title(f"Accepted and Rejected values of ${param}$.")
+            ax.grid()
+            ax.legend()
+        if not where:
+            plt.show()
+        else:
+            where(fig)
+
+    def show_accepted(self, where=False):
+        """ Trace and histogram of accepted points
+
+        Args:
+           where (bool or callable): method to forward the figure
+        """
+        fig = Figure(figsize=(20, 10))
+        gs = gridspec.GridSpec(len(self.params), 2, figure=fig)
+        for index, param in enumerate(self.params):
+            ax = fig.add_subplot(gs[index, 0])
+            ax.plot(self.accepted[:, index])
+            ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+            ax.set_title(f"Trace of accepted points for ${param}$")
+            ax.set_xlabel(f"Index")
+            ax.set_ylabel(f"${param}$")
+            ax.axvline(x=int(self.get_burn_in() * len(self.accepted[:, index])) + 0.5, color='black', linestyle='-',
+                       label="burn-in threshold")
+
+            ax = fig.add_subplot(gs[index, 1])
+            # X = sorted(list(set(accepted[:, index])))
+            # Y = []
+            # for i in X:
+            #     Y.append(list(accepted[:, index]).count(i))
+            # ax.bar(X, Y)
+            # plt.xticks(range(len(functions)), range(len(functions) + 1))
+            bins = 20
+            ax.hist(self.accepted[:, index], bins=bins, density=True)
+            ax.set_ylabel("Occurrence")
+            ax.set_xlabel(f"${param}$")
+            ax.set_title(f"Histogram of  accepted points for ${param}$, {bins} bins.")
+            fig.tight_layout()
+        if not where:
+            plt.show()
+        else:
+            where(fig)
 
 
 def sample_functions(functions, data_means):
@@ -413,7 +518,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         timeout (int): timeout in seconds
         debug (bool): if True extensive print will be used
         metadata (bool): if True metadata will be plotted
-        draw_plot (function): function showing intermidiate plots
+        draw_plot (function): function showing intermediate plots
 
     @author: tpetrov
     @edit: xhajnal
@@ -425,7 +530,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
 
     observations_samples_size = min(observations_count, observations_samples_size)
     ##                     HastingsResults ( params, theta_init, accepted, observations_count, observations_samples_count, MH_sampling_iterations, eps, not_burn_in,      pretitle, title, bins, last_iter,  timeout, time_it_took, rescale):
-    globals()["mh_results"] = HastingsResults(space.params, theta_init, False, observations_count, observations_samples_size, mh_sampling_iterations, eps, not_burn_in=not_burn_in, title="", bins=bins, last_iter=0, timeout=timeout)
+    globals()["mh_results"] = HastingsResults(space.params, theta_init, [], observations_count, observations_samples_size, mh_sampling_iterations, eps, not_burn_in=not_burn_in, title="", bins=bins, last_iter=0, timeout=timeout)
 
     ## TODO check this
     # ## Convert z3 functions
@@ -499,8 +604,9 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
 
         fig = Figure(figsize=(10, 10))
         ax = fig.add_subplot(1, 1, 1)
-        ax.bar(list(range(len(functions))), Y)
+        ax.bar(list(range(1, len(functions)+1)), Y)
         # plt.xticks(range(len(functions)), range(len(functions) + 1))
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         ax.set_xlabel("Function index")
         ax.set_ylabel("Number of observations")
         ax.set_title(f"Distribution of {observations_samples_size} observations (from full sample= {observations_count})")
@@ -514,7 +620,8 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     ##                                      (likelihood_computer,    prior, transition_model,   param_init, iterations,             space,    data, acceptance_rule, parameter_intervals, functions, eps, progress,          timeout,         debug):
     both, accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, mh_sampling_iterations, space, observations, acceptance, parameter_intervals, functions, eps, progress=progress, timeout=timeout, debug=debug)
 
-    globals()["mh_results"].accepted = accepted
+    globals()["mh_results"].set_accepted(accepted)
+    globals()["mh_results"].set_both(both)
 
     print("accepted.shape", accepted.shape)
     if len(accepted) == 0:
@@ -533,73 +640,17 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     # print("rejected", rejected)
 
     if metadata:
-        ## Create Scatter plot showing accepted and rejected points in its given order
-        fig = Figure(figsize=(10, 10))
-        for index, param in enumerate(space.get_params()):
-            ax = fig.add_subplot(len(space.get_params()), 1, index+1)
-            ## New code adding information how the accepted and rejected points are connected
-            ## TODO probably can be optimised
-            X_accept, X_reject, Y_accept, Y_reject = [], [], [], []
-            for point_index, point in enumerate(both):
-                if point[1] is False:
-                    X_reject.append(point_index)
-                    Y_reject.append(point[0][index])
-                else:
-                    X_accept.append(point_index)
-                    Y_accept.append(point[0][index])
-            ax.scatter(X_reject, Y_reject, marker='x', c="r", label='Rejected', alpha=0.5)
-            ax.scatter(X_accept, Y_accept, marker='.', c="b", label='Accepted', alpha=0.5)
-            ax.set_xlabel("MH Iteration")
-            ## Previous code before that information
-            # ax.plot(rejected[:, index], 'rx', label='Rejected', alpha=0.5)
-            # ax.plot(accepted[:, index], 'b.', label='Accepted', alpha=0.5)
-            # ax.set_xlabel("Index")
-            ax.set_ylabel(f"${param}$")
-            ax.set_title(f"Accepted and Rejected values of ${param}$.")
-            ax.grid()
-            ax.legend()
         if not where:
-            plt.show()
+            globals()["mh_results"].show_iterations()
         else:
-            draw_plot(fig)
-
-    globals()["mh_results"].not_burn_in = not_burn_in
+            globals()["mh_results"].show_iterations(where=draw_plot)
+    # globals()["mh_results"].not_burn_in = not_burn_in
 
     if metadata:
-        ## Trace and histogram of accepted points
-        if not_burn_in is False:
-            not_burn_in = int(-0.75 * accepted.shape[0])
-        elif 0 < not_burn_in < 1:
-            not_burn_in = int(-not_burn_in * accepted.shape[0])
-        else:
-            not_burn_in = int(-not_burn_in / 100 * accepted.shape[0])
-
-        fig = Figure(figsize=(20, 10))
-        gs = gridspec.GridSpec(len(space.get_params()), 2, figure=fig)
-        for index, param in enumerate(space.get_params()):
-            ax = fig.add_subplot(gs[index, 0])
-            ax.plot(accepted[:, index])
-            ax.set_title(f"Trace of accepted points for ${param}$")
-            ax.set_xlabel(f"Index")
-            ax.set_ylabel(f"${param}$")
-            ax = fig.add_subplot(gs[index, 1])
-
-            # X = sorted(list(set(accepted[:, index])))
-            # Y = []
-            # for i in X:
-            #     Y.append(list(accepted[:, index]).count(i))
-            # ax.bar(X, Y)
-            # plt.xticks(range(len(functions)), range(len(functions) + 1))
-            bins = 20
-            ax.hist(accepted[:, index], bins=bins, density=True)
-            ax.set_ylabel("Occurrence")
-            ax.set_xlabel(f"${param}$")
-            ax.set_title(f"Histogram of  accepted points for ${param}$, {bins} bins.")
-            fig.tight_layout()
         if not where:
-            plt.show()
+            globals()["mh_results"].show_accepted()
         else:
-            draw_plot(fig)
+            globals()["mh_results"].show_accepted(where=draw_plot)
 
     ## TODO make a option to set to see the whole space, not zoomed - freaking hard
     ## "Currently hist2d calculates it's own axis limits, and any limits previously set are ignored." (https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.axes.Axes.hist2d.html)
