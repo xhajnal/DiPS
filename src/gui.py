@@ -660,9 +660,9 @@ class Gui(Tk):
         self.bins.grid(row=4, column=8)
         self.bins.insert(END, '20')
 
-        label73 = Label(frame_left, text="Show from: ", anchor=W, justify=LEFT)
+        label73 = Label(frame_left, text="Set Burn-in: ", anchor=W, justify=LEFT)
         label73.grid(row=5, column=7)
-        createToolTip(label73, text='show last x percent of accepted pints')
+        createToolTip(label73, text='Trim the fraction of accepted points from beginning')
         self.show = Entry(frame_left)
         self.show.grid(row=5, column=8)
         self.show.insert(END, '75')
@@ -3028,7 +3028,7 @@ class Gui(Tk):
                                                   float(self.eps_entry.get()), theta_init=self.parameter_point,
                                                   where=[self.page6_figure2, self.page6_b],
                                                   progress=self.update_progress_bar, debug=self.debug.get(),
-                                                  bins=int(self.bins.get()), not_burn_in=float(self.show.get()),
+                                                  bins=int(self.bins.get()), burn_in=float(self.show.get()),
                                                   timeout=int(self.mh_timeout.get()), draw_plot=self.draw_plot_window,
                                                   metadata=self.mh_metada.get())
             spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b])
@@ -3453,10 +3453,12 @@ class Gui(Tk):
         self.grid_size_entry.grid(row=1, column=1)
         self.grid_size_entry.insert(END, str(self.mh_results.bins))
 
-        Label(self.new_window, text="Show from", anchor=W, justify=LEFT).grid(row=2, column=0)
-        self.show_entry = Entry(self.new_window)
-        self.show_entry.grid(row=2, column=1)
-        self.show_entry.insert(END, str(self.mh_results.not_burn_in))
+        burn_in_label = Label(self.new_window, text="Burn-in", anchor=W, justify=LEFT)
+        burn_in_label.grid(row=2, column=0)
+        createToolTip(burn_in_label, text='Trim the fraction of accepted points from beginning')
+        self.burn_in_entry = Entry(self.new_window)
+        self.burn_in_entry.grid(row=2, column=1)
+        self.burn_in_entry.insert(END, str(self.mh_results.get_burn_in()))
 
         # Label(self.new_window, text="Show 2D MH plot as scatter line plot", anchor=W, justify=LEFT).grid(row=3, column=0)
         show_mh_as_scatter_checkbutton = Checkbutton(self.new_window, text="Show 2D MH plot as scatter line plot", variable=self.show_mh_as_scatter)
@@ -3475,7 +3477,7 @@ class Gui(Tk):
         """ Parses window changing MH Plot"""
         try:
             bins = int(self.grid_size_entry.get())
-            show = float(self.show_entry.get())
+            burn_in = float(self.burn_in_entry.get())
             as_scatter = bool(self.show_mh_as_scatter.get())
 
             ## Clear figure
@@ -3485,7 +3487,7 @@ class Gui(Tk):
             self.page6_figure2.canvas.flush_events()
 
             assert isinstance(self.mh_results, HastingsResults)
-            spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b], bins=bins, not_burn_in=show, as_scatter=as_scatter)
+            spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b], bins=bins, burn_in=burn_in, as_scatter=as_scatter)
 
             if spam[0] is not False:
                 self.page6_figure2, self.page6_b = spam

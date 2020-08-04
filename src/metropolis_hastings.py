@@ -27,7 +27,7 @@ wrapper = DocumentWrapper(width=75)
 class HastingsResults:
     """ Class to represent Metropolis Hastings results"""
     def __init__(self, params, theta_init, accepted, observations_count: int, observations_samples_count: int,
-                 mh_sampling_iterations: int, eps, not_burn_in=75, pretitle="", title="", bins=20, last_iter=0, timeout=0, time_it_took=0, both=False):
+                 mh_sampling_iterations: int, eps, burn_in=0.25, pretitle="", title="", bins=20, last_iter=0, timeout=0, time_it_took=0, both=False):
         """
         Args:
             params (list of strings): parameter names
@@ -36,7 +36,7 @@ class HastingsResults:
             observations_samples_count (int): sample size from the observations
             mh_sampling_iterations (int): number of iterations/steps in searching in space
             eps (number): very small value used as probability of non-feasible values in prior
-            not_burn_in (number): shows last given percent of accepted points (trim burn-in period)
+            burn_in (number): fraction or count of how many samples will be trimmed from beginning
             pretitle (string): title to be put in front of title
             title (string): title of the plot
             bins (int): number of segments in the heatmap plot (used only for 2D param space)
@@ -64,7 +64,7 @@ class HastingsResults:
         self.mh_sampling_iterations = mh_sampling_iterations
         self.eps = eps
 
-        self.not_burn_in = not_burn_in
+        self.burn_in = burn_in
         # try:  ## backward compatibility
         #     self.not_burn_in = not_burn_in
         # except AttributeError as exx:
@@ -79,32 +79,46 @@ class HastingsResults:
         self.timeout = timeout
         self.time_it_took = time_it_took
 
-    def get_not_burn_in(self):
-        """ Returns fraction of not burned-in part"""
-        return self.not_burn_in / 100
-
     def get_burn_in(self):
         """ Returns fraction of the burned-in part"""
-        return 1 - self.not_burn_in / 100
+        if 0 < self.burn_in < 1:
+            return self.burn_in
+        elif len(self.accepted) or len(self.both):
+            if len(self.accepted):
+                return min(1, self.burn_in / len(self.accepted))  ## TODO define precisely burn-in
+            else:
+                return min(1, self.burn_in / len(self.both))
+        else:
+            return None
+
+    def get_not_burn_in(self):
+        """ Returns fraction of not burned-in part"""
+        if self.get_burn_in() is not None:
+            return 1 - self.get_burn_in()
+        else:
+            return None
 
     def set_accepted(self, accepted):
+        """ Input the accepted points"""
         self.accepted = accepted
 
     def set_both(self, both, override=False):
+        """ Input the both, accepted and rejected, sampled points"""
         self.both = both
         if override or self.accepted is False:
             self.accepted = np.array(filter(lambda x: x[1] is True, both))
 
     def get_acc_as_a_list(self):
+        """ Returns accepted points in a list"""
         return self.accepted.tolist()
 
-    def show_mh_heatmap(self, where=False, bins=False, not_burn_in=None, as_scatter=False, debug=False):
+    def show_mh_heatmap(self, where=False, bins=False, burn_in=None, as_scatter=False, debug=False):
         """ Visualises the result of Metropolis Hastings as a heatmap
 
         Args:
             where (tuple/list): output matplotlib sources to output created figure
             bins (int): number of segments in the plot (used only for heatmap - 2D param space)
-            not_burn_in (int or False or None): show last x percents of the accepted values, None - use class value (to trim burn-in period)
+            burn_in (number or None): discards the fraction/number of accepted points, None - use class value (to trim burn-in period)
             as_scatter (bool): Sets the plot to scatter plot even for 2D output
             debug (bool): if True extensive print will be used
 
@@ -116,35 +130,56 @@ class HastingsResults:
         # plt.style.use('default')
 
         if debug:
-            print("show", not_burn_in)
+            print("burn-in", burn_in)
             print("self.accepted", self.accepted)
 
-        if not_burn_in is None:
+        if burn_in is None:
             try:  ## backward compatibility
-                not_burn_in = self.not_burn_in
+                burn_in = self.burn_in
             except AttributeError as exx:
-                if "'HastingsResults' object has no attribute 'not_burn_in'" in str(exx):
-                    not_burn_in = self.show
+                if "'HastingsResults' object has no attribute 'burn_in'" in str(exx):
+                    try:
+                        burn_in = (100 - self.not_burn_in)/100
+                        self.burn_in = burn_in
+                    except:
+                        pass
+                    try:
+                        if 0 <= self.show <= 1:
+                            burn_in = 1 - self.show
+                        elif 0 <= self.show <= 100:
+                            burn_in = 1 - self.show/100
+                        elif self.show < 0:
+                            burn_in = len(self.accepted) + self.show
+                        else:
+                            burn_in = len(self.accepted) - self.show
+                        self.burn_in = burn_in
+                    except:
+                        pass
+        try:  ## backward compatibility
+            if self.mh_sampling_iterations < 0:
+                pass
+        except AttributeError as exx:
+            self.mh_sampling_iterations = self.MH_sampling_iterations
 
-        ## Convert percents / fraction to show into exact number
-        if 0 < not_burn_in < 1:
-            self.not_burn_in = not_burn_in * 100
-            not_burn_in = int(-not_burn_in * self.accepted.shape[0])
-        elif not_burn_in < 0:
-            self.not_burn_in = not_burn_in
-            not_burn_in = 75
+        if burn_in < 0:
+            raise Exception("MH - wrong burn-in setting.")
+        if burn_in > len(self.accepted):
+            raise Exception("MH - Burn-in values set higher than accepted point. Nothing to show.")
+
+        ## Convert fraction to show into exact number
+        if 0 < burn_in < 1:
+            keep_index = int(burn_in * self.accepted.shape[0])+1
         else:
-            self.not_burn_in = not_burn_in
-            not_burn_in = int(-not_burn_in / 100 * self.accepted.shape[0])
+            keep_index = int(burn_in)+1
+            burn_in = round(burn_in / self.accepted.shape[0], 2)
 
-        if self.title is "":
-            if self.last_iter > 0:
-                self.title = f'Estimate of MH algorithm, {niceprint(self.last_iter)} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n showing last {self.not_burn_in}% of {niceprint(self.accepted.shape[0])} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
-            else:
-                self.title = f'Estimate of MH algorithm, {niceprint(self.mh_sampling_iterations)} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n showing last {self.not_burn_in}% of {niceprint(self.accepted.shape[0])} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
+        if self.last_iter > 0:
+            self.title = f'Estimate of MH algorithm, {niceprint(self.last_iter)} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n trimming first {burn_in * 100}% of {niceprint(self.accepted.shape[0])} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
+        else:
+            self.title = f'Estimate of MH algorithm, {niceprint(self.mh_sampling_iterations)} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n trimming first {burn_in * 100}% of {niceprint(self.accepted.shape[0])} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
 
         if debug:
-            print("self.accepted[show:, 0]", self.accepted[not_burn_in:, 0])
+            print("self.accepted[show:, 0]", self.accepted[keep_index:, 0])
 
         if bins is not False:
             self.bins = bins
@@ -170,7 +205,7 @@ class HastingsResults:
             ## Get values of the vertical axis for respective line
             ax.xaxis.set_major_locator(MaxNLocator(integer=True))
             ## Thanks to Den for optimisation
-            egg = self.accepted[not_burn_in:].T
+            egg = self.accepted[keep_index:].T
             ax.plot(egg, '.-', markersize=15)
 
             # for sample in self.accepted[not_burn_in:]:
@@ -190,7 +225,7 @@ class HastingsResults:
                 plt.show()
         else:
             if where:
-                plt.hist2d(self.accepted[not_burn_in:, 0], self.accepted[not_burn_in:, 1], bins=self.bins)
+                plt.hist2d(self.accepted[keep_index:, 0], self.accepted[keep_index:, 1], bins=self.bins)
                 plt.xlabel(self.params[0])
                 plt.ylabel(self.params[1])
                 plt.title("\n".join(wrapper.wrap(self.title)))
@@ -198,7 +233,7 @@ class HastingsResults:
                 return where[0], where[1]
             else:
                 plt.figure(figsize=(12, 6))
-                plt.hist2d(self.accepted[not_burn_in:, 0], self.accepted[not_burn_in:, 1], bins=self.bins)
+                plt.hist2d(self.accepted[keep_index:, 0], self.accepted[keep_index:, 1], bins=self.bins)
                 plt.colorbar()
                 plt.xlabel(self.params[0])
                 plt.ylabel(self.params[1])
@@ -231,7 +266,7 @@ class HastingsResults:
             ax.scatter(X_accept, Y_accept, marker='.', c="b", label='Accepted', alpha=0.5)
 
             ## TODO calculate how many burned samples from burned accepted
-            borderline_index = X_accept[int(self.get_burn_in() * len(self.accepted[:, index]))]
+            borderline_index = X_accept[int(self.get_burn_in() * len(self.accepted))-1]
             ax.axvline(x=borderline_index + 0.5, color='black', linestyle='-', label="burn-in threshold")
             ax.xaxis.set_major_locator(MaxNLocator(integer=True))
             ax.set_xlabel("MH Iteration")
@@ -498,7 +533,7 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
 
 def initialise_sampling(space: RefinedSpace, observations, functions, observations_count: int,
                         observations_samples_size: int, mh_sampling_iterations: int, eps, theta_init=False, where=False,
-                        progress=False, not_burn_in=False, bins=20, timeout=False,
+                        progress=False, burn_in=False, bins=20, timeout=False,
                         debug=False, metadata=True, draw_plot=False):
     """ Initialisation method for Metropolis Hastings
 
@@ -513,7 +548,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         theta_init (list of numbers): initial parameter point
         where (tuple/list): output matplotlib sources to output created figure
         progress (Tkinter element or False): progress bar
-        not_burn_in (number): show last x percents of the accepted values (trim burn-in period)
+        burn_in (number): fraction or count of how many samples will be trimmed from beginning
         bins (int): number of segments in the plot
         timeout (int): timeout in seconds
         debug (bool): if True extensive print will be used
@@ -529,8 +564,8 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     globals()["start_time"] = start_time
 
     observations_samples_size = min(observations_count, observations_samples_size)
-    ##                     HastingsResults ( params, theta_init, accepted, observations_count, observations_samples_count, MH_sampling_iterations, eps, not_burn_in,      pretitle, title, bins, last_iter,  timeout, time_it_took, rescale):
-    globals()["mh_results"] = HastingsResults(space.params, theta_init, [], observations_count, observations_samples_size, mh_sampling_iterations, eps, not_burn_in=not_burn_in, title="", bins=bins, last_iter=0, timeout=timeout)
+    ##                     HastingsResults ( params, theta_init, accepted, observations_count, observations_samples_count, MH_sampling_iterations, eps, burn_in,      pretitle, title, bins, last_iter,  timeout, time_it_took, rescale):
+    globals()["mh_results"] = HastingsResults(space.params, theta_init, [], observations_count, observations_samples_size, mh_sampling_iterations, eps, burn_in=burn_in, title="", bins=bins, last_iter=0, timeout=timeout)
 
     ## TODO check this
     # ## Convert z3 functions
