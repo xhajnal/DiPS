@@ -26,12 +26,13 @@ wrapper = DocumentWrapper(width=75)
 
 class HastingsResults:
     """ Class to represent Metropolis Hastings results"""
-    def __init__(self, params, theta_init, accepted, observations_count: int, observations_samples_count: int,
-                 mh_sampling_iterations: int, eps, burn_in=0.25, pretitle="", title="", bins=20, last_iter=0, timeout=0, time_it_took=0, both=False):
+    def __init__(self, params, theta_init, accepted, rejected, observations_count: int, observations_samples_count: int,
+                 mh_sampling_iterations: int, eps, burn_in=0.25, pretitle="", title="", bins=20, last_iter=0, timeout=0, time_it_took=0):
         """
         Args:
             params (list of strings): parameter names
-            accepted (np.array): accepted points
+            accepted (np.array): accepted points with iteration index
+            rejected (np.array): rejected points with iteration index
             observations_count (int): total number of observations
             observations_samples_count (int): sample size from the observations
             mh_sampling_iterations (int): number of iterations/steps in searching in space
@@ -40,7 +41,6 @@ class HastingsResults:
             pretitle (string): title to be put in front of title
             title (string): title of the plot
             bins (int): number of segments in the heatmap plot (used only for 2D param space)
-            both (bool or np.array): both, accepted and rejected, sampled points
         """
         ## Inside variables
         self.params = params
@@ -48,15 +48,7 @@ class HastingsResults:
 
         ## Results
         self.accepted = accepted
-        if (self.accepted is False or self.accepted is []) and both is not False:
-            self.accepted = np.array(filter(lambda x: x[1] is True, both))
-        self.both = both
-        # try:  ## backward compatibility
-        #     self.both = both
-        # except Exception:
-        #     pass
-
-        # self.rejected = rejected
+        self.rejected = rejected
 
         ## Results setting
         self.observations_count = observations_count
@@ -83,13 +75,57 @@ class HastingsResults:
         """ Returns fraction of the burned-in part"""
         if 0 < self.burn_in < 1:
             return self.burn_in
-        elif len(self.accepted) or len(self.both):
-            if len(self.accepted):
-                return min(1, self.burn_in / len(self.accepted))  ## TODO define precisely burn-in
-            else:
-                return min(1, self.burn_in / len(self.both))
+        elif len(self.accepted):
+            return min(1, self.burn_in / len(self.accepted))
         else:
             return None
+
+    def merge_acc_and_rej(self):
+        """ Return both, accepted and rejected samples, in a single list"""
+        spam = np.empty([len(self.accepted) + len(self.rejected), len(self.params) + 1])
+        acc_index = 0
+        rej_index = 0
+        for i in range(len(spam)):
+            if acc_index < len(self.accepted):
+                if int(self.accepted[acc_index][-1]) == i:
+                    spam[i] = np.append(self.accepted[acc_index][:-1], True)
+                    acc_index = acc_index + 1
+                else:
+                    spam[i] = np.append(self.rejected[rej_index][:-1], False)
+                    rej_index = rej_index + 1
+            else:
+                spam[i] = np.append(self.rejected[rej_index][:-1], False)
+                rej_index = rej_index + 1
+        return spam
+
+        # spam = np.empty([len(self.accepted) + len(self.rejected), len(self.params) + 1])
+        # acc_index = 0
+        # rej_index = 0
+        # for i in range(len(self.accepted)):
+        #     if int(self.accepted[acc_index][-1]) == i:
+        #         spam[i] = np.append(self.accepted[acc_index][:-1], True)
+        #         acc_index = acc_index + 1
+        #     else:
+        #         spam[i] = np.append(self.rejected[rej_index][:-1], False)
+        #         rej_index = rej_index + 1
+        # for i in range(acc_index + rej_index, len(spam)):
+        #     spam[i] = np.append(self.rejected[rej_index][:-1], False)
+        #     rej_index = rej_index + 1
+        # return spam
+
+        # spam = []
+        # acc_index = 0
+        # rej_index = 0
+        # for i in range(len(self.accepted)):
+        #     if int(self.accepted[acc_index][-1]) == i:
+        #         spam.append(np.append(self.accepted[acc_index][:-1], True))
+        #         acc_index = acc_index + 1
+        #     else:
+        #         spam.append(np.append(self.rejected[rej_index][:-1], False))
+        #         rej_index = rej_index + 1
+        # for i in range(rej_index, len(self.rejected)):
+        #     spam.append(np.append(self.rejected[rej_index][:-1], False))
+        # return spam
 
     def get_not_burn_in(self):
         """ Returns fraction of not burned-in part"""
@@ -102,15 +138,17 @@ class HastingsResults:
         """ Input the accepted points"""
         self.accepted = accepted
 
-    def set_both(self, both, override=False):
-        """ Input the both, accepted and rejected, sampled points"""
-        self.both = both
-        if override or self.accepted is False:
-            self.accepted = np.array(filter(lambda x: x[1] is True, both))
+    def set_rejected(self, rejected):
+        """ Input rejected points"""
+        self.rejected = rejected
 
     def get_acc_as_a_list(self):
         """ Returns accepted points in a list"""
         return self.accepted.tolist()
+
+    def get_rej_as_a_list(self):
+        """ Returns rejected points in a list"""
+        return self.rejected.tolist()
 
     def show_mh_heatmap(self, where=False, bins=False, burn_in=None, as_scatter=False, debug=False):
         """ Visualises the result of Metropolis Hastings as a heatmap
@@ -128,6 +166,15 @@ class HastingsResults:
         # import matplotlib as mpl
         # mpl.rcParams.update(mpl.rcParamsDefault)
         # plt.style.use('default')
+
+        ## backwards compatibility
+        if len(self.params) == len(self.accepted[0]):
+            print("old data")
+            indices = np.linspace(1, len(self.accepted), num=len(self.accepted))
+            indices = np.array(list(map(lambda x: [x], indices)))
+            self.accepted = np.hstack((self.accepted, indices))
+            # for index, item in enumerate(self.accepted):
+            #     self.accepted[index] = self.accepted[index]
 
         if debug:
             print("burn-in", burn_in)
@@ -179,13 +226,13 @@ class HastingsResults:
             self.title = f'Estimate of MH algorithm, {niceprint(self.mh_sampling_iterations)} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n trimming first {burn_in * 100}% of {niceprint(self.accepted.shape[0])} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
 
         if debug:
-            print("self.accepted[show:, 0]", self.accepted[keep_index:, 0])
+            print("self.accepted[keep_index:, 0]", self.accepted[keep_index:, 0])
 
         if bins is not False:
             self.bins = bins
 
         ## Multidimensional case
-        if len(self.accepted[0]) > 2 or as_scatter:
+        if len(self.accepted[0]) > 3 or as_scatter:
             if where:
                 fig = where[0]
                 ax = where[1]
@@ -247,27 +294,37 @@ class HastingsResults:
            where (bool or callable): method to forward the figure
         """
         fig = Figure(figsize=(10, 10))
+        if len(self.params) == 2:
+            plots = 3
+        else:
+            plots = len(self.params)
         for index, param in enumerate(self.params):
-            ax = fig.add_subplot(len(self.params), 1, index + 1)
-            ## TODO decide whether to burn-in both or just accepted samples
-            # ax.axvline(x=self.get_burn_in() * self.mh_sampling_iterations, color='black', linestyle='-',
-            #           label="burn-in threshold")
+            ax = fig.add_subplot(plots, 1, index + 1)
+            borderline_index = self.accepted[:, -1][int(self.get_burn_in() * len(self.accepted))-1]
+            ax.axvline(x=borderline_index + 0.5, color='black', linestyle='-', label="burn-in threshold")
+
+
+            ax.scatter(self.rejected[:, -1], self.rejected[:, index], marker='x', c="r", label='Rejected', alpha=0.5)
+            ax.scatter(self.accepted[:, -1], self.accepted[:, index], marker='.', c="b", label='Accepted', alpha=0.5)
+
             ## TODO probably can be optimised
+            # ax.axvline(x=self.get_burn_in() * self.mh_sampling_iterations, color='black', linestyle='-',
+            #            label="burn-in threshold")
             ## New code adding information how the accepted and rejected points are connected
-            X_accept, X_reject, Y_accept, Y_reject = [], [], [], []
-            for point_index, point in enumerate(self.both):
-                if point[1] is False:
-                    X_reject.append(point_index)
-                    Y_reject.append(point[0][index])
-                else:
-                    X_accept.append(point_index)
-                    Y_accept.append(point[0][index])
-            ax.scatter(X_reject, Y_reject, marker='x', c="r", label='Rejected', alpha=0.5)
-            ax.scatter(X_accept, Y_accept, marker='.', c="b", label='Accepted', alpha=0.5)
+            # X_accept, X_reject, Y_accept, Y_reject = [], [], [], []
+            # for point_index, point in enumerate(self.both):
+            #     if point[1] is False:
+            #         X_reject.append(point_index)
+            #         Y_reject.append(point[0][index])
+            #     else:
+            #         X_accept.append(point_index)
+            #         Y_accept.append(point[0][index])
+            # ax.scatter(X_reject, Y_reject, marker='x', c="r", label='Rejected', alpha=0.5)
+            # ax.scatter(X_accept, Y_accept, marker='.', c="b", label='Accepted', alpha=0.5)
 
             ## TODO calculate how many burned samples from burned accepted
-            borderline_index = X_accept[int(self.get_burn_in() * len(self.accepted))-1]
-            ax.axvline(x=borderline_index + 0.5, color='black', linestyle='-', label="burn-in threshold")
+            # borderline_index = X_accept[int(self.get_burn_in() * len(self.accepted))-1]
+            # ax.axvline(x=borderline_index + 0.5, color='black', linestyle='-', label="burn-in threshold")
             ax.xaxis.set_major_locator(MaxNLocator(integer=True))
             ax.set_xlabel("MH Iteration")
             ## Previous code before that information
@@ -278,6 +335,19 @@ class HastingsResults:
             ax.set_title(f"Accepted and Rejected values of ${param}$.")
             ax.grid()
             ax.legend()
+        ## Plane plot, phase space
+        if len(self.params) == 2:
+            ax = fig.add_subplot(plots, 1, 3)
+            both = self.merge_acc_and_rej()
+            ax.plot(both[:, 0], both[:, 1], label="Path", c="grey", alpha=0.1)
+            ax.plot(both[:, 0][0], both[:, 1][0], 'g+', label="Start")
+            del both
+            ax.plot(self.accepted[:, 0], self.accepted[:, 1], 'b.', label='Accepted', alpha=0.3)
+            ax.plot(self.rejected[:, 0], self.rejected[:, 1], 'rx', label='Rejected', alpha=0.3)
+            ax.set_xlabel(self.params[0])
+            ax.set_ylabel(self.params[1])
+            ax.legend()
+            ax.set_title("Trace of Accepted and Rejected points in a plane.")
         if not where:
             plt.show()
         else:
@@ -290,17 +360,22 @@ class HastingsResults:
            where (bool or callable): method to forward the figure
         """
         fig = Figure(figsize=(20, 10))
-        gs = gridspec.GridSpec(len(self.params), 2, figure=fig)
+        if len(self.params) == 2:
+            gs = gridspec.GridSpec(3, 2, figure=fig)
+        else:
+            gs = gridspec.GridSpec(len(self.params), 2, figure=fig)
         for index, param in enumerate(self.params):
+            ## Trace of accepted points for respective parameter
             ax = fig.add_subplot(gs[index, 0])
             ax.plot(self.accepted[:, index])
+            ax.axvline(x=int(self.get_burn_in() * len(self.accepted[:, index])) + 0.5, color='black', linestyle='-',
+                       label="burn-in threshold")
             ax.xaxis.set_major_locator(MaxNLocator(integer=True))
             ax.set_title(f"Trace of accepted points for ${param}$")
             ax.set_xlabel(f"Index")
             ax.set_ylabel(f"${param}$")
-            ax.axvline(x=int(self.get_burn_in() * len(self.accepted[:, index])) + 0.5, color='black', linestyle='-',
-                       label="burn-in threshold")
 
+            ## Histogram of accepted points for respective parameter
             ax = fig.add_subplot(gs[index, 1])
             # X = sorted(list(set(accepted[:, index])))
             # Y = []
@@ -312,8 +387,19 @@ class HastingsResults:
             ax.hist(self.accepted[:, index], bins=bins, density=True)
             ax.set_ylabel("Occurrence")
             ax.set_xlabel(f"${param}$")
-            ax.set_title(f"Histogram of  accepted points for ${param}$, {bins} bins.")
+            ax.set_title(f"Histogram of accepted points for ${param}$, {bins} bins.")
             fig.tight_layout()
+        ## Plane plot, phase space
+        if len(self.params) == 2:
+            ax = fig.add_subplot(gs[2, :])
+            ax.plot(self.accepted[:, 0], self.accepted[:, 1],  label="Path", c="grey", alpha=0.1)
+            ax.plot(self.accepted[:, 0], self.accepted[:, 1], 'b.', label='Accepted', alpha=0.3)
+            ax.plot(self.accepted[:, 0][0], self.accepted[:, 1][0], 'g+', label="Start")
+            ax.set_xlabel(self.params[0])
+            ax.set_ylabel(self.params[1])
+            ax.legend()
+            ax.set_title("Trace of Accepted points in a plane.")
+
         if not where:
             plt.show()
         else:
@@ -434,11 +520,12 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param
     @edit: xhajnal
     """
     theta = param_init
-    both = []
     accepted = []
-    rejected = []
+    ## Setting the initial point as rejected so it will be shown in plots
+    ## Even though it is never compared and hence should not be acc nor rej
+    rejected = [np.append(theta, 0)]
     ## For each MCMC iteration do
-    for iteration in range(iterations):
+    for iteration in range(1, iterations + 1):
         ## Walk in parameter space - Get new parameter point from the current one
         theta_new = transition_model(theta, parameter_intervals)
         ## Estimate likelihood of current point
@@ -458,13 +545,11 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param
         if acceptance_rule(theta_lik + np.log(prior_rule(theta, parameter_intervals)), theta_new_lik + np.log(prior_rule(theta_new, parameter_intervals))):
             ## Go to the new point
             theta = theta_new
-            accepted.append(theta_new)
-            both.append([theta_new, True])
+            accepted.append(np.append(theta_new, iteration))
             if debug:
                 print(f"new point: {theta_new} accepted")
         else:
-            rejected.append(theta_new)
-            both.append([theta_new, False])
+            rejected.append(np.append(theta_new, iteration))
             if debug:
                 print(f"new point: {theta_new} rejected")
         if progress:
@@ -477,7 +562,7 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param
             break
 
     globals()["mh_results"].time_it_took = time() - globals()["start_time"]
-    return np.array(both), np.array(accepted), np.array(rejected)
+    return np.array(accepted), np.array(rejected)
 
 
 def manual_log_like_normal(space, theta, functions, observations, eps):
@@ -564,8 +649,8 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     globals()["start_time"] = start_time
 
     observations_samples_size = min(observations_count, observations_samples_size)
-    ##                     HastingsResults ( params, theta_init, accepted, observations_count, observations_samples_count, MH_sampling_iterations, eps, burn_in,      pretitle, title, bins, last_iter,  timeout, time_it_took, rescale):
-    globals()["mh_results"] = HastingsResults(space.params, theta_init, [], observations_count, observations_samples_size, mh_sampling_iterations, eps, burn_in=burn_in, title="", bins=bins, last_iter=0, timeout=timeout)
+    ##                     HastingsResults ( params, theta_init, accepted, rej observations_count, observations_samples_count, MH_sampling_iterations, eps, burn_in,      pretitle, title, bins, last_iter,  timeout, time_it_took, rescale):
+    globals()["mh_results"] = HastingsResults(space.params, theta_init, [], [], observations_count, observations_samples_size, mh_sampling_iterations, eps, burn_in=burn_in, title="", bins=bins, last_iter=0, timeout=timeout)
 
     ## TODO check this
     # ## Convert z3 functions
@@ -653,10 +738,10 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     print("Initial parameter point: ", theta_init)
 
     ##                                      (likelihood_computer,    prior, transition_model,   param_init, iterations,             space,    data, acceptance_rule, parameter_intervals, functions, eps, progress,          timeout,         debug):
-    both, accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, mh_sampling_iterations, space, observations, acceptance, parameter_intervals, functions, eps, progress=progress, timeout=timeout, debug=debug)
+    accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, mh_sampling_iterations, space, observations, acceptance, parameter_intervals, functions, eps, progress=progress, timeout=timeout, debug=debug)
 
     globals()["mh_results"].set_accepted(accepted)
-    globals()["mh_results"].set_both(both)
+    globals()["mh_results"].set_rejected(rejected)
 
     print("accepted.shape", accepted.shape)
     if len(accepted) == 0:

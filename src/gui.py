@@ -665,7 +665,7 @@ class Gui(Tk):
         createToolTip(label73, text='Trim the fraction of accepted points from beginning')
         self.show = Entry(frame_left)
         self.show.grid(row=5, column=8)
-        self.show.insert(END, '75')
+        self.show.insert(END, '0.25')
 
         label73 = Label(frame_left, text="Set timeout: ", anchor=W, justify=LEFT)
         label73.grid(row=6, column=7)
