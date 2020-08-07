@@ -628,7 +628,8 @@ class Gui(Tk):
         self.sample_size_entry.grid(row=1, column=1)
         self.sample_size_entry.insert(END, '5')
 
-        Button(frame_left, text='Grid sampling', command=self.sample_space).grid(row=9, column=0, columnspan=2, padx=10, pady=4)
+        Button(frame_left, text='Grid sampling', command=self.sample_space).grid(row=9, column=0, padx=10, pady=4)
+        Button(frame_left, text='Grid sat degree', command=self.sample_space_degree).grid(row=9, column=1, padx=10, pady=4)
 
         ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=2, rowspan=7, sticky='ns', padx=25, pady=25)
 
@@ -2927,6 +2928,81 @@ class Gui(Tk):
             ## This progress is passed as whole to update the thing inside the called function
             assert isinstance(self.constraints, list)
             self.space.grid_sample(self.constraints, self.sample_size, silent=self.silent.get(), save=False, progress=self.update_progress_bar)
+        finally:
+            try:
+                self.new_window.destroy()
+                del self.new_window
+                self.cursor_toggle_busy(False)
+                self.progress.set("0%")
+            except TclError:
+                return
+
+        self.print_space()
+
+        self.show_space(show_refinement=False, show_samples=True, show_true_point=self.show_true_point, prefer_unsafe=self.show_red_in_multidim_refinement.get())
+
+        ## Autosave figure
+        if self.save.get():
+            time_stamp = str(time.strftime("%d-%b-%Y-%H-%M-%S", time.localtime())) + ".png"
+            self.page6_figure.savefig(os.path.join(self.refinement_results, f"Space_sampling_{time_stamp}"), bbox_inches='tight')
+            print("Figure stored here: ", os.path.join(self.refinement_results, f"Space_sampling_{time_stamp}"))
+            with open(os.path.join(self.refinement_results, "figure_to_title.txt"), "a+") as file:
+                file.write(f"Space_sampling_{time_stamp} :\n")
+                file.write(f"      grid_size: {self.sample_size}\n")
+                file.write(f"      constraints: {self.constraints_file.get()}\n")
+
+        self.space_changed = False
+        self.constraints_changed = False
+
+        ## Autosave
+        self.save_space(os.path.join(self.tmp_dir, "space"))
+
+        self.status_set("Space sampling finished.")
+
+    def sample_space_degree(self):
+        """ Samples (Parameter) Space adn gives quantitative result in state space. Plots the results. """
+        print("Checking the inputs.")
+        self.check_changes("constraints")
+
+        print("Quantitative space sampling ...")
+        self.status_set("Quantitative space sampling  - checking inputs")
+        ## Getting values from entry boxes
+        self.sample_size = int(self.sample_size_entry.get())
+
+        ## Checking if all entries filled
+        if self.sample_size == "":
+            messagebox.showwarning("Quantitative space sampling ", "Choose grid size, number of samples before space sampling.")
+            return
+
+        if self.constraints == "":
+            messagebox.showwarning("Quantitative space sampling ", "Load or calculate constraints before space sampling.")
+            return
+
+        ## Check space
+        if not self.validate_space("Quantitative space sampling "):
+            return
+
+        self.status_set("Quantitative space sampling  is running ...")
+        if not self.silent.get():
+            assert isinstance(self.space, space.RefinedSpace)
+            print("space parameters: ", self.space.params)
+            print("constraints: ", self.constraints)
+            print("grid size: ", self.sample_size)
+
+        try:
+            self.cursor_toggle_busy(True)
+
+            ## Progress Bar
+            self.new_window = Toplevel(self)
+            Label(self.new_window, text="Quantitative space sampling  progress:", anchor=W, justify=LEFT).pack()
+            Label(self.new_window, textvar=self.progress, anchor=W, justify=LEFT).pack()
+            self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
+            self.progress_bar.pack()
+            self.update()
+
+            ## This progress is passed as whole to update the thing inside the called function
+            assert isinstance(self.constraints, list)
+            self.space.grid_quatitative_sample(self.constraints, self.sample_size, silent=self.silent.get(), save=False, progress=self.update_progress_bar)
         finally:
             try:
                 self.new_window.destroy()

@@ -707,6 +707,20 @@ class RefinedSpace:
         self.gridsampled = True
         sample(self, constraints, sample_size, compress=True, silent=silent, save=save, progress=progress)
 
+    def grid_quatitative_sample(self, constraints, sample_size, silent: bool = False, save=False, progress=False):
+        """ Executes quatitative grid sampling
+
+        Args:
+            constraints  (list of strings): array of properties
+            sample_size (int): number of samples in dimension
+            silent (bool): if silent printed output is set to minimum
+            save (bool): if True output is pickled
+            progress (Tkinter element): progress bar
+        """
+        from quantitative_space_sample import quantitative_sample
+        self.gridsampled = True
+        quantitative_sample(self, constraints, sample_size, compress=True, silent=silent, save=save, progress=progress)
+
     def show_samples(self, which):
         """ Visualises samples in 2D """
         if not (self.sat_samples or self.unsat_samples):
