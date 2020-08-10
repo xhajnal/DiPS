@@ -49,11 +49,25 @@ def ineq_to_constraints(functions: list, intervals: list, silent: bool = True):
         spam = []
         for index in range(len(functions)):
             if isinstance(intervals[index], Interval):
-                spam.append(functions[index] + ">=" + str(intervals[index].start))
-                spam.append(functions[index] + "<=" + str(intervals[index].end))
+                ## Old
+                # spam.append(functions[index] + " >= " + str(intervals[index].start))
+                # spam.append(functions[index] + " <= " + str(intervals[index].end))
+                ## New
+                spam.append(str(intervals[index].start) + " <= " + functions[index] + " <= " + str(intervals[index].end))
+                ## Slightly slower
+                # spam.append(f"{intervals[index].start} <= {functions[index]} <= {intervals[index].end}")
+                ## Slow
+                # spam.append(f"{functions[index]} in Interval({intervals[index].start}, {intervals[index].end})")
             else:
-                spam.append(functions[index] + ">=" + str(intervals[index][0]))
-                spam.append(functions[index] + "<=" + str(intervals[index][1]))
+                ## Old
+                # spam.append(functions[index] + " >= " + str(intervals[index][0]))
+                # spam.append(functions[index] + " <= " + str(intervals[index][1]))
+                ## New
+                spam.append(str(intervals[index][0]) + " <= " + functions[index] + " <= " + str(intervals[index][1]))
+                ## Slightly slower
+                # spam.append(f"{intervals[index][0]} <= {functions[index]} <= {intervals[index][1]}")
+                ## Slow
+                # spam.append(f"{functions[index]} in Interval({intervals[index][0]}, {intervals[index][1]})")
         return spam
     except Exception as error:
         if "'EmptySet' object does not support indexing" in str(error):
