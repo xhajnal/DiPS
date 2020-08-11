@@ -2,9 +2,9 @@ import os
 import socket
 import copy
 import numpy as np
-from matplotlib import colors
+from matplotlib import colors, pyplot
 from numpy import prod
-from collections import Iterable
+from collections.abc import Iterable
 from time import localtime, strftime
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
@@ -255,27 +255,29 @@ class RefinedSpace:
             # rc('font', **{'family':'serif', 'serif':['Computer Modern Roman']})
             if where:
                 fig = where[0]
-                pic = where[1]
+                axes = where[1]
+                # pyplot.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=None, hspace=None)
                 plt.autoscale()
-                pic.autoscale()
+                axes.autoscale()
             else:
                 fig = plt.figure()
-                pic = fig.add_subplot(111, aspect='equal')
-            pic.set_xlabel(self.params[0])
+                axes = fig.add_subplot(111, aspect='equal')
+                # fig.
+            axes.set_xlabel(self.params[0])
 
             ## Set axis ranges
             region = copy.deepcopy(self.region)
             if len(self.region) == 1:
                 if region[0][1] - region[0][0] < 0.1:
                     region[0] = (region[0][0] - 0.2, region[0][1] + 0.2)
-                pic.axis([region[0][0], region[0][1], 0, 1])
+                axes.axis([region[0][0], region[0][1], -0.1, 0.1])
             max_region_size = region[0][1] - region[0][0]
 
             if len(self.region) == 2:
-                pic.set_ylabel(self.params[1])
+                axes.set_ylabel(self.params[1])
                 # if region[1][1] - region[1][0] < 0.1:
                 #     region[1] = (region[1][0] - 0.2, region[1][1] + 0.2)
-                pic.axis([region[0][0], region[0][1], region[1][0], region[1][1]])
+                axes.axis([region[0][0], region[0][1], region[1][0], region[1][1]])
                 max_region_size = max(max_region_size, region[1][1] - region[1][0])
 
             pretitle = ""
@@ -293,21 +295,28 @@ class RefinedSpace:
             if pretitle:
                 pretitle = pretitle + "\n"
             if green:
-                pic.add_collection(self.show_green(show_all=show_all))
+                axes.add_collection(self.show_green(show_all=show_all))
             if red:
-                pic.add_collection(self.show_red(show_all=show_all))
+                axes.add_collection(self.show_red(show_all=show_all))
             if not quantitative:
-                if sat_samples and self.sat_samples:
-                    pic.add_collection(self.show_samples(True))
-                if unsat_samples and self.unsat_samples:
-                    pic.add_collection(self.show_samples(False))
+                if len(self.region) == 1:
+                    ## show 1D space sampling
+                    if sat_samples and self.sat_samples:
+                        axes.scatter(np.array(list(self.sat_samples)), np.zeros(len(self.sat_samples)), c="green", alpha=0.5)
+                    if unsat_samples and self.unsat_samples:
+                        axes.scatter(np.array(list(self.unsat_samples)), np.zeros(len(self.unsat_samples)), c="red", alpha=0.5)
+                elif len(self.region) == 2:
+                    ## show 2D space sampling
+                    if sat_samples and self.sat_samples:
+                        axes.scatter(np.array(list(self.sat_samples))[:, 0], np.array(list(self.sat_samples))[:, 1], c="green", alpha=0.5)
+                    if unsat_samples and self.unsat_samples:
+                        axes.scatter(np.array(list(self.unsat_samples))[:, 0], np.array(list(self.unsat_samples))[:, 1], c="red", alpha=0.5)
             else:
-                ## 2D quantitative sampling
-                # pic.add_collection(self.show_samples(True, quantitative=True))
-
+                ## Show quantitative space sampling
+                ## Get min, max sat degree
                 min_value = round(min(self.dist_samples.values()), 16)
                 max_value = round(max(self.dist_samples.values()), 16)
-
+                ## Setup colour normalisation
                 if min_value < 0 < max_value:
                     divnorm = colors.DivergingNorm(vmin=min_value, vcenter=0., vmax=max_value)
                 elif min_value > 0:
@@ -315,14 +324,23 @@ class RefinedSpace:
                 else:
                     divnorm = colors.DivergingNorm(vmin=min_value, vcenter=0., vmax=1)
 
-                if where:
-                    b = where[1].scatter(np.array(list(self.dist_samples.keys()))[:, 0], np.array(list(self.dist_samples.keys()))[:, 1], c=list(self.dist_samples.values()), cmap='RdYlGn', norm=divnorm)
-                    c = where[0].colorbar(b, ax=where[1])
-                    c.set_label('Satisfaction degree')
-                else:
-                    plt.scatter(np.array(self.dist_samples.keys())[:, 0], np.array(self.dist_samples.keys())[:, 1], c=self.dist_samples.values(), cmap='RdYlGn', norm=divnorm)
-                    cbar = plt.colorbar()
-                    cbar.set_label('Satisfaction degree')
+                if len(self.region) == 1:
+                    ## Show 1D quantitative space sampling
+                    if where:
+                        spam = axes.scatter(np.array(list(self.dist_samples.keys())), np.zeros(len(self.dist_samples.keys())), c=list(self.dist_samples.values()), cmap='RdYlGn', norm=divnorm)
+                        cbar = fig.colorbar(spam, ax=axes)
+                    else:
+                        plt.scatter(np.array(list(self.dist_samples.keys())), np.zeros(len(self.dist_samples.keys())), c=list(self.dist_samples.values()), cmap='RdYlGn', norm=divnorm)
+                        cbar = plt.colorbar()
+                elif len(self.region) == 2:
+                    ## show 2D quantitative sampling
+                    if where:
+                        spam = axes.scatter(np.array(list(self.dist_samples.keys()))[:, 0], np.array(list(self.dist_samples.keys()))[:, 1], c=list(self.dist_samples.values()), cmap='RdYlGn', norm=divnorm)
+                        cbar = fig.colorbar(spam, ax=axes)
+                    else:
+                        plt.scatter(np.array(self.dist_samples.keys())[:, 0], np.array(self.dist_samples.keys())[:, 1], c=self.dist_samples.values(), cmap='RdYlGn', norm=divnorm)
+                        cbar = plt.colorbar()
+                cbar.set_label('Satisfaction degree')
             if self.true_point and true_point:
                 # print(self.true_point)
                 if (len(self.sat_samples) + len(self.unsat_samples)) == 0 or len(self.region) == 0:
@@ -331,12 +349,12 @@ class RefinedSpace:
                     size_correction = min(1 / (len(self.sat_samples) + len(self.unsat_samples)) ** (1 / len(self.region)), 0.01)
                 circle = plt.Circle((self.true_point[0], self.true_point[1]), size_correction*1, color='b', fill=False)
                 if where:
-                    where[1].add_artist(circle)
+                    axes.add_artist(circle)
                 else:
                     plt.gcf().gca().add_artist(circle)
 
             whole_title = "\n".join(self.wrapper.wrap(f"{pretitle} \n{self.title} \n {title}"))
-            pic.set_title(whole_title)
+            axes.set_title(whole_title)
 
             ## Save the figure
             if save:
@@ -347,8 +365,9 @@ class RefinedSpace:
             if where:
                 ## TODO probably yield
                 # print("returning tuple")
+
                 del region
-                return fig, pic
+                return fig, axes
             else:
                 # plt.tight_layout()
                 plt.show()
@@ -750,6 +769,7 @@ class RefinedSpace:
         self.gridsampled = True
         sample(self, constraints, sample_size, compress=True, silent=silent, save=save, debug=debug, progress=progress, quantitative=quantitative)
 
+    ## TODO DEPRICATED NOT USED NOW, plot.scatter used instead
     def show_samples(self, which):
         """ Visualises samples in 2D"""
         if not (self.sat_samples or self.unsat_samples):
@@ -759,6 +779,8 @@ class RefinedSpace:
         if len(self.region) > 2:
             print("Error while visualising", len(self.region), "dimensional space")
             return None
+        elif len(self.region) == 1:
+            return PatchCollection([], facecolor='r', alpha=0.5)  ## TODO
         elif len(self.region) == 2:
             # print("samples", self.samples)
             try:
@@ -766,11 +788,11 @@ class RefinedSpace:
                 y_size = self.region[1][1] - self.region[1][0]
                 x_size_correction = min(1 / (len(self.sat_samples) + len(self.unsat_samples)) ** (1 / len(self.region)), 0.01) * x_size
                 y_size_correction = min(1 / (len(self.sat_samples) + len(self.unsat_samples)) ** (1 / len(self.region)), 0.01) * y_size
-            except:
+            except Exception as err:
                 print("len(self.sat_samples)", len(self.sat_samples))
                 print("len(self.unsat_samples)", len(self.unsat_samples))
                 print("len(self.region)", len(self.region))
-                raise Exception()
+                raise err
             ## CHOOSING SAT OR UNSAT
             if which:
                 for rectangle in self.sat_samples:
