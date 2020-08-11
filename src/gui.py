@@ -1808,7 +1808,7 @@ class Gui(Tk):
         self.space_collapsed = not self.space_collapsed
         self.print_space()
 
-    def show_space(self, show_refinement, show_samples, show_true_point, clear=False, show_all=False, prefer_unsafe=False):
+    def show_space(self, show_refinement, show_samples, show_true_point, clear=False, show_all=False, prefer_unsafe=False, quantitative=False):
         """ Visualises the space in the plot.
 
         Args:
@@ -1818,6 +1818,7 @@ class Gui(Tk):
             clear (bool): if True the plot is cleared
             show_all (bool):  if True, not only newly added rectangles are shown
             prefer_unsafe: if True unsafe space is shown in multidimensional space instead of safe
+            quantitative (bool): if True show far is the point from satisfying / not satisfying the constraints
         """
 
         try:
@@ -1828,7 +1829,8 @@ class Gui(Tk):
                     assert isinstance(self.space, space.RefinedSpace)
                     figure, axis = self.space.show(green=show_refinement, red=show_refinement, sat_samples=show_samples,
                                                    unsat_samples=show_samples, true_point=show_true_point, save=False,
-                                                   where=[self.page6_figure, self.page6_a], show_all=show_all, prefer_unsafe=prefer_unsafe)
+                                                   where=[self.page6_figure, self.page6_a], show_all=show_all,
+                                                   prefer_unsafe=prefer_unsafe, quantitative=quantitative)
                     ## If no plot provided
                     if figure is None:
                         messagebox.showinfo("Load Space", axis)
@@ -3002,7 +3004,8 @@ class Gui(Tk):
 
             ## This progress is passed as whole to update the thing inside the called function
             assert isinstance(self.constraints, list)
-            self.space.grid_quatitative_sample(self.constraints, self.sample_size, silent=self.silent.get(), save=False, progress=self.update_progress_bar)
+            self.show_space(None, None, None, clear=True)
+            self.space.grid_sample(self.constraints, self.sample_size, silent=self.silent.get(), save=False, progress=self.update_progress_bar, quantitative=True)
         finally:
             try:
                 self.new_window.destroy()
@@ -3014,7 +3017,7 @@ class Gui(Tk):
 
         self.print_space()
 
-        self.show_space(show_refinement=False, show_samples=True, show_true_point=self.show_true_point, prefer_unsafe=self.show_red_in_multidim_refinement.get())
+        self.show_space(show_refinement=False, show_samples=False, show_true_point=self.show_true_point, prefer_unsafe=self.show_red_in_multidim_refinement.get(), quantitative=True)
 
         ## Autosave figure
         if self.save.get():

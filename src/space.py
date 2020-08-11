@@ -1,6 +1,8 @@
 import os
 import socket
 import copy
+import numpy as np
+from matplotlib import colors
 from numpy import prod
 from collections import Iterable
 from time import localtime, strftime
@@ -39,7 +41,7 @@ class RefinedSpace:
         title (string): text to added in the end of the Figure titles, CASE STUDY STANDARD: f"model: {model_type}, population = {population}, sample_size = {sample_size},  \n Dataset = {dataset}, alpha={alpha}, #samples={n_samples}"
     """
 
-    def __init__(self, region, params, types=None, rectangles_sat=False, rectangles_unsat=False, rectangles_unknown=None, sat_samples=None, unsat_samples=None, true_point=False, title=False, prefer_unsafe=False):
+    def __init__(self, region, params, types=None, rectangles_sat=False, rectangles_unsat=False, rectangles_unknown=None, sat_samples=None, unsat_samples=None, dist_samples=False, true_point=False, title=False, prefer_unsafe=False):
         """ (hyper)rectangles is a list of intervals, point is a list of numbers
         Args:
             region (list of intervals or tuple of intervals): whole space
@@ -48,8 +50,9 @@ class RefinedSpace:
             rectangles_sat (list of (hyper)rectangles): sat (green) space
             rectangles_unsat (list of (hyper)rectangles): unsat (red) space
             rectangles_unknown (list of (hyper)rectangles): unknown (white) space
-            sat_samples: (list of points): satisfying points
-            unsat_samples: (list of points): unsatisfying points
+            sat_samples (list of points): satisfying points
+            unsat_samples (list of points): unsatisfying points
+            dist_samples (dictionary): points in param space to distance of not satisfying the constraints
             true_point (point): The true value in the parameter space
             title (string): text to added in the end of the Figure titles, CASE STUDY STANDARD: f"model: {model_type}, population = {population}, sample_size = {sample_size},  \n Dataset = {dataset}, alpha={alpha}, #samples={n_samples}"
             prefer_unsafe: if True unsafe space is shown in multidimensional space instead of safe
@@ -188,6 +191,12 @@ class RefinedSpace:
             print("Not sure about the source of the sample points")
             self.gridsampled = False
 
+        ## SET DIST POINTS
+        if dist_samples is False:
+            self.dist_samples = {}
+        else:
+            self.dist_samples = dist_samples
+
         ## SET THE TRUE POINT
         if true_point:
             if len(true_point) is len(self.params):
@@ -214,7 +223,7 @@ class RefinedSpace:
         ## TEXT WRAPPER
         self.wrapper = DocumentWrapper(width=70)
 
-    def show(self, title="", green=True, red=True, sat_samples=False, unsat_samples=False, true_point=True, save=False, where=False, show_all=True, prefer_unsafe=None):
+    def show(self, title="", green=True, red=True, sat_samples=False, unsat_samples=False, quantitative=False, true_point=True, save=False, where=False, show_all=True, prefer_unsafe=None):
         """ Visualises the space
 
         Args:
@@ -223,6 +232,7 @@ class RefinedSpace:
             red (bool): if True showing unsafe space
             sat_samples (bool): if True showing sat samples
             unsat_samples (bool): if True showing unsat samples
+            quantitative (bool): if True show far is the point from satisfying / not satisfying the constraints
             true_point (bool): if True showing true point
             save (bool): if True, the output is saved
             where (tuple/list): output matplotlib sources to output created figure
@@ -286,10 +296,33 @@ class RefinedSpace:
                 pic.add_collection(self.show_green(show_all=show_all))
             if red:
                 pic.add_collection(self.show_red(show_all=show_all))
-            if sat_samples and self.sat_samples:
-                pic.add_collection(self.show_samples(True))
-            if unsat_samples and self.unsat_samples:
-                pic.add_collection(self.show_samples(False))
+            if not quantitative:
+                if sat_samples and self.sat_samples:
+                    pic.add_collection(self.show_samples(True))
+                if unsat_samples and self.unsat_samples:
+                    pic.add_collection(self.show_samples(False))
+            else:
+                ## 2D quantitative sampling
+                # pic.add_collection(self.show_samples(True, quantitative=True))
+
+                min_value = round(min(self.dist_samples.values()), 16)
+                max_value = round(max(self.dist_samples.values()), 16)
+
+                if min_value < 0 < max_value:
+                    divnorm = colors.DivergingNorm(vmin=min_value, vcenter=0., vmax=max_value)
+                elif min_value > 0:
+                    divnorm = colors.DivergingNorm(vmin=-1, vcenter=0., vmax=max_value)
+                else:
+                    divnorm = colors.DivergingNorm(vmin=min_value, vcenter=0., vmax=1)
+
+                if where:
+                    b = where[1].scatter(np.array(list(self.dist_samples.keys()))[:, 0], np.array(list(self.dist_samples.keys()))[:, 1], c=list(self.dist_samples.values()), cmap='RdYlGn', norm=divnorm)
+                    c = where[0].colorbar(b, ax=where[1])
+                    c.set_label('Satisfaction degree')
+                else:
+                    plt.scatter(np.array(self.dist_samples.keys())[:, 0], np.array(self.dist_samples.keys())[:, 1], c=self.dist_samples.values(), cmap='RdYlGn', norm=divnorm)
+                    cbar = plt.colorbar()
+                    cbar.set_label('Satisfaction degree')
             if self.true_point and true_point:
                 # print(self.true_point)
                 if (len(self.sat_samples) + len(self.unsat_samples)) == 0 or len(self.region) == 0:
@@ -596,6 +629,14 @@ class RefinedSpace:
         # print("unsat_samples", unsat_samples)
         self.unsat_samples.extend(unsat_samples)
 
+    def add_degree_samples(self, samples):
+        """ Adds samples and their sat degree (distance from not satisfying the constraints)
+
+        Args:
+            samples (dict): of samples to sat degree
+        """
+        self.dist_samples.update(samples)
+
     def remove_green(self, green):
         """ Removes green (hyper)rectangle """
         self.rectangles_sat.remove(green)
@@ -693,7 +734,7 @@ class RefinedSpace:
         self.rectangles_unsat_to_show = []
         return PatchCollection(rectangles_unsat, facecolor='r', alpha=0.5)
 
-    def grid_sample(self, constraints, sample_size, silent: bool = False, save=False, progress=False):
+    def grid_sample(self, constraints, sample_size, silent: bool = False, save=False, debug=False, progress=False, quantitative=False):
         """ Executes grid sampling
 
         Args:
@@ -701,28 +742,16 @@ class RefinedSpace:
             sample_size (int): number of samples in dimension
             silent (bool): if silent printed output is set to minimum
             save (bool): if True output is pickled
+            debug (bool): if True extensive print will be used
             progress (Tkinter element): progress bar
+            quantitative (bool): if True return how far is the point from satisfying / not satisfying the constraints
         """
         from sample_space import sample
         self.gridsampled = True
-        sample(self, constraints, sample_size, compress=True, silent=silent, save=save, progress=progress)
-
-    def grid_quatitative_sample(self, constraints, sample_size, silent: bool = False, save=False, progress=False):
-        """ Executes quatitative grid sampling
-
-        Args:
-            constraints  (list of strings): array of properties
-            sample_size (int): number of samples in dimension
-            silent (bool): if silent printed output is set to minimum
-            save (bool): if True output is pickled
-            progress (Tkinter element): progress bar
-        """
-        from quantitative_space_sample import quantitative_sample
-        self.gridsampled = True
-        quantitative_sample(self, constraints, sample_size, compress=True, silent=silent, save=save, progress=progress)
+        sample(self, constraints, sample_size, compress=True, silent=silent, save=save, debug=debug, progress=progress, quantitative=quantitative)
 
     def show_samples(self, which):
-        """ Visualises samples in 2D """
+        """ Visualises samples in 2D"""
         if not (self.sat_samples or self.unsat_samples):
             return None
 
