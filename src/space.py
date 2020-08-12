@@ -376,6 +376,7 @@ class RefinedSpace:
 
         else:
             print("Multidimensional space")
+            ## Sampling multidim plotting
             ## Show only if sat_samples selected and either there are some unsat samples or the sampling was not grid
             if sat_samples and (not self.gridsampled or self.unsat_samples):
                 if self.sat_samples:
@@ -473,6 +474,73 @@ class RefinedSpace:
                 if where:
                     return None, "Since no sat samples, the whole grid of points are unsat, not visualising this trivial case."
 
+            ## Quantitative multidim plotting
+            if quantitative:
+                if self.dist_samples:
+                    if where:
+                        fig = where[0]
+                        ax = where[1]
+                        plt.autoscale()
+                        ax.autoscale()
+                    else:
+                        fig, ax = plt.subplots()
+                    ## Creates values of the horizontal axis
+                    x_axis = list(range(1, len(self.params)+1))
+                    if self.true_point and true_point:
+                        ax.scatter(x_axis, self.true_point, marker='x', label="true_point")
+                        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+                        ax.plot(x_axis, self.true_point)
+                        plt.legend(loc='upper right', numpoints=1, ncol=3, fontsize=8)
+
+                    ## Get min, max sat degree
+                    min_value = round(min(self.dist_samples.values()), 16)
+                    max_value = round(max(self.dist_samples.values()), 16)
+                    if min_value == max_value:
+                        if max_value < 0:
+                            max_value = 0.9 * max_value
+                        else:
+                            max_value = 1.1 * max_value
+                    ## Setup colour normalisation
+                    if min_value < 0 < max_value:
+                        divnorm = colors.DivergingNorm(vmin=min_value, vcenter=0., vmax=max_value)
+                    elif min_value > 0:
+                        divnorm = colors.DivergingNorm(vmin=-1, vcenter=0., vmax=max_value)
+                    else:
+                        divnorm = colors.DivergingNorm(vmin=min_value, vcenter=0., vmax=1)
+                    cmap = plt.cm.get_cmap("RdYlGn")
+
+                    ## Get values of the vertical axis for respective line
+                    for index, sample in enumerate(list(self.dist_samples.keys())):
+                        ## COLOR = cmap(divnorm(0.5)
+                        ax.scatter(x_axis, sample, color=cmap(divnorm(list(self.dist_samples.values()))[index]))
+                        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+                        ax.plot(x_axis, sample, color=cmap(divnorm(list(self.dist_samples.values()))[index]))
+
+                    spam = ax.scatter([], [], c=[], cmap='RdYlGn', norm=divnorm)
+                    cbar = fig.colorbar(spam, ax=ax)
+                    cbar.set_label('Sum of L1 distances to dissatisfy constraints.')
+                    ax.set_xlabel("param indices")
+                    ax.set_ylabel("parameter value")
+                    whole_title = "\n".join(self.wrapper.wrap(f"Quantitative samples, \n Sum of L1 distances to dissatisfy constraints. \n The greener the point is the further it is from the threshold \n where it stops to satisfy constraints. \n  Note that green point can be unsat and vice versa. \n{self.title} \n {title}"))
+                    ax.set_title(whole_title)
+                    ax.autoscale()
+                    ax.margins(0.1)
+
+                    ## Save the figure
+                    if save:
+                        plt.savefig(os.path.join(refinement_results, f"Samples_sat_{save}"), bbox_inches='tight')
+                        print("Figure stored here: ", os.path.join(refinement_results, f"Samples_sat_{save}"))
+                        with open(os.path.join(refinement_results, "figure_to_title.txt"), "a+") as file:
+                            file.write(f"Samples_sat{save} : {whole_title}\n")
+
+                    if where:
+                        return fig, ax
+                    else:
+                        plt.show()
+                else:
+                    print("No quantitative samples so far, nothing to show")
+
+            ## Refinement multidim plotting
             if red or green:
                 if where:  ## Return the plot
                     if not prefer_unsafe:
@@ -825,6 +893,12 @@ class RefinedSpace:
         text = text + str(f"rectangles_unknown: {(f'{rectangles_unknown[:5]} ... {len(rectangles_unknown)-5} more', rectangles_unknown)[len(rectangles_unknown) <= 30 or full_print]} \n")
         text = text + str(f"sat_samples: {(f'{self.sat_samples[:5]} ... {len(self.sat_samples)-5} more', self.sat_samples)[len(self.sat_samples) <= 30 or full_print]} \n")
         text = text + str(f"unsat_samples: {(f'{self.unsat_samples[:5]} ... {len(self.unsat_samples)-5} more', self.unsat_samples)[len(self.unsat_samples) <= 30 or full_print]} \n")
+        try:
+            text = text + str(f"quantitative_samples: {(f'{list(self.dist_samples.items())[:5]} ... {len(self.dist_samples)-5} more', self.dist_samples)[len(self.dist_samples) <= 30 or full_print]} \n")
+        except Exception as err:
+            print("DIST SAMPLES NOT FOUND PROBABLY OLD VERSION OF REFINED SPACE")
+            print(str(err))
+            pass
         text = text + str(f"true_point: {self.true_point}\n")
         return text
 
