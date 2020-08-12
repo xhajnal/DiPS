@@ -283,11 +283,12 @@ class RefinedSpace:
             pretitle = ""
             if (green or red) and (sat_samples or unsat_samples):
                 pretitle = pretitle + "Refinement and Sampling, \n red = unsafe region / unsat points, green = safe region / sat points, white = in between"
-            else:
-                if green or red:
-                    pretitle = pretitle + "Refinement, \n red = unsafe region, green = safe region, white = in between"
-                if sat_samples or unsat_samples:
-                    pretitle = pretitle + "Samples, \n red = unsat points, green = sat points"
+            elif green or red:
+                pretitle = pretitle + "Refinement, \n red = unsafe region, green = safe region, white = in between"
+            elif sat_samples or unsat_samples:
+                pretitle = pretitle + "Samples, \n red = unsat points, green = sat points"
+            elif quantitative:
+                pretitle = pretitle + "Quantitative samples, \n Sum of L1 distances to dissatisfy constraints. \n The greener the point is the further it is from the threshold \n where it stops to satisfy constraints. \n  Note that green point can be unsat and vice versa."
             if (green or red) and (self.rectangles_sat or self.rectangles_unsat) and show_all:
                 pretitle = pretitle + f"\n Last refinement took {socket.gethostname()} {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole time"
             if (sat_samples or unsat_samples) and (self.sat_samples or self.unsat_samples):
@@ -340,7 +341,7 @@ class RefinedSpace:
                     else:
                         plt.scatter(np.array(self.dist_samples.keys())[:, 0], np.array(self.dist_samples.keys())[:, 1], c=self.dist_samples.values(), cmap='RdYlGn', norm=divnorm)
                         cbar = plt.colorbar()
-                cbar.set_label('Satisfaction degree')
+                cbar.set_label('Sum of L1 distances to dissatisfy constraints.')
             if self.true_point and true_point:
                 # print(self.true_point)
                 if (len(self.sat_samples) + len(self.unsat_samples)) == 0 or len(self.region) == 0:

@@ -629,7 +629,7 @@ class Gui(Tk):
         self.sample_size_entry.insert(END, '5')
 
         Button(frame_left, text='Grid sampling', command=self.sample_space).grid(row=9, column=0, padx=10, pady=4)
-        Button(frame_left, text='Grid sat degree', command=self.sample_space_degree).grid(row=9, column=1, padx=10, pady=4)
+        Button(frame_left, text='Grid quantitative sampling', command=self.sample_space_degree).grid(row=9, column=1, padx=10, pady=4)
 
         ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=2, rowspan=7, sticky='ns', padx=25, pady=25)
 
