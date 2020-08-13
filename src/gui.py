@@ -229,6 +229,7 @@ class Gui(Tk):
         self.show_samples = None  ## flag telling whether to show samples
         self.show_refinement = None  ## flag telling whether to show refinement
         self.show_true_point = None  ## flag telling whether to show true point
+        self.show_quantitative = None  ## flag telling whether to show quantitative sampling
 
         ## Settings
         self.version = "1.14.0"  ## Version of the gui
@@ -1713,7 +1714,7 @@ class Gui(Tk):
                 else:
                     self.show_true_point = False
 
-                self.show_space(self.show_refinement, self.show_samples, self.show_true_point, show_all=True, prefer_unsafe=self.show_red_in_multidim_refinement.get())
+                self.show_space(self.show_refinement, self.show_samples, self.show_true_point, show_all=True, prefer_unsafe=self.show_red_in_multidim_refinement.get(), quantitative=self.show_quantitative)
 
                 self.space_changed = True
 
@@ -1820,7 +1821,6 @@ class Gui(Tk):
             prefer_unsafe: if True unsafe space is shown in multidimensional space instead of safe
             quantitative (bool): if True show far is the point from satisfying / not satisfying the constraints
         """
-
         try:
             self.cursor_toggle_busy(True)
             self.status_set("Space is being visualised.")
@@ -1865,11 +1865,21 @@ class Gui(Tk):
             self.parameter_domains = self.space.region
             self.create_window_to_load_param_point(parameters=self.space.params)
             self.space.true_point = self.parameter_point
-            # print(self.space.nice_print())
+            self.show_true_point = True
 
             self.print_space()
-            self.page6_a.cla()
-            self.show_space(self.show_refinement, self.show_samples, True, show_all=True, prefer_unsafe=self.show_red_in_multidim_refinement.get())
+
+            figure, axis = self.space.show_true_point(where=[self.page6_figure, self.page6_a])
+
+            ## If no plot provided
+            if figure is None:
+                messagebox.showinfo("Show true point failed", axis)
+            else:
+                self.page6_figure = figure
+                self.page6_a = axis
+                self.page6_figure.tight_layout()  ## By huypn
+                self.page6_figure.canvas.draw()
+                self.page6_figure.canvas.flush_events()
 
     def parse_data_from_window(self):
         """ Parses data from the window. """
@@ -2941,7 +2951,12 @@ class Gui(Tk):
 
         self.print_space()
 
+        if self.show_quantitative:
+            self.show_space(False, False, False, clear=True)
+
         self.show_space(show_refinement=False, show_samples=True, show_true_point=self.show_true_point, prefer_unsafe=self.show_red_in_multidim_refinement.get())
+
+        self.show_quantitative = False
 
         ## Autosave figure
         if self.save.get():
@@ -3004,7 +3019,7 @@ class Gui(Tk):
 
             ## This progress is passed as whole to update the thing inside the called function
             assert isinstance(self.constraints, list)
-            self.show_space(None, None, None, clear=True)
+            self.show_space(False, False, False, clear=True)
             self.space.grid_sample(self.constraints, self.sample_size, silent=self.silent.get(), save=False, progress=self.update_progress_bar, quantitative=True)
         finally:
             try:
@@ -3031,6 +3046,8 @@ class Gui(Tk):
 
         self.space_changed = False
         self.constraints_changed = False
+        self.show_quantitative = True
+        self.show_samples = False
 
         ## Autosave
         self.save_space(os.path.join(self.tmp_dir, "space"))

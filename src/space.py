@@ -2,7 +2,7 @@ import os
 import socket
 import copy
 import numpy as np
-from matplotlib import colors, pyplot
+from matplotlib import colors
 from numpy import prod
 from collections.abc import Iterable
 from time import localtime, strftime
@@ -11,6 +11,7 @@ from matplotlib.patches import Rectangle
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from termcolor import colored  ## Colored output
+from matplotlib.figure import Figure
 
 ## Importing my code
 from common.mathematics import get_rectangle_volume
@@ -244,9 +245,11 @@ class RefinedSpace:
         else:
             self.prefer_unsafe = prefer_unsafe
 
-        # print("self.true_point", self.true_point)
         if save is True:
             save = str(strftime("%d-%b-%Y-%H-%M-%S", localtime()))+".png"
+
+        if true_point:
+            self.show_true_point(where=where, is_inside_of_show=True)
 
         if len(self.region) == 1 or len(self.region) == 2:
             # colored(globals()["default_region"], self.region)
@@ -342,17 +345,6 @@ class RefinedSpace:
                         plt.scatter(np.array(self.dist_samples.keys())[:, 0], np.array(self.dist_samples.keys())[:, 1], c=self.dist_samples.values(), cmap='RdYlGn', norm=divnorm)
                         cbar = plt.colorbar()
                 cbar.set_label('Sum of L1 distances to dissatisfy constraints.')
-            if self.true_point and true_point:
-                # print(self.true_point)
-                if (len(self.sat_samples) + len(self.unsat_samples)) == 0 or len(self.region) == 0:
-                    size_correction = 0.01 * max_region_size
-                else:
-                    size_correction = min(1 / (len(self.sat_samples) + len(self.unsat_samples)) ** (1 / len(self.region)), 0.01)
-                circle = plt.Circle((self.true_point[0], self.true_point[1]), size_correction*1, color='b', fill=False)
-                if where:
-                    axes.add_artist(circle)
-                else:
-                    plt.gcf().gca().add_artist(circle)
 
             whole_title = "\n".join(self.wrapper.wrap(f"{pretitle} \n{self.title} \n {title}"))
             axes.set_title(whole_title)
@@ -389,11 +381,6 @@ class RefinedSpace:
                         fig, ax = plt.subplots()
                     ## Creates values of the horizontal axis
                     x_axis = list(range(1, len(self.sat_samples[0])+1))
-                    if self.true_point and true_point:
-                        ax.scatter(x_axis, self.true_point, marker='x', label="true_point")
-                        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-                        ax.plot(x_axis, self.true_point)
-                        plt.legend(loc='upper right', numpoints=1, ncol=3, fontsize=8)
 
                     ## Get values of the vertical axis for respective line
                     for sample in self.sat_samples:
@@ -486,12 +473,6 @@ class RefinedSpace:
                         fig, ax = plt.subplots()
                     ## Creates values of the horizontal axis
                     x_axis = list(range(1, len(self.params)+1))
-                    if self.true_point and true_point:
-                        ax.scatter(x_axis, self.true_point, marker='x', label="true_point")
-                        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-                        ax.plot(x_axis, self.true_point)
-                        plt.legend(loc='upper right', numpoints=1, ncol=3, fontsize=8)
-
                     ## Get min, max sat degree
                     min_value = round(min(self.dist_samples.values()), 16)
                     max_value = round(max(self.dist_samples.values()), 16)
@@ -580,6 +561,55 @@ class RefinedSpace:
                             plt.show()
                         else:
                             print("No unsat rectangles so far, nothing to show")
+
+    def show_true_point(self, where=False, is_inside_of_show=False):
+        """ Showing true point
+
+        Args:
+            where (tuple/list): output matplotlib sources to output created figure
+            is_inside_of_show (bool): if True not painting the plot
+            """
+        if self.true_point:
+            if where:
+                fig = where[0]
+                ax = where[1]
+            else:
+                fig, ax = plt.subplots()
+
+            max_region_size = self.region[0][1] - self.region[0][0]
+            if len(self.params) == 1:
+                self.true_point_object = plt.Circle((self.true_point[0], self.true_point[1]), max_region_size/10, color='blue', fill=False, label="true_point")
+                ax.scatter([], [], color="blue", label="true_point")
+                if where:
+                    ax.add_artist(self.true_point_object)
+                else:
+                    plt.gcf().gca().add_artist(self.true_point_object)
+            elif len(self.params) == 2:
+                max_region_size = max(max_region_size, self.region[1][1] - self.region[1][0])
+                if (len(self.sat_samples) + len(self.unsat_samples)) == 0 or len(self.region) == 0:
+                    size_correction = 0.01 * max_region_size
+                else:
+                    size_correction = min(1 / (len(self.sat_samples) + len(self.unsat_samples)) ** (1 / len(self.region)), 0.01)
+                self.true_point_object = plt.Circle((self.true_point[0], self.true_point[1]), size_correction * 1, color='blue', fill=False, label="true_point")
+                ax.scatter([], [], color="blue", label="true_point")
+                if where:
+                    ax.add_artist(self.true_point_object)
+                else:
+                    plt.gcf().gca().add_artist(self.true_point_object)
+            else:
+                ## Multidim true point
+                ## TODO maybe not working without GUI
+                x_axis = list(range(1, len(self.params) + 1))
+                self.true_point_object = ax.scatter(x_axis, self.true_point, marker='$o$', label="true_point", color="blue")
+                ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+                ax.plot(x_axis, self.true_point, color="blue")
+
+            ax.legend()
+            if not is_inside_of_show:
+                if where:
+                    return fig, ax
+                else:
+                    plt.show()
 
     def get_region(self):
         """ Returns whole domain """
