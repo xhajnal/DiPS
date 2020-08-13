@@ -34,6 +34,17 @@ class MyTestCase(unittest.TestCase):
             constraints_to_ineq(["x+3>=0", "x+4<=1"])
             self.assertTrue("does not have proper number of boundaries" in context.exception)
 
+    def test_decouple_constraints(self):
+        print(colored("Checking decoupling of constraints", 'blue'))
+        with self.assertRaises(Exception) as context:
+            decouple_constraints(["0.706726790611575 - (r_0 - r_1)**3 + 0.893273209388426"])
+        self.assertTrue('No' in str(context.exception))
+
+        self.assertEqual(decouple_constraints(["0.706726790611575 <= -(r_0 - r_1)**3"]), ["0.706726790611575 <= -(r_0 - r_1)**3"])
+        self.assertEqual(decouple_constraints(["0.706726790611575 <= -(r_0 - r_1)**3 <= 0.893273209388426"]), ['0.706726790611575 <= -(r_0 - r_1)**3', '-(r_0 - r_1)**3 <= 0.893273209388426'])
+        with self.assertRaises(Exception) as context:
+            decouple_constraints(["0.706726790611575 <= -(r_0 - r_1)**3 <= 0.893273 = 209388426"])
+        self.assertTrue('More than two' in str(context.exception))
 
     def test_to_interval(self):
         print(colored("Checking transformation of a set of points into a set of intervals here", 'blue'))

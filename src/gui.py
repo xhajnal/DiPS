@@ -741,7 +741,6 @@ class Gui(Tk):
         Button(frame_left, text='Extend / Collapse text', command=self.collapse_space_text).grid(row=15, column=3, sticky=S, padx=4, pady=(10, 10))
         Button(frame_left, text='Export text', command=self.export_space_text).grid(row=15, column=4, sticky=S, padx=4, pady=(10, 10))
 
-        # highlightbackground="blue", highlightcolor="blue", highlightthickness=1,
         frame_right = Frame(page6)
         # frame_right.grid_propagate(0)
         # frame_right.rowconfigure(9, weight=1)
@@ -767,22 +766,7 @@ class Gui(Tk):
         frame_right.rowconfigure(4, weight=1)
         frame_right.rowconfigure(8, weight=1)
 
-        # frame_right_up = Frame(frame_right, highlightbackground="green", highlightcolor="green", highlightthickness=1, height=int(self.winfo_height()/2))
-        # frame_right_up.pack(side=TOP, fill=BOTH)
-        #
-        # Button(frame_right_up, text='Open space', command=self.load_space).grid(row=1, column=1, padx=4, pady=4)
-        # Button(frame_right_up, text='Save space', command=self.save_space).grid(row=2, column=1, padx=4, pady=4)
-        # Button(frame_right_up, text='Delete space', command=self.refresh_space).grid(row=3, column=1, padx=4, pady=4)
-        #
-        # frame_right_bottom = Frame(frame_right, height=int(self.winfo_height()/2))
-        # frame_right_bottom.pack(side=BOTTOM, fill=BOTH)
-        #
-        # Button(frame_right_bottom, text='Load MH Results', command=self.load_mh_results).pack(side=TOP)
-        # Button(frame_right_bottom, text='Save MH Results', command=self.save_mh_results).pack(side=TOP)
-        # Button(frame_right_bottom, text='Delete MH Results', command=self.refresh_mh).pack(side=TOP)
-
         Button(self.frame_center, text='Set True point', command=self.set_true_point).pack(side=TOP, pady=10)
-        # Label(self.frame_center, text=f"Space Visualisation", anchor=W, justify=CENTER).pack(side=TOP)
 
         ##################################################### UPPER PLOT ###############################################
         self.page6_plotframe = Frame(self.frame_center)
@@ -3175,6 +3159,9 @@ class Gui(Tk):
 
     def refine_space(self):
         """ Refines (Parameter) Space. Plots the results. """
+        ## Internal setting showing that only newly added part should be visualised
+        show_all = False
+
         print("Checking the inputs.")
         self.check_changes("constraints")
         self.check_changes("data_intervals")
@@ -3253,6 +3240,12 @@ class Gui(Tk):
             self.update_progress_bar(change_to=0, change_by=False)
             self.update()
 
+            ## Refresh of plot before refinement
+            if self.show_quantitative:
+                self.show_space(False, False, False, clear=True)
+                self.show_quantitative = False
+                show_all = True
+
             ## RETURNS TUPLE -- (SPACE,(NONE, ERROR TEXT)) or (SPACE, )
             ## feeding z3 solver with z3 expressions, python expressions otherwise
             # if int(self.alg.get()) == 5:
@@ -3266,14 +3259,16 @@ class Gui(Tk):
                                     silent=self.silent.get(), version=int(self.alg.get()),
                                     sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
                                     where=[self.page6_figure, self.page6_a], solver=str(self.solver.get()),
-                                    delta=self.delta, gui=self.update_progress_bar, iterative=self.iterative_refinement.get())
+                                    delta=self.delta, gui=self.update_progress_bar, show_space=False,
+                                    iterative=self.iterative_refinement.get())
             else:
                 assert isinstance(self.constraints, list)
                 spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
                                     silent=self.silent.get(), version=int(self.alg.get()),
                                     sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
                                     where=[self.page6_figure, self.page6_a], solver=str(self.solver.get()),
-                                    delta=self.delta, gui=self.update_progress_bar, iterative=self.iterative_refinement.get())
+                                    delta=self.delta, gui=self.update_progress_bar, show_space=False,
+                                    iterative=self.iterative_refinement.get())
         finally:
             try:
                 self.cursor_toggle_busy(False)
@@ -3287,8 +3282,8 @@ class Gui(Tk):
             self.space = spam[0]
             messagebox.showinfo("Space refinement", spam[1])
         else:
-            # self.show_space(True, True, True, clear=False)
             self.space = spam
+            self.show_space(show_refinement=True, show_samples=self.show_samples, show_true_point=self.show_true_point, prefer_unsafe=self.show_red_in_multidim_refinement.get(), show_all=show_all)
             self.page6_figure.tight_layout()  ## By huypn
             self.page6_figure.canvas.draw()
             self.page6_figure.canvas.flush_events()

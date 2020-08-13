@@ -1,3 +1,5 @@
+import re
+
 from termcolor import colored
 from sympy import Interval
 import locale
@@ -179,7 +181,7 @@ def constraints_to_ineq(constraints: list, silent: bool = True, debug: bool = Fa
     ## Sort the intervals
     index = 0
     for interval_index in range(len(intervals)):
-        if len(intervals[interval_index]) is not 2:
+        if len(intervals[interval_index]) != 2:
             if not silent:
                 print(colored(f"Constraint {index + 1} does not have proper number of boundaries", "red"))
             raise Exception(f"Constraint {index + 1} does not have proper number of boundaries")
@@ -196,6 +198,37 @@ def constraints_to_ineq(constraints: list, silent: bool = True, debug: bool = Fa
         print("intervals: ", intervals)
 
     return funcs, intervals
+
+
+def decouple_constraints(constraints: list, silent: bool = True, debug: bool = False):
+    """ Decouples constrains with more than two inequalities into two:
+
+    Args:
+        constraints  (list of strings): properties to be converted
+        silent (bool): if silent printed output is set to minimum
+        debug (bool): if True extensive print will be used
+
+    Example:
+        ["-8 <= x+3 <= 0"] -> ["-8 <= x+3", "x+3 <= 0"]
+    """
+    pattern = r" < | > | >= | <= | = | => | =<"
+    new_constraints = []
+    for index, constraint in enumerate(constraints):
+        match = re.findall(pattern, constraint)
+        if debug:
+            print(constraint)
+            print(match)
+        if len(match) == 0:
+            raise Exception("Constraints", f"No <,>,>=, <=,= symbols in constrain {index+1}")
+        elif len(match) == 1:
+            new_constraints.append(constraint)
+        elif len(match) == 2:
+            parts = re.split(pattern, constraint)
+            new_constraints.append(match[0].join(parts[:2]))
+            new_constraints.append(match[0].join(parts[1:]))
+        else:
+            raise Exception("Constraints", f"More than two <,>,>=, <=,= symbols in constrain {index+1}")
+    return new_constraints
 
 
 def to_interval(points: list):
@@ -217,3 +250,5 @@ def to_interval(points: list):
                 interval[1] = points[point][dimension]
         intervals.append(interval)
     return intervals
+
+

@@ -18,7 +18,7 @@ from sample_space import sample
 from space import RefinedSpace
 from space import get_rectangle_volume
 from common.mathematics import is_in
-from common.convert import to_interval
+from common.convert import to_interval, decouple_constraints
 from common.convert import constraints_to_ineq
 from common.queue import Queue
 from common.config import load_config
@@ -408,13 +408,13 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
 
     ## If the given region is space
     ## TODO correct this
-    if not isinstance(region, list):
+    if isinstance(region, RefinedSpace):
         space = region
         globals()["space"] = space
         del region
         region = space.region
 
-        ## Check whether the the set of params is equal
+        ## Check whether the set of params is equal
         print("space parameters: ", space.params)
         globals()["parameters"] = space.params
         parameters = globals()["parameters"]
@@ -425,7 +425,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         #     raise Exception("The set of parameters of the given space and properties does not correspond")
 
     ## If the region is just list of intervals - a space is to be created
-    else:
+    elif isinstance(region, list) or isinstance(region, tuple):
         globals()["parameters"] = set()
 
         if isinstance(constraints[0], list):
@@ -446,12 +446,14 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
 
         ### Params
         if not isinstance(constraints, Iterable):
-            raise Exception("Given properties are not iterable, to use single property use list of length 1")
+            raise Exception("Refine Space", "Given properties are not iterable, to use single property use list of length 1")
 
         globals()["space"] = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[], title=title)
         space = globals()["space"]
 
         globals()["default_region"] = copy.deepcopy(region)
+    else:
+        raise Exception("Refine space", "region type is not accepted")
 
     ## Checking zero or negative size of dimension
     if space.get_volume() <= 0:
@@ -476,6 +478,10 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
 
     if debug:
         print("constraints", constraints)
+
+    ## In case of two inequalitites on a line decouple it
+    if version is not 5:
+        constraints = decouple_constraints(constraints, silent=silent, debug=debug)
 
     ## PRESAMPLING HERE
     if sample_size:
@@ -825,10 +831,14 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         if show_space:
             space.refinement_took(time() - start_time)
             space_shown = space.show(title=f"max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version} \n Last refinement took {socket.gethostname()} {round(time() - start_time, 2)} of {round(space.time_refinement, 2)} second(s)", green=True, red=True, sat_samples=gui and len(space.params) <= 2, unsat_samples=gui and len(space.params) <= 2, save=save, where=where, show_all=not gui)
+        else:
+            space_shown = [False]
     else:  ## TODO THIS IS A HOTFIX
         if show_space:
             space.refinement_took(time() - start_time)
             space_shown = space.show(title=f"max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version} \n Last refinement took {socket.gethostname()} {round(time() - start_time, 2)} of {round(space.time_refinement, 2)} second(s)", green=True, red=True, sat_samples=gui and len(space.params) <= 2, unsat_samples=gui and len(space.params) <= 2, save=save, where=where, show_all=not gui)
+        else:
+            space_shown = [False]
     print(colored(f"Result coverage is: {space_coverage}", "blue"))
     print(colored(f"Refinement took: {space.time_last_refinement} seconds", "blue"))
     if where:
