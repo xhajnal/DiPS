@@ -11,6 +11,9 @@ def load_config():
     config.read(os.path.join(workspace, "../../config.ini"))
     # config.sections()
 
+    if not config.sections():
+        raise Exception("Config file", "Config file, config.ini, not properly loaded.")
+
     prism_path = config.get("mandatory_paths", "prism_path")
 
     cwd = config.get("mandatory_paths", "cwd")

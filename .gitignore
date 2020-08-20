@@ -150,6 +150,7 @@ src/other_sources/*
 gui_test
 
 test/_trial_*
+test/tmp/*
 
 tmp/*
 

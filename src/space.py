@@ -241,7 +241,10 @@ class RefinedSpace:
             prefer_unsafe: if True unsafe space is shown in multidimensional space instead of safe
         """
         if prefer_unsafe is None:
-            prefer_unsafe = self.prefer_unsafe
+            try:  ## Backward compatibility
+                prefer_unsafe = self.prefer_unsafe
+            except AttributeError:
+                self.prefer_unsafe = False
         else:
             self.prefer_unsafe = prefer_unsafe
 

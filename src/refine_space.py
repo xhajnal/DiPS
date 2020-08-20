@@ -385,7 +385,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         show_space (bool): if show_space the refined space will be visualised
         solver (string):: specified solver, allowed: z3, dreal
         delta (number):: used for delta solving using dreal
-        gui (bool or function): called from the graphical user interface
+        gui (bool or Callable): called from the graphical user interface
         iterative (bool) : iterative approach, TBD
     """
 

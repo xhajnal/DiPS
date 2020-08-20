@@ -5,21 +5,25 @@ cwd = os.getcwd()
 
 try:
     os.mkdir("tmp")
-except Exception:
+except FileExistsError:
     pass
 try:
-    os.mkdir("tmp/prism_results")
-except Exception:
+    os.mkdir("tmp/results")
+except FileExistsError:
     pass
 try:
-    os.mkdir("tmp/storm_results")
-except Exception:
+    os.mkdir("tmp/results/prism_results")
+except FileExistsError:
+    pass
+try:
+    os.mkdir("tmp/results/storm_results")
+except FileExistsError:
     pass
 
 model_dir = os.path.join(cwd, "models")
 properties_dir = os.path.join(cwd, "properties")
-prism_results = os.path.join(cwd, "results/prism_results")
-storm_results = os.path.join(cwd, "results/storm_results")
+prism_results = os.path.join(cwd, "tmp/results/prism_results")
+storm_results = os.path.join(cwd, "tmp/results/storm_results")
 
 
 class MyTestCase(unittest.TestCase):

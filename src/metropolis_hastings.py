@@ -293,7 +293,10 @@ class HastingsResults:
         Args:
            where (bool or callable): method to forward the figure
         """
-        fig = Figure(figsize=(10, 10))
+        if where:
+            fig = Figure(figsize=(10, 10))
+        else:
+            fig = plt.figure()
         if len(self.params) == 2:
             plots = 3
         else:
@@ -358,7 +361,10 @@ class HastingsResults:
         Args:
            where (bool or callable): method to forward the figure
         """
-        fig = Figure(figsize=(20, 10))
+        if where:
+            fig = Figure(figsize=(20, 10))
+        else:
+            fig = plt.figure()
         if len(self.params) == 2:
             gs = gridspec.GridSpec(3, 2, figure=fig)
         else:
@@ -555,7 +561,7 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param
             progress(iteration/iterations, False, int(time() - globals()["start_time"]), timeout)
 
         ## Finish iterations after timeout
-        if (time() - globals()["start_time"]) > timeout >= 0:
+        if (time() - globals()["start_time"]) > timeout > 0:
             globals()["mh_results"].last_iter = iteration
             globals()["mh_results"].time_it_took = time() - globals()["start_time"]
             break
@@ -722,7 +728,10 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         for i in range(len(functions)):
             Y.append(list(observations).count(i))
 
-        fig = Figure(figsize=(10, 10))
+        if where:
+            fig = Figure(figsize=(10, 10))
+        else:
+            fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
         ax.bar(list(range(1, len(functions)+1)), Y)
         # plt.xticks(range(len(functions)), range(len(functions) + 1))

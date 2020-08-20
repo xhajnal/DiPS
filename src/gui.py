@@ -42,7 +42,7 @@ def do_config():
     for it in ["models", "properties", "data", "results", "tmp"]:
         try:
             subdir = config.get("paths", it)
-        except:
+        except configparser.NoSectionError as err:
             config.set("paths", it, f"{os.path.join(workspace, '..', it)}")
             subdir = config.get("paths", it)
             with open(os.path.join(workspace, "..", 'config.ini'), 'w') as configfile:
@@ -230,47 +230,49 @@ class Gui(Tk):
         self.show_refinement = None  ## flag telling whether to show refinement
         self.show_true_point = None  ## flag telling whether to show true point
         self.show_quantitative = None  ## flag telling whether to show quantitative sampling
-
-        ## Settings
-        self.version = "1.14.0"  ## Version of the gui
-        self.silent = BooleanVar()  ## Sets the command line output to minimum
-        self.debug = BooleanVar()  ## Sets the command line output to maximum
         self.show_red_in_multidim_refinement = BooleanVar()  ## Chooses whether to show unsafe space over safe space in multidimensional plot
         self.show_red_in_multidim_refinement.set(False)
+        ## Metropolis-Hastings visualisation settings
         self.show_mh_as_scatter = BooleanVar()  ## Sets the MH plot to scatter plot (even for 2D)
-        self.mh_metada = BooleanVar()  ## Chooses whether to visualise MH metadata plots or not
-        self.mh_metada.set(True)
+        self.show_mh_metadata = BooleanVar()  ## Chooses whether to visualise MH metadata plots or not
+        self.show_mh_metadata.set(True)
+        ## Save Figures
+        self.save = BooleanVar()  ## True if saving on
+        self.save.set(True)
 
-        ## Settings/data
+        ## General Settings
+        self.version = "1.17.1"  ## Version of the gui
+        self.silent = BooleanVar()  ## Sets the command line output to minimum
+        self.debug = BooleanVar()  ## Sets the command line output to maximum
+
+        ## Default analysis settings
         # self.C = ""  ## Confidence level
         # self.n_samples = ""  ## Number of samples
+        ## Load rat. functions
         self.program = StringVar()  ## "prism"/"storm"
+        self.factorise = BooleanVar()  ## Flag for factorising rational functions
+        ## Sampling
+        self.sample_size = ""  ## Number of samples
+        ## Refinement
         self.max_depth = ""  ## Max recursion depth
         self.coverage = ""  ## Coverage threshold
         self.epsilon = ""  ## Rectangle size threshold
         # self.alg = ""  ## Refinement alg. number
         self.presampled_refinement = BooleanVar()  ## Refinement flag
         self.iterative_refinement = BooleanVar()  ## Refinement flag
-
         # self.solver = ""  ## SMT solver - z3 or dreal
         self.delta = 0.01  ## dreal setting
-
         self.refinement_timeout = 0  ## timeout for refinement
 
-        self.factorise = BooleanVar()  ## Flag for factorising rational functions
-        self.sample_size = ""  ## Number of samples
-        self.save = BooleanVar()  ## True if saving on
-        self.save.set(True)
-
-        ## OTHER SETTINGS
+        ## INNER SETTINGS
         self.button_pressed = BooleanVar()  ## Inner variable to close created window
         self.python_recursion_depth = 1000  ## Inner python setting
-        self.space_collapsed = True
+        self.space_collapsed = True  ## Short / long print of space
 
         ## Other variables
-        self.progress = StringVar()
+        self.progress = StringVar()  ## Progress bar - progress value
         self.progress.set("0%")
-        self.progress_time = StringVar()
+        self.progress_time = StringVar()  ## Progress bar - time value
         self.progress_time.set("0")
 
     def gui_init(self):
@@ -342,7 +344,7 @@ class Gui(Tk):
         show_print_checkbutton.grid(row=5, column=1, sticky=E, padx=4)
         debug_checkbutton = Checkbutton(center_frame, text="Extensive command line print", variable=self.debug)
         debug_checkbutton.grid(row=5, column=2, sticky=E, padx=4)
-        mh_metadata_button = Checkbutton(center_frame, text="Show MH metadata plots", variable=self.mh_metada)
+        mh_metadata_button = Checkbutton(center_frame, text="Show MH metadata plots", variable=self.show_mh_metadata)
         mh_metadata_button.grid(row=5, column=3, sticky=E, padx=4)
         createToolTip(mh_metadata_button, text='Check to plot metadata plots of Metropolis-Hastings')
         # print("self.silent", self.silent.get())
@@ -3110,7 +3112,7 @@ class Gui(Tk):
                                                   progress=self.update_progress_bar, debug=self.debug.get(),
                                                   bins=int(self.bins.get()), burn_in=float(self.show.get()),
                                                   timeout=int(self.mh_timeout.get()), draw_plot=self.draw_plot_window,
-                                                  metadata=self.mh_metada.get())
+                                                  metadata=self.show_mh_metadata.get())
             spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b])
 
             if spam[0] is not False:
