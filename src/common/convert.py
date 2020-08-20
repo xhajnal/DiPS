@@ -25,17 +25,18 @@ def parse_numbers(text: str):
     return [float(i) for i in newstr.split()]
 
 
-def ineq_to_constraints(functions: list, intervals: list, silent: bool = True):
+def ineq_to_constraints(functions: list, intervals: list, decoupled=True, silent: bool = True):
     """ Converts expressions and intervals into constraints
         list of expressions, list of intervals -> constraints
 
     Args:
         functions:  (list of strings) array of functions
         intervals (list of intervals): array of pairs, low and high bound
+        decoupled (bool): if True returns 2 constraints for a single interval
         silent (bool): if silent printed output is set to minimum
 
     Example:
-        ["x+3"],[[0,1]] ->  ["x+3>=0","x+3<=1"]
+        ["x+3"],[[0,1]] ->  ["0<= x+3 <=1"]
 
     Returns:
         (list) of constraints
@@ -50,34 +51,44 @@ def ineq_to_constraints(functions: list, intervals: list, silent: bool = True):
     try:
         spam = []
         for index in range(len(functions)):
-            if isinstance(intervals[index], Interval):
-                ## Old
-                # spam.append(functions[index] + " >= " + str(intervals[index].start))
-                # spam.append(functions[index] + " <= " + str(intervals[index].end))
-                ## New
-                spam.append(str(intervals[index].start) + " <= " + functions[index] + " <= " + str(intervals[index].end))
-                ## Slightly slower
-                # spam.append(f"{intervals[index].start} <= {functions[index]} <= {intervals[index].end}")
-                ## Slow
-                # spam.append(f"{functions[index]} in Interval({intervals[index].start}, {intervals[index].end})")
+            if decoupled:
+                if isinstance(intervals[index], Interval):
+                    spam.append(functions[index] + " >= " + str(intervals[index].start))
+                    spam.append(functions[index] + " <= " + str(intervals[index].end))
+                else:
+                    spam.append(functions[index] + " >= " + str(intervals[index][0]))
+                    spam.append(functions[index] + " <= " + str(intervals[index][1]))
             else:
-                ## Old
-                # spam.append(functions[index] + " >= " + str(intervals[index][0]))
-                # spam.append(functions[index] + " <= " + str(intervals[index][1]))
-                ## New
-                spam.append(str(intervals[index][0]) + " <= " + functions[index] + " <= " + str(intervals[index][1]))
-                ## Slightly slower
-                # spam.append(f"{intervals[index][0]} <= {functions[index]} <= {intervals[index][1]}")
-                ## Slow
-                # spam.append(f"{functions[index]} in Interval({intervals[index][0]}, {intervals[index][1]})")
+                if isinstance(intervals[index], Interval):
+                    ## Old
+                    # spam.append(functions[index] + " >= " + str(intervals[index].start))
+                    # spam.append(functions[index] + " <= " + str(intervals[index].end))
+                    ## New
+                    spam.append(str(intervals[index].start) + " <= " + functions[index] + " <= " + str(intervals[index].end))
+                    ## Slightly slower
+                    # spam.append(f"{intervals[index].start} <= {functions[index]} <= {intervals[index].end}")
+                    ## Slow
+                    # spam.append(f"{functions[index]} in Interval({intervals[index].start}, {intervals[index].end})")
+                else:
+                    ## Old
+                    # spam.append(functions[index] + " >= " + str(intervals[index][0]))
+                    # spam.append(functions[index] + " <= " + str(intervals[index][1]))
+                    ## New
+                    spam.append(str(intervals[index][0]) + " <= " + functions[index] + " <= " + str(intervals[index][1]))
+                    ## Slightly slower
+                    # spam.append(f"{intervals[index][0]} <= {functions[index]} <= {intervals[index][1]}")
+                    ## Slow
+                    # spam.append(f"{functions[index]} in Interval({intervals[index][0]}, {intervals[index][1]})")
         return spam
-    except Exception as error:
-        if "'EmptySet' object does not support indexing" in str(error):
+    except TypeError as error:
+        if "EmptySet" in str(error):
             raise Exception("ineq_to_constraints", "Some intervals are incorrect (lover bound > upper bound)")
-        elif "'FiniteSet' object does not support indexing" in str(error):
+        elif "FiniteSet" in str(error):
             raise Exception("ineq_to_constraints", "Some intervals are incorrect (empty)")
-        else:
-            raise error
+    except Exception as err:
+        print("Unhandled exception", err)
+        raise err
+    print("done")
 
 
 def constraints_to_ineq(constraints: list, silent: bool = True, debug: bool = False):

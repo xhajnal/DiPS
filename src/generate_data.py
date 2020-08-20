@@ -68,16 +68,17 @@ def generate_all_data_two_param(agents_quantities, dic_fun, p_v=None, q_v=None):
 
 
 def generate_experiments_and_data(model_types, n_samples, populations, dimension_sample_size,
-                                  sim_length=False, modular_param_space=None, silent=False, debug=False):
+                                  sim_length=False, modular_param_space=None, folder=False, silent=False, debug=False):
     """ Generate experiment data for given settings
 
     Args:
         model_types (list of strings): list of model types
         n_samples (list of ints): list of sample sizes
         populations (list of ints): list of agent populations
-        dimension_sample_size (list of ints): number of samples of in each parameter dimension to be used
-        sim_length (Int): length of the simulation
+        dimension_sample_size (int): number of samples of in each parameter dimension to be used
+        sim_length (int): length of the simulation
         modular_param_space (numpy array): parameter space to be used
+        folder (str or path): folder where to search for models
         silent (bool): if silent printed output is set to minimum
         debug (bool): if True extensive print will be used
     """
@@ -101,8 +102,10 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
                 sim_length = 2 * population_size
             if "asynchronous" in model_type and not sim_length:
                 sim_length = 2 * population_size
-
-            model = os.path.join(model_path, (model_type + str(population_size) + ".pm"))
+            if folder is False:
+                model = os.path.join(model_path, (model_type + str(population_size) + ".pm"))
+            else:
+                model = os.path.join(folder, (model_type + str(population_size) + ".pm"))
             # A bad way how to deal with model without N
             if isinstance(population_size, str):
                 population_size = 0
@@ -164,7 +167,7 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
                     if not silent:
                         print(f"calling: \n {model} -const {prism_parameter_values} -simpath {str(sim_length)} {path_file}")
                     call_prism(f"{model} -const {prism_parameter_values} -simpath {str(sim_length)} {path_file}",
-                               silent=True, prism_output_path=cwd, std_output_path=None)
+                               silent=True, prism_output_path=os.path.join(os.getcwd(), "results/prism_results"))
                    
                     ## Parse the dump file
                     # print("curr dir:", os.getcwd())
@@ -176,7 +179,7 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
 
                     ## If some error occurred
                     ## A bad way how to deal with files without N
-                    if population_size is not 0:
+                    if population_size != 0:
                         if state > population_size or debug or "2" in last_line.split(" ")[2:-1]:
                             print(last_line[:-1])
                             print("state: ", state)

@@ -6,14 +6,20 @@ from src.common.convert import *
 class MyTestCase(unittest.TestCase):
     def test_ineq_to_constraints(self):
         print(colored("Checking conversion from a list of inequalities to list of properties", 'blue'))
-        self.assertEqual(ineq_to_constraints(["x+3"], [[0, 1]]), ["x+3>=0", "x+3<=1"])
-        self.assertEqual(ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 2)]), ['x>=0', 'x<=1', '2*x>=0', '2*x<=2'])
+        self.assertEqual(ineq_to_constraints(["x+3"], [[0, 1]], decoupled=True), ["x+3 >= 0", "x+3 <= 1"])
+        self.assertEqual(ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 2)], decoupled=True), ['x >= 0', 'x <= 1', '2*x >= 0', '2*x <= 2'])
 
-        self.assertEqual(ineq_to_constraints(["x+3"], []), False)
+        self.assertEqual(ineq_to_constraints(["x+3"], [], decoupled=True), False)
+
+        self.assertEqual(ineq_to_constraints(["x+3"], [[0, 1]], decoupled=False), ["0 <= x+3 <= 1"], )
+        self.assertEqual(ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 2)], decoupled=False), ['0 <= x <= 1', '0 <= 2*x <= 2'])
+
+        self.assertEqual(ineq_to_constraints(["x+3"], [], decoupled=False), False)
 
         ## Bad intervals
         with self.assertRaises(Exception) as context:
             ineq_to_constraints(["x"], [Interval(3, 2)])
+            print(context.exception)
         self.assertTrue('Some intervals are incorrect' in str(context.exception))
 
         with self.assertRaises(Exception) as context:

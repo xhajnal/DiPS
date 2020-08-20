@@ -3,7 +3,7 @@ import pickle
 import os
 import time
 import webbrowser
-from collections import Iterable
+from collections.abc import Iterable
 from copy import deepcopy
 from tkinter import *
 from tkinter import scrolledtext, messagebox
@@ -30,7 +30,7 @@ import configparser
 
 config = configparser.RawConfigParser()
 workspace = os.path.dirname(__file__)
-if workspace is "":
+if workspace == "":
     workspace = os.getcwd()
 sys.path.append(workspace)
 
@@ -370,7 +370,7 @@ class Gui(Tk):
 
         self.model_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_width()/2))
         # self.model_text.bind("<FocusOut>", self.refresh_model)
-        self.model_text.bind("<Key>", lambda x: self.model_text_modified.set(True) if x.char is not "" else None)
+        self.model_text.bind("<Key>", lambda x: self.model_text_modified.set(True) if x.char != "" else None)
         # self.model_text.config(state="disabled")
         self.model_text.grid(row=2, column=0, columnspan=16, rowspan=2, sticky=W, padx=4, pady=4)  # pack(anchor=W, fill=X, expand=True)
 
@@ -388,7 +388,7 @@ class Gui(Tk):
 
         self.property_text = scrolledtext.ScrolledText(frame_right, width=int(self.winfo_width() / 2), height=int(self.winfo_width()/2))
         # self.property_text.bind("<FocusOut>", self.refresh_properties)
-        self.property_text.bind("<Key>", lambda x: self.properties_text_modified.set(True) if x.char is not "" else None)
+        self.property_text.bind("<Key>", lambda x: self.properties_text_modified.set(True) if x.char != "" else None)
         # self.property_text.config(state="disabled")
         self.property_text.grid(row=2, column=1, columnspan=16, rowspan=2, sticky=W, pady=4)  # pack(anchor=W, fill=X)
 
@@ -439,7 +439,7 @@ class Gui(Tk):
         Label(frame_right, text=f"Parsed function(s):", anchor=W, justify=LEFT).grid(row=4, column=1, sticky=W, padx=4, pady=4)
         self.functions_parsed_text = scrolledtext.ScrolledText(frame_right, width=int(self.winfo_width() / 2), height=int(self.winfo_width() / 2), state=DISABLED)
         # self.functions_parsed_text.bind("<FocusOut>", self.refresh_parsed_functions)
-        self.functions_parsed_text.bind("<Key>", lambda x: self.parsed_functions_text_modified.set(True) if x.char is not "" else None)
+        self.functions_parsed_text.bind("<Key>", lambda x: self.parsed_functions_text_modified.set(True) if x.char != "" else None)
         self.functions_parsed_text.grid(row=5, column=1, columnspan=16, rowspan=2, sticky=W, pady=4)
 
         ######################################### TAB SAMPLE AND VISUALISE #############################################
@@ -519,7 +519,7 @@ class Gui(Tk):
         # self.data_text = Text(page4, height=12, state=DISABLED)  # , height=10, width=30
         # self.data_text.config(state="disabled")
         # self.data_text.bind("<FocusOut>", self.refresh_data)
-        self.data_text.bind("<Key>", lambda x: self.data_text_modified.set(True) if x.char is not "" else None)
+        self.data_text.bind("<Key>", lambda x: self.data_text_modified.set(True) if x.char != "" else None)
         self.data_text.grid(row=2, column=0, columnspan=16, sticky=W, padx=4, pady=4)
 
         ## SET THE INTERVAL COMPUTATION SETTINGS
@@ -552,7 +552,7 @@ class Gui(Tk):
         self.data_intervals_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_height() * 0.8 / 40), state=DISABLED)  # height=10, width=30
         # self.data_intervals_text.config(state="disabled")
         # self.data_intervals_text.bind("<FocusOut>", self.refresh_data_intervals)
-        self.data_intervals_text.bind("<Key>", lambda x: self.data_intervals_text_modified.set(True) if x.char is not "" else None)
+        self.data_intervals_text.bind("<Key>", lambda x: self.data_intervals_text_modified.set(True) if x.char != "" else None)
         self.data_intervals_text.grid(row=8, column=0, rowspan=2, columnspan=16, sticky=W, padx=4, pady=4)
         # ttk.Separator(frame_left, orient=VERTICAL).grid(row=0, column=17, rowspan=10, sticky='ns', padx=50, pady=10)
 
@@ -562,7 +562,7 @@ class Gui(Tk):
         self.property_text2 = scrolledtext.ScrolledText(frame_right, width=int(self.winfo_width() / 2), height=int(self.winfo_height() * 0.8 / 40), state=DISABLED)
         # self.property_text2.config(state="disabled")
         # self.property_text2.bind("<FocusOut>", self.refresh_data)
-        self.property_text2.bind("<Key>", lambda x: self.properties_text_modified.set(True) if x.char is not "" else None)
+        self.property_text2.bind("<Key>", lambda x: self.properties_text_modified.set(True) if x.char != "" else None)
         self.property_text2.grid(row=2, column=1, columnspan=16, rowspan=2, sticky=W + E + N + S, padx=5, pady=4)
         Button(frame_right, text='Generate data informed properties', command=self.generate_data_informed_properties).grid(row=4, column=1, sticky=W, padx=5, pady=4)
 
@@ -586,7 +586,7 @@ class Gui(Tk):
 
         self.constraints_text = scrolledtext.ScrolledText(page5)
         # self.constraints_text.bind("<FocusOut>", self.refresh_constraints)
-        self.constraints_text.bind("<Key>", lambda x: self.constraints_text_modified.set(True) if x.char is not "" else None)
+        self.constraints_text.bind("<Key>", lambda x: self.constraints_text_modified.set(True) if x.char != "" else None)
         self.constraints_text.grid(row=1, column=0, columnspan=9, rowspan=4, padx=5, sticky=E+W+S+N)
 
         label = Label(page5, text=f"Import/Export:", anchor=W, justify=LEFT)
@@ -1092,7 +1092,7 @@ class Gui(Tk):
 
         self.functions_file.set(spam)
         # print("self.functions_file.get() ", self.functions_file.get())
-        if not self.functions_file.get() is "":
+        if not self.functions_file.get() == "":
 
             self.functions_changed = True
             # self.model_changed = False
@@ -1839,7 +1839,7 @@ class Gui(Tk):
     def set_true_point(self):
         """ Sets the true point of the space """
 
-        if self.space is "":
+        if self.space == "":
             print("No space loaded. Cannot set the true_point.")
             messagebox.showwarning("Edit True point", "Load space first.")
             return
@@ -1952,7 +1952,7 @@ class Gui(Tk):
         print("Checking the inputs.")
         self.check_changes("properties")
 
-        if self.property_file.get() is "":
+        if self.property_file.get() == "":
             messagebox.showwarning("Data informed property generation", "No property file loaded.")
             return False
 
@@ -2017,7 +2017,7 @@ class Gui(Tk):
         """
         print("Saving the rational functions ...")
 
-        if self.functions is "":
+        if self.functions == "":
             self.status_set("There are no rational functions to be saved.")
             return
 
@@ -2026,11 +2026,11 @@ class Gui(Tk):
             save_functions_file = file
         else:
             self.status_set("Please select folder to store the rational functions in.")
-            if self.program is "prism":
+            if self.program == "prism":
                 save_functions_file = filedialog.asksaveasfilename(initialdir=self.prism_results,
                                                                    title="Rational functions saving - Select file",
                                                                    filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
-            elif self.program is "storm":
+            elif self.program == "storm":
                 save_functions_file = filedialog.asksaveasfilename(initialdir=self.storm_results,
                                                                    title="Rational functions saving - Select file",
                                                                    filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
@@ -2063,7 +2063,7 @@ class Gui(Tk):
         # print("text", text)
         scrap = []
         for line in text:
-            if line is "":
+            if line == "":
                 continue
             ## Getting rid of last comma
             scrap.append(re.sub(r',\s*$', '', line))
@@ -2207,7 +2207,7 @@ class Gui(Tk):
             save_constraints_file = file
         else:
             print("Saving the constraints ...")
-            if constraints is "":
+            if constraints == "":
                 self.status_set("There is no constraints to be saved.")
                 return
 
@@ -2240,7 +2240,7 @@ class Gui(Tk):
             save_space_file = file
         else:
             print("Saving the space ...")
-            if self.space is "":
+            if self.space == "":
                 self.status_set("There is no space to be saved.")
                 messagebox.showwarning("Saving Space", "There is no space to be saved.")
                 return
@@ -2274,7 +2274,7 @@ class Gui(Tk):
             save_mh_results_file = file
         else:
             print("Saving Metropolis Hastings results ...")
-            if self.mh_results is "":
+            if self.mh_results == "":
                 self.status_set("There is no Metropolis Hastings results to be saved.")
                 return
             self.status_set("Please select folder to store Metropolis Hastings results in.")
@@ -2321,12 +2321,12 @@ class Gui(Tk):
                 messagebox.showwarning("Parameter synthesis",
                                        "The properties for parameter synthesis have changed in the mean time, please consider that.")
             ## If model file not selected load model
-            if self.model_file.get() is "":
+            if self.model_file.get() == "":
                 self.status_set("Load model for parameter synthesis")
                 self.load_model()
 
             ## If property file not selected load property
-            if self.property_file.get() is "":
+            if self.property_file.get() == "":
                 self.status_set("Load property for parameter synthesis")
                 self.load_property()
 
@@ -2527,7 +2527,7 @@ class Gui(Tk):
 
         assert isinstance(self.parameters, list)
         for parameter_point in get_param_values(self.parameters, int(self.fun_sample_size_entry.get()), False):
-            if self.page3_figure_in_use.get() is not "2":
+            if self.page3_figure_in_use.get() != "2":
                 return
 
             # print("parameter_point", parameter_point)
@@ -2578,7 +2578,7 @@ class Gui(Tk):
 
         self.validate_parameters(where=self.functions)
 
-        if len(self.parameters) is not 2:
+        if len(self.parameters) != 2:
             messagebox.showerror("Plot heatmap", f"Could not show this 2D heatmap. Parsed function(s) contain {len(self.parameters)} parameter(s), expected 2.")
             return
 
@@ -2591,7 +2591,7 @@ class Gui(Tk):
 
         i = 0
         for function in self.functions:
-            if self.page3_figure_in_use.get() is not "3":
+            if self.page3_figure_in_use.get() != "3":
                 return
             i = i + 1
             assert isinstance(self.parameters, list)
@@ -2748,7 +2748,7 @@ class Gui(Tk):
 
         ## old check:  len(self.model_text.get('1.0', END)) > 1 and
         if option[0].get():
-            if option[1] is not "":
+            if option[1] != "":
                 if not askyesno(f"In the meanwhile the {option[2]} was changed", f"Do you wanna apply these changes? \n It will overwrite the {option[2]} file."):
                     option[0].set(False)   ## Set as not changed
                     return
@@ -2850,7 +2850,7 @@ class Gui(Tk):
             return
 
         ## If data file not selected load data
-        if self.data_file.get() is "":
+        if self.data_file.get() == "":
             self.load_data()
         # print("self.data_file.get()", self.data_file.get())
 
@@ -3405,10 +3405,10 @@ class Gui(Tk):
             ## Create constraints
             assert isinstance(self.functions, list)
             assert isinstance(self.data_intervals, list)
-            self.constraints = ineq_to_constraints(self.functions, self.data_intervals, silent=self.silent.get())
+            self.constraints = ineq_to_constraints(self.functions, self.data_intervals, decoupled=True, silent=self.silent.get())
             if self.z3_functions:
                 assert isinstance(self.z3_functions, list)
-                self.z3_constraints = ineq_to_constraints(self.z3_functions, self.data_intervals, silent=self.silent.get())
+                self.z3_constraints = ineq_to_constraints(self.z3_functions, self.data_intervals, decoupled=True, silent=self.silent.get())
 
             self.constraints_changed = True
             self.constraints_file.set("")
@@ -3449,7 +3449,7 @@ class Gui(Tk):
             save_space_text_file = file
         else:
             print("Saving the textual representation of space ...")
-            if self.space is "":
+            if self.space == "":
                 self.status_set("There is no space to be saved.")
                 messagebox.showwarning("Saving the textual representation of space", "There is no space to be saved.")
                 return
@@ -3499,7 +3499,7 @@ class Gui(Tk):
     def change_refinement_plot(self):
         """ Parses window changing for refinement plot"""
         try:
-            if self.space is not "":
+            if self.space != "":
                 assert isinstance(self.space, space.RefinedSpace)
                 if len(self.space.params) > 2:
                     self.show_space(self.show_refinement, self.show_samples, self.show_true_point, show_all=True, prefer_unsafe=self.show_red_in_multidim_refinement.get())

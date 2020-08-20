@@ -1604,7 +1604,7 @@ def create_bee_multiparam_semisynchronous_model(file, population_size):
                 continue
             ## skipping the rest of final states
             ## if for all non ones the item is equal to ones, it means they cannot update any more
-            if all(map(lambda x: x == -state.count(1), list(filter(lambda x: x is not 1, state)))):
+            if all(map(lambda x: x == -state.count(1), list(filter(lambda x: x != 1, state)))):
                 continue
 
             # print("solving state", state)
@@ -1615,14 +1615,14 @@ def create_bee_multiparam_semisynchronous_model(file, population_size):
             fails_count = population_size - success_count
 
             ## updatable not stinging bees
-            to_be_updated = list(filter(lambda x: x is not 1 and abs(x) < success_count, state))
+            to_be_updated = list(filter(lambda x: x != 1 and abs(x) < success_count, state))
             print("state", state)
             print("to_be_updated", to_be_updated)
             to_be_updated_count = len(to_be_updated)
             print("to_be_updated_count", to_be_updated_count)
 
             ## Distinct bee states which failed
-            distinct_fails = list(set(filter(lambda x: x is not 1, state)))
+            distinct_fails = list(set(filter(lambda x: x != 1, state)))
             ## Filter those who can be updated
             # print(distinct_fails)
             distinct_fails = list(filter(lambda x: abs(x) < success_count, distinct_fails))

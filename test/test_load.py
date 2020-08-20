@@ -3,8 +3,8 @@ from src.load import *
 cwd = os.getcwd()
 test = cwd
 model_dir = os.path.join(cwd, "models")
-prism_results = os.path.join(cwd, "prism_results")
-storm_results = os.path.join(cwd, "storm_results")
+prism_results = os.path.join(cwd, "results/prism_results")
+storm_results = os.path.join(cwd, "results/storm_results")
 
 
 class MyTestCase(unittest.TestCase):

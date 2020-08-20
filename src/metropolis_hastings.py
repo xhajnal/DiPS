@@ -81,7 +81,7 @@ class HastingsResults:
             return None
 
     def merge_acc_and_rej(self):
-        """ Return both, accepted and rejected samples, in a single list"""
+        """ Returns both, accepted and rejected samples, in a single list"""
         spam = np.empty([len(self.accepted) + len(self.rejected), len(self.params) + 1])
         acc_index = 0
         rej_index = 0
@@ -135,11 +135,11 @@ class HastingsResults:
             return None
 
     def set_accepted(self, accepted):
-        """ Input the accepted points"""
+        """ Sets the accepted points"""
         self.accepted = accepted
 
     def set_rejected(self, rejected):
-        """ Input rejected points"""
+        """ Sets rejected points"""
         self.rejected = rejected
 
     def get_acc_as_a_list(self):
@@ -167,7 +167,7 @@ class HastingsResults:
         # mpl.rcParams.update(mpl.rcParamsDefault)
         # plt.style.use('default')
 
-        ## backwards compatibility
+        ## Backwards compatibility
         if len(self.params) == len(self.accepted[0]):
             print("old data")
             indices = np.linspace(1, len(self.accepted), num=len(self.accepted))
@@ -181,24 +181,24 @@ class HastingsResults:
             print("self.accepted", self.accepted)
 
         if burn_in is None:
-            try:  ## backward compatibility
+            try:  ## Backward compatibility
                 burn_in = self.burn_in
             except AttributeError as exx:
                 if "'HastingsResults' object has no attribute 'burn_in'" in str(exx):
                     try:
-                        burn_in = (100 - self.not_burn_in)/100
+                        burn_in = (100 - self.not_burn_in)/100  ## Backward compatibility
                         self.burn_in = burn_in
                     except:
                         pass
                     try:
-                        if 0 <= self.show <= 1:
-                            burn_in = 1 - self.show
-                        elif 0 <= self.show <= 100:
-                            burn_in = 1 - self.show/100
-                        elif self.show < 0:
-                            burn_in = len(self.accepted) + self.show
+                        if 0 <= self.show <= 1:  ## Backward compatibility
+                            burn_in = 1 - self.show  ## Backward compatibility
+                        elif 0 <= self.show <= 100:  ## Backward compatibility
+                            burn_in = 1 - self.show/100  ## Backward compatibility
+                        elif self.show < 0:  ## Backward compatibility
+                            burn_in = len(self.accepted) + self.show  ## Backward compatibility
                         else:
-                            burn_in = len(self.accepted) - self.show
+                            burn_in = len(self.accepted) - self.show  ## Backward compatibility
                         self.burn_in = burn_in
                     except:
                         pass
@@ -206,7 +206,7 @@ class HastingsResults:
             if self.mh_sampling_iterations < 0:
                 pass
         except AttributeError as exx:
-            self.mh_sampling_iterations = self.MH_sampling_iterations
+            self.mh_sampling_iterations = self.MH_sampling_iterations  ## Backward compatibility
 
         if burn_in < 0:
             raise Exception("MH - wrong burn-in setting.")
@@ -302,7 +302,6 @@ class HastingsResults:
             ax = fig.add_subplot(plots, 1, index + 1)
             borderline_index = self.accepted[:, -1][int(self.get_burn_in() * len(self.accepted))-1]
             ax.axvline(x=borderline_index + 0.5, color='black', linestyle='-', label="burn-in threshold")
-
 
             ax.scatter(self.rejected[:, -1], self.rejected[:, index], marker='x', c="r", label='Rejected', alpha=0.5)
             ax.scatter(self.accepted[:, -1], self.accepted[:, index], marker='.', c="b", label='Accepted', alpha=0.5)
@@ -557,8 +556,8 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param
 
         ## Finish iterations after timeout
         if (time() - globals()["start_time"]) > timeout >= 0:
-            globals()["results"].last_iter = iteration
-            globals()["results"].time_it_took = time() - globals()["start_time"]
+            globals()["mh_results"].last_iter = iteration
+            globals()["mh_results"].time_it_took = time() - globals()["start_time"]
             break
 
     globals()["mh_results"].time_it_took = time() - globals()["start_time"]
@@ -716,11 +715,12 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         observations = np.array(samples)[np.random.randint(0, observations_count, observations_samples_size)]
     print("observations", observations)
 
+    ## Showing metadata visualisations
     if metadata:
         ## Plotting the distribution of observations
         Y = []
         for i in range(len(functions)):
-            Y.append(observations.count(i))
+            Y.append(list(observations).count(i))
 
         fig = Figure(figsize=(10, 10))
         ax = fig.add_subplot(1, 1, 1)
@@ -737,6 +737,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
 
     print("Initial parameter point: ", theta_init)
 
+    ## MAIN LOOP
     ##                                      (likelihood_computer,    prior, transition_model,   param_init, iterations,             space,    data, acceptance_rule, parameter_intervals, functions, eps, progress,          timeout,         debug):
     accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, mh_sampling_iterations, space, observations, acceptance, parameter_intervals, functions, eps, progress=progress, timeout=timeout, debug=debug)
 
@@ -745,34 +746,27 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
 
     print("accepted.shape", accepted.shape)
     if len(accepted) == 0:
-        return False, False
+        print("Metropolis-Hastings, no accepted point found")
+        return False
 
-    print(f"Set of accepted and rejected points is stored here: {tmp_dir}/[accepted/rejected]_{observations_samples_size}.p")
-    pickle.dump(accepted, open(os.path.join(tmp_dir, f"accepted_{observations_samples_size}.p"), 'wb'))
-    pickle.dump(rejected, open(os.path.join(tmp_dir, f"rejected_{observations_samples_size}.p"), 'wb'))
-
+    ## Dumping results
+    print(f"Set of accepted points is stored here: {tmp_dir}/accepted.p")
+    pickle.dump(accepted, open(os.path.join(tmp_dir, f"accepted.p"), 'wb'))
+    print(f"Set of rejected points is stored here: {tmp_dir}/rejected.p")
+    pickle.dump(rejected, open(os.path.join(tmp_dir, f"rejected.p"), 'wb'))
     print(f"Whole class is stored here: {tmp_dir}/mh_class.p")
     pickle.dump(globals()["mh_results"], open(os.path.join(tmp_dir, f"mh_class.p"), 'wb'))
 
-    # print("accepted", accepted)
-    # to_show = accepted.shape[0]
-    # print("accepted[100:to_show, 1]", accepted[100:to_show, 1])
-    # print("rejected", rejected)
-
+    ## Showing metadata visualisations
     if metadata:
         if not where:
             globals()["mh_results"].show_iterations()
-        else:
-            globals()["mh_results"].show_iterations(where=draw_plot)
-    # globals()["mh_results"].not_burn_in = not_burn_in
-
-    if metadata:
-        if not where:
             globals()["mh_results"].show_accepted()
         else:
+            globals()["mh_results"].show_iterations(where=draw_plot)
             globals()["mh_results"].show_accepted(where=draw_plot)
 
-    ## TODO make a option to set to see the whole space, not zoomed - freaking hard
+    ## TODO make a option to set to see the unzoomed space - freaking hard
     ## "Currently hist2d calculates it's own axis limits, and any limits previously set are ignored." (https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.axes.Axes.hist2d.html)
     ## Option 2 - https://stackoverflow.com/questions/29175093/creating-a-log-linear-plot-in-matplotlib-using-hist2d
     ## No scale
