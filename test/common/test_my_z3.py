@@ -1,6 +1,5 @@
 import unittest
 from src.common.my_z3 import *
-from termcolor import colored
 
 
 class MyTestCase(unittest.TestCase):

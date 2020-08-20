@@ -1,5 +1,4 @@
 import unittest
-from termcolor import colored
 from src.common.convert import *
 
 

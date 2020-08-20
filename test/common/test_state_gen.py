@@ -1,6 +1,4 @@
 import unittest
-from termcolor import colored
-from src.common.state_gen import *
 
 
 class MyTestCase(unittest.TestCase):

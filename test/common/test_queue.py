@@ -1,6 +1,4 @@
 import unittest
-from src.common.queue import *
-from termcolor import colored
 
 
 class MyTestCase(unittest.TestCase):

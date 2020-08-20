@@ -552,6 +552,7 @@ def call_storm_files(model_prefix, agents_quantities, param_intervals=False, mod
         param_intervals (list of pairs): list of intervals to be used for respective parameter (default all intervals are from 0 to 1)
         properties_path (string): path to load properties from
         property_file (string): file name of single property files to be used for all models
+        command_output_file (string): file to write the command
         output_path (string): path for the output
         time (bool): if True time measurement is added
     """

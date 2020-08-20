@@ -1,6 +1,5 @@
 import unittest
 from termcolor import colored
-from src.common.space_stuff import *
 
 
 class MyTestCase(unittest.TestCase):

@@ -76,6 +76,7 @@ def create_interval_NEW(confidence, samples=False, n_samples=False, mean=False, 
         Returns:
             confidence interval of mean
         """
+    h = 0
 
     if samples:
         n_samples = len(samples)

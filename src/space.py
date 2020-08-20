@@ -11,7 +11,6 @@ from matplotlib.patches import Rectangle
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from termcolor import colored  ## Colored output
-from matplotlib.figure import Figure
 
 ## Importing my code
 from common.mathematics import get_rectangle_volume
@@ -220,6 +219,8 @@ class RefinedSpace:
         self.time_refinement = 0
 
         self.prefer_unsafe = prefer_unsafe
+
+        self.true_point_object = []
 
         ## TEXT WRAPPER
         self.wrapper = DocumentWrapper(width=70)

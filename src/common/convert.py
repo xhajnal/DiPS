@@ -261,5 +261,3 @@ def to_interval(points: list):
                 interval[1] = points[point][dimension]
         intervals.append(interval)
     return intervals
-
-

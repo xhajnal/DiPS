@@ -208,7 +208,7 @@ def generate_experiments(model_types, n_samples, populations, dimension_sample_s
         model_types (list of strings): list of model types
         n_samples (list of ints): list of sample sizes
         populations (list of ints): list of agent populations
-        dimension_sample_size (list of ints): number of samples of in each parameter dimension to be used
+        dimension_sample_size (int): number of samples of in each parameter dimension to be used
         sim_length (Int): length of the simulation
         modular_param_space (numpy array): parameter space to be used
         silent (bool): if silent printed output is set to minimum
@@ -226,7 +226,7 @@ def generate_data(model_types, n_samples, populations, dimension_sample_size,
         model_types (list of strings): list of model types
         n_samples (list of ints): list of sample sizes
         populations (list of ints): list of agent populations
-        dimension_sample_size (list of ints): number of samples of in each parameter dimension to be used
+        dimension_sample_size (int): number of samples of in each parameter dimension to be used
         sim_length (Int): length of the simulation
         modular_param_space (numpy array): parameter space to be used
         silent (bool): if silent printed output is set to minimum

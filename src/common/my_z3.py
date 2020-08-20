@@ -49,7 +49,6 @@ def is_this_python_function(function: str):
             continue
         except Exception:
             return False
-        go_on = False
     return True
     # return "if" in function or "and" in function or "or" in function or "not" in function
 

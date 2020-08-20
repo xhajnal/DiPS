@@ -643,7 +643,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         timeout (int): timeout in seconds
         debug (bool): if True extensive print will be used
         metadata (bool): if True metadata will be plotted
-        draw_plot (function): function showing intermediate plots
+        draw_plot (Callable): function showing intermediate plots
 
     @author: tpetrov
     @edit: xhajnal

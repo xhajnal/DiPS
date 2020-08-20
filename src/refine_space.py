@@ -135,7 +135,7 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
     if not silent:
         print(f"Checking unsafe {region} using {('dreal', 'z3')[solver=='z3']} solver, current time is {datetime.datetime.now()}")
 
-    if solver == "z3":
+    if solver == "z3":  ## avoiding collision name
         del delta
 
     if called:
@@ -260,7 +260,8 @@ def check_safe(region, constraints, silent: bool = False, called=False, solver="
 
     if not silent:
         print(f"checking safe {region} using {('dreal', 'z3')[solver=='z3']} solver, current time is {datetime.datetime.now()}")
-    if solver == "z3":
+
+    if solver == "z3":  ## avoiding collision name
         del delta
 
     if called:
