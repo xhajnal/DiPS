@@ -1,9 +1,11 @@
 import unittest
+from termcolor import colored
 from src.metropolis_hastings import *
 
 
 class MyTestCase(unittest.TestCase):
-    def test_example(self):
+    def test_without_data_nor_observation(self):
+        print(colored('Metropolis-Hastings without data - it is sampled', 'blue'))
         #                     (region, params, types=None, rectangles_sat=False, rectangles_unsat=False, rectangles_unknown=None, sat_samples=None, unsat_samples=None, dist_samples=False, true_point=False, title=False, prefer_unsafe=False):
         space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"], types=["Real", "Real"], rectangles_sat=[[[0, 0.5], [0, 0.5]]], rectangles_unsat=[], true_point=[0.82, 0.92])
         g = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -28,17 +30,20 @@ class MyTestCase(unittest.TestCase):
         #                  (space, observations,      functions, observations_count, observations_samples_size,        mh_sampling_iterations: int, eps, theta_init=False, where=False, progress=False, burn_in=False, bins=20, timeout=False, debug=False, metadata=True, draw_plot=False)
         initialise_sampling(space, observations=[], functions=g, observations_count=500, observations_samples_size=100, mh_sampling_iterations=100, eps=0, debug=True)
 
-    def test_example2(self):
+    def test_without_data_nor_observation2(self):
+        print(colored('Metropolis-Hastings without data - it is sampled', 'blue'))
         space = RefinedSpace([(0, 1), (0, 1)], ["p", "q"], ["Real", "Real"], [[[0, 0.5], [0, 0.5]]], [], true_point=[0.82, 0.92])
         f = ["p**2-2*p+1", "2*q*p**2-2*p**2-2*q*p+2*p", "(-2)*q*p**2+p**2+2*q*p"]
         initialise_sampling(space, observations=[], functions=f, observations_count=500, observations_samples_size=100, mh_sampling_iterations=100, eps=0, debug=True)
 
     def test_given_observation(self):
+        print(colored('Metropolis-Hastings with observations', 'blue'))
         space = RefinedSpace([(0, 1), (0, 1)], ["p", "q"], ["Real", "Real"], [[[0, 0.5], [0, 0.5]]], [], true_point=[0.82, 0.92])
         f = ["p**2-2*p+1", "2*q*p**2-2*p**2-2*q*p+2*p", "(-2)*q*p**2+p**2+2*q*p"]
         initialise_sampling(space, observations=[0, 2, 1, 2, 1, 0, 2, 1, 0, 1], functions=f, observations_count=500, observations_samples_size=100, mh_sampling_iterations=100, eps=0, debug=True)
 
     def test_given_data(self):
+        print(colored('Metropolis-Hastings with data', 'blue'))
         space = RefinedSpace([(0, 1), (0, 1)], ["p", "q"], ["Real", "Real"], [[[0, 0.5], [0, 0.5]]], [], true_point=[0.82, 0.92])
         f = ["p**2-2*p+1", "2*q*p**2-2*p**2-2*q*p+2*p", "(-2)*q*p**2+p**2+2*q*p"]
         initialise_sampling(space, observations=[0.2, 0.5, 0.3], functions=f, observations_count=500, observations_samples_size=100, mh_sampling_iterations=100, eps=0, debug=True)

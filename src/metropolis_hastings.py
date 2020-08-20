@@ -431,8 +431,8 @@ def sample_functions(functions, data_means):
 
 
 def transition_model_a(theta, parameter_intervals):
-    """" Defines how to walk around the parameter space
-        using normal distribution around old point
+    """" Defines how to walk around the parameter space, set a new point,
+        using normal distribution around the old point
 
     Args:
         theta (list): old parameter point
@@ -454,7 +454,7 @@ def transition_model_a(theta, parameter_intervals):
         while (temp <= parameter_intervals[index][0]) or (temp >= parameter_intervals[index][1]):
             ## Generate new parameter value from normal distribution
             temp = np.random.normal(theta[index], sd)
-        ##  Store only if the param value inside the domains
+        ## Store only if the param value inside the domains
         theta_new[index] = temp
 
     return theta_new
@@ -482,7 +482,7 @@ def prior(theta, parameter_intervals):
 
 
 def acceptance(x_likelihood, x_new_likelihood):
-    """ Decides whether to accept new point or not
+    """ Decides whether to accept new point, x_new, or not, based on its likelihood
 
     Args:
         x_likelihood: likelihood of the old parameter point
@@ -500,6 +500,57 @@ def acceptance(x_likelihood, x_new_likelihood):
         ## Chance to accept even if the likelihood of the new point is lower (than likelihood of current point)
         accept = np.random.uniform(0, 1)
         return accept < (np.exp(x_new_likelihood - x_likelihood))
+
+
+def manual_log_like_normal(space, theta, functions, observations, eps):
+    """ Log likelihood of functions in parameter point theta drawing the data, P(functions(theta)| data)
+
+    Args:
+        space (Refined space): supporting structure, defining parameters, their domains and types
+        theta (list): parameter point
+        functions (list of strings): functions to be evaluated in theta
+        observations (list of ints): list of function indices which are being observed
+        eps (number): very small value used as probability of non-feasible values in prior
+
+    Returns:
+         likelihood (float): P(functions(theta)| data)
+
+    @author: tpetrov
+    @edit: xhajnal
+    """
+    res = 0
+    # print("data", data)
+    # print("functions", functions)
+
+    ## Assignment of parameter values
+    for index, param in enumerate(theta):
+        locals()[space.get_params()[index]] = theta[index]
+
+    ## Dictionary optimising performance - not evaluating the same functions again
+    evaled_functions = {}
+
+    for data_point in observations:
+        # print("data_point", data_point)
+        # print("functions[data_point]", functions[data_point])
+
+        if data_point in evaled_functions.keys():
+            temp = evaled_functions[data_point]
+        else:
+            evaled_functions[data_point] = eval(functions[data_point])
+            temp = evaled_functions[data_point]
+
+        # print(temp)
+        # print(np.log(temp))
+
+        if temp < eps:
+            temp = eps
+        if temp > 1. - eps:
+            temp = 1. - eps
+
+        # print(res)
+        res = res + np.log(temp)  # +np.log(prior(x))
+    # print(res)
+    return res
 
 
 def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param_init, iterations, space, observations,
@@ -530,13 +581,17 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param
     ## Even though it is never compared and hence should not be acc nor rej
     rejected = [np.append(theta, 0)]
     ## For each MCMC iteration do
+    has_moved = True
+    theta_lik = 0
     for iteration in range(1, iterations + 1):
         ## Walk in parameter space - Get new parameter point from the current one
         theta_new = transition_model(theta, parameter_intervals)
         ## Estimate likelihood of current point
-        ## TODO - check whether we can reuse the likelihood from the previous iteration
         ## (space, theta, functions, data, eps)
-        theta_lik = likelihood_computer(space, theta, functions, observations, eps)
+
+        ## Not recalculating the likelihood if we did not move
+        if has_moved:
+            theta_lik = likelihood_computer(space, theta, functions, observations, eps)
         # print("theta_lik", theta_lik)
         ## Estimate likelihood of new point
         theta_new_lik = likelihood_computer(space, theta_new, functions, observations, eps)
@@ -549,11 +604,13 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param
         ## If new point accepted
         if acceptance_rule(theta_lik + np.log(prior_rule(theta, parameter_intervals)), theta_new_lik + np.log(prior_rule(theta_new, parameter_intervals))):
             ## Go to the new point
+            has_moved = True
             theta = theta_new
             accepted.append(np.append(theta_new, iteration))
             if debug:
                 print(f"new point: {theta_new} accepted")
         else:
+            has_moved = False
             rejected.append(np.append(theta_new, iteration))
             if debug:
                 print(f"new point: {theta_new} rejected")
@@ -568,57 +625,6 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param
 
     globals()["mh_results"].time_it_took = time() - globals()["start_time"]
     return np.array(accepted), np.array(rejected)
-
-
-def manual_log_like_normal(space, theta, functions, observations, eps):
-    """ Log likelihood of functions in point theta drawing the data
-
-    Args:
-        space (Refined space): supporting structure, defining parameters, their domains and types
-        theta (list): parameter point
-        functions (list of strings): functions to be evaluated in theta
-        observations (list of ints): list of function indices which are being observed
-        eps (number): very small value used as probability of non-feasible values in prior
-
-    Returns:
-         likelihood (float): P(data | functions(theta))
-
-    @author: tpetrov
-    @edit: xhajnal
-    """
-    res = 0
-    # print("data", data)
-    # print("functions", functions)
-
-    ## Assignment of parameter values
-    for index, param in enumerate(theta):
-        locals()[space.get_params()[index]] = theta[index]
-
-    ## Dictionary optimising performance - not evaluating the same functions again
-    evaled_functions = {}
-
-    for data_point in observations:  # observations:
-        # print("data_point", data_point)
-        # print("functions[data_point]", functions[data_point])
-
-        if data_point in evaled_functions.keys():
-            temp = evaled_functions[data_point]
-        else:
-            evaled_functions[data_point] = eval(functions[data_point])
-            temp = evaled_functions[data_point]
-
-        # print(temp)
-        # print(np.log(temp))
-
-        if temp < eps:
-            temp = eps
-        if temp > 1. - eps:
-            temp = 1. - eps
-
-        # print(res)
-        res = res + np.log(temp)  # +np.log(prior(x))
-    # print(res)
-    return res
 
 
 def initialise_sampling(space: RefinedSpace, observations, functions, observations_count: int,
@@ -747,7 +753,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     print("Initial parameter point: ", theta_init)
 
     ## MAIN LOOP
-    ##                                      (likelihood_computer,    prior, transition_model,   param_init, iterations,             space,    data, acceptance_rule, parameter_intervals, functions, eps, progress,          timeout,         debug):
+    ##                                      (likelihood_computer,    prior, transition_model,   param_init,       iterations,       space,   data,  acceptance_rule, parameter_intervals, functions, eps, progress,          timeout,         debug):
     accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, mh_sampling_iterations, space, observations, acceptance, parameter_intervals, functions, eps, progress=progress, timeout=timeout, debug=debug)
 
     globals()["mh_results"].set_accepted(accepted)
