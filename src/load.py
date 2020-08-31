@@ -497,6 +497,11 @@ def find_param(my_string, debug: bool = False):
     Returns:
          set of strings - parameters
     """
+    try:
+        return my_string.free_symbols
+    except AttributeError:
+        pass
+
     my_string = copy.copy(my_string)
     if debug:
         print("my_default_string ", my_string)
@@ -558,11 +563,11 @@ def find_param(my_string, debug: bool = False):
     return parameters
 
 
-def find_param_old(polynomial, debug: bool = False):
+def find_param_old(expression, debug: bool = False):
     """ Finds parameters of a polynomials (also deals with Z3 expressions)
 
     Args:
-        polynomial : polynomial as string
+        expression : polynomial as string
         debug (bool): if True extensive print will be used
 
     Returns:
@@ -570,7 +575,12 @@ def find_param_old(polynomial, debug: bool = False):
     """
 
     ## Get the e-/e+ notation away
-    parameters = re.sub('[0-9]e[+|-][0-9]', '0', polynomial)
+    try:
+        return expression.free_symbols
+    except AttributeError:
+        pass
+
+    parameters = re.sub('[0-9]e[+|-][0-9]', '0', expression)
 
     parameters = parameters.replace('(', '').replace(')', '').replace('**', '*').replace(' ', '')
     ## replace python expressions
@@ -589,17 +599,17 @@ def find_param_old(polynomial, debug: bool = False):
     return set(parameters)
 
 
-def find_param_older(polynomial, debug: bool = False):
+def find_param_older(expression, debug: bool = False):
     """ Finds parameters of a polynomials
 
     Args:
-        polynomial : polynomial as string
+        expression : polynomial as string
         debug (bool): if True extensive print will be used
     
     Returns:
          set of strings - parameters
     """
-    parameters = polynomial.replace('(', '').replace(')', '').replace('**', '*').replace(' ', '')
+    parameters = expression.replace('(', '').replace(')', '').replace('**', '*').replace(' ', '')
     parameters = re.split('\+|\*|\-|/', parameters)
     parameters = [i for i in parameters if not i.replace('.', '', 1).isdigit()]
     parameters = set(parameters)

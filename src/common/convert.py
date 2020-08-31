@@ -2,6 +2,7 @@ import re
 
 from termcolor import colored
 from sympy import Interval
+import sympy
 import locale
 locale.setlocale(locale.LC_ALL, '')
 
@@ -51,34 +52,35 @@ def ineq_to_constraints(functions: list, intervals: list, decoupled=True, silent
     try:
         spam = []
         for index in range(len(functions)):
-            if decoupled:
-                if isinstance(intervals[index], Interval):
-                    spam.append(functions[index] + " >= " + str(intervals[index].start))
-                    spam.append(functions[index] + " <= " + str(intervals[index].end))
-                else:
-                    spam.append(functions[index] + " >= " + str(intervals[index][0]))
-                    spam.append(functions[index] + " <= " + str(intervals[index][1]))
+            ## debug
+            print(colored(f"type of the function is {type(functions[index])}", "blue"))
+            ## name intervals
+            if isinstance(intervals[index], Interval):
+                low = intervals[index].start
+                high = intervals[index].end
             else:
-                if isinstance(intervals[index], Interval):
-                    ## Old
-                    # spam.append(functions[index] + " >= " + str(intervals[index].start))
-                    # spam.append(functions[index] + " <= " + str(intervals[index].end))
-                    ## New
-                    spam.append(str(intervals[index].start) + " <= " + functions[index] + " <= " + str(intervals[index].end))
-                    ## Slightly slower
-                    # spam.append(f"{intervals[index].start} <= {functions[index]} <= {intervals[index].end}")
-                    ## Slow
-                    # spam.append(f"{functions[index]} in Interval({intervals[index].start}, {intervals[index].end})")
+                low = intervals[index][0]
+                high = intervals[index][1]
+
+            if decoupled or not isinstance(functions[index], str):
+                if not isinstance(functions[index], str):
+                    print("SYMPY")
+                    spam.append(functions[index] >= low)
+                    spam.append(functions[index] <= high)
                 else:
-                    ## Old
-                    # spam.append(functions[index] + " >= " + str(intervals[index][0]))
-                    # spam.append(functions[index] + " <= " + str(intervals[index][1]))
-                    ## New
-                    spam.append(str(intervals[index][0]) + " <= " + functions[index] + " <= " + str(intervals[index][1]))
-                    ## Slightly slower
-                    # spam.append(f"{intervals[index][0]} <= {functions[index]} <= {intervals[index][1]}")
-                    ## Slow
-                    # spam.append(f"{functions[index]} in Interval({intervals[index][0]}, {intervals[index][1]})")
+                    spam.append(functions[index] + " >= " + str(low))
+                    spam.append(functions[index] + " <= " + str(high))
+            else:
+                ## Old
+                # spam.append(functions[index] + " >= " + str(low))
+                # spam.append(functions[index] + " <= " + str(high))
+                ## New
+                spam.append(str(low) + " <= " + functions[index] + " <= " + str(high))
+                ## Slightly slower
+                # spam.append(f"{low} <= {functions[index]} <= {high}")
+                ## Slow
+                # spam.append(f"{functions[index]} in Interval({low}, {high})")
+
         return spam
     except TypeError as error:
         if "EmptySet" in str(error):
@@ -88,7 +90,6 @@ def ineq_to_constraints(functions: list, intervals: list, decoupled=True, silent
     except Exception as err:
         print("Unhandled exception", err)
         raise err
-    print("done")
 
 
 def constraints_to_ineq(constraints: list, silent: bool = True, debug: bool = False):

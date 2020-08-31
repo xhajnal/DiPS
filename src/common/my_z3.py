@@ -27,7 +27,8 @@ def is_this_z3_function(function: str):
         function (string): expression to be checked
     """
     # print("is_this_z3_function?", function)
-    return ("If" in function) or ("And" in function) or ("Or" in function) or ("Not" in function) or ("Pow" in function)
+    spam = str(function)
+    return ("If" in spam) or ("And" in spam) or ("Or" in spam) or ("Not" in spam) or ("Pow" in spam)
 
 
 def is_this_python_function(function: str):

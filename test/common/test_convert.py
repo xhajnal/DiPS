@@ -25,6 +25,30 @@ class MyTestCase(unittest.TestCase):
             ineq_to_constraints(["x"], [Interval(2, 2)])
         self.assertTrue('Some intervals are incorrect' in str(context.exception))
 
+    def test_ineq_to_constraints_with_sympy(self):
+        print(colored("Checking conversion from a list of inequalities to list of properties with sympy", 'blue'))
+        self.assertEqual(ineq_to_constraints([sympy.factor("x+3")], [[0, 1]], decoupled=True), [sympy.factor("x+3 >= 0"), sympy.factor("x+3 <= 1")])
+        self.assertEqual(ineq_to_constraints([sympy.factor("x"), sympy.factor("2*x")], [Interval(0, 1), Interval(0, 2)], decoupled=True), [sympy.factor('x >= 0'), sympy.factor('x <= 1'), sympy.factor('2*x >= 0'), sympy.factor('2*x <= 2')])
+
+        self.assertEqual(ineq_to_constraints([sympy.factor("x+3")], [], decoupled=True), False)
+
+        self.assertEqual(ineq_to_constraints([sympy.factor("x+3")], [[0, 1]], decoupled=False), [sympy.factor("x+3 >= 0"), sympy.factor("x+3 <= 1")])
+
+        self.assertEqual(ineq_to_constraints([sympy.factor("x"), sympy.factor("2*x")], [Interval(0, 1), Interval(0, 2)],
+                                             decoupled=False), [sympy.factor('x >= 0'), sympy.factor('x <= 1'), sympy.factor('2*x >= 0'), sympy.factor('2*x <= 2')])
+
+        self.assertEqual(ineq_to_constraints([sympy.factor("x+3")], [], decoupled=False), False)
+
+        ## Bad intervals
+        with self.assertRaises(Exception) as context:
+            ineq_to_constraints([sympy.factor("x")], [Interval(3, 2)])
+            print(context.exception)
+        self.assertTrue('Some intervals are incorrect' in str(context.exception))
+
+        with self.assertRaises(Exception) as context:
+            ineq_to_constraints([sympy.factor("x")], [Interval(2, 2)])
+        self.assertTrue('Some intervals are incorrect' in str(context.exception))
+
     def test_constraints_to_ineq(self):
         print(colored("Checking conversion from a list properties to a list of inequalities", 'blue'))
         self.assertEqual(constraints_to_ineq(["x+3>=0", "x+3<=1"]), (["x+3"], [Interval(0, 1)]))
