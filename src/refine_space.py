@@ -407,6 +407,9 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
     ## Store the recursion_depth
     globals()["init_recursion_depth"] = recursion_depth
 
+    ## Store whether init recursion_depth is 0
+    globals()["flat_refinement"] = (recursion_depth == 0)
+
     ## If the given region is space
     ## TODO correct this
     if isinstance(region, RefinedSpace):
@@ -485,12 +488,13 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         print("constraints", constraints)
 
     ## Decoupling constraints
-    if version is not 5:
+    if version != 5:
         ## In case of two inequalities on a line decouple it
         constraints = decouple_constraints(constraints, silent=silent, debug=debug)
 
     ## White space
     numb_of_white_rectangles = space.count_white_rectangles()
+    globals()["numb_of_white_rectangles"] = numb_of_white_rectangles
 
     # PRESAMPLING
     if sample_size:
@@ -614,7 +618,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
             space.show(red=False, green=False, sat_samples=False, unsat_samples=True, save=save, where=where, show_all=not gui)
 
         ## If there is only the default region to be refined in the whitespace
-        if space.count_white_rectangles == 1:
+        if numb_of_white_rectangles == 1:
             ## COMPUTING THE ORTHOGONAL HULL OF UNSAT POINTS
             ## Initializing the min point and max point as the first point in the list
             if unsat_points:
@@ -668,6 +672,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         print(f"Presampling took {socket.gethostname()} {round(time() - start_time)} second(s)")
         print()
 
+    # NORMAL REFINEMENT - WITHOUT/AFTER PRESAMPLING
     ## Choosing version/algorithm here
     ## If using z3 initialise the parameters
     if version <= 4:
@@ -687,7 +692,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
             index = index + 1
 
     ## Iterating through the regions
-    if numb_of_white_rectangles is 1:
+    if numb_of_white_rectangles == 1:
         rectangle = space.get_flat_white()[0]
         if version == 1:
             print(f"Using DFS method with {('dreal', 'z3')[solver=='z3']} solver")
@@ -735,9 +740,13 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
 
         ## To get more similar result substituting the number of splits from the max_depth
         ## Setting the depth as a proportion
+        ## TODO discuss this setting
         next_depth = max(0, recursion_depth - (int(log(numb_of_white_rectangles, 2))))
         if debug:
             print("max_depth = ", next_depth)
+
+        if next_depth == 0:
+            globals()["flat_refinement"] = True
 
         ## Iterating hyperectangles
         for volume in keys:
@@ -1712,7 +1721,12 @@ def private_check_deeper_interval(region, constraints, intervals, recursion_dept
     if check_interval_out(region, constraints, intervals, silent=silent, called=False, debug=debug) is True:
         result = "unsafe"
         if progress:
-            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))/(coverage - globals()["init_coverage"]))
+            ## Fixing overflow of progress when refinement continuous for "flat" refinement
+            if globals()["flat_refinement"]:
+                ## Proportion of que lenght and initial number of white rectangles
+                progress(1 - globals()["que"].size() / globals()["numb_of_white_rectangles"])
+            else:
+                progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))/(coverage - globals()["init_coverage"]))
         if not silent:
             print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} {result} \n", "red"))
@@ -1720,7 +1734,12 @@ def private_check_deeper_interval(region, constraints, intervals, recursion_dept
     elif check_interval_in(region, constraints, intervals, silent=silent, called=False, debug=debug) is True:
         result = "safe"
         if progress:
-            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))/(coverage - globals()["init_coverage"]))
+            ## Fixing overflow of progress when refinement continuous for "flat" refinement
+            if globals()["flat_refinement"]:
+                ## Proportion of que lenght and initial number of white rectangles
+                progress(1 - globals()["que"].size() / globals()["numb_of_white_rectangles"])
+            else:
+                progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))/(coverage - globals()["init_coverage"]))
         if not silent:
             print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} {result} \n", "green"))
