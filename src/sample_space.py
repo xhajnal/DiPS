@@ -209,4 +209,5 @@ def sample(space, constraints, sample_size, compress=False, silent=True, save=Fa
         pickle.dump(sampling, open(os.path.join(refinement_results, ("Sampled_space_" + save).split(".")[0] + ".p"), "wb"))
 
     space.sampling_took(time() - start_time)
+    space.title = f"using grid_size:{sample_size}"
     return sampling

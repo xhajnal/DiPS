@@ -296,10 +296,10 @@ class RefinedSpace:
                 pretitle = pretitle + "Samples, \n red = unsat points, green = sat points"
             elif quantitative:
                 pretitle = pretitle + "Quantitative samples, \n Sum of L1 distances to dissatisfy constraints. \n The greener the point is the further it is from the threshold \n where it stops to satisfy constraints. \n  Note that green point can be unsat and vice versa."
-            if (green or red) and (self.rectangles_sat or self.rectangles_unsat) and show_all:
-                pretitle = pretitle + f"\n Last refinement took {socket.gethostname()} {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole time"
             if (sat_samples or unsat_samples) and (self.sat_samples or self.unsat_samples):
                 pretitle = pretitle + f"\n Last sampling took {socket.gethostname()} {round(self.time_last_sampling, 2)} of {round(self.time_sampling, 2)} sec. whole sampling time"
+            if (green or red) and (self.rectangles_sat or self.rectangles_unsat):
+                pretitle = pretitle + f"\n Last refinement took {socket.gethostname()} {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole refinement time"
             if pretitle:
                 pretitle = pretitle + "\n"
             if green:
@@ -637,15 +637,14 @@ class RefinedSpace:
 
     def get_flat_white(self):
         """ Returns white space as a flat list"""
-        ## https://stackoverflow.com/questions/952914/how-to-make-a-flat-list-out-of-list-of-lists
-        return [item for sublist in self.rectangles_unknown.values() for item in sublist]
-
-    def get_white_rectangles(self):
-        """ Returns white (hyper)rectangles """
         rectangles_unknown = []
         for key in self.rectangles_unknown.keys():
             rectangles_unknown.extend(self.rectangles_unknown[key])
         return rectangles_unknown
+
+        ## Old implementation (slower)
+        # ## https://stackoverflow.com/questions/952914/how-to-make-a-flat-list-out-of-list-of-lists
+        # return [item for sublist in self.rectangles_unknown.values() for item in sublist]
 
     def get_nonwhite(self):
         """ Returns nonwhite (hyper)rectangles """
@@ -917,11 +916,12 @@ class RefinedSpace:
             full_print (bool): if True not truncated print is used
         """
 
-        rectangles_unknown = self.get_white_rectangles()
+        rectangles_unknown = self.get_flat_white()
 
         text = str(f"params: {self.params}\n")
         text = text + str(f"region: {self.region}\n")
         text = text + str(f"types: {self.types}\n")
+        text = text + str(f"coverage: {self.get_coverage()} \n")
         text = text + str(f"rectangles_sat: {(f'{self.rectangles_sat[:5]} ... {len(self.rectangles_sat)-5} more', self.rectangles_sat)[len(self.rectangles_sat) <= 30 or full_print]} \n")
         text = text + str(f"rectangles_unsat: {(f'{self.rectangles_unsat[:5]} ... {len(self.rectangles_unsat)-5} more', self.rectangles_unsat)[len(self.rectangles_unsat) <= 30 or full_print]} \n")
         text = text + str(f"rectangles_unknown: {(f'{rectangles_unknown[:5]} ... {len(rectangles_unknown)-5} more', rectangles_unknown)[len(rectangles_unknown) <= 30 or full_print]} \n")
