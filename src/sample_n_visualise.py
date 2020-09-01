@@ -62,14 +62,14 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
 
     if not parameters:
         parameters = set()
-        for polynomial in functions:
-            parameters.update(find_param(polynomial, debug))
+        for function in functions:
+            parameters.update(find_param(function, debug))
         parameters = sorted(list(parameters))
     if debug:
         print("Parameters: ", parameters)
 
     title = "Rational functions sampling \n parameter values:"
-    values = []
+    function_values = []
     add = 0
     for param in range(len(parameters)):
         if debug:
@@ -80,23 +80,24 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
     title = title[:-1]
 
     title = f"{title}\n function(s) values: "
-    for polynomial in functions:
-        expression = eval(polynomial)
+    for function in functions:
+        expression = eval(function)
         if debug:
-            print(polynomial)
-            print("Eval ", polynomial, expression)
+            print(function)
+            print("Eval ", function, expression)
         if cumulative:
             ## Add sum of all values
             add = add + expression
-            values.append(add)
+            function_values.append(add)
             title = f"{title} {add} , "
             del expression
         else:
-            values.append(expression)
+            function_values.append(expression)
             title = f"{title} {expression} ,"
     title = title[:-2]
     if data:
-        title = f"{title}\n Comparing with the data: \n{data}"
+        # data_to_str = str(data).replace(" ", "\u00A0") does not work
+        title = f"{title}\n Comparing with the data: {data}"
         if cumulative:
             for index in range(1, len(data)):
                 data[index] = data[index] + data[index - 1]
@@ -116,14 +117,15 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
             functions_inside_of_intervals = []
             for index in range(len(data)):
                 try:
-                    if values[index] in data_intervals[index]:
+                    if function_values[index] in data_intervals[index]:
                         functions_inside_of_intervals.append(True)
                     else:
                         functions_inside_of_intervals.append(False)
                 except IndexError as error:
-                    raise Exception(f"Unable to show the data on the plot. Data intervals do not share the size.")
+                    raise Exception(f"Unable to show the intervals on the plot. Data intervals do not share the size.")
 
-            title = f"{title} \n Function value within the respective interval:\n {functions_inside_of_intervals} \n Intervals: {data_intervals}"
+            # functions_inside_of_intervals_to_str = str(functions_inside_of_intervals).replace(" ", "\u00A0") - does not work
+            title = f"{title} \n Function value within the respective interval: {functions_inside_of_intervals} \n Intervals: {data_intervals}"
     else:
         ax.set_xlabel('Rational function indices')
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
@@ -132,10 +134,10 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
     ax.set_title(wraper.fill(title))
     if debug:
         print("Len(fun_list): ", len(functions))
-        print("values:", values)
-        print("range:", range(1, len(values) + 1))
+        print("values:", function_values)
+        print("range:", range(1, len(function_values) + 1))
         print("title", title)
-    ax.bar(range(1, len(values) + 1), values, width, color='b')
+    ax.bar(range(1, len(function_values) + 1), function_values, width, color='b')
     if data:
         ax.bar(list(map(lambda x: x + width, range(1, len(data) + 1))), data, width, color='r')
 
@@ -143,7 +145,7 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
         return fig, ax
     else:
         plt.show()
-    return values
+    return function_values
 
 
 def sample_dictionary_funs(dictionary, sample_size, keys=None, debug: bool = False):
@@ -242,32 +244,32 @@ def sample_list_funs(functions, sample_size, parameters=False, intervals=False, 
     return arr
 
 
-def visualise(dic_fun, agents_quantities, sample_size, cumulative=False, debug: bool = False, show_all_in_one=False, where=False):
+def visualise(dic_fun, indices, sample_size, cumulative=False, debug: bool = False, show_all_in_one=False, where=False):
     """ Creates bar plot of probabilities of i successes for sampled parametrisation
 
     Args:
-        dic_fun (dictionary population_size -> list of rational functions)
+        dic_fun (dictionary index -> list of rational functions)
         sample_size (int): sample size in each parameter
-        agents_quantities (list of ints): pop sizes to be used
+        indices (list of ints): list of indices to show
         cumulative (bool): if True cdf instead of pdf is visualised
         debug (bool): if debug extensive output is provided
         show_all_in_one (bool): if True all plots are put into one window
         where (tuple/list): output matplotlib sources to output created figure
     """
 
-    for population_size in agents_quantities:
+    for index in indices:
         parameters = set()
-        for index, polynomial in enumerate(dic_fun[population_size]):
-            if is_this_z3_function(polynomial):
-                dic_fun[population_size][index] = translate_z3_function(polynomial)
+        for index, expression in enumerate(dic_fun[index]):
+            if is_this_z3_function(expression):
+                dic_fun[index][index] = translate_z3_function(expression)
 
             if debug:
-                print("Polynomial: ", polynomial)
-            parameters.update(find_param(polynomial, debug))
+                print("Polynomial: ", expression)
+            parameters.update(find_param(expression, debug))
 
             ## THIS THING IS WORKING ONLY FOR THE CASE STUDY
-            # if len(parameters) < population_size:
-            #    parameters.update(find_param(polynomial, debug))
+            # if len(parameters) < index:
+            #    parameters.update(find_param(expression, debug))
         if debug:
             print("Parameters: ", parameters)
         parameters = sorted(list(parameters))
@@ -280,11 +282,11 @@ def visualise(dic_fun, agents_quantities, sample_size, cumulative=False, debug: 
             if debug:
                 print("Parameter_value: ", parameter_value)
             add = 0
-            a = [population_size, dic_fun[population_size].index(polynomial)]
-            if population_size == 0:
+            a = [index, dic_fun[index].index(expression)]
+            if index == 0:
                 title = f"Rational functions sampling \n parameters:"
             else:
-                title = f"Rational functions sampling \n population_size={population_size}, parameters:"
+                title = f"Rational functions sampling \n index={index}, parameters:"
             for param in range(len(parameters)):
                 a.append(parameter_value[param])
                 if debug:
@@ -294,9 +296,9 @@ def visualise(dic_fun, agents_quantities, sample_size, cumulative=False, debug: 
                 title = "{} {}={},".format(title, parameters[param], parameter_value[param])
             title = title[:-1]
             if debug:
-                print("Eval ", polynomial, eval(polynomial))
-            for polynomial in dic_fun[population_size]:
-                value = eval(polynomial)
+                print("Eval ", expression, eval(expression))
+            for expression in dic_fun[index]:
+                value = eval(expression)
                 if cumulative:
                     ## Add sum of all values
                     add = add + value
@@ -312,7 +314,7 @@ def visualise(dic_fun, agents_quantities, sample_size, cumulative=False, debug: 
             ax.set_xlabel('Rational function indices')
             ax.set_title(wraper.fill(title))
             # print(title)
-            rects1 = ax.bar(range(len(dic_fun[population_size])), a[len(parameters) + 2:], width, color='b')
+            rects1 = ax.bar(range(len(dic_fun[index])), a[len(parameters) + 2:], width, color='b')
             plt.show()
 
 
