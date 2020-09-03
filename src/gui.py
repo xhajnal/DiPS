@@ -1548,10 +1548,10 @@ class Gui(Tk):
         if proceed:
             self.constraints = ""
             self.z3_constraints = ""
-            self.validate_constraints(position="constraints")
+            self.validate_constraints(position="constraints", force=True)
             ## Autosave
             self.save_constraints(os.path.join(self.tmp_dir, "constraints"))
-        self.status_set("constraints recalculated and shown.")
+        self.status_set("Constraints recalculated and shown.")
 
     def load_constraints(self, file=False, append=False, ask=True):
         """ Loads constraints from a pickled file.
@@ -3388,11 +3388,12 @@ class Gui(Tk):
             self.parameter_domains = []
             self.validate_parameters(where=where)
 
-    def validate_constraints(self, position=False):
-        """ Validates created properties.
+    def validate_constraints(self, position=False, force=False):
+        """ Validates created constraints.
 
         Args:
             position (string): Name of the place from which is being called e.g. "Refine Space"/"Sample space"
+            force (bool): force to validate constraints
         """
         print("Validating constraints ...")
         ## MAYBE an error here
@@ -3402,7 +3403,7 @@ class Gui(Tk):
         if position is False:
             position = "Validating constraints"
         ## If constraints empty create constraints
-        if self.functions_changed or self.data_intervals_changed:
+        if self.functions_changed or self.data_intervals_changed or force:
             if not self.silent.get():
                 print("Functions: ", self.functions)
                 print("Intervals: ", self.data_intervals)

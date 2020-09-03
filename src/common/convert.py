@@ -1,8 +1,6 @@
 import re
-
 from termcolor import colored
 from sympy import Interval
-import sympy
 import locale
 locale.setlocale(locale.LC_ALL, '')
 
@@ -213,7 +211,7 @@ def constraints_to_ineq(constraints: list, silent: bool = True, debug: bool = Fa
 
 
 def decouple_constraints(constraints: list, silent: bool = True, debug: bool = False):
-    """ Decouples constrains with more than two inequalities into two:
+    """ Decouples constrains with more two inequalities into two separate constraints:
 
     Args:
         constraints  (list of strings): properties to be converted
@@ -228,8 +226,8 @@ def decouple_constraints(constraints: list, silent: bool = True, debug: bool = F
     for index, constraint in enumerate(constraints):
         match = re.findall(pattern, constraint)
         if debug:
-            print(constraint)
-            print(match)
+            print("constraint", constraint)
+            print("match", match)
         if len(match) == 0:
             raise Exception("Constraints", f"No <,>,>=, <=,= symbols in constrain {index+1}")
         elif len(match) == 1:
@@ -241,6 +239,78 @@ def decouple_constraints(constraints: list, silent: bool = True, debug: bool = F
         else:
             raise Exception("Constraints", f"More than two <,>,>=, <=,= symbols in constrain {index+1}")
     return new_constraints
+
+
+def add_white_spaces(expression):
+    just_equal = r"[^\s<>]=[^<>]|[^<>]=[^\s<>]"
+    match = re.findall(just_equal, expression)
+    print(match)
+    if match:
+        expression.replace("=", " = ")
+
+    with_equal = r"[^\s]>=|[^\s]<=|[^\s]=>|[^\s]=<|>=[^\s]|<=[^\s]|=>[^\s]|=<[^\s]"
+    match = re.findall(with_equal, expression)
+    print(match)
+    if match:
+        greater_eq_check = True
+        smaller_eq_check = True
+        eq_greater_check = True
+        eq_smaller_check = True
+        for item in match:
+            if ">=" in item and greater_eq_check:
+                expression = expression.replace(">=", " >= ")
+                greater_eq_check = False
+            if "<=" in item and smaller_eq_check:
+                expression = expression.replace("<=", " <= ")
+                smaller_eq_check = False
+            if "=>" in item and eq_greater_check:
+                expression = expression.replace("=>", " >= ")
+                greater_eq_check = False
+            if "=<" in item and eq_smaller_check:
+                expression = expression.replace("=<", " <= ")
+                smaller_eq_check = False
+
+    without_equal = r"<[^\s=]|>[^\s=]|[^\s=]<|[^\s=]>"
+    match = re.findall(without_equal, expression)
+    print(match)
+    if match:
+        greater_check = True
+        smaller_check = True
+        for item in match:
+            if ">" in item and greater_check:
+                expression = expression.replace(">", " > ")
+                greater_check = False
+            if "<" in item and smaller_check:
+                expression = expression.replace("<", " < ")
+                smaller_check = False
+
+    return expression
+
+# print(add_white_spaces("0.270794145078059 >= p*q >= 0.129205854921941"))
+# print(add_white_spaces("0.270794145078059>=p*q>=0.129205854921941"))
+
+
+def normalise_constraint(constraint: list, silent: bool = True, debug: bool = False):
+    """ Transforms the set constraint into normalised form
+
+    Args:
+        constraint  (string): constraint to be normalised
+        silent (bool): if silent printed output is set to minimum
+        debug (bool): if True extensive print will be used
+
+    Example:
+          0.2 >= p >= 0.1    --->  0.1 <= p <= 0.2
+          0.2 >= p           --->  p <= 0.2
+    """
+    add_white_spaces(constraint)
+    pattern = r" < | > | >= | <= | = | => | =<"
+    match = re.findall(pattern, constraint)
+    if debug:
+        print("constraint", constraint)
+        print("match", match)
+    print(re.split(pattern, constraint))
+
+# normalise_constraint("0.270794145078059 >= p*q >= 0.129205854921941", debug=True)
 
 
 def to_interval(points: list):

@@ -35,10 +35,19 @@ def sample(space, constraints, sample_size, compress=False, silent=True, save=Fa
 
     Returns:
         (dict) of point to list of Bools whether f(point) in interval[index]
+        if quantitative
+        (dict) of point to list of numbers, sum of distances to satisfy constraints
     """
     assert isinstance(space, RefinedSpace)
     if debug:
         silent = False
+
+    ## TODO maybe normalise constraints before
+    ## check whether constraints are in normal form
+    if quantitative:
+        for constraint in constraints:
+            if len(re.findall(">", constraint)) >= 1:
+                raise Exception("Constraints", "Please rewrite constraints using < / <= instead of > / >=")
 
     ## Convert z3 functions
     for index, constraint in enumerate(constraints):
