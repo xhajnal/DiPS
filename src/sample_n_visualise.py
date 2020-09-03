@@ -68,7 +68,7 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
     if debug:
         print("Parameters: ", parameters)
 
-    title = "Rational functions sampling \n parameter values:"
+    title = "Rational functions sampling \n Parameter values:"
     function_values = []
     add = 0
     for param in range(len(parameters)):
@@ -79,7 +79,7 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
         title = "{} {}={},".format(title, parameters[param], parameter_value[param])
     title = title[:-1]
 
-    title = f"{title}\n function(s) values: "
+    title = f"{title}\n Function values: "
     for function in functions:
         expression = eval(function)
         if debug:
@@ -97,7 +97,7 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
     title = title[:-2]
     if data:
         # data_to_str = str(data).replace(" ", "\u00A0") does not work
-        title = f"{title}\n Comparing with the data: {data}"
+        title = f"{title}\n Data values: {data}"
         if cumulative:
             for index in range(1, len(data)):
                 data[index] = data[index] + data[index - 1]
@@ -122,7 +122,7 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
                     else:
                         functions_inside_of_intervals.append(False)
                 except IndexError as error:
-                    raise Exception(f"Unable to show the intervals on the plot. Data intervals do not share the size.")
+                    raise Exception(f"Unable to show the intervals on the plot. Number of data intervals ({len(data_intervals)}) is not equal to number of functions ({len(functions)}).")
 
             # functions_inside_of_intervals_to_str = str(functions_inside_of_intervals).replace(" ", "\u00A0") - does not work
             title = f"{title} \n Function value within the respective interval: {functions_inside_of_intervals} \n Intervals: {data_intervals}"

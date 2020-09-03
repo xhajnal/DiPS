@@ -211,7 +211,7 @@ class Gui(Tk):
         self.data_informed_property = ""  ## Property containing the interval boundaries from the data  ##TODO rewrite as [], need to go through checks
         self.functions = ""  ## Parameter synthesis results (rational functions)  ##TODO rewrite as [], need to go through checks
         self.z3_functions = ""  ## functions with z3 expressions inside  ##TODO rewrite as [], need to go through checks
-        self.data_intervals = ""  ## Computed intervals  ##TODO rewrite as [], need to go through checks
+        self.data_intervals = []  ## Computed intervals  ##TODO rewrite as [], need to go through checks
         self.parameters = ""  ##  Parsed parameters  ##TODO rewrite as [], need to go through checks
         self.parameter_domains = []  ## Parameters domains as intervals  ##TODO rewrite as [], need to go through checks
         self.constraints = ""  ## Computed or loaded constrains  ##TODO rewrite as [], need to go through checks
@@ -250,7 +250,7 @@ class Gui(Tk):
         # self.n_samples = ""  ## Number of samples
         ## Load rat. functions
         self.program = StringVar()  ## "prism"/"storm"
-        self.factorise = BooleanVar()  ## Flag for factorising rational functions
+        self.factorise = BooleanVar()  ## Flag for factorising functions
         ## Sampling
         self.sample_size = ""  ## Number of samples
         ## Refinement
@@ -434,12 +434,12 @@ class Gui(Tk):
         self.functions_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_width() / 2), state=DISABLED)
         self.functions_text.grid(row=5, column=0, columnspan=16, rowspan=2, sticky=W, padx=4, pady=4)
 
-        Label(frame_right, text=f"Rational functions section.", anchor=W, justify=LEFT).grid(row=1, column=1, sticky=W, padx=4, pady=4)
+        Label(frame_right, text=f"Functions section.", anchor=W, justify=LEFT).grid(row=1, column=1, sticky=W, padx=4, pady=4)
         Button(frame_right, text='Open functions', command=self.load_parsed_functions).grid(row=3, column=1, sticky=W, padx=4, pady=4)
         Button(frame_right, text='Save functions', command=self.save_parsed_functions).grid(row=3, column=2, sticky=W, pady=4)
 
         Label(frame_right, text=f"Parsed function(s):", anchor=W, justify=LEFT).grid(row=4, column=1, sticky=W, padx=4, pady=4)
-        self.functions_parsed_text = scrolledtext.ScrolledText(frame_right, width=int(self.winfo_width() / 2), height=int(self.winfo_width() / 2), state=DISABLED)
+        self.functions_parsed_text = scrolledtext.ScrolledText(frame_right, width=int(self.winfo_width() / 2), height=int(self.winfo_width() / 2))
         # self.functions_parsed_text.bind("<FocusOut>", self.refresh_parsed_functions)
         self.functions_parsed_text.bind("<Key>", lambda x: self.parsed_functions_text_modified.set(True) if x.char != "" else None)
         self.functions_parsed_text.grid(row=5, column=1, columnspan=16, rowspan=2, sticky=W, pady=4)
@@ -472,7 +472,7 @@ class Gui(Tk):
         self.sampled_functions_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width()/2), height=int(self.winfo_width()/2), state=DISABLED)
         self.sampled_functions_text.grid(row=4, column=0, columnspan=8, rowspan=2, sticky=W, padx=4, pady=4)
 
-        Label(self.frame3_right, text=f"Rational functions visualisation", anchor=W, justify=CENTER).grid(row=1, column=1, columnspan=3, pady=4)
+        Label(self.frame3_right, text=f"Functions visualisation", anchor=W, justify=CENTER).grid(row=1, column=1, columnspan=3, pady=4)
         Button(self.frame3_right, text='Plot functions in a given point', command=self.show_funs_in_single_point).grid(row=2, column=1, padx=4, pady=4)
         Button(self.frame3_right, text='Plot all sampled points', command=self.show_funs_in_all_points).grid(row=2, column=2, padx=4, pady=4)
         Button(self.frame3_right, text='Heatmap', command=self.show_heatmap).grid(row=2, column=3, padx=4, pady=4)
@@ -514,7 +514,7 @@ class Gui(Tk):
 
         label10 = Label(frame_left, text=f"Data:", anchor=W, justify=LEFT)
         label10.grid(row=1, column=0, sticky=W, padx=4, pady=4)
-        createToolTip(label10, text='For each rational function exactly one data point should be assigned.')
+        createToolTip(label10, text='For each function exactly one data point should be assigned.')
 
         self.data_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_height() * 0.8 / 40))  # , height=10, width=30
         ## self.data_text.bind("<FocusOut>", self.parse_data)
@@ -704,8 +704,11 @@ class Gui(Tk):
         label67.grid(row=6, column=3, padx=0)
         createToolTip(label67, text='When using dreal solver, delta is used to set solver error boundaries for satisfiability.')
 
+        label68 = Label(frame_left, text="Set timeout: ", anchor=W, justify=LEFT)
+        label68.grid(row=7, column=3, padx=0)
+
         presampled_refinement_checkbutton = Checkbutton(frame_left, text="Use presampled refinement", variable=self.presampled_refinement)
-        presampled_refinement_checkbutton.grid(row=7, column=3, padx=0)
+        presampled_refinement_checkbutton.grid(row=8, column=3, padx=0)
 
         # iterative_refinement_checkbutton = Checkbutton(frame_left, text="Use iterative refinement (TBD)", variable=self.iterative_refinement)
         # iterative_refinement_checkbutton.grid(row=8, column=3, padx=0)
@@ -713,25 +716,26 @@ class Gui(Tk):
         self.max_dept_entry = Entry(frame_left)
         self.coverage_entry = Entry(frame_left)
         self.epsilon_entry = Entry(frame_left)
-        self.alg = ttk.Combobox(frame_left, values=('1', '2', '3', '4', '5'))
-        self.solver = ttk.Combobox(frame_left, values=('z3', 'dreal'))
+        self.alg_entry = ttk.Combobox(frame_left, values=('1', '2', '3', '4', '5'))
+        self.solver_entry = ttk.Combobox(frame_left, values=('z3', 'dreal'))
         self.delta_entry = Entry(frame_left)
-        ## TODO not shown
-        self.refinement_timeout = 3600
+        self.refinement_timeout_entry = Entry(frame_left)
 
         self.max_dept_entry.grid(row=1, column=4)
         self.coverage_entry.grid(row=2, column=4)
         self.epsilon_entry.grid(row=3, column=4)
-        self.alg.grid(row=4, column=4)
-        self.solver.grid(row=5, column=4)
+        self.alg_entry.grid(row=4, column=4)
+        self.solver_entry.grid(row=5, column=4)
         self.delta_entry.grid(row=6, column=4)
+        self.refinement_timeout_entry.grid(row=7, column=4)
 
         self.max_dept_entry.insert(END, '5')
         self.coverage_entry.insert(END, '0.95')
         self.epsilon_entry.insert(END, '0')
-        self.alg.current(3)
-        self.solver.current(0)
+        self.alg_entry.current(3)
+        self.solver_entry.current(0)
         self.delta_entry.insert(END, '0.01')
+        self.refinement_timeout_entry.insert(END, '3600')
 
         Button(frame_left, text='Refine space', command=self.refine_space).grid(row=9, column=3, columnspan=2, pady=4, padx=0)
 
@@ -801,7 +805,7 @@ class Gui(Tk):
         # file_menu.add_cascade(label="Load", menu=load_menu, underline=0)
         # load_menu.add_command(label="Load model", command=self.load_model)
         # load_menu.add_command(label="Load property", command=self.load_property)
-        # load_menu.add_command(label="Load rational functions", command=self.load_functions)
+        # load_menu.add_command(label="Load functions", command=self.load_functions)
         # load_menu.add_command(label="Load data", command=self.load_data)
         # load_menu.add_command(label="Load space", command=self.load_space)
         # file_menu.add_separator()
@@ -811,7 +815,7 @@ class Gui(Tk):
         # file_menu.add_cascade(label="Save", menu=save_menu, underline=0)
         # save_menu.add_command(label="Save model", command=self.save_model)
         # save_menu.add_command(label="Save property", command=self.save_property)
-        # # save_menu.add_command(label="Save rational functions", command=self.save_functions())
+        # # save_menu.add_command(label="Save functions", command=self.save_functions())
         # save_menu.add_command(label="Save data", command=self.save_data)
         # save_menu.add_command(label="Save space", command=self.save_space)
         # file_menu.add_separator()
@@ -1065,13 +1069,13 @@ class Gui(Tk):
                 return
             spam = file
         else:
-            print("Loading functions ...")
+            print("Loading rational functions ...")
 
             if self.functions_changed and ask:
-                if not askyesno("Loading functions", "Previously obtained functions will be lost. Do you want to proceed?"):
+                if not askyesno("Loading rational functions", "Previously obtained functions will be lost. Do you want to proceed?"):
                     return
 
-            self.status_set("Loading functions - checking inputs")
+            self.status_set("Loading rational functions - checking inputs")
 
             if not self.silent.get():
                 print("Used program: ", program)
@@ -1080,7 +1084,7 @@ class Gui(Tk):
             elif program == "storm":
                 initial_dir = self.storm_results
             else:
-                messagebox.showwarning("Load functions", "Select a program for which you want to load data.")
+                messagebox.showwarning("Load rational functions", "Select a program for which you want to load data.")
                 return
 
             self.status_set("Please select the prism/storm symbolic results to be loaded.")
@@ -1126,7 +1130,7 @@ class Gui(Tk):
                 return
 
         if not self.silent.get():
-            print("Unparsed functions: ", self.functions)
+            print("Unparsed rational functions: ", self.functions)
 
         self.unfold_functions()
 
@@ -1145,7 +1149,7 @@ class Gui(Tk):
         for function in self.functions:
             if is_this_z3_function(function):
                 self.store_z3_functions()
-                messagebox.showinfo("Loading functions", "Some of the functions contains z3 expressions, these are being stored and used only for z3 refinement, shown functions are translated into python expressions.")
+                messagebox.showinfo("Loading rational functions", "Some of the functions contains z3 expressions, these are being stored and used only for z3 refinement, shown functions are translated into python expressions.")
                 break
 
         ## Print functions into TextBox
@@ -1160,7 +1164,7 @@ class Gui(Tk):
 
         ## Check whether loaded
         if not self.functions:
-            messagebox.showwarning("Loading functions", "No functions loaded. Please check input file.")
+            messagebox.showwarning("Loading rational functions", "No functions loaded. Please check input file.")
         else:
             pass
             ## Autosave
@@ -1250,13 +1254,13 @@ class Gui(Tk):
                 return
             spam = file
         else:
-            print("Loading parsed rational functions ...")
+            print("Loading parsed functions ...")
             if self.data_changed and ask:
-                if not askyesno("Loading parsed rational functions",
+                if not askyesno("Loading parsed functions",
                                 "Previously obtained functions will be lost. Do you want to proceed?"):
                     return
 
-            self.status_set("Please select the parsed rational functions to be loaded.")
+            self.status_set("Please select the parsed functions to be loaded.")
 
             if not self.silent.get():
                 print("self.program.get()", self.program.get())
@@ -1269,7 +1273,7 @@ class Gui(Tk):
                 return
 
             spam = filedialog.askopenfilename(initialdir=initial_dir,
-                                              title="Rational functions saving - Select file",
+                                              title="Functions saving - Select file",
                                               filetypes=(("pickle files / text files", "*.p *.txt"), ("all files", "*.*")))
 
         ## If no file selected
@@ -1302,7 +1306,7 @@ class Gui(Tk):
             ## Check whether functions not empty
             if not self.functions:
                 messagebox.showwarning("Loading functions", "No functions loaded. Please check input file.")
-                self.status_set("No rational functions loaded.")
+                self.status_set("No functions loaded.")
                 return
 
             print("loaded functions", self.functions)
@@ -1358,7 +1362,7 @@ class Gui(Tk):
             if not file:
                 self.save_parsed_functions(os.path.join(self.tmp_dir, f"functions.p"))
 
-            self.status_set("Parsed rational functions loaded.")
+            self.status_set("Parsed functions loaded.")
 
     def load_data(self, file=False, ask=True):
         """ Loads data from a file. Either pickled list or comma separated values in one line
@@ -1403,7 +1407,7 @@ class Gui(Tk):
                 print("Loaded data: ", self.data)
 
             ## Clear intervals
-            self.data_intervals = ""
+            self.data_intervals = []
             self.data_intervals_text.delete('1.0', END)
 
             ## Autosave
@@ -1530,7 +1534,7 @@ class Gui(Tk):
                 self.status_set("Data intervals loaded.")
 
     def recalculate_constraints(self):
-        """ Merges rational functions and intervals into constraints. Shows it afterwards. """
+        """ Merges functions and intervals into constraints. Shows it afterwards. """
         print("Checking the inputs.")
         self.check_changes("functions")
         self.check_changes("data_intervals")
@@ -1958,7 +1962,7 @@ class Gui(Tk):
             messagebox.showwarning("Data informed property generation", "No property file loaded.")
             return False
 
-        if self.data_intervals == "":
+        if self.data_intervals == []:
             print("Intervals not computed, properties cannot be generated")
             messagebox.showwarning("Data informed property generation", "Compute intervals first.")
             return False
@@ -2017,24 +2021,24 @@ class Gui(Tk):
         Args:
             file (bool or str or Path): file to save the functions
         """
-        print("Saving the rational functions ...")
+        print("Saving the functions ...")
 
         if self.functions == "":
-            self.status_set("There are no rational functions to be saved.")
+            self.status_set("There are no functions to be saved.")
             return
 
         ## TODO choose to save rewards or normal functions
         if file:
             save_functions_file = file
         else:
-            self.status_set("Please select folder to store the rational functions in.")
+            self.status_set("Please select folder to store the functions in.")
             if self.program == "prism":
                 save_functions_file = filedialog.asksaveasfilename(initialdir=self.prism_results,
-                                                                   title="Rational functions saving - Select file",
+                                                                   title="Functions saving - Select file",
                                                                    filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
             elif self.program == "storm":
                 save_functions_file = filedialog.asksaveasfilename(initialdir=self.storm_results,
-                                                                   title="Rational functions saving - Select file",
+                                                                   title="Functions saving - Select file",
                                                                    filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
             else:
                 self.status_set("Error - Selected program not recognised.")
@@ -2043,7 +2047,7 @@ class Gui(Tk):
                 print("Saving functions in file: ", save_functions_file)
 
             if save_functions_file == "":
-                self.status_set("No file selected to store the rational functions.")
+                self.status_set("No file selected to store the functions.")
                 return
 
         if "." not in basename(save_functions_file):
@@ -2055,7 +2059,7 @@ class Gui(Tk):
 
         if not file:
             self.functions_file.set(save_functions_file)
-            self.status_set("Rational functions saved.")
+            self.status_set("Functions saved.")
 
     @staticmethod
     def scrap_TextBox(where):
@@ -2072,14 +2076,14 @@ class Gui(Tk):
         return scrap
 
     def save_parsed_functions(self, file=False):
-        """ Saves parsed rational functions as a pickled file.
+        """ Saves parsed functions as a pickled file.
 
         Args:
             file (bool or str or Path): file to save the parsed functions
         """
         functions = self.scrap_TextBox(self.functions_parsed_text)
 
-        if functions is []:
+        if functions == []:
             self.status_set("There are no functions to be saved.")
             messagebox.showwarning("Saving functions", "There are no functions to be saved.")
             return
@@ -2094,15 +2098,15 @@ class Gui(Tk):
             elif self.program.get() == "storm":
                 initial_dir = self.storm_results
             else:
-                messagebox.showwarning("Save parsed rational functions",
+                messagebox.showwarning("Save parsed functions",
                                        "Select a program for which you want to save functions.")
                 return
 
             save_functions_file = filedialog.asksaveasfilename(initialdir=initial_dir,
-                                                               title="Rational functions saving - Select file",
+                                                               title="Functions saving - Select file",
                                                                filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
             if save_functions_file == "":
-                self.status_set("No file selected to store the parsed rational functions.")
+                self.status_set("No file selected to store the parsed functions.")
                 return
 
         if "." not in basename(save_functions_file):
@@ -2301,7 +2305,7 @@ class Gui(Tk):
 
     ## ANALYSIS
     def synth_params(self):
-        """ Computes rational functions from model and temporal properties. Saves output as a text file. """
+        """ Computes functions from model and temporal properties. Saves output as a text file. """
         print("Checking the inputs.")
         self.check_changes("model")
         self.check_changes("properties")
@@ -2380,20 +2384,20 @@ class Gui(Tk):
             self.cursor_toggle_busy(False)
 
     def sample_fun(self):
-        """ Samples rational functions. Prints the result. """
+        """ Samples functions. Prints the result. """
         print("Checking the inputs.")
         self.check_changes("functions")
 
-        print("Sampling rational functions ...")
-        self.status_set("Sampling rational functions. - checking inputs")
+        print("Sampling functions ...")
+        self.status_set("Sampling functions. - checking inputs")
         if self.fun_sample_size_entry.get() == "":
-            messagebox.showwarning("Sampling rational functions", "Choose grid size, number of samples per dimension.")
+            messagebox.showwarning("Sampling functions", "Choose grid size, number of samples per dimension.")
             return
         if self.functions == "":
-            messagebox.showwarning("Sampling rational functions", "Load the functions first, please")
+            messagebox.showwarning("Sampling functions", "Load the functions first, please")
             return
 
-        self.status_set("Sampling rational functions.")
+        self.status_set("Sampling functions.")
         self.validate_parameters(where=self.functions)
 
         try:
@@ -2410,7 +2414,7 @@ class Gui(Tk):
                 return
         self.sampled_functions_text.configure(state='normal')
         self.sampled_functions_text.delete('1.0', END)
-        self.sampled_functions_text.insert('1.0', "rational function index, [parameter values], function value: \n")
+        self.sampled_functions_text.insert('1.0', " function index, [parameter values], function value: \n")
         spam = ""
         assert isinstance(self.sampled_functions, Iterable)
         for item in self.sampled_functions:
@@ -2421,23 +2425,28 @@ class Gui(Tk):
             spam = spam + "], " + str(item[-1]) + ",\n"
         self.sampled_functions_text.insert('2.0', spam[:-2])
         # self.sampled_functions_text.configure(state='disabled')
-        self.status_set("Sampling rational functions finished.")
+        self.status_set("Sampling functions finished.")
 
     def show_funs_in_single_point(self):
-        """ Plots rational functions in a given point. """
+        """ Plots functions in a given point. """
         print("Checking the inputs.")
         self.check_changes("functions")
+        self.check_changes("data")
+        self.check_changes("data_intervals")
 
-        print("Plotting rational functions in a given point ...")
-        self.status_set("Plotting rational functions in a given point.")
+        print("Plotting functions in a given point ...")
+        self.status_set("Plotting functions in a given point.")
 
         if self.functions == "":
-            messagebox.showwarning("Plotting rational functions in a given point.", "Load the functions first, please.")
+            pass  ## TODO TODO
+
+        if self.functions == "":
+            messagebox.showwarning("Plotting functions in a given point.", "Load the functions first, please.")
             return
 
         ## Disable overwriting the plot by show_funs_in_all_points
         if self.page3_figure_in_use.get():
-            if not askyesno("Plotting rational functions in a given point",
+            if not askyesno("Plotting functions in a given point",
                             "The result plot is currently in use. Do you want override?"):
                 return
         self.page3_figure_in_use.set("1")
@@ -2466,7 +2475,7 @@ class Gui(Tk):
                                   debug=self.debug.get(), where=[self.page3_figure, self.page3_a])
 
         if spam is None:
-            messagebox.showinfo("Plots rational functions in a given point.", egg)
+            messagebox.showinfo("Plots functions in a given point.", egg)
         else:
             self.page3_figure = spam
             self.page3_a = egg
@@ -2482,7 +2491,7 @@ class Gui(Tk):
 
         if not self.silent.get():
             print(f"Using point", self.parameter_point)
-        self.status_set("Sampling rational functions done.")
+        self.status_set("Sampling functions done.")
 
     def save_functions_plot(self, plot_type):
         """ Saves the plot of visualised functions
@@ -2500,23 +2509,25 @@ class Gui(Tk):
                 file.write(f"      data: {self.data_file.get()}\n")
 
     def show_funs_in_all_points(self):
-        """ Shows sampled rational functions in all sampled points. """
+        """ Shows sampled functions in all sampled points. """
         print("Checking the inputs.")
         self.check_changes("functions")
+        self.check_changes("data")
+        self.check_changes("data_intervals")
 
-        print("Plotting sampled rational functions ...")
-        self.status_set("Plotting sampled rational functions.")
+        print("Plotting sampled functions ...")
+        self.status_set("Plotting sampled functions.")
 
         if self.page3_figure_in_use.get():
             if not askyesno("Show all sampled points", "The result plot is currently in use. Do you want override?"):
                 return
 
         if self.functions == "":
-            messagebox.showwarning("Sampling rational functions", "Load the functions first, please")
+            messagebox.showwarning("Sampling functions", "Load the functions first, please")
             return
 
         if self.fun_sample_size_entry.get() == "":
-            messagebox.showwarning("Sampling rational functions", "Choose grid size, number of samples per dimension.")
+            messagebox.showwarning("Sampling functions", "Choose grid size, number of samples per dimension.")
             return
         self.page3_figure_in_use.set("2")
 
@@ -2543,7 +2554,7 @@ class Gui(Tk):
                                       debug=self.debug.get(), where=[self.page3_figure, self.page3_a])
 
             if spam is None:
-                messagebox.showinfo("Plots rational functions in a given point.", egg)
+                messagebox.showinfo("Plots functions in a given point.", egg)
             else:
                 spam.tight_layout()
                 self.page3_figure = spam
@@ -2556,15 +2567,15 @@ class Gui(Tk):
 
             self.Next_sample_button.wait_variable(self.button_pressed)
         # self.Next_sample_button.config(state="disabled")
-        self.status_set("Plotting sampled rational functions finished.")
+        self.status_set("Plotting sampled functions finished.")
 
     def show_heatmap(self):
-        """ Shows heatmap - sampling of a rational function in all sampled points. """
+        """ Shows heatmap - sampling of a function in all sampled points. """
         print("Checking the inputs.")
         self.check_changes("functions")
 
-        print("Plotting heatmap of rational functions ...")
-        self.status_set("Plotting heatmap of rational functions.")
+        print("Plotting heatmap of functions ...")
+        self.status_set("Plotting heatmap of functions.")
 
         if self.page3_figure_in_use.get():
             if not askyesno("Plot heatmap", "The result plot is currently in use. Do you want override?"):
@@ -2611,7 +2622,7 @@ class Gui(Tk):
         # self.Next_sample_button.config(state="disabled")
         # self.page3_figure_locked.set(False)
         # self.update()
-        self.status_set("Plotting sampled rational functions finished.")
+        self.status_set("Plotting sampled functions finished.")
 
     def optimize(self):
         """ Search for parameter values minimizing the distance of function to data. """
@@ -2634,6 +2645,9 @@ class Gui(Tk):
 
         print("self.parameters", self.parameters)
         print("self.parameter_domains", self.parameter_domains)
+
+        if len(self.functions) != len(self.data):
+            messagebox.showwarning("Optimize functions", f"Number of functions ({len(self.functions)}) is not equal to the number of data points ({len(self.data)})")
 
         try:
             self.cursor_toggle_busy(True)
@@ -2728,8 +2742,7 @@ class Gui(Tk):
             file.write(f"function values {self.optimised_function_value} \n")
             file.write(f"distance {self.optimised_distance} \n")
 
-    ## TODO this can be written as a single method with one more argument
-    ## first it asks whether it is, then selects (text, file, text) accordingly
+    ## First, it asks whether it is changed, then selects (text, file, text) accordingly
     def check_changes(self, what):
         """ Checks whether a changed occurred and it is necessary to reload
 
@@ -2738,33 +2751,44 @@ class Gui(Tk):
             what (string): "model", "properties", "parsed_functions", "data"
             "data_intervals", or "constraints" choosing what to check
         """
-        ## SWITCH contains triples:  (text widget, file path, text, modifiedflag, save_function , load_function)
-        switch = {"model": (self.model_text_modified, self.model_file.get(), "model", self.save_model, self.load_model),
-                  "properties": (self.properties_text_modified, self.property_file.get(), "properties", self.save_property, self.load_property),
-                  "functions": (self.parsed_functions_text_modified, self.functions_file.get(), "functions", self.save_parsed_functions if os.path.splitext(self.functions_file.get())[1] == ".p" else lambda x: True, self.load_parsed_functions),
-                  "data": (self.data_text_modified, self.data_file.get(), "data", self.save_data, self.load_data),
-                  "data_intervals": (self.data_intervals_text_modified, self.data_intervals_file.get(), "data_intervals", self.save_data_intervals, self.load_data_intervals),
-                  "constraints": (self.constraints_text_modified, self.constraints_file.get(), "constraints", self.save_constraints, self.load_constraints),
+        ## SWITCH contains quadruples:  (modifiedflag, file path, text, save_function, load_function)
+        switch = {"model": (self.model_text_modified, self.model_file, "model", self.save_model, self.load_model),
+                  "properties": (self.properties_text_modified, self.property_file, "properties", self.save_property, self.load_property),
+                  "functions": (self.parsed_functions_text_modified, self.functions_file, "functions", self.save_parsed_functions if os.path.splitext(self.functions_file.get())[1] == ".p" else lambda x: True, self.load_parsed_functions),
+                  "data": (self.data_text_modified, self.data_file, "data", self.save_data, self.load_data),
+                  "data_intervals": (self.data_intervals_text_modified, self.data_intervals_file, "data_intervals", self.save_data_intervals, self.load_data_intervals),
+                  "constraints": (self.constraints_text_modified, self.constraints_file, "constraints", self.save_constraints, self.load_constraints),
                   }
         option = switch[what]
+        modified_flag = option[0].get()
+        file_path = option[1]
+        text = option[2]
+        save_function = option[3]
 
-        ## old check:  len(self.model_text.get('1.0', END)) > 1 and
+        ## Old check:  len(self.model_text.get('1.0', END)) > 1 and
+        ## If modified
         if option[0].get():
-            if option[1] != "":
-                if not askyesno(f"In the meanwhile the {option[2]} was changed", f"Do you wanna apply these changes? \n It will overwrite the {option[2]} file."):
+            ## If file set
+            if option[1].get() != "":
+                if not askyesno(f"In the meanwhile the {option[2]} was changed", f"Do you wanna apply these changes?"):
                     option[0].set(False)   ## Set as not changed
                     return
-                option[3](option[1])  ## save the thing as a file
-                option[4](option[1])  ## load that thing as a file
+                if askyesno(f"Saving {option[2]}", f"Do you want to overwrite the existing {option[2]} file?"):
+                    option[3](option[1].get())  ## Save the thing as a file - overwrite
+                else:
+                    option[3]()  ## Save the thing as a file - new file
+                option[4](option[1].get())  ## Load that thing as a file
                 option[0].set(False)  ## Set as not changed
+
             else:
                 if not askyesno(f"In the meanwhile the {option[2]} was changed", f"Do you wanna save these changes as a {option[2]}?"):
                     option[0].set(False)  ## Set as not changed
                     return
-                option[3]()  ## save the thing as a file
-                option[4](option[1])  ## load the thing as a file
+                option[3]()           ## Save the thing as a file - new file
+                option[4](option[1].get())  ## Load the thing as a file
                 option[0].set(False)  ## Set as not changed
 
+    ## Old implementation
     # def refresh_properties(self):
     #     if self.property_text_modified.get():
     #         if self.property_file.get() is not "":
@@ -3195,14 +3219,14 @@ class Gui(Tk):
             messagebox.showwarning("Refine space", "Choose epsilon, min rectangle size before refinement.")
             return
 
-        if self.alg.get() == "":
+        if self.alg_entry.get() == "":
             messagebox.showwarning("Refine space", "Pick algorithm for the refinement before running.")
             return
         # if int(self.alg.get()) == 5:
         #     if self.functions == "":
         #         messagebox.showwarning("Refine space", "Load or synthesise functions before refinement.")
         #         return
-        #     if self.data_intervals == "":
+        #     if self.data_intervals == []:
         #         messagebox.showwarning("Refine space", "Load or compute data intervals before refinement.")
         #         return
         # else:
@@ -3217,7 +3241,7 @@ class Gui(Tk):
         if not self.validate_space("Refine Space"):
             return
 
-        if int(self.alg.get()) <= 4 and not self.z3_constraints:
+        if int(self.alg_entry.get()) <= 4 and not self.z3_constraints:
             for constraint in self.constraints:
                 if is_this_exponential_function(constraint):
                     if not askyesno("Refinement", "Some constraints contain exponential function, we recommend using interval algorithmic (algorithm 5). Do you want to proceed anyway?"):
@@ -3255,20 +3279,20 @@ class Gui(Tk):
             #                         self.coverage, silent=self.silent.get(), version=int(self.alg.get()), sample_size=False,
             #                         debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
             #                         solver=str(self.solver.get()), delta=self.delta, gui=self.update_progress_bar)
-            if str(self.solver.get()) == "z3" and self.z3_constraints:
+            if str(self.solver_entry.get()) == "z3" and self.z3_constraints:
                 assert isinstance(self.z3_constraints, list)
                 spam = check_deeper(self.space, self.z3_constraints, self.max_depth, self.epsilon, self.coverage,
-                                    silent=self.silent.get(), version=int(self.alg.get()),
+                                    silent=self.silent.get(), version=int(self.alg_entry.get()),
                                     sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
-                                    where=[self.page6_figure, self.page6_a], solver=str(self.solver.get()),
+                                    where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
                                     delta=self.delta, gui=self.update_progress_bar, show_space=False,
                                     iterative=self.iterative_refinement.get())
             else:
                 assert isinstance(self.constraints, list)
                 spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
-                                    silent=self.silent.get(), version=int(self.alg.get()),
+                                    silent=self.silent.get(), version=int(self.alg_entry.get()),
                                     sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
-                                    where=[self.page6_figure, self.page6_a], solver=str(self.solver.get()),
+                                    where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
                                     delta=self.delta, gui=self.update_progress_bar, show_space=False,
                                     iterative=self.iterative_refinement.get())
         finally:
@@ -3388,14 +3412,14 @@ class Gui(Tk):
                 messagebox.showwarning(position, "Load or synthesise functions first.")
                 return False
             ## If intervals empty raise an error (return False)
-            if self.data_intervals == "":
+            if self.data_intervals == []:
                 print("Intervals not computed, properties cannot be computed")
                 messagebox.showwarning(position, "Compute intervals first.")
                 return False
 
             ## Check if the number of functions and intervals is equal
             if len(self.functions) != len(self.data_intervals):
-                messagebox.showerror(position, "The number of rational functions and data points (or intervals) is not equal")
+                messagebox.showerror(position, "The number of functions and data points (or intervals) is not equal")
                 return
 
             if self.functions_changed:
@@ -3408,6 +3432,8 @@ class Gui(Tk):
             assert isinstance(self.functions, list)
             assert isinstance(self.data_intervals, list)
             self.constraints = ineq_to_constraints(self.functions, self.data_intervals, decoupled=True, silent=self.silent.get())
+            if self.debug:
+                print("self.constraints", self.constraints)
             if self.z3_functions:
                 assert isinstance(self.z3_functions, list)
                 self.z3_constraints = ineq_to_constraints(self.z3_functions, self.data_intervals, decoupled=True, silent=self.silent.get())
