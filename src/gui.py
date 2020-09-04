@@ -461,7 +461,7 @@ class Gui(Tk):
         self.frame3_right.columnconfigure(4, weight=1)
         self.frame3_right.pack(side=RIGHT, fill=X)
 
-        Label(frame_left, text="Set number of samples per variable (grid size):", anchor=W, justify=LEFT).grid(row=1, column=0, padx=4, pady=4)
+        Label(frame_left, text="Number of samples per variable (grid size):", anchor=W, justify=LEFT).grid(row=1, column=0, padx=4, pady=4)
         self.fun_sample_size_entry = Entry(frame_left)
         self.fun_sample_size_entry.grid(row=1, column=1)
 
@@ -529,10 +529,10 @@ class Gui(Tk):
         button41.grid(row=3, column=0, sticky=W, padx=4, pady=4)
         createToolTip(button41, text='using regression')
 
-        label42 = Label(frame_left, text="Set C, confidence level:", anchor=W, justify=LEFT)
+        label42 = Label(frame_left, text="C, confidence level:", anchor=W, justify=LEFT)
         label42.grid(row=4)
         createToolTip(label42, text='confidence')
-        label43 = Label(frame_left, text="Set n_samples, number of samples: ", anchor=W, justify=LEFT)
+        label43 = Label(frame_left, text="N_samples, number of samples: ", anchor=W, justify=LEFT)
         label43.grid(row=5)
         createToolTip(label43, text='number of samples')
 
@@ -606,7 +606,10 @@ class Gui(Tk):
 
         # frame_left = Frame(page6, width=500, height=200)
         # frame_left.pack(side=LEFT, expand=False)
-        frame_left = Frame(page6, width=int(self.winfo_width() * 0.4), height=int(self.winfo_height()))
+        if self.winfo_screenwidth() < 2500:
+            frame_left = Frame(page6, width=int(self.winfo_width() * 0.5), height=int(self.winfo_height()))
+        else:
+            frame_left = Frame(page6, width=int(self.winfo_width() * 0.4), height=int(self.winfo_height()))
         frame_left.pack(side=LEFT)
         frame_left.grid_propagate(0)
         frame_left.rowconfigure(16, weight=1)
@@ -623,7 +626,7 @@ class Gui(Tk):
 
         ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=1, column=0, columnspan=15, sticky='nwe', padx=10, pady=8)
 
-        label61 = Label(frame_left, text="Set grid size: ", anchor=W, justify=LEFT, padx=10)
+        label61 = Label(frame_left, text="Grid size: ", anchor=W, justify=LEFT, padx=10)
         label61.grid(row=1, pady=16)
         createToolTip(label61, text='number of samples per dimension')
 
@@ -631,47 +634,47 @@ class Gui(Tk):
         self.sample_size_entry.grid(row=1, column=1)
         self.sample_size_entry.insert(END, '5')
 
-        Button(frame_left, text='Grid sampling', command=self.sample_space).grid(row=9, column=0, padx=10, pady=4)
-        Button(frame_left, text='Grid quantitative sampling', command=self.sample_space_degree).grid(row=9, column=1, padx=10, pady=4)
+        Button(frame_left, text='Grid sampling', command=self.sample_space).grid(row=8, column=0, columnspan=2, padx=10, pady=4)
+        Button(frame_left, text='Grid quantitative sampling', command=self.sample_space_degree).grid(row=9, column=0,  columnspan=2, padx=10, pady=4)
 
         ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=2, rowspan=7, sticky='ns', padx=25, pady=25)
 
-        label71 = Label(frame_left, text="Set # of samples: ", anchor=W, justify=LEFT)
+        label71 = Label(frame_left, text="# of samples: ", anchor=W, justify=LEFT)
         label71.grid(row=1, column=7)
         createToolTip(label71, text='number of samples to be used for sampling - subset of all samples')
         self.observations_samples_size_entry = Entry(frame_left)
         self.observations_samples_size_entry.grid(row=1, column=8)
         self.observations_samples_size_entry.insert(END, '500')
 
-        label71 = Label(frame_left, text="Set # of iteration: ", anchor=W, justify=LEFT)
+        label71 = Label(frame_left, text="# of iteration: ", anchor=W, justify=LEFT)
         label71.grid(row=2, column=7)
         createToolTip(label71, text='number of iterations, steps in parameter space')
         self.MH_sampling_iterations_entry = Entry(frame_left)
         self.MH_sampling_iterations_entry.grid(row=2, column=8)
         self.MH_sampling_iterations_entry.insert(END, '500')
 
-        label72 = Label(frame_left, text="Set eps: ", anchor=W, justify=LEFT)
+        label72 = Label(frame_left, text="Eps: ", anchor=W, justify=LEFT)
         label72.grid(row=3, column=7)
         createToolTip(label72, text='very small value used as probability of non-feasible values in prior')
         self.eps_entry = Entry(frame_left)
         self.eps_entry.grid(row=3, column=8)
         self.eps_entry.insert(END, '0.0001')
 
-        label73 = Label(frame_left, text="Set grid size: ", anchor=W, justify=LEFT)
+        label73 = Label(frame_left, text="Grid size: ", anchor=W, justify=LEFT)
         label73.grid(row=4, column=7)
         createToolTip(label73, text='number of segments in the plot')
         self.bins = Entry(frame_left)
         self.bins.grid(row=4, column=8)
         self.bins.insert(END, '20')
 
-        label73 = Label(frame_left, text="Set Burn-in: ", anchor=W, justify=LEFT)
+        label73 = Label(frame_left, text="Burn-in: ", anchor=W, justify=LEFT)
         label73.grid(row=5, column=7)
         createToolTip(label73, text='Trim the fraction of accepted points from beginning')
         self.show = Entry(frame_left)
         self.show.grid(row=5, column=8)
         self.show.insert(END, '0.25')
 
-        label73 = Label(frame_left, text="Set timeout: ", anchor=W, justify=LEFT)
+        label73 = Label(frame_left, text="Timeout: ", anchor=W, justify=LEFT)
         label73.grid(row=6, column=7)
         createToolTip(label73, text='in seconds')
         self.mh_timeout = Entry(frame_left)
@@ -682,33 +685,33 @@ class Gui(Tk):
 
         ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=5, rowspan=7, sticky='ns', padx=25, pady=25)
 
-        label62 = Label(frame_left, text="Set max_dept: ", anchor=W, justify=LEFT)
+        label62 = Label(frame_left, text="Max_dept: ", anchor=W, justify=LEFT)
         label62.grid(row=1, column=3, padx=0)
         createToolTip(label62, text='Maximal number of splits')
-        label63 = Label(frame_left, text="Set coverage: ", anchor=W, justify=LEFT)
+        label63 = Label(frame_left, text="Coverage: ", anchor=W, justify=LEFT)
         label63.grid(row=2, column=3, padx=0)
         createToolTip(label63, text='Proportion of the nonwhite area to be reached')
-        label64 = Label(frame_left, text="Set epsilon: ", anchor=W, justify=LEFT)
+        label64 = Label(frame_left, text="Epsilon: ", anchor=W, justify=LEFT)
         label64.grid(row=3, column=3, padx=0)
         createToolTip(label64,
                       text='Minimal size of the rectangle to be checked (if 0 all rectangles are being checked)')
-        label65 = Label(frame_left, text="Set algorithm: ", anchor=W, justify=LEFT)
+        label65 = Label(frame_left, text="Algorithm: ", anchor=W, justify=LEFT)
         label65.grid(row=4, column=3, padx=0)
         createToolTip(label65, text='Choose from algorithms:\n 1-4 - using SMT solvers \n 1 - DFS search \n 2 - BFS search \n 3 - BFS search with example propagation \n 4 - BFS with example and counterexample propagation \n 5 - interval algorithmic')
 
-        label66 = Label(frame_left, text="Set SMT solver: ", anchor=W, justify=LEFT)
+        label66 = Label(frame_left, text="SMT solver: ", anchor=W, justify=LEFT)
         label66.grid(row=5, column=3, padx=0)
         createToolTip(label66, text='When using SMT solver (alg 1-4), two options are possible, z3 or dreal (with delta complete decision procedures)')
 
-        label67 = Label(frame_left, text="Set delta for dreal: ", anchor=W, justify=LEFT)
+        label67 = Label(frame_left, text="Delta for dreal: ", anchor=W, justify=LEFT)
         label67.grid(row=6, column=3, padx=0)
         createToolTip(label67, text='When using dreal solver, delta is used to set solver error boundaries for satisfiability.')
 
-        label68 = Label(frame_left, text="Set timeout: ", anchor=W, justify=LEFT)
+        label68 = Label(frame_left, text="Timeout: ", anchor=W, justify=LEFT)
         label68.grid(row=7, column=3, padx=0)
 
         presampled_refinement_checkbutton = Checkbutton(frame_left, text="Use presampled refinement", variable=self.presampled_refinement)
-        presampled_refinement_checkbutton.grid(row=8, column=3, padx=0)
+        presampled_refinement_checkbutton.grid(row=8, column=3, columnspan=2, padx=0)
 
         # iterative_refinement_checkbutton = Checkbutton(frame_left, text="Use iterative refinement (TBD)", variable=self.iterative_refinement)
         # iterative_refinement_checkbutton.grid(row=8, column=3, padx=0)
@@ -3568,7 +3571,7 @@ class Gui(Tk):
         label = Label(self.new_window, text="Costumize MH Plot")
         label.grid(row=0)
 
-        Label(self.new_window, text="Set grid size", anchor=W, justify=LEFT).grid(row=1, column=0)
+        Label(self.new_window, text="Grid size", anchor=W, justify=LEFT).grid(row=1, column=0)
         self.grid_size_entry = Entry(self.new_window)
         self.grid_size_entry.grid(row=1, column=1)
         self.grid_size_entry.insert(END, str(self.mh_results.bins))

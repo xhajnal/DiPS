@@ -61,7 +61,7 @@ def load_functions(file_path, tool="unknown", factorize=True, rewards_only=False
         ## PARSING PRISM/STORM OUTPUT
         ## Getting the tool
         for line in file:
-            if tool is "unknown":
+            if tool == "unknown":
                 # print(line)
                 if line.lower().startswith("prism"):
                     tool = "prism"
@@ -69,7 +69,7 @@ def load_functions(file_path, tool="unknown", factorize=True, rewards_only=False
                     tool = "storm"
             else:
                 break
-        if tool is "unknown":
+        if tool == "unknown":
             print("Tool not recognised")
             return False, False
 
@@ -113,7 +113,7 @@ def load_functions(file_path, tool="unknown", factorize=True, rewards_only=False
                 line = line.replace("-*", "-")
                 if line.startswith('*'):
                     line = line[1:]
-                if line[-1] is "\n":
+                if line[-1] == "\n":
                     line = line[:-1]
                 if here == "r" and not f_only:
                     # print(f"formula: {i+1}", line)
@@ -220,7 +220,7 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
             rewards[population_size] = []
             ## PARSING PRISM/STORM OUTPUT
             line_index = 0
-            if tool is "unknown":
+            if tool == "unknown":
                 # print(line)
                 if line.lower().startswith("prism"):
                     tool = "prism"
@@ -266,7 +266,7 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
                     line = line.replace("-*", "-")
                     if line.startswith('*'):
                         line = line[1:]
-                    if line[-1] is "\n":
+                    if line[-1] == "\n":
                         line = line[:-1]
                     if here == "r" and not f_only:
                         # print(f"pop: {N}, formula: {i+1}", line)

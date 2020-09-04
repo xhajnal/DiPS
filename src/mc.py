@@ -430,7 +430,7 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
                         gui(1, "Parameter synthesis", f"Unrecognised error occurred: \n {error[1]}")
                     continue
 
-            if error[0] is not 0:
+            if error[0] != 0:
                 ## If an error occurred call this function for this file again
                 print()
                 # print("seq",seq)
@@ -511,7 +511,7 @@ def call_storm(args, silent: bool = False, model_path=model_path, properties_pat
         args.extend(storm_args)
         if time:
             args.append(")")
-        if storm_file_path is not "":
+        if storm_file_path != "":
             args.append(">>")
             print(colored(storm_file_path, "blue"))
             args.append(f"/DiPS/{os.path.relpath(storm_file_path, os.path.join(model_path, '..'))}")
