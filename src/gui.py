@@ -639,46 +639,46 @@ class Gui(Tk):
 
         ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=2, rowspan=7, sticky='ns', padx=25, pady=25)
 
-        label71 = Label(frame_left, text="# of samples: ", anchor=W, justify=LEFT)
-        label71.grid(row=1, column=7)
-        createToolTip(label71, text='number of samples to be used for sampling - subset of all samples')
-        self.observations_samples_size_entry = Entry(frame_left)
-        self.observations_samples_size_entry.grid(row=1, column=8)
-        self.observations_samples_size_entry.insert(END, '500')
+        # label71 = Label(frame_left, text="# of samples: ", anchor=W, justify=LEFT)
+        # label71.grid(row=1, column=7)
+        # createToolTip(label71, text='number of samples to be used for sampling - subset of all samples')
+        # self.observations_samples_size_entry = Entry(frame_left)
+        # self.observations_samples_size_entry.grid(row=1, column=8)
+        # self.observations_samples_size_entry.insert(END, '500')
 
         label71 = Label(frame_left, text="# of iteration: ", anchor=W, justify=LEFT)
-        label71.grid(row=2, column=7)
+        label71.grid(row=1, column=7)
         createToolTip(label71, text='number of iterations, steps in parameter space')
         self.MH_sampling_iterations_entry = Entry(frame_left)
-        self.MH_sampling_iterations_entry.grid(row=2, column=8)
+        self.MH_sampling_iterations_entry.grid(row=1, column=8)
         self.MH_sampling_iterations_entry.insert(END, '500')
 
         label72 = Label(frame_left, text="Eps: ", anchor=W, justify=LEFT)
-        label72.grid(row=3, column=7)
+        label72.grid(row=2, column=7)
         createToolTip(label72, text='very small value used as probability of non-feasible values in prior')
         self.eps_entry = Entry(frame_left)
-        self.eps_entry.grid(row=3, column=8)
+        self.eps_entry.grid(row=2, column=8)
         self.eps_entry.insert(END, '0.0001')
 
         label73 = Label(frame_left, text="Grid size: ", anchor=W, justify=LEFT)
-        label73.grid(row=4, column=7)
+        label73.grid(row=3, column=7)
         createToolTip(label73, text='number of segments in the plot')
         self.bins = Entry(frame_left)
-        self.bins.grid(row=4, column=8)
+        self.bins.grid(row=3, column=8)
         self.bins.insert(END, '20')
 
         label73 = Label(frame_left, text="Burn-in: ", anchor=W, justify=LEFT)
-        label73.grid(row=5, column=7)
+        label73.grid(row=4, column=7)
         createToolTip(label73, text='Trim the fraction of accepted points from beginning')
         self.show = Entry(frame_left)
-        self.show.grid(row=5, column=8)
+        self.show.grid(row=4, column=8)
         self.show.insert(END, '0.25')
 
         label73 = Label(frame_left, text="Timeout: ", anchor=W, justify=LEFT)
-        label73.grid(row=6, column=7)
+        label73.grid(row=5, column=7)
         createToolTip(label73, text='in seconds')
         self.mh_timeout = Entry(frame_left)
-        self.mh_timeout.grid(row=6, column=8)
+        self.mh_timeout.grid(row=5, column=8)
         self.mh_timeout.insert(END, '3600')
 
         Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=9, column=7, columnspan=2, pady=4)
@@ -2758,7 +2758,7 @@ class Gui(Tk):
         ## SWITCH contains quadruples:  (modifiedflag, file path, text, save_function, load_function)
         switch = {"model": (self.model_text_modified, self.model_file, "model", self.save_model, self.load_model),
                   "properties": (self.properties_text_modified, self.property_file, "properties", self.save_property, self.load_property),
-                  "functions": (self.parsed_functions_text_modified, self.functions_file, "functions", self.save_parsed_functions if os.path.splitext(self.functions_file.get())[1] == ".p" else lambda x: True, self.load_parsed_functions),
+                  "functions": (self.parsed_functions_text_modified, self.functions_file, "functions", self.save_parsed_functions, self.load_parsed_functions),
                   "data": (self.data_text_modified, self.data_file, "data", self.save_data, self.load_data),
                   "data_intervals": (self.data_intervals_text_modified, self.data_intervals_file, "data_intervals", self.save_data_intervals, self.load_data_intervals),
                   "constraints": (self.constraints_text_modified, self.constraints_file, "constraints", self.save_constraints, self.load_constraints),
@@ -2768,6 +2768,7 @@ class Gui(Tk):
         file_path = option[1]
         text = option[2]
         save_function = option[3]
+        load_function = option[4]
 
         ## Old check:  len(self.model_text.get('1.0', END)) > 1 and
         ## If modified
@@ -3105,8 +3106,8 @@ class Gui(Tk):
         self.create_window_to_load_param_point(parameters=self.space.params)
 
         ## Create a warning
-        if int(self.n_samples_entry.get()) < int(self.observations_samples_size_entry.get()):
-            messagebox.showwarning("Metropolis Hastings", "Number of samples from observations (data) is higher than number of observation, using all observations as samples.")
+        # if int(self.n_samples_entry.get()) < int(self.observations_samples_size_entry.get()):
+        #    messagebox.showwarning("Metropolis Hastings", "Number of samples from observations (data) is higher than number of observation, using all observations as samples.")
 
         ## Clear figure
         self.set_lower_figure(clear=True)
@@ -3134,7 +3135,7 @@ class Gui(Tk):
             assert isinstance(self.data, list)
             assert isinstance(self.functions, list)
             self.mh_results = initialise_sampling(self.space, self.data, self.functions, int(self.n_samples_entry.get()),
-                                                  int(self.observations_samples_size_entry.get()), int(self.MH_sampling_iterations_entry.get()),
+                                                  int(self.MH_sampling_iterations_entry.get()),
                                                   float(self.eps_entry.get()), theta_init=self.parameter_point,
                                                   where=[self.page6_figure2, self.page6_b],
                                                   progress=self.update_progress_bar, debug=self.debug.get(),

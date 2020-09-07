@@ -11,6 +11,8 @@ from matplotlib.figure import Figure
 # from termcolor import colored
 
 ## Importing my code
+from termcolor import colored
+
 from space import RefinedSpace
 from common.config import load_config
 from common.document_wrapper import DocumentWrapper
@@ -502,18 +504,37 @@ def acceptance(x_likelihood, x_new_likelihood):
         return accept < (np.exp(x_new_likelihood - x_likelihood))
 
 
-def manual_log_like_normal(space, theta, functions, observations, eps):
+def acceptance_default(x_likelihood, x_new_likelihood):
+    """ Decides whether to accept new point, x_new, or not, based on its likelihood
+
+    Args:
+        x_likelihood: likelihood of the old parameter point
+        x_new_likelihood: likelihood of the new parameter point
+
+    Returns:
+         True if the new points is accepted
+
+    @author: xhajnal
+    """
+    ## If likelihood of new point is higher (than likelihood of current point) accept the new point
+    if x_new_likelihood > x_likelihood:
+        return True
+
+
+def manual_log_like_normal(space, theta, functions, data, sample_size, eps, debug=False):
     """ Log likelihood of functions in parameter point theta drawing the data, P(functions(theta)| data)
 
     Args:
         space (Refined space): supporting structure, defining parameters, their domains and types
         theta (list): parameter point
         functions (list of strings): functions to be evaluated in theta
-        observations (list of ints): list of function indices which are being observed
+        data (list): list of function indices which are being observed
+        sample_size (int): number of samples
         eps (number): very small value used as probability of non-feasible values in prior
+        debug (bool): if True extensive print will be used
 
     Returns:
-         likelihood (float): P(functions(theta)| data)
+         likelihood (float): P(data | functions(theta))
 
     @author: tpetrov
     @edit: xhajnal
@@ -529,31 +550,53 @@ def manual_log_like_normal(space, theta, functions, observations, eps):
     ## Dictionary optimising performance - not evaluating the same functions again
     evaled_functions = {}
 
-    for data_point in observations:
-        # print("data_point", data_point)
-        # print("functions[data_point]", functions[data_point])
+    ## TODO represent observations as data
+    res = 0
 
-        if data_point in evaled_functions.keys():
-            temp = evaled_functions[data_point]
-        else:
-            evaled_functions[data_point] = eval(functions[data_point])
-            temp = evaled_functions[data_point]
+    ## Via wiki https://en.wikipedia.org/wiki/Maximum_likelihood_estimation Discrete distribution, continuous parameter space
+    for index, data_point in enumerate(data):
+        point = eval(functions[index])
+        # lik = sample_size*data_point * np.log(point) + (sample_size - sample_size*data_point) * np.log(1 - point)
+        lik = sample_size*(data_point * np.log(point) + (1 - data_point) * np.log(1 - point))
+        res = res + lik
+        if debug:
+            print(f"param point {theta}")
+            print(f"data_point {data_point}")
+            print(f"function {eval(functions[index])}")
+            print(colored(f"log-likelihood {lik}", "blue"))
+            print()
 
-        # print(temp)
-        # print(np.log(temp))
+    # for index, data_point in enumerate(data):
+    #     sigma = np.sqrt((data_point - eval(functions[index])) ** 2 / sample_size)
+    #     res = res - sample_size * np.log(sigma * np.sqrt(2 * np.pi)) - ((data_point - eval(functions[index])) ** 2 / (2 * sigma ** 2))
 
-        if temp < eps:
-            temp = eps
-        if temp > 1. - eps:
-            temp = 1. - eps
+    ## OLD CODE - using observation - problem how to encode overlapping observation of events
+    # for data_point in observations:
+    #     # print("data_point", data_point)
+    #     # print("functions[data_point]", functions[data_point])
+    #
+    #     if data_point in evaled_functions.keys():
+    #         temp = evaled_functions[data_point]
+    #     else:
+    #         evaled_functions[data_point] = eval(functions[data_point])
+    #         temp = evaled_functions[data_point]
+    #
+    #     # print(temp)
+    #     # print(np.log(temp))
+    #
+    #     if temp < eps:
+    #         temp = eps
+    #     if temp > 1. - eps:
+    #         temp = 1. - eps
+    #
+    #     # print(res)
+    #     res = res + np.log(temp)  # +np.log(prior(x))
 
-        # print(res)
-        res = res + np.log(temp)  # +np.log(prior(x))
     # print(res)
     return res
 
 
-def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param_init, iterations, space, observations,
+def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param_init, iterations, space, data, sample_size,
                         acceptance_rule, parameter_intervals, functions, eps, progress=False, timeout=-1, debug=False):
     """ The core method of the Metropolis Hasting
 
@@ -562,7 +605,9 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param
         transition_model (function(theta)): a function that draws a sample from a symmetric distribution and returns it
         param_init  (pair of numbers): starting parameter point
         iterations (int): number of accepted to generated
-        observations (list of numbers): observations that we wish to model
+        space (Refined space): supporting structure, defining parameters, their domains and types
+        data (list of numbers): data that we wish to model
+        sample_size (int): sample size / number of observations
         acceptance_rule (function(theta, theta_new)): decides whether to accept or reject the new sample
         parameter_intervals (list of pairs): parameter domains
         progress (Tkinter_element or False): progress bar
@@ -591,10 +636,10 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param
 
         ## Not recalculating the likelihood if we did not move
         if has_moved:
-            theta_lik = likelihood_computer(space, theta, functions, observations, eps)
+            theta_lik = likelihood_computer(space, theta, functions, data, sample_size, eps, debug=debug)
         # print("theta_lik", theta_lik)
         ## Estimate likelihood of new point
-        theta_new_lik = likelihood_computer(space, theta_new, functions, observations, eps)
+        theta_new_lik = likelihood_computer(space, theta_new, functions, data, sample_size, eps, debug=debug)
         # print("theta_new_lik", theta_new_lik)
         if debug:
             print("iteration:", iteration)
@@ -602,7 +647,9 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param
         # print("theta_new_lik + np.log(prior(theta, parameter_intervals))", theta_new_lik + np.log(prior(theta_new, parameter_intervals)))
 
         ## If new point accepted
-        if acceptance_rule(theta_lik + np.log(prior_rule(theta, parameter_intervals)), theta_new_lik + np.log(prior_rule(theta_new, parameter_intervals))):
+        ## old acceptance rule checking using uniform distribution ## this is done by the walker
+        # if acceptance_rule(theta_lik + np.log(prior_rule(theta, parameter_intervals)), theta_new_lik + np.log(prior_rule(theta_new, parameter_intervals))):
+        if acceptance_rule(theta_lik, theta_new_lik):
             ## Go to the new point
             has_moved = True
             theta = theta_new
@@ -627,18 +674,16 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param
     return np.array(accepted), np.array(rejected)
 
 
-def initialise_sampling(space: RefinedSpace, observations, functions, observations_count: int,
-                        observations_samples_size: int, mh_sampling_iterations: int, eps, theta_init=False, where=False,
-                        progress=False, burn_in=False, bins=20, timeout=False,
+def initialise_sampling(space: RefinedSpace, data, functions, sample_size: int,  mh_sampling_iterations: int, eps,
+                        theta_init=False, where=False, progress=False, burn_in=False, bins=20, timeout=False,
                         debug=False, metadata=True, draw_plot=False):
     """ Initialisation method for Metropolis Hastings
 
     Args:
         space (RefinedSpace): supporting structure, defining parameters, their domains and types
-        observations (list of ints): either experiment or data(experiment result frequency)
+        data (list of numbers): data that we wish to model
         functions (list of strings):
-        observations_count (int): total number of observations
-        observations_samples_size (int): sample size from the observations
+        sample_size (int): total number of observations
         mh_sampling_iterations (int): number of iterations/steps in searching in space
         eps (number): very small value used as probability of non-feasible values in prior
         theta_init (list of numbers): initial parameter point
@@ -659,9 +704,8 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     start_time = time()
     globals()["start_time"] = start_time
 
-    observations_samples_size = min(observations_count, observations_samples_size)
     ##                     HastingsResults ( params, theta_init, accepted, rej observations_count, observations_samples_count, MH_sampling_iterations, eps, burn_in,      pretitle, title, bins, last_iter,  timeout, time_it_took, rescale):
-    globals()["mh_results"] = HastingsResults(space.params, theta_init, [], [], observations_count, observations_samples_size, mh_sampling_iterations, eps, burn_in=burn_in, title="", bins=bins, last_iter=0, timeout=timeout)
+    globals()["mh_results"] = HastingsResults(space.params, theta_init, [], [], sample_size, sample_size, mh_sampling_iterations, eps, burn_in=burn_in, title="", bins=bins, last_iter=0, timeout=timeout)
 
     ## TODO check this
     # ## Convert z3 functions
@@ -700,39 +744,39 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         globals()[param] = theta_init[index]
         print(f"{param} = {theta_init[index]}")
 
-    ## Maintaining observations
-    # If given observations or data
-    if observations:
-        ## Checking the type of observations (experiment/data)
-        if len(observations) > len(functions):
-            ## Already given observations
-            observations_count = len(observations)
-        else:
-            ## Changing the data into observations
-            spam = []
-            index = 0
-            for observation in observations:
-                for times in range(int(observation * float(observations_count))):
-                    spam.append(index)
-                index = index + 1
-            observations = spam
-    else:
-        data_means = [eval(fi) for fi in functions]
-        print("data means", data_means)
-        samples = []
-        for i in range(observations_count):
-            samples.append(sample_functions(functions, data_means))
-        print("samples", samples)
-
-        observations = np.array(samples)[np.random.randint(0, observations_count, observations_samples_size)]
-    print("observations", observations)
+    # ## Maintaining observations
+    # # If given observations or data
+    # if data:
+    #     ## Checking the type of observations (experiment/data)
+    #     if len(data) > len(functions):
+    #         ## Already given observations
+    #         observations_count = len(data)
+    #     else:
+    #         ## Changing the data into observations
+    #         spam = []
+    #         index = 0
+    #         for observation in data:
+    #             for times in range(int(observation * float(sample_size))):
+    #                 spam.append(index)
+    #             index = index + 1
+    #         data = spam
+    # else:
+    #     data_means = [eval(fi) for fi in functions]
+    #     print("data means", data_means)
+    #     samples = []
+    #     for i in range(sample_size):
+    #         samples.append(sample_functions(functions, data_means))
+    #     print("samples", samples)
+    #
+    #     data = np.array(samples)[np.random.randint(0, sample_size, sample_size)]
+    print("data", data)
 
     ## Showing metadata visualisations
     if metadata:
         ## Plotting the distribution of observations
         Y = []
         for i in range(len(functions)):
-            Y.append(list(observations).count(i))
+            Y.append(list(data).count(i))
 
         if where:
             fig = Figure(figsize=(10, 10))
@@ -744,7 +788,7 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         ax.set_xlabel("Function index")
         ax.set_ylabel("Number of observations")
-        ax.set_title(f"Distribution of {observations_samples_size} observations (from full sample= {observations_count})")
+        ax.set_title(f"Distribution of {sample_size} observations")
         if not where:
             plt.show()
         else:
@@ -753,8 +797,8 @@ def initialise_sampling(space: RefinedSpace, observations, functions, observatio
     print("Initial parameter point: ", theta_init)
 
     ## MAIN LOOP
-    ##                                      (likelihood_computer,    prior, transition_model,   param_init,       iterations,       space,   data,  acceptance_rule, parameter_intervals, functions, eps, progress,          timeout,         debug):
-    accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, mh_sampling_iterations, space, observations, acceptance, parameter_intervals, functions, eps, progress=progress, timeout=timeout, debug=debug)
+    ##                                      (likelihood_computer,    prior, transition_model,   param_init,       iterations,       space, data, sample_size, acceptance_rule, parameter_intervals, functions, eps, progress,          timeout,         debug):
+    accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, mh_sampling_iterations, space, data, sample_size, acceptance, parameter_intervals, functions, eps, progress=progress, timeout=timeout, debug=debug)
 
     globals()["mh_results"].set_accepted(accepted)
     globals()["mh_results"].set_rejected(rejected)
