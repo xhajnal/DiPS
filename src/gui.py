@@ -207,7 +207,7 @@ class Gui(Tk):
         ## True Variables
         # self.model = ""
         # self.property = ""
-        self.data = ""
+        self.data = []  ## Experimental estimation of probabilities of functions
         self.data_informed_property = ""  ## Property containing the interval boundaries from the data  ##TODO rewrite as [], need to go through checks
         self.functions = ""  ## Parameter synthesis results (rational functions)  ##TODO rewrite as [], need to go through checks
         self.z3_functions = ""  ## functions with z3 expressions inside  ##TODO rewrite as [], need to go through checks
@@ -2521,10 +2521,6 @@ class Gui(Tk):
         print("Plotting sampled functions ...")
         self.status_set("Plotting sampled functions.")
 
-        if self.page3_figure_in_use.get():
-            if not askyesno("Show all sampled points", "The result plot is currently in use. Do you want override?"):
-                return
-
         if self.functions == "":
             messagebox.showwarning("Sampling functions", "Load the functions first, please")
             return
@@ -2532,6 +2528,11 @@ class Gui(Tk):
         if self.fun_sample_size_entry.get() == "":
             messagebox.showwarning("Sampling functions", "Choose grid size, number of samples per dimension.")
             return
+
+        if self.page3_figure_in_use.get():
+            if not askyesno("Show all sampled points", "The result plot is currently in use. Do you want override?"):
+                return
+
         self.page3_figure_in_use.set("2")
 
         self.validate_parameters(where=self.functions)
@@ -2580,10 +2581,6 @@ class Gui(Tk):
         print("Plotting heatmap of functions ...")
         self.status_set("Plotting heatmap of functions.")
 
-        if self.page3_figure_in_use.get():
-            if not askyesno("Plot heatmap", "The result plot is currently in use. Do you want override?"):
-                return
-
         if self.functions == "":
             messagebox.showwarning("Plot heatmap", "Load the functions first, please")
             return
@@ -2591,6 +2588,10 @@ class Gui(Tk):
         if self.fun_sample_size_entry.get() == "":
             messagebox.showwarning("Plot heatmap", "Choose grid size, number of samples per dimension.")
             return
+
+        if self.page3_figure_in_use.get():
+            if not askyesno("Plot heatmap", "The result plot is currently in use. Do you want override?"):
+                return
 
         self.validate_parameters(where=self.functions)
 
@@ -2640,7 +2641,7 @@ class Gui(Tk):
             messagebox.showwarning("Optimize functions", "Load the functions first, please")
             return
 
-        if self.data == "":
+        if self.data == []:
             messagebox.showwarning("Optimize functions", "Load the data first, please")
             return
 
@@ -2906,7 +2907,7 @@ class Gui(Tk):
 
         ## Autosave
         self.save_data_intervals(os.path.join(self.tmp_dir, "data_intervals"))
-
+        self.data_intervals_file.set(os.path.join(self.tmp_dir, "data_intervals"))
         self.status_set("Intervals created.")
 
     def sample_space(self):
@@ -3084,7 +3085,7 @@ class Gui(Tk):
             messagebox.showwarning("Space Metropolis-Hastings", "Load functions before Metropolis-Hastings.")
             return
 
-        if self.data == "":
+        if self.data == []:
             messagebox.showwarning("Space Metropolis-Hastings", "Load data before Metropolis-Hastings.")
             return
 
