@@ -217,9 +217,9 @@ class HastingsResults:
 
         ## Convert fraction to show into exact number
         if 0 < burn_in < 1:
-            keep_index = int(burn_in * self.accepted.shape[0])+1
+            keep_index = int(burn_in * self.accepted.shape[0]) + 1
         else:
-            keep_index = int(burn_in)+1
+            keep_index = int(burn_in) + 1
             burn_in = round(burn_in / self.accepted.shape[0], 2)
 
         if self.last_iter > 0:
@@ -255,6 +255,7 @@ class HastingsResults:
             ax.xaxis.set_major_locator(MaxNLocator(integer=True))
             ## Thanks to Den for optimisation
             egg = self.accepted[keep_index:].T
+            egg = egg[:-1]
             ax.plot(egg, '.-', markersize=15)
 
             # for sample in self.accepted[not_burn_in:]:
@@ -462,6 +463,7 @@ def transition_model_a(theta, parameter_intervals):
     return theta_new
 
 
+## Now unused
 def prior(theta, parameter_intervals):
     """ Very simple prior estimator only for MH as it checks if the parametrisation is inside of respective domain or not
         This simulates uniform distribution
@@ -504,6 +506,7 @@ def acceptance(x_likelihood, x_new_likelihood):
         return accept < (np.exp(x_new_likelihood - x_likelihood))
 
 
+## Now unused
 def acceptance_default(x_likelihood, x_new_likelihood):
     """ Decides whether to accept new point, x_new, or not, based on its likelihood
 
@@ -774,21 +777,23 @@ def initialise_sampling(space: RefinedSpace, data, functions, sample_size: int, 
     ## Showing metadata visualisations
     if metadata:
         ## Plotting the distribution of observations
-        Y = []
-        for i in range(len(functions)):
-            Y.append(list(data).count(i))
+
+        # Y = []
+        # for i in range(len(functions)):
+        #     Y.append(list(data).count(i))
+
 
         if where:
             fig = Figure(figsize=(10, 10))
         else:
             fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
-        ax.bar(list(range(1, len(functions)+1)), Y)
+        ax.bar(list(range(1, len(data)+1)), data)
         # plt.xticks(range(len(functions)), range(len(functions) + 1))
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-        ax.set_xlabel("Function index")
-        ax.set_ylabel("Number of observations")
-        ax.set_title(f"Distribution of {sample_size} observations")
+        ax.set_xlabel("Data index")
+        ax.set_ylabel("Data value")
+        ax.set_title(f"Summary of {sample_size} observations")
         if not where:
             plt.show()
         else:
