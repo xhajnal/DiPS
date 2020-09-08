@@ -217,13 +217,17 @@ class Gui(Tk):
         self.constraints = ""  ## Computed or loaded constrains  ##TODO rewrite as [], need to go through checks
         self.z3_constraints = ""  ## Constrains with z3 expressions inside  ##TODO rewrite as [], need to go through checks
         self.space = ""  ## Instance of a RefinedSpace class
-        # self.mh_results = HastingsResults()  ## Instance of HastingsResults class
+        self.mh_results = ""  ## Instance of HastingsResults class
 
         ## Results
         self.sampled_functions = []  ## List of values of sampled functions True/False
         self.optimised_param_point = ""  ## List of parameter values with least distance
         self.optimised_function_value = ""  ## List of functions values with least distance
         self.optimised_distance = ""  ## The actual distance between functions and data
+
+        ## Heatmap visualisation settings
+        self.show_data_in_heatmap = BooleanVar()  ## Chooses between function vs. function - data point
+        self.show_data_in_heatmap.set(False)
 
         ## Space visualisation settings
         self.show_samples = None  ## flag telling whether to show samples
@@ -319,33 +323,33 @@ class Gui(Tk):
 
         Label(center_frame, text=f"Data intervals file:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, padx=4)
         self.data_intervals_label = Label(center_frame, textvariable=self.data_intervals_file, anchor=W, justify=LEFT)
-        self.data_intervals_label.grid(row=1, column=1, sticky=W, padx=4)
+        self.data_intervals_label.grid(row=1, column=1, columnspan=2, sticky=W, padx=4)
 
         Label(center_frame, text=f"Constraints file:", anchor=W, justify=LEFT).grid(row=2, column=0, sticky=W, padx=4)
         self.constraints_label = Label(center_frame, textvariable=self.constraints_file, anchor=W, justify=LEFT)
-        self.constraints_label.grid(row=2, column=1, sticky=W, padx=4)
+        self.constraints_label.grid(row=2, column=1, columnspan=2, sticky=W, padx=4)
 
         Label(center_frame, text=f"Space file:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, padx=4)
         self.space_label = Label(center_frame, textvariable=self.space_file, anchor=W, justify=LEFT)
-        self.space_label.grid(row=3, column=1, sticky=W, padx=4)
+        self.space_label.grid(row=3, column=1, columnspan=2, sticky=W, padx=4)
 
         Label(center_frame, text=f"Metropolis-Hastings file:", anchor=W, justify=LEFT).grid(row=4, column=0, sticky=W, padx=4)
         self.hastings_label = Label(center_frame, textvariable=self.hastings_file, anchor=W, justify=LEFT)
-        self.hastings_label.grid(row=4, column=1, sticky=W, padx=4)
+        self.hastings_label.grid(row=4, column=1, columnspan=2, sticky=W, padx=4)
 
         frame.rowconfigure(0, weight=1)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
 
         autosave_figures_button = Checkbutton(center_frame, text="Autosave figures", variable=self.save)
-        autosave_figures_button.grid(row=5, column=0, sticky=E, padx=4)
-        createToolTip(autosave_figures_button, text='Check to autosaves results figures in folder results/figures')
-        show_print_checkbutton = Checkbutton(center_frame, text="Hide print in command line", variable=self.silent)
-        show_print_checkbutton.grid(row=5, column=1, sticky=E, padx=4)
-        debug_checkbutton = Checkbutton(center_frame, text="Extensive command line print", variable=self.debug)
-        debug_checkbutton.grid(row=5, column=2, sticky=E, padx=4)
+        autosave_figures_button.grid(row=5, column=0, sticky=W, padx=4)
+        createToolTip(autosave_figures_button, text='Check to autosave results figures in folder results/figures')
+        show_print_checkbutton = Checkbutton(center_frame, text="Minimal output", variable=self.silent)
+        show_print_checkbutton.grid(row=5, column=1, sticky=W, padx=4)
+        debug_checkbutton = Checkbutton(center_frame, text="Extensive output", variable=self.debug)
+        debug_checkbutton.grid(row=5, column=2, sticky=W, padx=4)
         mh_metadata_button = Checkbutton(center_frame, text="Show MH metadata plots", variable=self.show_mh_metadata)
-        mh_metadata_button.grid(row=5, column=3, sticky=E, padx=4)
+        mh_metadata_button.grid(row=5, column=3, sticky=W, padx=4)
         createToolTip(mh_metadata_button, text='Check to plot metadata plots of Metropolis-Hastings')
         # print("self.silent", self.silent.get())
 
@@ -411,30 +415,35 @@ class Gui(Tk):
         frame_right = Frame(page2, width=int(self.winfo_width() / 2), height=int(self.winfo_width() / 2))
         frame_right.grid_propagate(0)
         frame_right.rowconfigure(5, weight=1)
-        frame_right.columnconfigure(2, weight=1)
+        frame_right.columnconfigure(3, weight=1)
         frame_right.pack(side=RIGHT, fill=X)
 
         ## SELECTING THE PROGRAM
         self.program.set("prism")
+
+        ## Left (Model checking) Frame
+        Label(frame_left, text=f"Symbolic model checking.", anchor=W, justify=LEFT).grid(row=0, column=0, sticky=W, padx=4, pady=4)
+
         Label(frame_left, text="Select the program: ", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, padx=4, pady=4)
         Radiobutton(frame_left, text="Prism", variable=self.program, value="prism").grid(row=1, column=1, sticky=W, pady=4)
         radio = Radiobutton(frame_left, text="Storm", variable=self.program, value="storm")
         radio.grid(row=1, column=2, sticky=W, pady=4)
         createToolTip(radio, text='This option results in a command that would produce desired output. (If you installed Storm, open command line and insert the command. Then load output file.)')
 
-        Label(frame_left, text=f"Show function(s):", anchor=W, justify=LEFT).grid(row=2, column=0, sticky=W, padx=4, pady=4)
-        Radiobutton(frame_left, text="Original", variable=self.factorise, value=False).grid(row=2, column=1, sticky=W, pady=4)
-        Radiobutton(frame_left, text="Factorised", variable=self.factorise, value=True).grid(row=2, column=2, sticky=W, pady=4)
-
         Button(frame_left, text='Run parameter synthesis', command=self.synth_params).grid(row=3, column=0, sticky=W, padx=4, pady=4)
         Button(frame_left, text='Open Prism/Storm output file', command=self.load_mc_output_file).grid(row=3, column=1, sticky=W, pady=4)
 
         Label(frame_left, text=f"Loaded Prism/Storm output file:", anchor=W, justify=LEFT).grid(row=4, column=0, sticky=W, padx=4, pady=4)
-
         self.functions_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_width() / 2), state=DISABLED)
         self.functions_text.grid(row=5, column=0, columnspan=16, rowspan=2, sticky=W, padx=4, pady=4)
 
-        Label(frame_right, text=f"Functions section.", anchor=W, justify=LEFT).grid(row=1, column=1, sticky=W, padx=4, pady=4)
+        ## Right (Parsed functions) Frame
+        Label(frame_right, text=f"Parsed rational functions.", anchor=W, justify=LEFT).grid(row=1, column=1, sticky=W, padx=4, pady=4)
+
+        Label(frame_right, text=f"Show function(s):", anchor=W, justify=LEFT).grid(row=2, column=1, sticky=W, padx=4, pady=4)
+        Radiobutton(frame_right, text="Original", variable=self.factorise, value=False).grid(row=2, column=2, sticky=W, pady=4)
+        Radiobutton(frame_right, text="Factorised", variable=self.factorise, value=True).grid(row=2, column=3, sticky=W, pady=4)
+
         Button(frame_right, text='Open functions', command=self.load_parsed_functions).grid(row=3, column=1, sticky=W, padx=4, pady=4)
         Button(frame_right, text='Save functions', command=self.save_parsed_functions).grid(row=3, column=2, sticky=W, pady=4)
 
@@ -458,14 +467,17 @@ class Gui(Tk):
         self.frame3_right = Frame(page3, width=int(self.winfo_width() * 0.7), height=int(self.winfo_width() / 2))
         self.frame3_right.grid_propagate(0)
         self.frame3_right.rowconfigure(5, weight=1)
-        self.frame3_right.columnconfigure(4, weight=1)
+        self.frame3_right.columnconfigure(5, weight=1)
         self.frame3_right.pack(side=RIGHT, fill=X)
 
         Label(frame_left, text="Number of samples per variable (grid size):", anchor=W, justify=LEFT).grid(row=1, column=0, padx=4, pady=4)
         self.fun_sample_size_entry = Entry(frame_left)
         self.fun_sample_size_entry.grid(row=1, column=1)
 
-        Button(frame_left, text='Sample functions', command=self.sample_fun).grid(row=2, column=0, sticky=W, padx=4, pady=4)
+        sample_function_button = Button(frame_left, text='Sample functions', command=self.sample_fun)
+        sample_function_button.grid(row=2, column=0, sticky=W, padx=4, pady=4)
+        createToolTip(sample_function_button, text='Samples functions in a regular grid of a given size')
+        del sample_function_button
 
         Label(frame_left, text=f"Values of sampled points:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, padx=4, pady=4)
 
@@ -473,11 +485,29 @@ class Gui(Tk):
         self.sampled_functions_text.grid(row=4, column=0, columnspan=8, rowspan=2, sticky=W, padx=4, pady=4)
 
         Label(self.frame3_right, text=f"Functions visualisation", anchor=W, justify=CENTER).grid(row=1, column=1, columnspan=3, pady=4)
-        Button(self.frame3_right, text='Plot functions in a given point', command=self.show_funs_in_single_point).grid(row=2, column=1, padx=4, pady=4)
-        Button(self.frame3_right, text='Plot all sampled points', command=self.show_funs_in_all_points).grid(row=2, column=2, padx=4, pady=4)
-        Button(self.frame3_right, text='Heatmap', command=self.show_heatmap).grid(row=2, column=3, padx=4, pady=4)
+        plot_functions_in_a_given_point_button = Button(self.frame3_right, text='Plot functions in a given point', command=self.show_funs_in_single_point)
+        plot_functions_in_a_given_point_button.grid(row=2, column=1, padx=4, pady=4)
+        createToolTip(plot_functions_in_a_given_point_button, "Creates a barplot of function values in the given point, also showing data and interval values (if available).")
+        del plot_functions_in_a_given_point_button
+
+        plot_functions_in_all_points_button = Button(self.frame3_right, text='Plot all sampled points', command=self.show_funs_in_all_points)
+        plot_functions_in_all_points_button.grid(row=2, column=2, padx=4, pady=4)
+        createToolTip(plot_functions_in_all_points_button, "Creates a barplot of function values in each sampled point, also showing data and interval values (if available).")
+        del plot_functions_in_all_points_button
+
+        show_heat_map_button = Button(self.frame3_right, text='Heatmap', command=self.show_heatmap)
+        show_heat_map_button.grid(row=2, column=3, padx=4, pady=4)
+        createToolTip(show_heat_map_button, "Creates a heatmap for each function.")
+        del show_heat_map_button
+
+        show_data_in_heatmap_button = Checkbutton(self.frame3_right, text="Show distance to data", variable=self.show_data_in_heatmap)
+        show_data_in_heatmap_button.grid(row=2, column=4, padx=4, pady=4)
+        createToolTip(show_data_in_heatmap_button, "Showing distance of functions to data.")
+        del show_data_in_heatmap_button
+
         self.Next_sample_button = Button(self.frame3_right, text="Next plot", state="disabled", command=lambda: self.button_pressed.set(True))
         self.Next_sample_button.grid(row=3, column=2, padx=4, pady=4)
+        createToolTip(self.Next_sample_button, "Iterates through created plots.")
 
         self.page3_figure = None
         # self.page3_figure = pyplt.figure()
@@ -512,7 +542,7 @@ class Gui(Tk):
         Button(frame_left, text='Open data file', command=self.load_data).grid(row=0, column=0, sticky=W, padx=4, pady=4)
         Button(frame_left, text='Save data', command=self.save_data).grid(row=0, column=1, sticky=W, padx=4)
 
-        label10 = Label(frame_left, text=f"Data:", anchor=W, justify=LEFT)
+        label10 = Label(frame_left, text=f"Loaded data:", anchor=W, justify=LEFT)
         label10.grid(row=1, column=0, sticky=W, padx=4, pady=4)
         createToolTip(label10, text='For each function exactly one data point should be assigned.')
 
@@ -527,14 +557,14 @@ class Gui(Tk):
         ## SET THE INTERVAL COMPUTATION SETTINGS
         button41 = Button(frame_left, text='Optimize parameters', command=self.optimize)
         button41.grid(row=3, column=0, sticky=W, padx=4, pady=4)
-        createToolTip(button41, text='using regression')
+        createToolTip(button41, text='Using regression')
 
         label42 = Label(frame_left, text="C, confidence level:", anchor=W, justify=LEFT)
         label42.grid(row=4)
-        createToolTip(label42, text='confidence')
+        createToolTip(label42, text='Confidence level')
         label43 = Label(frame_left, text="N_samples, number of samples: ", anchor=W, justify=LEFT)
         label43.grid(row=5)
-        createToolTip(label43, text='number of samples')
+        createToolTip(label43, text='Number of samples')
 
         self.confidence_entry = Entry(frame_left)
         self.n_samples_entry = Entry(frame_left)
@@ -549,7 +579,7 @@ class Gui(Tk):
         Button(frame_left, text='Open intervals file', command=self.load_data_intervals).grid(row=6, column=1, sticky=W, padx=4, pady=4)
         Button(frame_left, text='Save intervals', command=self.save_data_intervals).grid(row=6, column=2, sticky=W, padx=4, pady=4)
 
-        Label(frame_left, text=f"Intervals:", anchor=W, justify=LEFT).grid(row=7, column=0, sticky=W, padx=4, pady=4)
+        Label(frame_left, text=f"Loaded/computed intervals:", anchor=W, justify=LEFT).grid(row=7, column=0, sticky=W, padx=4, pady=4)
 
         self.data_intervals_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_height() * 0.8 / 40), state=DISABLED)  # height=10, width=30
         # self.data_intervals_text.config(state="disabled")
@@ -628,7 +658,7 @@ class Gui(Tk):
 
         label61 = Label(frame_left, text="Grid size: ", anchor=W, justify=LEFT, padx=10)
         label61.grid(row=1, pady=16)
-        createToolTip(label61, text='number of samples per dimension')
+        createToolTip(label61, text='Number of samples per dimension')
 
         self.sample_size_entry = Entry(frame_left)
         self.sample_size_entry.grid(row=1, column=1)
@@ -641,28 +671,28 @@ class Gui(Tk):
 
         # label71 = Label(frame_left, text="# of samples: ", anchor=W, justify=LEFT)
         # label71.grid(row=1, column=7)
-        # createToolTip(label71, text='number of samples to be used for sampling - subset of all samples')
+        # createToolTip(label71, text='Number of samples to be used for sampling - subset of all samples')
         # self.observations_samples_size_entry = Entry(frame_left)
         # self.observations_samples_size_entry.grid(row=1, column=8)
         # self.observations_samples_size_entry.insert(END, '500')
 
         label71 = Label(frame_left, text="# of iteration: ", anchor=W, justify=LEFT)
-        label71.grid(row=1, column=7)
-        createToolTip(label71, text='number of iterations, steps in parameter space')
+        label71.grid(row=1, column=7, padx=0)
+        createToolTip(label71, text='Number of iterations, steps in parameter space')
         self.MH_sampling_iterations_entry = Entry(frame_left)
         self.MH_sampling_iterations_entry.grid(row=1, column=8)
         self.MH_sampling_iterations_entry.insert(END, '500')
 
         label72 = Label(frame_left, text="Eps: ", anchor=W, justify=LEFT)
         label72.grid(row=2, column=7)
-        createToolTip(label72, text='very small value used as probability of non-feasible values in prior')
+        createToolTip(label72, text='Very small value used as probability of non-feasible values in prior')
         self.eps_entry = Entry(frame_left)
         self.eps_entry.grid(row=2, column=8)
         self.eps_entry.insert(END, '0.0001')
 
         label73 = Label(frame_left, text="Grid size: ", anchor=W, justify=LEFT)
         label73.grid(row=3, column=7)
-        createToolTip(label73, text='number of segments in the plot')
+        createToolTip(label73, text='Number of segments in the plot')
         self.bins = Entry(frame_left)
         self.bins.grid(row=3, column=8)
         self.bins.insert(END, '20')
@@ -676,7 +706,7 @@ class Gui(Tk):
 
         label73 = Label(frame_left, text="Timeout: ", anchor=W, justify=LEFT)
         label73.grid(row=5, column=7)
-        createToolTip(label73, text='in seconds')
+        createToolTip(label73, text='Timeout in seconds')
         self.mh_timeout = Entry(frame_left)
         self.mh_timeout.grid(row=5, column=8)
         self.mh_timeout.insert(END, '3600')
@@ -685,7 +715,7 @@ class Gui(Tk):
 
         ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=5, rowspan=7, sticky='ns', padx=25, pady=25)
 
-        label62 = Label(frame_left, text="Max_dept: ", anchor=W, justify=LEFT)
+        label62 = Label(frame_left, text="Max dept: ", anchor=W, justify=LEFT)
         label62.grid(row=1, column=3, padx=0)
         createToolTip(label62, text='Maximal number of splits')
         label63 = Label(frame_left, text="Coverage: ", anchor=W, justify=LEFT)
@@ -693,8 +723,7 @@ class Gui(Tk):
         createToolTip(label63, text='Proportion of the nonwhite area to be reached')
         label64 = Label(frame_left, text="Epsilon: ", anchor=W, justify=LEFT)
         label64.grid(row=3, column=3, padx=0)
-        createToolTip(label64,
-                      text='Minimal size of the rectangle to be checked (if 0 all rectangles are being checked)')
+        createToolTip(label64, text='Minimal size of the rectangle to be checked (if 0 all rectangles are being checked)')
         label65 = Label(frame_left, text="Algorithm: ", anchor=W, justify=LEFT)
         label65.grid(row=4, column=3, padx=0)
         createToolTip(label65, text='Choose from algorithms:\n 1-4 - using SMT solvers \n 1 - DFS search \n 2 - BFS search \n 3 - BFS search with example propagation \n 4 - BFS with example and counterexample propagation \n 5 - interval algorithmic')
@@ -709,6 +738,7 @@ class Gui(Tk):
 
         label68 = Label(frame_left, text="Timeout: ", anchor=W, justify=LEFT)
         label68.grid(row=7, column=3, padx=0)
+        createToolTip(label68, text='Timeout in seconds')
 
         presampled_refinement_checkbutton = Checkbutton(frame_left, text="Use presampled refinement", variable=self.presampled_refinement)
         presampled_refinement_checkbutton.grid(row=8, column=3, columnspan=2, padx=0)
@@ -2577,6 +2607,8 @@ class Gui(Tk):
         """ Shows heatmap - sampling of a function in all sampled points. """
         print("Checking the inputs.")
         self.check_changes("functions")
+        if self.show_data_in_heatmap.get():
+            self.check_changes("data")
 
         print("Plotting heatmap of functions ...")
         self.status_set("Plotting heatmap of functions.")
@@ -2607,15 +2639,22 @@ class Gui(Tk):
         self.reinitialise_plot(set_onclick=True)
 
         i = 0
-        for function in self.functions:
+        for index, function in enumerate(self.functions):
             if self.page3_figure_in_use.get() != "3":
                 return
             i = i + 1
             assert isinstance(self.parameters, list)
-            self.page3_figure = heatmap(function, self.parameter_domains,
-                                        [int(self.fun_sample_size_entry.get()), int(self.fun_sample_size_entry.get())],
-                                        posttitle=f"Function number {i}: {function}", where=True,
-                                        parameters=self.parameters)
+            if self.show_data_in_heatmap.get():
+                self.page3_figure = heatmap(f"abs({function} - {self.data[index]})", self.parameter_domains,
+                                            [int(self.fun_sample_size_entry.get()),
+                                             int(self.fun_sample_size_entry.get())],
+                                            posttitle=f"|Function - data point|, #{i} : |{function} - {self.data[index]}|", where=True,
+                                            parameters=self.parameters, verbose=self.debug.get())
+            else:
+                self.page3_figure = heatmap(function, self.parameter_domains,
+                                            [int(self.fun_sample_size_entry.get()), int(self.fun_sample_size_entry.get())],
+                                            posttitle=f"Function number {i}: {function}", where=True,
+                                            parameters=self.parameters, verbose=self.debug.get())
             self.initialise_plot3(what=self.page3_figure)
 
             ## Autosave figure
@@ -3633,7 +3672,7 @@ class Gui(Tk):
 
     def show_mh_iterations(self):
         """ Create Scatter plot showing accepted and rejected points in its given order """
-        if not self.mh_results:
+        if self.mh_results == "":
             return
         else:
             assert isinstance(self.mh_results, HastingsResults)
@@ -3641,7 +3680,7 @@ class Gui(Tk):
 
     def show_mh_acc_points(self):
         """ Shows trace and histogram of accepted points """
-        if not self.mh_results:
+        if self.mh_results == "":
             return
         else:
             assert isinstance(self.mh_results, HastingsResults)
@@ -3653,7 +3692,7 @@ class Gui(Tk):
         Args:
             file (string or False):  file to export accepted points of MH
         """
-        if not self.mh_results:
+        if self.mh_results == "":
             return
         else:
             print("Exporting accepted points of MH ...")
@@ -3920,7 +3959,7 @@ class Gui(Tk):
         # except AttributeError:
         #     pass
         self.page3_plotframe = Frame(self.frame3_right)
-        self.page3_plotframe.grid(row=5, column=1, columnspan=4, padx=5, pady=4, sticky=N+S+E+W)
+        self.page3_plotframe.grid(row=5, column=1, columnspan=5, padx=5, pady=4, sticky=N+S+E+W)
 
         self.page3_canvas = FigureCanvasTkAgg(what, master=self.page3_plotframe)
         self.page3_canvas.draw()

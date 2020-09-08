@@ -414,6 +414,7 @@ class HastingsResults:
             where(fig)
 
 
+## Now unused
 def sample_functions(functions, data_means):
     """ Will sample functions according to the pdf as given by the polynomials
 

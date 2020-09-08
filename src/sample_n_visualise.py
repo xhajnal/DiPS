@@ -375,7 +375,7 @@ def visualise_by_param(hyper_rectangles, colour='g', title="", where=False):
             return None
 
 
-def heatmap(function, region, sampling_sizes, posttitle="", where=False, parameters=False):
+def heatmap(function, region, sampling_sizes, posttitle="", where=False, parameters=False, verbose=False):
     """ Creates 2D heatmap plot of sampled points of given function
 
     Args:
@@ -384,7 +384,8 @@ def heatmap(function, region, sampling_sizes, posttitle="", where=False, paramet
         sampling_sizes (list of ints): tuple of sample size of respective parameter
         posttitle (string): A string to be put after the title
         where (tuple/list): output matplotlib sources to output created figure
-        parameters (list):: list of parameters
+        parameters (list): list of parameters
+        verbose (bool): will input maximum information
 
     Example:
         heatmap("p+q",[[0,1],[3,4]],[5,5])
@@ -423,15 +424,18 @@ def heatmap(function, region, sampling_sizes, posttitle="", where=False, paramet
     # d = d.pivot("p", "q", "E")
     heatmap_data = heatmap_data.pivot(parameters[0], parameters[1], "E")
 
+    vmin = min(arr[:, 2])
+    vmax = max(arr[:, 2])
+
     if where:
         f, ax = plt.subplots()
-        ax = sns.heatmap(heatmap_data)
+        ax = sns.heatmap(heatmap_data, vmin=vmin, vmax=vmax, annot=verbose)
         title = f"Heatmap \n{posttitle}"
         ax.set_title(wraper.fill(title))
         ax.invert_yaxis()
         return f
     else:
-        ax = sns.heatmap(heatmap_data)
+        ax = sns.heatmap(heatmap_data, vmin=vmin, vmax=vmax, annot=verbose)
         title = f"Heatmap of the parameter space \n function: {function}"
         ax.set_title(wraper.fill(title))
         ax.invert_yaxis()
