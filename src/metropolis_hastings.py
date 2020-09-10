@@ -18,6 +18,9 @@ from common.config import load_config
 from common.document_wrapper import DocumentWrapper
 from common.convert import niceprint
 
+import warnings
+warnings.filterwarnings("error")
+
 spam = load_config()
 # results_dir = spam["results"]
 tmp_dir = spam["tmp"]
@@ -256,7 +259,7 @@ class HastingsResults:
             ## Thanks to Den for optimisation
             egg = self.accepted[keep_index:].T
             egg = egg[:-1]
-            ax.plot(egg, '.-', markersize=15)
+            ax.plot(egg, '.-', markersize=15)  ## TODO Check 10 bees default -> ZeroDivisionError: integer division or modulo by zero
 
             # for sample in self.accepted[not_burn_in:]:
             #    ax.scatter(x_axis, sample)
@@ -561,7 +564,14 @@ def manual_log_like_normal(space, theta, functions, data, sample_size, eps, debu
     for index, data_point in enumerate(data):
         point = eval(functions[index])
         # lik = sample_size*data_point * np.log(point) + (sample_size - sample_size*data_point) * np.log(1 - point)
-        lik = sample_size*(data_point * np.log(point) + (1 - data_point) * np.log(1 - point))
+        try:
+            lik = sample_size*(data_point * np.log(point) + (1 - data_point) * np.log(1 - point))
+        except RuntimeWarning as warn:
+            print("index", index)
+            print("theta", theta)
+            print("functions[index]", point)
+            print("data[index]", data_point)
+            raise warn
         res = res + lik
         if debug:
             print(f"param point {theta}")
@@ -789,9 +799,9 @@ def initialise_sampling(space: RefinedSpace, data, functions, sample_size: int, 
         else:
             fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
-        ax.bar(list(range(1, len(data)+1)), data)
-        # plt.xticks(range(len(functions)), range(len(functions) + 1))
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        ax.bar(list(range(1, len(data)+1)), data)
+        ax.set_xticks(list(range(1, len(data)+1)))
         ax.set_xlabel("Data index")
         ax.set_ylabel("Data value")
         ax.set_title(f"Summary of {sample_size} observations")
