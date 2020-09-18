@@ -216,8 +216,7 @@ def sample(space, constraints, sample_size, compress=False, silent=True, save=Fa
     if save:
         if save is True:
             save = str(strftime("%d-%b-%Y-%H-%M-%S", localtime()))
-        with open(os.path.join(refinement_results, ("Sampled_space_" + save).split(".")[0] + ".p"), "wb") as file:
-            pickle_dump(sampling, file)
+        pickle_dump(sampling, os.path.join(refinement_results, ("Sampled_space_" + save).split(".")[0] + ".p"))
 
     space.sampling_took(time() - start_time)
     space.title = f"using grid_size:{sample_size}"
