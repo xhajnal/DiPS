@@ -826,11 +826,14 @@ def initialise_sampling(space: RefinedSpace, data, functions, sample_size: int, 
 
     ## Dumping results
     print(f"Set of accepted points is stored here: {tmp_dir}/accepted.p")
-    pickle.dump(accepted, open(os.path.join(tmp_dir, f"accepted.p"), 'wb'))
+    with open(os.path.join(tmp_dir, f"accepted.p"), 'wb') as file:
+        pickle.dump(accepted, file)
     print(f"Set of rejected points is stored here: {tmp_dir}/rejected.p")
-    pickle.dump(rejected, open(os.path.join(tmp_dir, f"rejected.p"), 'wb'))
+    with open(os.path.join(tmp_dir, f"rejected.p"), 'wb') as file:
+        pickle.dump(rejected, file)
     print(f"Whole class is stored here: {tmp_dir}/mh_class.p")
-    pickle.dump(globals()["mh_results"], open(os.path.join(tmp_dir, f"mh_class.p"), 'wb'))
+    with open(os.path.join(tmp_dir, f"mh_class.p"), 'wb') as file:
+        pickle.dump(globals()["mh_results"], file)
 
     ## Showing metadata visualisations
     if metadata:

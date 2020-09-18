@@ -2148,7 +2148,8 @@ class Gui(Tk):
         if not self.silent.get() and not file:
             print("Saving parsed functions as a file:", save_functions_file)
 
-        pickle.dump(functions, open(save_functions_file, 'wb'))
+        with open(save_functions_file, 'wb') as file:
+            pickle.dump(functions, file)
 
         if not file:
             self.functions_file.set(save_functions_file)
@@ -2185,7 +2186,8 @@ class Gui(Tk):
         if not self.silent.get():
             print("Saving data as a file:", save_data_file)
 
-        pickle.dump(self.data, open(save_data_file, 'wb'))
+        with open(save_data_file, 'wb') as file:
+            pickle.dump(self.data, file)
 
         if not file:
             self.data_file.set(save_data_file)
@@ -2228,7 +2230,8 @@ class Gui(Tk):
         if not self.silent.get():
             print("Saving data intervals as a file:", save_data_intervals_file)
 
-        pickle.dump(data_intervals, open(save_data_intervals_file, 'wb'))
+        with open(save_data_intervals_file, 'wb') as file:
+            pickle.dump(data_intervals, file)
 
         if not file:
             self.data_intervals_file.set(save_data_intervals_file)
@@ -2263,7 +2266,8 @@ class Gui(Tk):
         if "." not in basename(save_constraints_file):
             save_constraints_file = save_constraints_file + ".p"
 
-        pickle.dump(constraints, open(save_constraints_file, 'wb'))
+        with open(save_constraints_file, 'wb') as file:
+            pickle.dump(constraints, file)
 
         if not file:
             self.constraints_file.set(save_constraints_file)
@@ -2296,7 +2300,8 @@ class Gui(Tk):
         if not self.silent.get():
             print("Saving space as a file:", save_space_file)
 
-        pickle.dump(self.space, open(save_space_file, 'wb'))
+        with open(save_space_file, 'wb') as file:
+            pickle.dump(self.space, file)
 
         if not file:
             self.space_file.set(save_space_file)
@@ -2329,7 +2334,8 @@ class Gui(Tk):
         if not self.silent.get():
             print("Saving Metropolis Hastings results as a file:", save_mh_results_file)
 
-        pickle.dump(self.mh_results, open(save_mh_results_file, 'wb'))
+        with open(save_mh_results_file, 'wb') as file:
+            pickle.dump(self.mh_results, file)
         # pickle.dump(self.mh_results, open(os.path.join(self.mh_results_dir, f"mh_results_{strftime('%d-%b-%Y-%H-%M-%S', localtime())}.p"), 'wb'))
 
         if not file:
