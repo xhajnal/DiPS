@@ -19,6 +19,7 @@ from termcolor import colored
 
 ## Importing my code
 from common.convert import ineq_to_constraints, parse_numbers
+from common.document_wrapper import show_message
 from common.files import pickle_dump, pickle_load
 from common.my_z3 import is_this_z3_function, translate_z3_function, is_this_exponential_function
 from metropolis_hastings import HastingsResults
@@ -131,16 +132,6 @@ def createToolTip(widget, text):
 
     widget.bind('<Enter>', enter)
     widget.bind('<Leave>', leave)
-
-
-## Callback function (but can be used also inside the GUI class)
-def show_message(typee, where, message):
-    if typee == 1 or str(typee).lower() == "error":
-        messagebox.showerror(where, message)
-    if typee == 2 or str(typee).lower() == "warning":
-        messagebox.showwarning(where, message)
-    if typee == 3 or str(typee).lower() == "info":
-        messagebox.showinfo(where, message)
 
 
 class Gui(Tk):
@@ -1032,7 +1023,8 @@ class Gui(Tk):
             self.model_file.set(spam)
             # self.model_text.configure(state='normal')
             self.model_text.delete('1.0', END)
-            self.model_text.insert('end', open(self.model_file.get(), 'r').read())
+            with open(self.model_file.get(), 'r') as file:
+                self.model_text.insert('end', file.read())
             # self.model_text.configure(state='disabled')
             self.status_set("Model loaded.")
             # print("self.model", self.model.get())
@@ -1073,12 +1065,14 @@ class Gui(Tk):
             self.property_file.set(spam)
             self.property_text.configure(state='normal')
             self.property_text.delete('1.0', END)
-            self.property_text.insert('end', open(self.property_file.get(), 'r').read())
+            with open(self.property_file.get(), 'r') as file:
+                self.property_text.insert('end', file.read())
             # self.property_text.configure(state='disabled')
 
             self.property_text2.configure(state='normal')
             self.property_text2.delete('1.0', END)
-            self.property_text2.insert('end', open(self.property_file.get(), 'r').read())
+            with open(self.property_file.get(), 'r') as file:
+                self.property_text2.insert('end', file.read())
             # self.property_text2.configure(state='disabled')
             self.status_set("Property loaded.")
             # print("self.property", self.property.get())
@@ -1189,7 +1183,8 @@ class Gui(Tk):
         ## Print functions into TextBox
         self.functions_text.configure(state='normal')
         self.functions_text.delete('1.0', END)
-        self.functions_text.insert('1.0', open(self.functions_file.get(), 'r').read())
+        with open(self.functions_file.get(), 'r') as file:
+            self.functions_text.insert('1.0', file.read())
         # self.functions_text.configure(state='disabled')
 
         ## Resetting parsed intervals
@@ -1786,7 +1781,7 @@ class Gui(Tk):
             return
         else:
             self.mh_results_changed = True
-            self.mh_results : HastingsResults = pickle_load(spam)
+            self.mh_results: HastingsResults = pickle_load(spam)
             self.hastings_file.set(spam)
 
             ## Clear figure
@@ -2149,7 +2144,7 @@ class Gui(Tk):
         if not self.silent.get() and not file:
             print("Saving parsed functions as a file:", save_functions_file)
 
-        pickle_dump(functions, open(save_functions_file, 'wb'))
+        pickle_dump(functions, save_functions_file)
 
         if not file:
             self.functions_file.set(save_functions_file)
@@ -2186,7 +2181,7 @@ class Gui(Tk):
         if not self.silent.get():
             print("Saving data as a file:", save_data_file)
 
-        pickle_dump(self.data, open(save_data_file, 'wb'))
+        pickle_dump(self.data, save_data_file)
 
         if not file:
             self.data_file.set(save_data_file)
@@ -2229,7 +2224,7 @@ class Gui(Tk):
         if not self.silent.get():
             print("Saving data intervals as a file:", save_data_intervals_file)
 
-        pickle_dump(data_intervals, open(save_data_intervals_file, 'wb'))
+        pickle_dump(data_intervals, save_data_intervals_file)
 
         if not file:
             self.data_intervals_file.set(save_data_intervals_file)
@@ -2264,7 +2259,7 @@ class Gui(Tk):
         if "." not in basename(save_constraints_file):
             save_constraints_file = save_constraints_file + ".p"
 
-        pickle_dump(constraints, open(save_constraints_file, 'wb'))
+        pickle_dump(constraints, save_constraints_file)
 
         if not file:
             self.constraints_file.set(save_constraints_file)
@@ -2297,7 +2292,7 @@ class Gui(Tk):
         if not self.silent.get():
             print("Saving space as a file:", save_space_file)
 
-        pickle_dump(self.space, open(save_space_file, 'wb'))
+        pickle_dump(self.space, save_space_file)
 
         if not file:
             self.space_file.set(save_space_file)
@@ -2330,8 +2325,8 @@ class Gui(Tk):
         if not self.silent.get():
             print("Saving Metropolis Hastings results as a file:", save_mh_results_file)
 
-        pickle_dump(self.mh_results, open(save_mh_results_file, 'wb'))
-        # pickle_dump(self.mh_results, open(os.path.join(self.mh_results_dir, f"mh_results_{strftime('%d-%b-%Y-%H-%M-%S', localtime())}.p"), 'wb'))
+        pickle_dump(self.mh_results, save_mh_results_file)
+        # pickle_dump(self.mh_results, os.path.join(self.mh_results_dir, f"mh_results_{strftime('%d-%b-%Y-%H-%M-%S', localtime())}.p"))
 
         if not file:
             self.hastings_file.set(save_mh_results_file)
@@ -3130,6 +3125,9 @@ class Gui(Tk):
             messagebox.showwarning("Space Metropolis-Hastings", "Load data before Metropolis-Hastings.")
             return
 
+        if self.constraints_changed:
+            messagebox.showwarning("Space Metropolis-Hastings", "Constraints changed and may not correspond to the function which are about to be used.")
+
         ## Check functions / Get function parameters
         self.validate_parameters(where=self.functions)
 
@@ -3408,6 +3406,7 @@ class Gui(Tk):
 
             i = 1
             ## For each param create an entry
+            self.parameter_domains_entries = []
             for param in self.parameters:
                 Label(self.new_window, text=param, anchor=W, justify=LEFT).grid(row=i, column=0)
                 spam_low = Entry(self.new_window)
@@ -3416,7 +3415,7 @@ class Gui(Tk):
                 spam_high.grid(row=i, column=2)
                 spam_low.insert(END, '0')
                 spam_high.insert(END, '1')
-                self.parameter_domains.append([spam_low, spam_high])
+                self.parameter_domains_entries.append([spam_low, spam_high])
                 i = i + 1
 
             ## To be used to wait until the button is pressed
@@ -3541,9 +3540,9 @@ class Gui(Tk):
         if not self.silent.get():
             print("Saving the textual representation of space as a file:", save_space_text_file)
 
-        save_space_text_file = open(save_space_text_file, "w")
-        assert isinstance(self.space, space.RefinedSpace)
-        save_space_text_file.write(self.space.nice_print(full_print=True))
+        with open(save_space_text_file, "w") as save_space_text_file:
+            assert isinstance(self.space, space.RefinedSpace)
+            save_space_text_file.write(self.space.nice_print(full_print=True))
 
         if not file:
             self.status_set("Textual representation of space saved.")
@@ -3852,7 +3851,13 @@ class Gui(Tk):
         new_plot_toolbar.update()
         new_plot_canvas.get_tk_widget().pack(fill=BOTH, expand=True)
 
-        new_plot_canvas.draw()
+        try:
+            new_plot_canvas.draw()
+        except OverflowError as err:
+            pyplt.rcParams['agg.path.chunksize'] = 10000
+            new_plot_canvas.draw()
+            show_message(2, "Ploting window", err)
+
         # canvas.flush_events()
         # self.new_window.update()
         # self.update()
@@ -3894,16 +3899,17 @@ class Gui(Tk):
 
         for param_index in range(len(self.parameters)):
             ## Getting the values from each entry, low = [0], high = [1]
-            assert isinstance(self.parameter_domains[param_index][0], Entry)
-            assert isinstance(self.parameter_domains[param_index][1], Entry)
-            region.append([float(self.parameter_domains[param_index][0].get()),
-                           float(self.parameter_domains[param_index][1].get())])
+            assert isinstance(self.parameter_domains_entries[param_index][0], Entry)
+            assert isinstance(self.parameter_domains_entries[param_index][1], Entry)
+            region.append([float(self.parameter_domains_entries[param_index][0].get()),
+                           float(self.parameter_domains_entries[param_index][1].get())])
         if not self.silent.get():
             print("Region: ", region)
         del self.key
         self.new_window.destroy()
         del self.new_window
         self.parameter_domains = region
+        del self.parameter_domains_entries
         self.button_pressed.set(True)
         if not self.silent.get():
             if self.space:

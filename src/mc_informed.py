@@ -99,33 +99,32 @@ def create_data_informed_properties(population, data, alpha, n_samples, multipar
         conjunction = " & "
         seq = ""
 
-    file = open(os.path.join(properties_folder, "prop{}_{}_{}_{}{}.pctl".format(model, population, alpha, n_samples, seq)), "w")
-    print(os.path.join(properties_folder, "prop{}_{}_{}_{}{}.pctl".format(model, population, alpha, n_samples, seq)))
+    with open(os.path.join(properties_folder, "prop{}_{}_{}_{}{}.pctl".format(model, population, alpha, n_samples, seq)), "w") as file:
+        print(os.path.join(properties_folder, "prop{}_{}_{}_{}{}.pctl".format(model, population, alpha, n_samples, seq)))
 
-    for i in range(len(data[population])):
-        if data[population][i] - margin(alpha, n_samples, data[population][i]) > 0:
-            if i > 0:
-                file.write("P>{} [ F (a0=1)".format(data[population][i] - margin(alpha, n_samples, data[population][i])))
-            else:
-                # print(("P>{} [ F (a0=0)".format(data[N][i]-margin(alpha,n_samples,data[N][i]))))
-                # print(alpha,n_samples,data[N][i])
-                file.write("P>{} [ F (a0=0)".format(data[population][i] - margin(alpha, n_samples, data[population][i])))
+        for i in range(len(data[population])):
+            if data[population][i] - margin(alpha, n_samples, data[population][i]) > 0:
+                if i > 0:
+                    file.write("P>{} [ F (a0=1)".format(data[population][i] - margin(alpha, n_samples, data[population][i])))
+                else:
+                    # print(("P>{} [ F (a0=0)".format(data[N][i]-margin(alpha,n_samples,data[N][i]))))
+                    # print(alpha,n_samples,data[N][i])
+                    file.write("P>{} [ F (a0=0)".format(data[population][i] - margin(alpha, n_samples, data[population][i])))
 
-            for j in range(1, population):
-                file.write("&(a" + str(j) + "=" + str(1 if j < i else 0) + ")")
-            file.write("]{}".format(conjunction))
-        if data[population][i] + margin(alpha, n_samples, data[population][i]) < 1:
-            if i > 0:
-                file.write("P<{} [ F (a0=1)".format(data[population][i] + margin(alpha, n_samples, data[population][i])))
-            else:
-                file.write("P<{} [ F (a0=0)".format(data[population][i] + margin(alpha, n_samples, data[population][i])))
+                for j in range(1, population):
+                    file.write("&(a" + str(j) + "=" + str(1 if j < i else 0) + ")")
+                file.write("]{}".format(conjunction))
+            if data[population][i] + margin(alpha, n_samples, data[population][i]) < 1:
+                if i > 0:
+                    file.write("P<{} [ F (a0=1)".format(data[population][i] + margin(alpha, n_samples, data[population][i])))
+                else:
+                    file.write("P<{} [ F (a0=0)".format(data[population][i] + margin(alpha, n_samples, data[population][i])))
 
-            for j in range(1, population):
-                file.write("&(a" + str(j) + "=" + str(1 if j < i else 0) + ")")
-            file.write("]{}".format(conjunction))
-    if seq is not "_seq":
-        file.write(" true ")
-    file.close()
+                for j in range(1, population):
+                    file.write("&(a" + str(j) + "=" + str(1 if j < i else 0) + ")")
+                file.write("]{}".format(conjunction))
+        if seq != "_seq":
+            file.write(" true ")
 
 
 def call_data_informed_prism(population, parameters, data, alpha, n_samples, multiparam, seq):

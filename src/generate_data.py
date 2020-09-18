@@ -44,27 +44,26 @@ def generate_all_data_two_param(agents_quantities, dic_fun, p_v=None, q_v=None):
     # 0.03 -- 0.45 -- 0.002 -- 0.3 (for N=5, there are 4 entries)
 
     for N in agents_quantities:
-        file = open('data_n=' + str(N) + ".csv", "w")
-        file.write('n=' + str(N) + ', p_v=' + str(p_v) + ', q_v=' + str(q_v) + "\n")
-        second_line = ""
+        with open('data_n=' + str(N) + ".csv", "w") as file:
+            file.write('n=' + str(N) + ', p_v=' + str(p_v) + ', q_v=' + str(q_v) + "\n")
+            second_line = ""
 
-        for polynome in dic_fun[N]:
-            parameters = set()
-            if len(parameters) < N:
-                parameters.update(find_param(polynome))
-            parameters = sorted(list(parameters))
-            parameter_value = [p_v, q_v]
+            for polynome in dic_fun[N]:
+                parameters = set()
+                if len(parameters) < N:
+                    parameters.update(find_param(polynome))
+                parameters = sorted(list(parameters))
+                parameter_value = [p_v, q_v]
 
-            for param in range(len(parameters)):
-                a.append(parameter_value[param])
-                globals()[parameters[param]] = parameter_value[param]
+                for param in range(len(parameters)):
+                    a.append(parameter_value[param])
+                    globals()[parameters[param]] = parameter_value[param]
 
-            x = eval(polynome)
-            x = round(x, 2)
-            second_line = second_line + str(x) + ","
+                x = eval(polynome)
+                x = round(x, 2)
+                second_line = second_line + str(x) + ","
 
-        file.write(second_line[:-1])
-        file.close()
+            file.write(second_line[:-1])
 
 
 def generate_experiments_and_data(model_types, n_samples, populations, dimension_sample_size,

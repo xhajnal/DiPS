@@ -16,11 +16,10 @@ from termcolor import colored
 from common.files import pickle_dump
 from space import RefinedSpace
 from common.config import load_config
-from common.document_wrapper import DocumentWrapper
+from common.document_wrapper import DocumentWrapper, show_message
 from common.convert import niceprint
 
 import warnings
-warnings.filterwarnings("error")
 
 spam = load_config()
 # results_dir = spam["results"]
@@ -547,6 +546,7 @@ def manual_log_like_normal(space, theta, functions, data, sample_size, eps, debu
     @author: tpetrov
     @edit: xhajnal
     """
+    warnings.filterwarnings("error")
     res = 0
     # print("data", data)
     # print("functions", functions)
@@ -568,11 +568,13 @@ def manual_log_like_normal(space, theta, functions, data, sample_size, eps, debu
         try:
             lik = sample_size*(data_point * np.log(point) + (1 - data_point) * np.log(1 - point))
         except RuntimeWarning as warn:
-            print("index", index)
-            print("theta", theta)
-            print("functions[index]", point)
-            print("data[index]", data_point)
-            raise warn
+            if debug:
+                print("index", index)
+                print("theta", theta)
+                print("functions[index]", point)
+                print("data[index]", data_point)
+            # lik = float("-inf")
+            # show_message(2, "MH", f"function value {point} is invalid for log")
         res = res + lik
         if debug:
             print(f"param point {theta}")
@@ -580,6 +582,7 @@ def manual_log_like_normal(space, theta, functions, data, sample_size, eps, debu
             print(f"function {eval(functions[index])}")
             print(colored(f"log-likelihood {lik}", "blue"))
             print()
+    warnings.filterwarnings("default")
 
     # for index, data_point in enumerate(data):
     #     sigma = np.sqrt((data_point - eval(functions[index])) ** 2 / sample_size)

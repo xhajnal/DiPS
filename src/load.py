@@ -418,32 +418,31 @@ def load_all_data(path):
     if not glob.glob(str(path)):
         raise OSError("No valid files in the given directory " + os.path.join(os.getcwd(), path))
 
-    for file in glob.glob(str(path)):
-        print(os.path.join(os.getcwd(), file))
-        file = open(file, "r")
-        population = 0
-        for line in file:
-            # print("line: ",line)
-            if re.search("population", line) is not None:
-                population = int(line.split(",")[0].split("=")[1])
-                # print("population, ",population)
-                data[population] = []
-                continue
-            data[population] = line[:-1].split(",")
-            # print(D[N])
-            for value in range(len(data[population])):
-                # print(D[N][value])
-                try:
-                    data[population][value] = float(data[population][value])
-                except:
-                    print("error while parsing population =", population, " i =", value, " of value =",
-                          data[population][value])
-                    data[population][value] = 0
-                # print(type(D[population][value]))
-            # D[population].append(1-sum(D[population]))
-            break
-            # print(D[population])
-        file.close()
+    for file_name in glob.glob(str(path)):
+        print(os.path.join(os.getcwd(), file_name))
+        with open(file_name, "r") as file:
+            population = 0
+            for line in file:
+                # print("line: ",line)
+                if re.search("population", line) is not None:
+                    population = int(line.split(",")[0].split("=")[1])
+                    # print("population, ",population)
+                    data[population] = []
+                    continue
+                data[population] = line[:-1].split(",")
+                # print(D[N])
+                for value in range(len(data[population])):
+                    # print(D[N][value])
+                    try:
+                        data[population][value] = float(data[population][value])
+                    except:
+                        print("error while parsing population =", population, " i =", value, " of value =",
+                              data[population][value])
+                        data[population][value] = 0
+                    # print(type(D[population][value]))
+                # D[population].append(1-sum(D[population]))
+                break
+                # print(D[population])
     os.chdir(cwd)
     if data:
         return data
