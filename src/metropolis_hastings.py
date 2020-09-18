@@ -564,23 +564,25 @@ def manual_log_like_normal(space, theta, functions, data, sample_size, eps, debu
     ## Via wiki https://en.wikipedia.org/wiki/Maximum_likelihood_estimation Discrete distribution, continuous parameter space
     for index, data_point in enumerate(data):
         point = eval(functions[index])
-        # lik = sample_size*data_point * np.log(point) + (sample_size - sample_size*data_point) * np.log(1 - point)
+        # lik = C(n,k) * p**k * (1-p)**(n-k)  ## formula
+        # lik = nCr(sample_size, data_point*sample_size) * point**(data_point*sample_size) * (1-point)**(sample_size-data_point*sample_size)  ## Our representation
+        ## log_lik = np.log(nCr(data_point * sample_size, sample_size)) + (data_point * sample_size * np.log(point) + (1 - data_point) * sample_size * np.log(1 - point))  ## Original log likelihood, but the C(n,k) does not change that the one loglik is greater and it strikes out in subtraction part
         try:
-            lik = sample_size*(data_point * np.log(point) + (1 - data_point) * np.log(1 - point))
+            pseudo_log_lik = (data_point * sample_size * np.log(point) + (1 - data_point) * sample_size * np.log(1 - point))
         except RuntimeWarning as warn:
             if debug:
                 print("index", index)
                 print("theta", theta)
                 print("functions[index]", point)
                 print("data[index]", data_point)
-            # lik = float("-inf")
+            pseudo_log_lik = float("-inf")
             # show_message(2, "MH", f"function value {point} is invalid for log")
-        res = res + lik
+        res = res + pseudo_log_lik
         if debug:
             print(f"param point {theta}")
             print(f"data_point {data_point}")
             print(f"function {eval(functions[index])}")
-            print(colored(f"log-likelihood {lik}", "blue"))
+            print(colored(f"log-likelihood {pseudo_log_lik}", "blue"))
             print()
     warnings.filterwarnings("default")
 
