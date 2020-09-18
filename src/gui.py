@@ -19,6 +19,7 @@ from termcolor import colored
 
 ## Importing my code
 from common.convert import ineq_to_constraints, parse_numbers
+from common.files import pickle_dump, pickle_load
 from common.my_z3 import is_this_z3_function, translate_z3_function, is_this_exponential_function
 from metropolis_hastings import HastingsResults
 
@@ -1334,7 +1335,7 @@ class Gui(Tk):
             if os.path.splitext(self.functions_file.get())[1] == ".txt":
                 self.functions = parse_functions(self.functions_file.get())
             elif os.path.splitext(self.functions_file.get())[1] == ".p":
-                self.functions = pickle.load(open(self.functions_file.get(), "rb"))
+                self.functions = pickle_load(self.functions_file.get())
 
             ## Check whether functions not empty
             if not self.functions:
@@ -1427,7 +1428,7 @@ class Gui(Tk):
             self.data_file.set(spam)
 
             if ".p" in self.data_file.get():
-                self.data = pickle.load(open(self.data_file.get(), "rb"))
+                self.data = pickle_load(self.data_file.get())
                 self.unfold_data()
             else:
                 self.data = load_data(self.data_file.get(), silent=self.silent.get(), debug=not self.silent.get())
@@ -1542,7 +1543,7 @@ class Gui(Tk):
             self.data_intervals_changed = True
             self.data_intervals_file.set(spam)
 
-            self.data_intervals = pickle.load(open(self.data_intervals_file.get(), "rb"))
+            self.data_intervals = pickle_load(self.data_intervals_file.get())
 
             intervals = ""
             if not self.silent.get():
@@ -1630,11 +1631,11 @@ class Gui(Tk):
                 if append:
                     if self.constraints == "":
                         self.constraints = []
-                    spam = pickle.load(open(self.constraints_file.get(), "rb"))
+                    spam = pickle_load(self.constraints_file.get())
                     self.constraints.extend(spam)
                 else:
                     try:
-                        self.constraints = pickle.load(open(self.constraints_file.get(), "rb"))
+                        self.constraints = pickle_load(self.constraints_file.get())
                     except pickle.UnpicklingError:
                         messagebox.showerror("Loading constraints", "Error, no constraints loaded")
                         return
@@ -1718,7 +1719,7 @@ class Gui(Tk):
                 self.space_changed = True
                 self.space_file.set(spam)
 
-                self.space = pickle.load(open(self.space_file.get(), "rb"))
+                self.space = pickle_load(self.space_file.get())
 
                 ## Back compatibility
                 self.space.update()
@@ -1785,7 +1786,7 @@ class Gui(Tk):
             return
         else:
             self.mh_results_changed = True
-            self.mh_results : HastingsResults = pickle.load(open(spam, "rb"))
+            self.mh_results : HastingsResults = pickle_load(spam)
             self.hastings_file.set(spam)
 
             ## Clear figure
@@ -2148,7 +2149,7 @@ class Gui(Tk):
         if not self.silent.get() and not file:
             print("Saving parsed functions as a file:", save_functions_file)
 
-        pickle.dump(functions, open(save_functions_file, 'wb'))
+        pickle_dump(functions, open(save_functions_file, 'wb'))
 
         if not file:
             self.functions_file.set(save_functions_file)
@@ -2185,7 +2186,7 @@ class Gui(Tk):
         if not self.silent.get():
             print("Saving data as a file:", save_data_file)
 
-        pickle.dump(self.data, open(save_data_file, 'wb'))
+        pickle_dump(self.data, open(save_data_file, 'wb'))
 
         if not file:
             self.data_file.set(save_data_file)
@@ -2228,7 +2229,7 @@ class Gui(Tk):
         if not self.silent.get():
             print("Saving data intervals as a file:", save_data_intervals_file)
 
-        pickle.dump(data_intervals, open(save_data_intervals_file, 'wb'))
+        pickle_dump(data_intervals, open(save_data_intervals_file, 'wb'))
 
         if not file:
             self.data_intervals_file.set(save_data_intervals_file)
@@ -2263,7 +2264,7 @@ class Gui(Tk):
         if "." not in basename(save_constraints_file):
             save_constraints_file = save_constraints_file + ".p"
 
-        pickle.dump(constraints, open(save_constraints_file, 'wb'))
+        pickle_dump(constraints, open(save_constraints_file, 'wb'))
 
         if not file:
             self.constraints_file.set(save_constraints_file)
@@ -2296,7 +2297,7 @@ class Gui(Tk):
         if not self.silent.get():
             print("Saving space as a file:", save_space_file)
 
-        pickle.dump(self.space, open(save_space_file, 'wb'))
+        pickle_dump(self.space, open(save_space_file, 'wb'))
 
         if not file:
             self.space_file.set(save_space_file)
@@ -2329,8 +2330,8 @@ class Gui(Tk):
         if not self.silent.get():
             print("Saving Metropolis Hastings results as a file:", save_mh_results_file)
 
-        pickle.dump(self.mh_results, open(save_mh_results_file, 'wb'))
-        # pickle.dump(self.mh_results, open(os.path.join(self.mh_results_dir, f"mh_results_{strftime('%d-%b-%Y-%H-%M-%S', localtime())}.p"), 'wb'))
+        pickle_dump(self.mh_results, open(save_mh_results_file, 'wb'))
+        # pickle_dump(self.mh_results, open(os.path.join(self.mh_results_dir, f"mh_results_{strftime('%d-%b-%Y-%H-%M-%S', localtime())}.p"), 'wb'))
 
         if not file:
             self.hastings_file.set(save_mh_results_file)

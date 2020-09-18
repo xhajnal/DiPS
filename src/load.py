@@ -11,6 +11,7 @@ from sympy import factor
 
 ## Importing my code
 from common.config import load_config
+from common.files import pickle_load
 
 spam = load_config()
 data_path = spam["data"]
@@ -456,10 +457,7 @@ def load_pickled_data(file):
     Args:
         file (string): filename of the data to be loaded
     """
-    if ".p" in file:
-        return pickle.load(open(os.path.join(data_path, file), "rb"))
-    else:
-        return pickle.load(open(os.path.join(data_path, file + ".p"), "rb"))
+    pickle_load(os.path.join(data_path, file))
 
 
 #######################

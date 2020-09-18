@@ -7,6 +7,7 @@ import socket
 
 ## Importing my code
 from common.convert import ineq_to_constraints
+from common.files import pickle_dump
 from refine_space import check_deeper
 from load import get_f, load_pickled_data
 from common.mathematics import create_intervals
@@ -44,9 +45,9 @@ methods = [1, 2, 3]
 sample_size = 2
 
 ## INITIALISATION OF THE RESULTS
-results = pickle.load(open(os.path.join(test, "Freya_results.p"), "rb"))
-coverages = pickle.load(open(os.path.join(test, "Freya_coverages.p"), "rb"))
-averages_and_deviations = pickle.load(open(os.path.join(test, "Freya_averages_and_deviations.p"), "rb"))
+results = pickle_load(os.path.join(test, "Freya_results.p"))
+coverages = pickle_load(os.path.join(test, "Freya_coverages.p"))
+averages_and_deviations = pickle_load(os.path.join(test, "Freya_averages_and_deviations.p"))
 
 if not results:
     raise OSError("results.p is empty")
@@ -139,6 +140,6 @@ for alpha in alphas:
                                     averages_and_deviations[(alpha, n_samples, depth, epsilon, population_size, method, v_p, v_q,)] = (average, math.sqrt(sum(deviations) / sample_size))
 
                                     ## PICKLE THE OUTPUT OF EXPERIMENTS WITH THIS SETTING SETTING
-                                    pickle.dump(results, open(os.path.join(test, "Freya_results.p"), 'wb'))
-                                    pickle.dump(coverages, open(os.path.join(test, "Freya_coverages.p"), 'wb'))
-                                    pickle.dump(averages_and_deviations, open(os.path.join(test, "Freya_averages_and_deviations.p"), 'wb'))
+                                    pickle_dump(results, os.path.join(test, "Freya_results.p"))
+                                    pickle_dump(coverages, os.path.join(test, "Freya_coverages.p"))
+                                    pickle_dump(averages_and_deviations, os.path.join(test, "Freya_averages_and_deviations.p"))

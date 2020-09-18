@@ -5,6 +5,7 @@ from time import time, strftime, localtime
 import numpy as np
 
 ## Importing my code
+from common.files import pickle_dump
 from common.mathematics import create_matrix, cartesian_product
 from common.my_z3 import is_this_z3_function, translate_z3_function
 from common.config import load_config
@@ -215,7 +216,8 @@ def sample(space, constraints, sample_size, compress=False, silent=True, save=Fa
     if save:
         if save is True:
             save = str(strftime("%d-%b-%Y-%H-%M-%S", localtime()))
-        pickle.dump(sampling, open(os.path.join(refinement_results, ("Sampled_space_" + save).split(".")[0] + ".p"), "wb"))
+        with open(os.path.join(refinement_results, ("Sampled_space_" + save).split(".")[0] + ".p"), "wb") as file:
+            pickle_dump(sampling, file)
 
     space.sampling_took(time() - start_time)
     space.title = f"using grid_size:{sample_size}"

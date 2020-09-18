@@ -13,6 +13,7 @@ from matplotlib.figure import Figure
 ## Importing my code
 from termcolor import colored
 
+from common.files import pickle_dump
 from space import RefinedSpace
 from common.config import load_config
 from common.document_wrapper import DocumentWrapper
@@ -826,11 +827,11 @@ def initialise_sampling(space: RefinedSpace, data, functions, sample_size: int, 
 
     ## Dumping results
     print(f"Set of accepted points is stored here: {tmp_dir}/accepted.p")
-    pickle.dump(accepted, open(os.path.join(tmp_dir, f"accepted.p"), 'wb'))
+    pickle_dump(accepted, os.path.join(tmp_dir, f"accepted.p"))
     print(f"Set of rejected points is stored here: {tmp_dir}/rejected.p")
-    pickle.dump(rejected, open(os.path.join(tmp_dir, f"rejected.p"), 'wb'))
+    pickle_dump(rejected, os.path.join(tmp_dir, f"rejected.p"))
     print(f"Whole class is stored here: {tmp_dir}/mh_class.p")
-    pickle.dump(globals()["mh_results"], open(os.path.join(tmp_dir, f"mh_class.p"), 'wb'))
+    pickle_dump(globals()["mh_results"], os.path.join(tmp_dir, f"mh_class.p"))
 
     ## Showing metadata visualisations
     if metadata:
