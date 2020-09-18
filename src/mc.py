@@ -118,21 +118,21 @@ def call_prism(args, seq=False, silent: bool = False, model_path=model_path, pro
         for arg in args:
             # print(arg)
             # print(re.compile('\.[a-z]').search(arg))
-            if re.compile('\.pm').search(arg) is not None:
+            if re.compile(r'\.pm').search(arg) is not None:
                 model_file_path = os.path.join(model_path, arg)
                 # print(model_file)
                 if not os.path.isfile(model_file_path):
                     print(f"{colored('model file', 'red')} {model_file_path} {colored('not found -- skipped', 'red')}")
                     return 404, f"model file  {model_file_path} not found -- skipped"
                 prism_args.append(model_file_path)
-            elif re.compile('\.pctl').search(arg) is not None:
+            elif re.compile(r'\.pctl').search(arg) is not None:
                 property_file_path = os.path.join(properties_path, arg)
                 # print(property_file)
                 if not os.path.isfile(property_file_path):
                     print(f"{colored('property file', 'red')} {property_file_path} {colored('not found -- skipped', 'red')}")
                     return 404, f"property file {property_file_path} not found -- skipped"
                 prism_args.append(property_file_path)
-            elif re.compile('\.txt').search(arg) is not None:
+            elif re.compile(r'\.txt').search(arg) is not None:
                 print("prism_output_path", prism_output_path)
                 if not os.path.isabs(prism_output_path):
                     prism_output_path = os.path.join(Path(prism_results), Path(prism_output_path))
@@ -480,7 +480,7 @@ def call_storm(args, silent: bool = False, model_path=model_path, properties_pat
         for arg in args:
             # print(arg)
             # print(re.compile('\.[a-z]').search(arg))
-            if re.compile('\.pm').search(arg) is not None:
+            if re.compile(r'\.pm').search(arg) is not None:
                 model_file_path = os.path.join(model_path, arg)
                 # print(model_file)
                 if not os.path.isfile(model_file_path):
@@ -489,7 +489,7 @@ def call_storm(args, silent: bool = False, model_path=model_path, properties_pat
                     return 404
                 print(f"{model_file_path} {colored('found', 'blue')}")
                 storm_args.append(f"/DiPS/{os.path.relpath(model_file_path, os.path.join(model_path,'..'))}")
-            elif re.compile('\.pctl').search(arg) is not None:
+            elif re.compile(r'\.pctl').search(arg) is not None:
                 property_file_path = os.path.join(properties_path, arg)
                 # print(property_file)
                 if not os.path.isfile(property_file_path):
@@ -498,7 +498,7 @@ def call_storm(args, silent: bool = False, model_path=model_path, properties_pat
                     return 404
                 # storm_args.append(property_file_path)
                 storm_args.append("my_super_cool_string")
-            elif re.compile('\.txt').search(arg) is not None:
+            elif re.compile(r'\.txt').search(arg) is not None:
                 storm_file_path = os.path.join(properties_path, arg)
                 if not os.path.isabs(storm_file_path):
                     storm_file_path = os.path.join(Path(storm_results), Path(storm_file_path))
