@@ -102,6 +102,11 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
             for index in range(1, len(data)):
                 data[index] = data[index] + data[index - 1]
 
+        distance = 0
+        for index in range(len(data)):
+            distance = distance + (eval(functions[index]) - data[index])**2
+        title = f"{title}\n Distance: {distance}"
+
     if where:
         fig = where[0]
         ax = where[1]
@@ -125,7 +130,7 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
                     raise Exception(f"Unable to show the intervals on the plot. Number of data intervals ({len(data_intervals)}) is not equal to number of functions ({len(functions)}).")
 
             # functions_inside_of_intervals_to_str = str(functions_inside_of_intervals).replace(" ", "\u00A0") - does not work
-            title = f"{title} \n Function value within the respective interval: {functions_inside_of_intervals} \n Intervals: {data_intervals}"
+            title = f"{title} \n Function value within the respective interval: {functions_inside_of_intervals}"
     else:
         ax.set_xlabel('Rational function indices')
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))

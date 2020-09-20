@@ -226,9 +226,9 @@ class HastingsResults:
             burn_in = round(burn_in / self.accepted.shape[0], 2)
 
         if self.last_iter > 0:
-            self.title = f'Estimate of MH algorithm, {niceprint(self.last_iter)} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n trimming first {burn_in * 100}% of {niceprint(self.accepted.shape[0])} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
+            self.title = f'Estimate of MH algorithm, {niceprint(self.last_iter)} iterations, sample size = {self.observations_count}, \n trimming first {burn_in * 100}% of {niceprint(self.accepted.shape[0])} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
         else:
-            self.title = f'Estimate of MH algorithm, {niceprint(self.mh_sampling_iterations)} iterations, sample size = {self.observations_samples_count}/{self.observations_count}, \n trimming first {burn_in * 100}% of {niceprint(self.accepted.shape[0])} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
+            self.title = f'Estimate of MH algorithm, {niceprint(self.mh_sampling_iterations)} iterations, sample size = {self.observations_count}, \n trimming first {burn_in * 100}% of {niceprint(self.accepted.shape[0])} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
 
         if debug:
             print("self.accepted[keep_index:, 0]", self.accepted[keep_index:, 0])
