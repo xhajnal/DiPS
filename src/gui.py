@@ -2703,7 +2703,7 @@ class Gui(Tk):
             assert isinstance(self.functions, list)
             assert isinstance(self.parameters, list)
             assert isinstance(self.data, list)
-            result = optimize(self.functions, self.parameters, self.parameter_domains, self.data)
+            result = optimize(self.functions, self.parameters, self.parameter_domains, self.data, debug=self.debug.get())
         except Exception as error:
             messagebox.showerror("Optimize", f"Error occurred during Optimization: {error}")
             raise error
