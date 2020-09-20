@@ -22,7 +22,7 @@ def dist(x):
     result = []
     for index, function in enumerate(globals()["functions"]):
         ## Function value - data point
-        result.append(eval(function) - float(globals()["data_point"][index]))
+        result.append(abs(eval(function) - float(globals()["data_point"][index])))
     # print("semiresult", result)
     return np.array(result)
 
@@ -46,7 +46,7 @@ def optimize(functions: [list], params: [list], param_intervals: [list], data_po
             functions[index] = translate_z3_function(function)
 
     ## Get the average value of parameter intervals
-    x0 = np.array(list(map(lambda lst: (lst[0]+lst[1])/2, param_intervals)))
+    x0 = np.array(list(map(lambda lst: (lst[0] + lst[1]) / 2, param_intervals)))
 
     globals()["functions"] = functions
     # print("globals()[functions]", globals()["functions"])
@@ -66,11 +66,14 @@ def optimize(functions: [list], params: [list], param_intervals: [list], data_po
 
     ## VALUES OF PARAMS, VALUES OF FUNCTIONS, DISTANCE
     # print("point", list(res.x))
-    function_values = res.fun
-    for index, item in enumerate(function_values):
-        function_values[index] = function_values[index] + data_point[index]
+    ## function_values = res.fun
+    ## for index, item in enumerate(function_values):
+    ##     function_values[index] = function_values[index] + data_point[index]
     # print("function values", function_values)
     # print("distance values", list(res.fun))
     # print("total distance", res.cost)
-    # return list(res.x), function_values,  sum([abs(x - y) for x, y in zip(function_values, data_point)])
-    return list(res.x), list(function_values), res.cost
+    print(res)
+    # print(f"{params}: ", list(res.x), list(map(eval, functions)),  sum([abs(x - y) for x, y in zip(list(map(eval, functions)), data_point)]))
+    # print(f"{params}: ", list(res.x), list(map(eval, functions)), (sum([(x - y)**2 for x, y in zip(list(map(eval, functions)), data_point)]))**(1/2))
+    # print(res.fun)
+    return list(res.x), list(map(eval, functions)), (2*res.cost)**(1/2)
