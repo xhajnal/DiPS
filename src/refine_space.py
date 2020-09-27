@@ -552,7 +552,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
             unsat_points = space.get_unsat_samples()
             sample_size = int(len(samples) ** (1 / len(region)))
         else:
-            to_be_searched = sample(space, constraints, sample_size, compress=True, silent=not debug, save=save)
+            to_be_searched = sample(space, constraints, sample_size, compress=True, silent=not debug, save=save, debug=debug)
 
             if debug:
                 print("Sampled space type (should be array): ", type(to_be_searched))

@@ -8,7 +8,7 @@ from matplotlib import gridspec
 from matplotlib.ticker import MaxNLocator
 from matplotlib.figure import Figure
 
-# from termcolor import colored
+from common.document_wrapper import DocumentWrapper
 
 ## Importing my code
 from termcolor import colored
@@ -454,13 +454,14 @@ def sample_functions(functions, data_means):
     return i - 1
 
 
-def transition_model_a(theta, parameter_intervals):
+def transition_model_a(theta, parameter_intervals, sort=False):
     """" Defines how to walk around the parameter space, set a new point,
         using normal distribution around the old point
 
     Args:
         theta (list): old parameter point
         parameter_intervals (list of tuples) domains of parameters
+        sort (Bool): tag whether the params are non-decreasing (CASE STUDY SPECIFIC SETTING)
 
     Returns:
         theta_new (list): new parameter point within the domains
@@ -473,12 +474,26 @@ def transition_model_a(theta, parameter_intervals):
 
     ## For each parameter
     ## TODO why we change all params and not just one in random?
+    max_param = theta[0]
     for index, param in enumerate(theta):
-        temp = parameter_intervals[index][0] - 1  ## Lower bound of first parameter - 1
-        while (temp <= parameter_intervals[index][0]) or (temp >= parameter_intervals[index][1]):
+        temp = parameter_intervals[index][0] - 1  ## Lower bound of first parameter - 1, forcing to find a new value
+        #### THIS WAS NOT WORKING
+        # if sort:
+        #     temp = get_truncated_normal(theta[index], sd, low=max(temp <= parameter_intervals[index][0], theta_new[max(0, index - 1)]), upp=parameter_intervals[index][1])
+        # else:
+        #     while (temp <= parameter_intervals[index][0]) or (temp >= parameter_intervals[index][1]):
+        #         temp = np.random.normal(theta[index], sd)
+        # max_param = theta_new[max(0, index - 1)]
+        while (temp <= parameter_intervals[index][0]) or (temp >= parameter_intervals[index][1]) or (sort and temp < max_param):
             ## Generate new parameter value from normal distribution
-            temp = np.random.normal(theta[index], sd)
+            if sort and max_param > theta[index]:
+                temp = np.random.normal(max_param, sd)
+                if temp < max_param:
+                    temp = temp + abs(max_param-temp)
+            else:
+                temp = np.random.normal(theta[index], sd)
         ## Store only if the param value inside the domains
+        max_param = temp
         theta_new[index] = temp
 
     return theta_new
@@ -634,7 +649,7 @@ def manual_log_like_normal(space, theta, functions, data, sample_size, eps, debu
 
 
 def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param_init, iterations, space, data, sample_size,
-                        acceptance_rule, parameter_intervals, functions, eps, progress=False, timeout=-1, debug=False):
+                        acceptance_rule, parameter_intervals, functions, eps, progress=False, timeout=-1, debug=False, sort=False):
     """ The core method of the Metropolis Hasting
 
         likelihood_computer (function(space, theta, functions, observation/data, eps)): function returning the likelihood that functions in theta point generated the data
@@ -650,6 +665,7 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param
         progress (Tkinter_element or False): progress bar
         timeout (int): timeout in seconds
         debug (bool): if True extensive print will be used
+        sort (Bool): tag whether the params are non-decreasing (CASE STUDY SPECIFIC SETTING)
 
     Returns:
         accepted, rejected (tuple of np.arrays): tuple of accepted and rejected parameter points
@@ -667,10 +683,14 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param
     theta_lik = 0
     for iteration in range(1, iterations + 1):
         ## Walk in parameter space - Get new parameter point from the current one
-        theta_new = transition_model(theta, parameter_intervals)
+        theta_new = transition_model(theta, parameter_intervals, sort)
+        # print("theta_new", theta_new)
+        # if sort:
+        #     if sorted(list(theta_new)) != list(theta_new):
+        #         print(colored(f"{theta_new} is decreasing", "red"))
+
         ## Estimate likelihood of current point
         ## (space, theta, functions, data, eps)
-
         ## Not recalculating the likelihood if we did not move
         if has_moved:
             theta_lik = likelihood_computer(space, theta, functions, data, sample_size, eps, debug=debug)
@@ -713,7 +733,7 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param
 
 def initialise_sampling(space: RefinedSpace, data, functions, sample_size: int,  mh_sampling_iterations: int, eps,
                         theta_init=False, where=False, progress=False, burn_in=False, bins=20, timeout=False,
-                        debug=False, metadata=True, draw_plot=False):
+                        debug=False, metadata=True, draw_plot=False, sort=False):
     """ Initialisation method for Metropolis Hastings
 
     Args:
@@ -729,6 +749,7 @@ def initialise_sampling(space: RefinedSpace, data, functions, sample_size: int, 
         burn_in (number): fraction or count of how many samples will be trimmed from beginning
         bins (int): number of segments in the plot
         timeout (int): timeout in seconds
+        sort (Bool): tag whether the params are non-decreasing (CASE STUDY SPECIFIC SETTING)
         debug (bool): if True extensive print will be used
         metadata (bool): if True metadata will be plotted
         draw_plot (Callable): function showing intermediate plots
@@ -811,15 +832,12 @@ def initialise_sampling(space: RefinedSpace, data, functions, sample_size: int, 
 
     ## MAIN LOOP
     ##                                      (likelihood_computer,    prior, transition_model,   param_init,       iterations,       space, data, sample_size, acceptance_rule, parameter_intervals, functions, eps, progress,          timeout,         debug):
-    accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, mh_sampling_iterations, space, data, sample_size, acceptance, parameter_intervals, functions, eps, progress=progress, timeout=timeout, debug=debug)
+    accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, mh_sampling_iterations, space, data, sample_size, acceptance, parameter_intervals, functions, eps, progress=progress, timeout=timeout, debug=debug, sort=sort)
 
     globals()["mh_results"].set_accepted(accepted)
     globals()["mh_results"].set_rejected(rejected)
 
     print("accepted.shape", accepted.shape)
-    if len(accepted) == 0:
-        print("Metropolis-Hastings, no accepted point found")
-        return False
 
     ## Dumping results
     print(f"Set of accepted points is stored here: {tmp_dir}/accepted.p")

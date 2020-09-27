@@ -18,7 +18,8 @@ z3_path = spam["z3_path"]
 del spam
 
 
-def sample(space, constraints, sample_size, compress=False, silent=True, save=False, debug: bool = False, progress=False, quantitative=False):
+def sample(space, constraints, sample_size, compress=False, silent=True, save=False, debug: bool = False,
+           progress=False, quantitative=False, sort=False):
     """ Samples the space in **sample_size** samples in each dimension and saves if the point is in respective interval
 
     Args:
@@ -32,6 +33,7 @@ def sample(space, constraints, sample_size, compress=False, silent=True, save=Fa
         debug (bool): if True extensive print will be used
         progress (Tkinter element): progress bar
         quantitative (bool): if True return how far is the point from satisfying / not satisfying the constraints
+        sort (Bool): tag whether the params are non-decreasing (CASE STUDY SPECIFIC SETTING)
 
     Returns:
         (dict) of point to list of Bools whether f(point) in interval[index]
@@ -61,8 +63,8 @@ def sample(space, constraints, sample_size, compress=False, silent=True, save=Fa
         print("space.params", space.params)
         print("space.region", space.region)
         print("sample_size", sample_size)
-    for param in range(len(space.params)):
-        parameter_values.append(np.linspace(space.region[param][0], space.region[param][1], sample_size, endpoint=True))
+    for index in range(len(space.params)):
+        parameter_values.append(np.linspace(space.region[index][0], space.region[index][1], sample_size, endpoint=True))
         parameter_indices.append(np.asarray(range(0, sample_size)))
 
     sampling = create_matrix(sample_size, len(space.params))
@@ -86,6 +88,9 @@ def sample(space, constraints, sample_size, compress=False, silent=True, save=Fa
         ## For each parameter set the current sample point value
         if progress:
             progress(index / len(parameter_values))
+        if sort:
+            if (parameter_value != np.sort(parameter_value)).any():
+                continue
         for param in range(len(space.params)):
             locals()[space.params[param]] = float(parameter_value[param])
             if debug:

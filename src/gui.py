@@ -85,7 +85,7 @@ try:
     from refine_space import check_deeper
     from mc import call_prism_files, call_storm_files
     from sample_n_visualise import sample_list_funs, eval_and_show, get_param_values, heatmap, bar_err_plot
-    from optimize import optimize
+    from optimize_case_study import optimize_case_study
 except Exception as error:
     print(colored(f"An error occurred during importing module: {error}", "red"))
     error_occurred = error
@@ -213,6 +213,8 @@ class Gui(Tk):
         self.z3_constraints = ""  ## Constrains with z3 expressions inside  ##TODO rewrite as [], need to go through checks
         self.space = ""  ## Instance of a RefinedSpace class
         self.mh_results = ""  ## Instance of HastingsResults class
+        self.non_decreasing_params = BooleanVar()  ## Tag whether the params are non-decreasing (CASE STUDY SPECIFIC SETTING)
+        self.non_decreasing_params.set(False)
 
         ## Results
         self.sampled_functions = []  ## List of values of sampled functions True/False
@@ -573,8 +575,12 @@ class Gui(Tk):
         button41.grid(row=4, column=0, sticky=W, padx=4, pady=4)
         createToolTip(button41, text='Using regression')
 
+        constrained_optimize_button = Checkbutton(frame_left, text="Apply non-decreasing params", variable=self.non_decreasing_params)
+        constrained_optimize_button.grid(row=4, column=1, sticky=W, padx=4, pady=4)
+        
         label42 = Label(frame_left, text="C, confidence level:", anchor=W, justify=LEFT)
-        label42.grid(row=5)
+        label42.grid(row=5)       
+        
         createToolTip(label42, text='Confidence level')
 
         self.confidence_entry = Entry(frame_left)
@@ -672,8 +678,11 @@ class Gui(Tk):
         self.sample_size_entry.grid(row=1, column=1)
         self.sample_size_entry.insert(END, '5')
 
-        Button(frame_left, text='Grid sampling', command=self.sample_space).grid(row=7, column=0, columnspan=2, padx=10, pady=4)
-        Button(frame_left, text='Grid quantitative sampling', command=self.sample_space_degree).grid(row=8, column=0,  columnspan=2, padx=10, pady=4)
+        sorted_sampling_button = Checkbutton(frame_left, text="Apply non-decreasing params", variable=self.non_decreasing_params)
+        sorted_sampling_button.grid(row=7, column=0, columnspan=2, padx=0)
+
+        Button(frame_left, text='Grid sampling', command=self.sample_space).grid(row=8, column=0, columnspan=2, padx=10, pady=4)
+        Button(frame_left, text='Grid quantitative sampling', command=self.sample_space_degree).grid(row=9, column=0,  columnspan=2, padx=10, pady=4)
 
         # ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=2, rowspan=7, sticky='ns', padx=25, pady=25)
 
@@ -720,6 +729,9 @@ class Gui(Tk):
         self.mh_timeout_entry.insert(END, '3600')
 
         Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=8, column=7, columnspan=2, pady=4)
+
+        constrained_optimize_button = Checkbutton(frame_left, text="Apply non-decreasing params", variable=self.non_decreasing_params)
+        constrained_optimize_button.grid(row=8, column=7, sticky=W, padx=4, pady=4)
 
         # ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=5, rowspan=7, sticky='ns', padx=25, pady=25)
 
@@ -2756,8 +2768,10 @@ class Gui(Tk):
             assert isinstance(self.functions, list)
             assert isinstance(self.parameters, list)
             assert isinstance(self.data, list)
+            
             start_time = time()
-            result = optimize(self.functions, self.parameters, self.parameter_domains, self.data, debug=self.debug.get())
+            # result = optimize(self.functions, self.parameters, self.parameter_domains, self.data, debug=self.debug.get())
+            result = optimize_case_study(self.functions, self.parameters, self.parameter_domains, self.data, self.non_decreasing_params.get(), debug=self.debug.get())
             print(colored(f"Optimisation took {time() - start_time} seconds", "yellow"))
         except Exception as error:
             messagebox.showerror("Optimize", f"Error occurred during Optimization: {error}")
@@ -3044,7 +3058,7 @@ class Gui(Tk):
 
             ## This progress is passed as whole to update the thing inside the called function
             assert isinstance(self.constraints, list)
-            self.space.grid_sample(self.constraints, self.sample_size, silent=self.silent.get(), save=False, progress=self.update_progress_bar)
+            self.space.grid_sample(self.constraints, self.sample_size, silent=self.silent.get(), save=False, progress=self.update_progress_bar, sort=self.non_decreasing_params.get())
         finally:
             try:
                 self.new_window.destroy()
@@ -3235,7 +3249,7 @@ class Gui(Tk):
                                                   progress=self.update_progress_bar, debug=self.debug.get(),
                                                   bins=int(self.bins.get()), burn_in=float(self.show.get()),
                                                   timeout=int(self.mh_timeout_entry.get()), draw_plot=self.draw_plot_window,
-                                                  metadata=self.show_mh_metadata.get())
+                                                  metadata=self.show_mh_metadata.get(), sort=self.non_decreasing_params.get())
             spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b])
 
             if spam[0] is not False:
@@ -3252,6 +3266,23 @@ class Gui(Tk):
                 self.page6_figure2.canvas.draw()
                 self.page6_figure2.canvas.flush_events()
                 self.update()
+            else:
+                spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b])
+
+                if spam[0] is not False:
+                    self.page6_figure2, self.page6_b = spam
+                    self.page6_figure2.tight_layout()
+                    self.page6_figure2.canvas.draw()
+                    self.page6_figure2.canvas.flush_events()
+                    self.update()
+                else:
+                    messagebox.showwarning("Metropolis Hastings", "No accepted point found, not showing the plot")
+                    ## Clear figure
+                    self.page6_figure2.clf()
+                    self.page6_b = self.page6_figure2.add_subplot(111)
+                    self.page6_figure2.canvas.draw()
+                    self.page6_figure2.canvas.flush_events()
+                    self.update()
         finally:
             try:
                 self.new_window.destroy()
