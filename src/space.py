@@ -906,7 +906,7 @@ class RefinedSpace:
         self.rectangles_unsat_to_show = []
         return PatchCollection(rectangles_unsat, facecolor='r', alpha=0.5)
 
-    def grid_sample(self, constraints, sample_size, silent: bool = False, save=False, debug=False, progress=False, quantitative=False):
+    def grid_sample(self, constraints, sample_size, silent: bool = False, save=False, debug=False, progress=False, quantitative=False, sort=False):
         """ Executes grid sampling
 
         Args:
@@ -917,10 +917,11 @@ class RefinedSpace:
             debug (bool): if True extensive print will be used
             progress (Tkinter element): progress bar
             quantitative (bool): if True return how far is the point from satisfying / not satisfying the constraints
+            sort (Bool): tag whether the params are non-decreasing (CASE STUDY SPECIFIC SETTING)
         """
         from sample_space import sample
         self.gridsampled = True
-        sample(self, constraints, sample_size, compress=True, silent=silent, save=save, debug=debug, progress=progress, quantitative=quantitative)
+        sample(self, constraints, sample_size, compress=True, silent=silent, save=save, debug=debug, progress=progress, quantitative=quantitative, sort=sort)
 
     ## TODO DEPRICATED NOT USED NOW, plot.scatter used instead
     def show_samples(self, which):
