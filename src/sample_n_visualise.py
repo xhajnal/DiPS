@@ -16,6 +16,34 @@ from common.mathematics import cartesian_product
 wraper = DocumentWrapper(width=60)
 
 
+def bar_err_plot(data, intervals, titles):
+    """ Creates bar plot (with errors)
+
+    Args:
+        data (list of numbers): values to barplot
+        intervals (list of numbers or Intervals): if False (0,1) interval is used
+        titles (list of strings): (xlabel, ylabel, title)
+    """
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    if intervals == []:
+        ax.bar(list(range(1, len(data) + 1)), data, color='r')
+    else:
+        errors = [[], []]
+        for index, item in enumerate(intervals):
+            errors[0].append(abs(data[index] - item.start))
+            errors[1].append(abs(data[index] - item.end))
+
+        ax.bar(list(range(1, len(data) + 1)), data, yerr=errors, color='r', capsize=10)
+
+    ax.set_xticks(list(range(1, len(data) + 1)))
+    ax.set_xlabel(titles[0])
+    ax.set_ylabel(titles[1])
+    ax.set_title(titles[2])
+    fig.show()
+
+
 def get_param_values(parameters, sample_size, intervals=False, debug: bool = False):
     """ Creates linearly sampled parameter space from the given parameter intervals and number of samples
 
@@ -49,7 +77,7 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
         parameter_value: (list of numbers) array of param values
         parameters (list of strings): parameter names (used for faster eval)
         data (list of floats): Data comparison next to respective function
-        data_intervals (list of tuples): intervals obtained from the data to check if the function are within the intervals
+        data_intervals (list of Intervals): intervals obtained from the data to check if the function are within the intervals
         cumulative (bool): if True cdf instead of pdf is visualised
         debug (bool): if debug extensive output is provided
         where (tuple or list): output matplotlib sources to output created figure
@@ -68,7 +96,10 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
     if debug:
         print("Parameters: ", parameters)
 
-    title = "Rational functions sampling \n Parameter values:"
+    if data:
+        title = "Rational functions and data \n Parameter values:"
+    else:
+        title = "Rational functions \n Parameter values:"
     function_values = []
     add = 0
     for param in range(len(parameters)):
@@ -97,14 +128,16 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
     title = title[:-2]
     if data:
         # data_to_str = str(data).replace(" ", "\u00A0") does not work
-        title = f"{title}\n Data values: {data}"
+        title = f"{title}\n Data values: {str(data)[1:-1]}"
         if cumulative:
             for index in range(1, len(data)):
                 data[index] = data[index] + data[index - 1]
-
         distance = 0
         for index in range(len(data)):
-            distance = distance + (eval(functions[index]) - data[index])**2
+            try:
+                distance = distance + (eval(functions[index]) - data[index])**2
+            except IndexError as error:
+                raise Exception(f"Unable to show the intervals on the plot. Number of data point ({len(data)}) is not equal to number of functions ({len(functions)}).")
         title = f"{title}\n Distance: {distance}"
 
     if where:
@@ -117,35 +150,43 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
     width = 0.2
     ax.set_ylabel(f'{("Value", "Cumulative value")[cumulative]}')
     if data:
-        ax.set_xlabel('Rational function indices (blue), Data point indices (red)')
-        if data_intervals:
-            functions_inside_of_intervals = []
-            for index in range(len(data)):
-                try:
-                    if function_values[index] in data_intervals[index]:
-                        functions_inside_of_intervals.append(True)
-                    else:
-                        functions_inside_of_intervals.append(False)
-                except IndexError as error:
-                    raise Exception(f"Unable to show the intervals on the plot. Number of data intervals ({len(data_intervals)}) is not equal to number of functions ({len(functions)}).")
-
-            # functions_inside_of_intervals_to_str = str(functions_inside_of_intervals).replace(" ", "\u00A0") - does not work
-            title = f"{title} \n Function value within the respective interval: {functions_inside_of_intervals}"
+        ax.set_xlabel('Rational function indices (blue bars), Data point indices (red bars)')
+        # if data_intervals:
+        #     functions_inside_of_intervals = []
+        #     for index in range(len(data)):
+        #         try:
+        #             if function_values[index] in data_intervals[index]:
+        #                 functions_inside_of_intervals.append(True)
+        #             else:
+        #                 functions_inside_of_intervals.append(False)
+        #         except IndexError as error:
+        #             raise Exception(f"Unable to show the intervals on the plot. Number of data intervals ({len(data_intervals)}) is not equal to number of functions ({len(functions)}).")
+        #
+        #     # functions_inside_of_intervals_to_str = str(functions_inside_of_intervals).replace(" ", "\u00A0") - does not work
+        #     title = f"{title} \n Function value within the respective interval: {functions_inside_of_intervals}"
     else:
         ax.set_xlabel('Rational function indices')
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-    if debug:
-        print("title: \n", title)
+    ax.bar(range(1, len(function_values) + 1), function_values, width, color='b', label="function")
+    if data:
+        if data_intervals:
+            # np.array(list(map(lambda x: np.array([x.start, x.end]), data_intervals))) # wrong shape (N,2) instead of (2,N)
+            errors = [[], []]
+            for index, item in enumerate(data_intervals):
+                errors[0].append(abs(data[index] - item.start))
+                errors[1].append(abs(data[index] - item.end))
+
+            ax.bar(list(map(lambda x: x + width, range(1, len(data) + 1))), data, width, yerr=errors, color='r', capsize=10, label="data")
+            title = f"{title}\n Data intervals visualised as error bars."
+        else:
+            ax.bar(list(map(lambda x: x + width, range(1, len(data) + 1))), data, width, color='r', label="data")
     ax.set_title(wraper.fill(title))
+    # fig.legend()
     if debug:
         print("Len(fun_list): ", len(functions))
         print("values:", function_values)
         print("range:", range(1, len(function_values) + 1))
         print("title", title)
-    ax.bar(range(1, len(function_values) + 1), function_values, width, color='b')
-    if data:
-        ax.bar(list(map(lambda x: x + width, range(1, len(data) + 1))), data, width, color='r')
-
     if where:
         return fig, ax
     else:

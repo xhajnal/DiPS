@@ -156,6 +156,9 @@ tmp/*
 
 backup/*
 
+all_bees/*
+10_bees_152_samples/*
+
 ###############
 # STORM CALLS #
 ###############

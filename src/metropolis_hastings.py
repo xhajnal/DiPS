@@ -790,32 +790,6 @@ def initialise_sampling(space: RefinedSpace, data, functions, sample_size: int, 
     #
     #     data = np.array(samples)[np.random.randint(0, sample_size, sample_size)]
     print("data", data)
-
-    ## Showing metadata visualisations
-    if metadata:
-        ## Plotting the distribution of observations
-
-        # Y = []
-        # for i in range(len(functions)):
-        #     Y.append(list(data).count(i))
-
-
-        if where:
-            fig = Figure(figsize=(10, 10))
-        else:
-            fig = plt.figure()
-        ax = fig.add_subplot(1, 1, 1)
-        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-        ax.bar(list(range(1, len(data)+1)), data)
-        ax.set_xticks(list(range(1, len(data)+1)))
-        ax.set_xlabel("Data index")
-        ax.set_ylabel("Data value")
-        ax.set_title(f"Summary of {sample_size} observations")
-        if not where:
-            plt.show()
-        else:
-            draw_plot(fig)
-
     print("Initial parameter point: ", theta_init)
 
     ## MAIN LOOP

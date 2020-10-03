@@ -81,7 +81,7 @@ try:
     import space
     from refine_space import check_deeper
     from mc import call_prism_files, call_storm_files
-    from sample_n_visualise import sample_list_funs, eval_and_show, get_param_values, heatmap
+    from sample_n_visualise import sample_list_funs, eval_and_show, get_param_values, heatmap, bar_err_plot
     from optimize import optimize
 except Exception as error:
     print(colored(f"An error occurred during importing module: {error}", "red"))
@@ -237,7 +237,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.17.1"  ## Version of the gui
+        self.version = "1.18"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -531,11 +531,19 @@ class Gui(Tk):
         frame_right.columnconfigure(1, weight=1)
         frame_right.pack(side=RIGHT, fill=X)
 
-        Button(frame_left, text='Open data file', command=self.load_data).grid(row=0, column=0, sticky=W, padx=4, pady=4)
-        Button(frame_left, text='Save data', command=self.save_data).grid(row=0, column=1, sticky=W, padx=4)
+        label43 = Label(frame_left, text="N_samples, number of samples: ", anchor=W, justify=LEFT)
+        label43.grid(row=0)
+        createToolTip(label43, text='Number of samples')
+
+        self.n_samples_entry = Entry(frame_left)
+        self.n_samples_entry.grid(row=0, column=1)
+
+        Button(frame_left, text='Open data file', command=self.load_data).grid(row=1, column=0, sticky=W, padx=4, pady=4)
+        Button(frame_left, text='Save data', command=self.save_data).grid(row=1, column=1, sticky=W, padx=4)
+        Button(frame_left, text='Plot data', command=self.plot_data).grid(row=1, column=2, sticky=W, padx=4)
 
         label10 = Label(frame_left, text=f"Loaded data:", anchor=W, justify=LEFT)
-        label10.grid(row=1, column=0, sticky=W, padx=4, pady=4)
+        label10.grid(row=2, column=0, sticky=W, padx=4, pady=4)
         createToolTip(label10, text='For each function exactly one data point should be assigned.')
 
         self.data_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_height() * 0.8 / 40))  # , height=10, width=30
@@ -544,25 +552,19 @@ class Gui(Tk):
         # self.data_text.config(state="disabled")
         # self.data_text.bind("<FocusOut>", self.refresh_data)
         self.data_text.bind("<Key>", lambda x: self.data_text_modified.set(True) if x.char != "" else None)
-        self.data_text.grid(row=2, column=0, columnspan=16, sticky=W, padx=4, pady=4)
+        self.data_text.grid(row=3, column=0, columnspan=16, sticky=W, padx=4, pady=4)
 
         ## SET THE INTERVAL COMPUTATION SETTINGS
         button41 = Button(frame_left, text='Optimize parameters', command=self.optimize)
-        button41.grid(row=3, column=0, sticky=W, padx=4, pady=4)
+        button41.grid(row=4, column=0, sticky=W, padx=4, pady=4)
         createToolTip(button41, text='Using regression')
 
         label42 = Label(frame_left, text="C, confidence level:", anchor=W, justify=LEFT)
-        label42.grid(row=4)
+        label42.grid(row=5)
         createToolTip(label42, text='Confidence level')
-        label43 = Label(frame_left, text="N_samples, number of samples: ", anchor=W, justify=LEFT)
-        label43.grid(row=5)
-        createToolTip(label43, text='Number of samples')
 
         self.confidence_entry = Entry(frame_left)
-        self.n_samples_entry = Entry(frame_left)
-
-        self.confidence_entry.grid(row=4, column=1)
-        self.n_samples_entry.grid(row=5, column=1)
+        self.confidence_entry.grid(row=5, column=1)
 
         self.confidence_entry.insert(END, '0.90')
         self.n_samples_entry.insert(END, '60')
@@ -1248,6 +1250,7 @@ class Gui(Tk):
             spam.pack()
             spam.focus()
             spam.bind('<Return>', self.unfold_functions2)
+            self.functions_window.bind('<Return>', self.unfold_functions2)
         else:
             functions = ""
             for function in self.functions:
@@ -2186,6 +2189,20 @@ class Gui(Tk):
         if not file:
             self.data_file.set(save_data_file)
             self.status_set("Data saved.")
+
+    def plot_data(self):
+        """ Plot data.
+        """
+        print("Plotting the data ...")
+
+        if not self.data:
+            messagebox.showwarning("Saving data", "There is no data to be plotted.")
+            self.status_set("There is no data to be plot.")
+            return
+        if self.data_intervals:
+            bar_err_plot(self.data, self.data_intervals, titles=["Data indices", "Data values", f"Summary of {self.n_samples_entry.get()} observations.\n Data intervals visualised as error bars."])
+        else:
+            bar_err_plot(self.data, self.data_intervals, titles=["Data indices", "Data values", f"Summary of {self.n_samples_entry.get()} observations."])
 
     def save_data_intervals(self, file=False):
         """ Saves data intervals as a pickled file.
@@ -3425,9 +3442,9 @@ class Gui(Tk):
             load_param_intervals_button.grid(row=i)
             load_param_intervals_button.focus()
             load_param_intervals_button.bind('<Return>', self.load_param_intervals_from_window)
+            # self.new_window.bind('<Return>', self.load_param_intervals_from_window)
 
             load_param_intervals_button.wait_variable(self.button_pressed)
-            ## print("key pressed")
         elif (len(self.parameter_domains) is not len(self.parameters)) and intervals:
             self.parameter_domains = []
             self.validate_parameters(where=where)
@@ -3569,7 +3586,7 @@ class Gui(Tk):
 
         costumize_mh_results_button.wait_variable(self.button_pressed)
 
-    def change_refinement_plot(self):
+    def change_refinement_plot(self, fake_param=False):
         """ Parses window changing for refinement plot"""
         try:
             if self.space != "":
