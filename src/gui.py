@@ -17,6 +17,8 @@ import matplotlib.pyplot as pyplt
 import matplotlib
 from termcolor import colored
 
+sys.setrecursionlimit(4000000)
+
 ## Importing my code
 from common.convert import ineq_to_constraints, parse_numbers
 from common.document_wrapper import show_message
@@ -4062,17 +4064,30 @@ class Gui(Tk):
         self.page6_b = self.page6_figure2.add_subplot(111)
 
 
-sys.setrecursionlimit(4000000)
-gui = Gui()
-## System dependent fullscreen setting
-if "wind" in platform.system().lower():
-    gui.state('zoomed')
-else:
-    gui.attributes('-zoomed', True)
-gui.autoload(True)
+if __name__ == '__main__':
+    info = sys.version_info
+    if info[0] < 3:
+        sys.exit(f"Python {info[0]} is not supported.")
 
-gui.protocol('WM_DELETE_WINDOW', gui.ask_quit)
-sys.setrecursionlimit(20000)
-gui.gui_init()
-gui.autoload()
-gui.mainloop()
+    if info[1] == 8:
+        sys.exit(f"Python 3.8 may cause a visualisation problems, we are sorry. Please use 3.7.*")
+
+    if info[1] == 9:
+        sys.exit(f"Python 3.9 was not tested and may cause errors. Please use 3.7.*")
+
+    if info[1] != 7:
+        sys.exit(f"Please python use 3.7.*")
+
+    gui = Gui()
+    ## System dependent fullscreen setting
+    if "wind" in platform.system().lower():
+        gui.state('zoomed')
+    else:
+        gui.attributes('-zoomed', True)
+    gui.autoload(True)
+
+    gui.protocol('WM_DELETE_WINDOW', gui.ask_quit)
+    sys.setrecursionlimit(20000)
+    gui.gui_init()
+    gui.autoload()
+    gui.mainloop()
