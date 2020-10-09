@@ -2,7 +2,7 @@ from math import sqrt
 
 import scipy
 import numpy as np
-from scipy.optimize import least_squares, NonlinearConstraint
+from scipy.optimize import least_squares, NonlinearConstraint, LinearConstraint, Bounds
 
 ## Importing my code
 from termcolor import colored
@@ -72,6 +72,8 @@ def dist_single(param_point, parameter_values):
             except IndexError:
                 pass
     result = [eval(globals()["functions"][indexx]) - float(globals()["data_point"][indexx])]
+    # if indexx == len(globals()["functions"]) - 2:
+    #     result[0] = result[0] + eval(globals()["functions"][indexx+1]) - float(globals()["data_point"][indexx+1])
     # for index, function in enumerate():
     #     ## Function value - data point
     #     # print(f'{index} {abs(eval(function) - float(globals()["data_point"][index]))}')
@@ -115,138 +117,65 @@ def optimize_case_study(functions: [list], params: [list], param_intervals: [lis
 
     # If accept only non-decreasing params
     if sort:
-        ## Vector of parameter values and function values to store
-        parameter_values = []
-        function_values = []
-        bounds = [[], []]
-        bounds[0].append(param_intervals[0][0])
-        bounds[1].append(param_intervals[0][1])
-        x0 = [x0[0]]
-        distance = 0
+        low_bounds = []
+        upper_bounds = []
+        for interval in param_intervals:
+            low_bounds.append(interval[0])
+            upper_bounds.append(interval[1])
+        bounds = Bounds(low_bounds, upper_bounds)
+        if debug:
+            print("bounds", bounds)
 
-        ## For each function we run least_squares separately
-        for indexx, function in enumerate(functions):
-            ## Non decreasing values by setting lower bound
-            for index, value in enumerate(parameter_values):
-                if index >= 1:
-                    bounds = [[], []]
-                    bounds[0].append(parameter_values[-1])
-                    bounds[1].append(param_intervals[index][1])
-                    ## x0 = [(parameter_values[-1] + param_intervals[index][1])/2]
-                    x0 = [parameter_values[-1]]
-            try:
-                res = scipy.optimize.least_squares(dist_single, x0, bounds=bounds, args=[parameter_values])
-            except ValueError as error:
-                print(error)
-                print("point: ", x0)
-                print("bounds: ", bounds)
-            print(res)
-            function_values.append(float(res.fun))
-            parameter_values.append(float(res.x))
-            distance = distance + res.cost
+        ## THE USABLE SET OF METHODS
+        methods = ["COBYLA", "SLSQP", "trust-constr"]
 
-        parameter_values = parameter_values[:-1]
-        # print(list(res.x), list(function_values), res.cost)
+        ## Example for 10 bees
+        # lc_10 = LinearConstraint(
+        #     [[1, -1, 0, 0, 0, 0, 0, 0, 0, 0], [0, 1, -1, 0, 0, 0, 0, 0, 0, 0], [0, 0, 1, -1, 0, 0, 0, 0, 0, 0],
+        #      [0, 0, 0, 1, -1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 1, -1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 1, -1, 0, 0, 0],
+        #      [0, 0, 0, 0, 0, 0, 1, -1, 0, 0], [0, 0, 0, 0, 0, 0, 0, 1, -1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, -1]],
+        #     [-1, -1, -1, -1, -1, -1, -1, -1, -1],
+        #     [0, 0, 0, 0, 0, 0, 0, 0, 0])
+        const = []
+        for i in range(len(params)-1):
+            a = np.zeros(len(params))
+            a[i] = 1
+            a[i+1] = -1
+            const.append(a)
+        low_const = list(map(lambda x: -x, np.ones(len(params) - 1)))
+        high_const = np.zeros(len(params) - 1)
+        if debug:
+            print("const", const)
+            print("low_const", low_const)
+            print("high_const", high_const)
+        lc = LinearConstraint(const, low_const, high_const)
+
+        results = dict()
+        for method in methods:
+            # print("method", method)
+            # res = scipy.optimize.minimize(dist_l2, x0, method=method, options={"maxiter": 100}, bounds=bounds, constraints=[lc])
+            res = scipy.optimize.minimize(dist_l2, x0, method=method, bounds=bounds, constraints=[lc])
+            results[method] = res
+
+        for key in results.keys():
+            print(colored(key, "red"))
+            print(results[key])
+            print()
+            ## Find the method with minimal distance
+            if results[key].fun < res.fun:
+                res = results[key]
 
         if debug:
-            print(res)
-            print("params", params)
-            ## !!! THIS IS NOT UPDATED RESULT
-            # spam = []
-            # for item in params:
-            #     spam.append(globals()[item])
-            # print("param values", spam)
+            print("param names", params)
             print("param values", list(res.x))
             print("function values", list(map(eval, functions)))
-            print("distance values", list(res.fun))
-            print("total distance according to scipy - not transformed", res.cost)
-            ## !!! THIS IS NOT UPDATED RESULT
-            # print("L1 distance", sum([abs(x - y) for x, y in zip(list(map(eval, functions)), data_point)]))
-            # print("L2 distance", (sum([(x - y)**2 for x, y in zip(list(map(eval, functions)), data_point)]))**(1/2))
-
             for index, value in enumerate(params):
-                globals()[str(value)] = parameter_values
+                locals()[str(value)] = res.x[index]
             print("L1 distance", sum([abs(x - y) for x, y in zip(list(map(eval, functions)), data_point)]))
-            print("L2 distance",
-                  (sum([(x - y) ** 2 for x, y in zip(list(map(eval, functions)), data_point)])) ** (1 / 2))
-        return parameter_values, list(map(eval, functions)), (2 * distance) ** (1 / 2)
+            print("L2 distance", (sum([(x - y) ** 2 for x, y in zip(list(map(eval, functions)), data_point)])) ** (1 / 2))
 
-        #
-        # bounds = []
-        # for interval in param_intervals:
-        #     bounds.append(interval)
-        # # print("bounds", bounds)
-        #
-        # def is_nondecreasing(param_point):
-        #     if np.array_equal(param_point, sorted(param_point)):
-        #         return 0
-        #     else:
-        #         return -1
-        #
-        # # constraints = [{'type': 'eq', 'fun': is_nondecreasing}]
-        #
-        # ## THE USABLE SET OF METHODS = ["COBYLA", "SLSQP", "trust-constr"]
-        #
-        # results = dict()
-        # for method in ["SLSQP"]:
-        #     # print("method", method)
-        #     nlc = NonlinearConstraint(is_nondecreasing, 0 - 1e-12, 0 + 1e-12, keep_feasible=True)
-        #     res = scipy.optimize.minimize(dist_l2, x0, method=method, options={"maxiter": 1000}, bounds=bounds, constraints=nlc)
-        #     # print(res)
-        #     results[method] = res
-        #
-        # for key in results.keys():
-        #     print(colored(key, "grey"))
-        #     print(results[key])
-        #     print()
-        #
-        # results = dict()
-        # for method in ["SLSQP"]:
-        #     # print("method", method)
-        #     nlc = NonlinearConstraint(is_nondecreasing, 0 - 1e-12, 0 + 1e-12, keep_feasible=False)
-        #     res = scipy.optimize.minimize(dist_l2, x0, method=method, options={"maxiter": 50000}, bounds=bounds, constraints=nlc)
-        #     # print(res)
-        #     results[method] = res
-        #
-        # for key in results.keys():
-        #     print(colored(key, "red"))
-        #     print(results[key])
-        #     print()
-        #
-        # results = dict()
-        # for method in ["SLSQP"]:
-        #     # print("method", method)
-        #     constraints = []
-        #     constraints.append({'type': 'ineq', 'fun': is_nondecreasing})
-        #     res = scipy.optimize.minimize(dist_l2, x0, method=method, options={"maxiter": 1000}, bounds=bounds, constraints=constraints)
-        #     # print(res)
-        #     results[method] = res
-        #
-        # for key in results.keys():
-        #     print(colored(key, "blue"))
-        #     print(results[key])
-        #     print()
-        #
-        # results = dict()
-        # for method in ["SLSQP"]:
-        #     # print("method", method)
-        #     constraints = []
-        #     constraints.append({'type': 'eq', 'fun': is_nondecreasing})
-        #     res = scipy.optimize.minimize(dist_l2, x0, method=method, options={"maxiter": 1000}, bounds=bounds, constraints=constraints)
-        #     # print(res)
-        #     results[method] = res
-        #
-        # for key in results.keys():
-        #     print(colored(key, "green"))
-        #     print(results[key])
-        #     print()
-        #
-        # function_values = []
-        # for index, param in enumerate(globals()["params"]):
-        #     globals()[str(param)] = float(res.x[index])
-        # for index, function in enumerate(globals()["functions"]):
-        #     function_values.append(eval(function))
-        # return list(res.x), list(function_values), res.fun
+        ## parameter point, function values, distance
+        return list(res.x), list(map(eval, functions)), res.fun
     else:
         bounds = [[], []]
         for interval in param_intervals:
@@ -254,12 +183,12 @@ def optimize_case_study(functions: [list], params: [list], param_intervals: [lis
             bounds[1].append(interval[1])
         # print("bounds", bounds)
 
-        #print(x0)
-        #print(dist(x0))
+        # print(x0)
+        # print(dist(x0))
         res = scipy.optimize.least_squares(dist, x0, bounds=bounds)
         if debug:
             print(res)
-            print("params", params)
+            print("param names", params)
             ## !!! THIS IS NOT UPDATED RESULT
             # spam = []
             # for item in params:
