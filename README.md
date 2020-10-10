@@ -25,6 +25,10 @@ chain are compliant with the data measurements:
 The tool was primarily designed to facilitate flexible and efficient parameter search for stochastic models in computational systems biology, where scarcely available data measurements (e.g. only at the steady-state) can be naturally encoded as multiple-property specifications.
 However, the tool is directly applicable to any search problem, where multiple rational functions over unknown real variables are constrained by real-valued intervals.
 
+
+![](architecture.jpg)
+
+
 For a brief summary, you can see our poster (CMSB 19), and for more information, please read [[1]](#one).
 Feel free to leave response either via issues or an email.
 *****
