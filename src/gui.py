@@ -260,7 +260,8 @@ class Gui(Tk):
         self.iterative_refinement = BooleanVar()  ## Refinement flag
         # self.solver = ""  ## SMT solver - z3 or dreal
         self.delta = 0.01  ## dreal setting
-        self.refinement_timeout = 0  ## timeout for refinement
+        self.refinement_timeout = 0  ## timeout for refinement (0 is no timeout)
+        self.mh_timeout = 0  ## timeout for Metropolis Hastings (0 is no timeout)
 
         ## INNER SETTINGS
         self.button_pressed = BooleanVar()  ## Inner variable to close created window
@@ -494,10 +495,11 @@ class Gui(Tk):
         createToolTip(show_heat_map_button, "Creates a heatmap for each function.")
         del show_heat_map_button
 
-        show_data_in_heatmap_button = Checkbutton(self.frame3_right, text="Show distance to data", variable=self.show_data_in_heatmap)
-        show_data_in_heatmap_button.grid(row=2, column=4, padx=4, pady=4)
-        createToolTip(show_data_in_heatmap_button, "Showing distance of functions to data.")
-        del show_data_in_heatmap_button
+        ## TODO bring on in next update
+        # show_data_in_heatmap_button = Checkbutton(self.frame3_right, text="Show distance to data", variable=self.show_data_in_heatmap)
+        # show_data_in_heatmap_button.grid(row=2, column=4, padx=4, pady=4)
+        # createToolTip(show_data_in_heatmap_button, "Showing distance of functions to data.")
+        # del show_data_in_heatmap_button
 
         self.Next_sample_button = Button(self.frame3_right, text="Next plot", state="disabled", command=lambda: self.button_pressed.set(True))
         self.Next_sample_button.grid(row=3, column=2, padx=4, pady=4)
@@ -703,9 +705,9 @@ class Gui(Tk):
         label73 = Label(frame_left, text="Timeout: ", anchor=W, justify=LEFT)
         label73.grid(row=5, column=7)
         createToolTip(label73, text='Timeout in seconds')
-        self.mh_timeout = Entry(frame_left)
-        self.mh_timeout.grid(row=5, column=8)
-        self.mh_timeout.insert(END, '3600')
+        self.mh_timeout_entry = Entry(frame_left)
+        self.mh_timeout_entry.grid(row=5, column=8)
+        self.mh_timeout_entry.insert(END, '3600')
 
         Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=9, column=7, columnspan=2, pady=4)
 
@@ -978,14 +980,16 @@ class Gui(Tk):
             os.makedirs(self.tmp_dir)
         # print("self.tmp_dir", self.tmp_dir)
 
-        ## TODO pass this to gui entries
         try:
             self.refinement_timeout = config.get("settings", "refine_timeout")
+            self.refinement_timeout_entry.delete(0, 'end')
+            self.refinement_timeout_entry.insert(END, self.refinement_timeout)
         except configparser.NoOptionError:
             pass
         try:
-            self.mh_timeout.delete(0, 'end')
-            self.mh_timeout.insert(END, config.get("settings", "mh_timeout"))
+            self.mh_timeout = config.get("settings", "mh_timeout")
+            self.mh_timeout_entry.delete(0, 'end')
+            self.mh_timeout_entry.insert(END, self.mh_timeout)
         except configparser.NoOptionError:
             pass
 
@@ -3197,7 +3201,7 @@ class Gui(Tk):
                                                   where=[self.page6_figure2, self.page6_b],
                                                   progress=self.update_progress_bar, debug=self.debug.get(),
                                                   bins=int(self.bins.get()), burn_in=float(self.show.get()),
-                                                  timeout=int(self.mh_timeout.get()), draw_plot=self.draw_plot_window,
+                                                  timeout=int(self.mh_timeout_entry.get()), draw_plot=self.draw_plot_window,
                                                   metadata=self.show_mh_metadata.get())
             spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b])
 
@@ -3348,7 +3352,7 @@ class Gui(Tk):
                                     sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
                                     where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
                                     delta=self.delta, gui=self.update_progress_bar, show_space=False,
-                                    iterative=self.iterative_refinement.get())
+                                    iterative=self.iterative_refinement.get(), timeout=int(self.refinement_timeout_entry.get()))
             else:
                 assert isinstance(self.constraints, list)
                 spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
@@ -3356,7 +3360,7 @@ class Gui(Tk):
                                     sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
                                     where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
                                     delta=self.delta, gui=self.update_progress_bar, show_space=False,
-                                    iterative=self.iterative_refinement.get())
+                                    iterative=self.iterative_refinement.get(), timeout=int(self.refinement_timeout_entry.get()))
         finally:
             try:
                 self.cursor_toggle_busy(False)

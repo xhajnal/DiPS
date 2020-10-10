@@ -47,6 +47,7 @@ cwd = os.getcwd()
 
 try:
     from z3 import *
+
     os.chdir(cwd)
     p = Real('p')
 except ImportError:
@@ -113,7 +114,8 @@ except NameError:
     raise Exception("z3 not loaded properly")
 
 
-def check_unsafe(region, constraints, silent: bool = False, called=False, solver="z3", delta=0.001, debug: bool = False):
+def check_unsafe(region, constraints, silent: bool = False, called=False, solver="z3", delta=0.001,
+                 debug: bool = False):
     """ Check if the given region is unsafe or not using z3 or dreal.
 
     It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given
@@ -133,7 +135,8 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
         silent = False
 
     if not silent:
-        print(f"Checking unsafe {region} using {('dreal', 'z3')[solver=='z3']} solver, current time is {datetime.datetime.now()}")
+        print(
+            f"Checking unsafe {region} using {('dreal', 'z3')[solver == 'z3']} solver, current time is {datetime.datetime.now()}")
 
     if solver == "z3":  ## avoiding collision name
         del delta
@@ -259,7 +262,8 @@ def check_safe(region, constraints, silent: bool = False, called=False, solver="
         silent = False
 
     if not silent:
-        print(f"checking safe {region} using {('dreal', 'z3')[solver=='z3']} solver, current time is {datetime.datetime.now()}")
+        print(
+            f"checking safe {region} using {('dreal', 'z3')[solver == 'z3']} solver, current time is {datetime.datetime.now()}")
 
     if solver == "z3":  ## avoiding collision name
         del delta
@@ -366,8 +370,8 @@ def check_safe(region, constraints, silent: bool = False, called=False, solver="
 
 
 def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent, version, sample_size=False,
-                 debug=False, save=False, title="", where=False, show_space=True, solver="z3", delta=0.001, gui=False, iterative=False):
-
+                 debug=False, save=False, title="", where=False, show_space=True, solver="z3", delta=0.001, gui=False,
+                 iterative=False, timeout=0):
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
 
     Args:
@@ -388,6 +392,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         delta (number):: used for delta solving using dreal
         gui (bool or Callable): called from the graphical user interface
         iterative (bool) : iterative approach, TBD
+        timeout (int): timeout in seconds (set 0 for no timeout)
     """
 
     # INITIALISATION
@@ -453,10 +458,12 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
 
         ## Constraints
         if not isinstance(constraints, Iterable):
-            raise Exception("Refine Space", "Given properties are not iterable, to use single property use list of length 1")
+            raise Exception("Refine Space",
+                            "Given properties are not iterable, to use single property use list of length 1")
 
         ## Params
-        globals()["space"] = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[], title=title)
+        globals()["space"] = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[],
+                                          rectangles_unsat=[], title=title)
         space = globals()["space"]
 
         globals()["default_region"] = copy.deepcopy(region)
@@ -478,11 +485,14 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
     # globals()["init_white_rectangles"] = len(space.get_white())
 
     if space_coverage >= coverage:
-        print(colored(f"Space refinement - The coverage threshold already reached: {space_coverage} >= {coverage}", "green"))
+        print(colored(f"Space refinement - The coverage threshold already reached: {space_coverage} >= {coverage}",
+                      "green"))
         return space
 
-    print(colored(f"Initialisation took {socket.gethostname()} {round(time() - initialisation_start_time, 2)} seconds", "blue"))
+    print(colored(f"Initialisation took {socket.gethostname()} {round(time() - initialisation_start_time, 2)} seconds",
+                  "blue"))
     start_time = time()
+    globals()["start_time"] = start_time
 
     if debug:
         print("constraints", constraints)
@@ -498,7 +508,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
 
     # PRESAMPLING
     if sample_size:
-        if not([region] == space.get_flat_white()):
+        if not ([region] == space.get_flat_white()):
             raise Exception("Presampling of prerefined space is not implemented yet.")
 
         if version == 1:
@@ -527,7 +537,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         if samples:
             sat_points = space.get_sat_samples()
             unsat_points = space.get_unsat_samples()
-            sample_size = int(len(samples)**(1/len(region)))
+            sample_size = int(len(samples) ** (1 / len(region)))
         else:
             to_be_searched = sample(space, constraints, sample_size, compress=True, silent=not debug, save=save)
 
@@ -560,7 +570,8 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         if debug and save:
             print("I am showing sampling_sat_" + str(save))
         if not where:
-            space.show(red=False, green=False, sat_samples=True, unsat_samples=False, save=save, where=where, show_all=not gui)
+            space.show(red=False, green=False, sat_samples=True, unsat_samples=False, save=save, where=where,
+                       show_all=not gui)
 
         ## COMPUTING THE ORTHOGONAL HULL OF SAT POINTS
         ## Initializing the min point and max point as the first point from the list
@@ -598,9 +609,17 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                 bordering_intervals = to_interval([sat_min, sat_max])
                 for interval_index in range(len(bordering_intervals)):
                     ## increase the space to the left
-                    bordering_intervals[interval_index][0] = max(region[interval_index][0], bordering_intervals[interval_index][0] - (region[interval_index][1]-region[interval_index][0])/(sample_size-1))
+                    bordering_intervals[interval_index][0] = max(region[interval_index][0],
+                                                                 bordering_intervals[interval_index][0] - (
+                                                                             region[interval_index][1] -
+                                                                             region[interval_index][0]) / (
+                                                                             sample_size - 1))
                     ## increase the space to the right
-                    bordering_intervals[interval_index][1] = min(region[interval_index][1], bordering_intervals[interval_index][1] + (region[interval_index][1] - region[interval_index][0]) / (sample_size - 1))
+                    bordering_intervals[interval_index][1] = min(region[interval_index][1],
+                                                                 bordering_intervals[interval_index][1] + (
+                                                                             region[interval_index][1] -
+                                                                             region[interval_index][0]) / (
+                                                                             sample_size - 1))
                 print(f"Intervals bordering the sat hull are: {bordering_intervals}")
 
                 ## SPLIT THE WHITE REGION INTO 3-5 AREAS (in 2D) (DEPENDING ON THE POSITION OF THE HULL)
@@ -613,9 +632,10 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
 
         ## SHOW UNSAT POINTS
         if debug and save:
-            print("I am showing sampling_unsat_"+str(save))
+            print("I am showing sampling_unsat_" + str(save))
         if not where:
-            space.show(red=False, green=False, sat_samples=False, unsat_samples=True, save=save, where=where, show_all=not gui)
+            space.show(red=False, green=False, sat_samples=False, unsat_samples=True, save=save, where=where,
+                       show_all=not gui)
 
         ## If there is only the default region to be refined in the whitespace
         if numb_of_white_rectangles == 1:
@@ -638,11 +658,13 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                             print(point[dimension])
                         if point[dimension] < unsat_min[dimension]:
                             if debug:
-                                print("current point:", point[dimension], "current min:", unsat_min[dimension], "change min")
+                                print("current point:", point[dimension], "current min:", unsat_min[dimension],
+                                      "change min")
                             unsat_min[dimension] = point[dimension]
                         if point[dimension] > unsat_max[dimension]:
                             if debug:
-                                print("current point:", point[dimension], "current max:", unsat_max[dimension], "change max")
+                                print("current point:", point[dimension], "current max:", unsat_max[dimension],
+                                      "change max")
                             unsat_max[dimension] = point[dimension]
                 if debug:
                     print(f"Intervals bordering the unsat hull are:: {unsat_min},{unsat_max}")
@@ -655,9 +677,17 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                     bordering_intervals = to_interval([unsat_min, unsat_max])
                     for interval_index in range(len(bordering_intervals)):
                         ## increase the space to the left
-                        bordering_intervals[interval_index][0] = max(region[interval_index][0], bordering_intervals[interval_index][0] - (region[interval_index][1] - region[interval_index][0]) / (sample_size - 1))
+                        bordering_intervals[interval_index][0] = max(region[interval_index][0],
+                                                                     bordering_intervals[interval_index][0] - (
+                                                                                 region[interval_index][1] -
+                                                                                 region[interval_index][0]) / (
+                                                                                 sample_size - 1))
                         ## increase the space to the right
-                        bordering_intervals[interval_index][1] = min(region[interval_index][1], bordering_intervals[interval_index][1] + (region[interval_index][1] - region[interval_index][0]) / (sample_size - 1))
+                        bordering_intervals[interval_index][1] = min(region[interval_index][1],
+                                                                     bordering_intervals[interval_index][1] + (
+                                                                                 region[interval_index][1] -
+                                                                                 region[interval_index][0]) / (
+                                                                                 sample_size - 1))
                     print(f"Intervals bordering the unsat hull are: {bordering_intervals}")
 
                     ## SPLIT THE WHITE REGION INTO 3-5 AREAS (in 2D) (DEPENDING ON THE POSITION OF THE HULL)
@@ -687,28 +717,36 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
             elif space.types[index][0] == "BitVec":
                 globals()[param] = BitVec(param, space.types[index][1])
             else:
-                print(colored(f"Type of parameter {param} which was set as {space.types[index]} does not correspond with any known type", "red"))
-                raise TypeError(f"Type of parameter {param} which was set as {space.types[index]} does not correspond with any known type")
+                print(colored(
+                    f"Type of parameter {param} which was set as {space.types[index]} does not correspond with any known type",
+                    "red"))
+                raise TypeError(
+                    f"Type of parameter {param} which was set as {space.types[index]} does not correspond with any known type")
             index = index + 1
 
     ## Iterating through the regions
     if numb_of_white_rectangles == 1:
         rectangle = space.get_flat_white()[0]
         if version == 1:
-            print(f"Using DFS method with {('dreal', 'z3')[solver=='z3']} solver")
-            private_check_deeper(rectangle, constraints, recursion_depth, epsilon, coverage, silent, solver=solver, delta=delta, debug=debug, progress=gui)
+            print(f"Using DFS method with {('dreal', 'z3')[solver == 'z3']} solver")
+            private_check_deeper(rectangle, constraints, recursion_depth, epsilon, coverage, silent, solver=solver,
+                                 delta=delta, debug=debug, progress=gui, timeout=timeout)
         elif version == 2:
-            print(f"Using BFS method with {('dreal', 'z3')[solver=='z3']} solver")
+            print(f"Using BFS method with {('dreal', 'z3')[solver == 'z3']} solver")
             globals()["que"] = Queue()
-            private_check_deeper_queue(rectangle, constraints, recursion_depth, epsilon, coverage, silent, solver=solver, delta=delta, debug=debug, progress=gui)
+            private_check_deeper_queue(rectangle, constraints, recursion_depth, epsilon, coverage, silent,
+                                       solver=solver, delta=delta, debug=debug, progress=gui, timeout=timeout)
         elif version == 3:
-            print(f"Using BFS method with passing examples with {('dreal', 'z3')[solver=='z3']} solver")
+            print(f"Using BFS method with passing examples with {('dreal', 'z3')[solver == 'z3']} solver")
             globals()["que"] = Queue()
-            private_check_deeper_queue_checking(rectangle, constraints, recursion_depth, epsilon, coverage, silent, model=None, solver=solver, delta=delta, debug=debug, progress=gui)
+            private_check_deeper_queue_checking(rectangle, constraints, recursion_depth, epsilon, coverage, silent,
+                                                model=None, solver=solver, delta=delta, debug=debug, progress=gui, timeout=timeout)
         elif version == 4:
-            print(f"Using BFS method with passing examples and counterexamples with {('dreal', 'z3')[solver=='z3']} solver")
+            print(
+                f"Using BFS method with passing examples and counterexamples with {('dreal', 'z3')[solver == 'z3']} solver")
             globals()["que"] = Queue()
-            private_check_deeper_queue_checking_both(rectangle, constraints, recursion_depth, epsilon, coverage, silent, model=None, solver=solver, delta=delta, debug=debug, progress=gui)
+            private_check_deeper_queue_checking_both(rectangle, constraints, recursion_depth, epsilon, coverage, silent,
+                                                     model=None, solver=solver, delta=delta, debug=debug, progress=gui, timeout=timeout)
         elif version == 5:
             print("Using Interval arithmetic")
             globals()["que"] = Queue()
@@ -726,7 +764,8 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                 print("converted_intervals", egg)
 
             # private_check_deeper_interval(region, constraints, intervals, recursion_depth, epsilon, coverage, silent, debug=False, progress=False):
-            private_check_deeper_interval(rectangle, egg[0], egg[1], recursion_depth, epsilon, coverage, silent, debug=debug, progress=gui)
+            private_check_deeper_interval(rectangle, egg[0], egg[1], recursion_depth, epsilon, coverage, silent,
+                                          debug=debug, progress=gui, timeout=timeout)
         else:
             print(colored("Chosen version not found", "red"))
         space_coverage = space.get_coverage()
@@ -771,15 +810,18 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                             print("with constraints", constraints)
                         single_rectangle_start_time = time()
                         if not silent:
-                            print(f"Using DFS method with {('dreal', 'z3')[solver == 'z3']} solver to solve spliced rectangle number {index + 1} of {numb_of_white_rectangles}")
-                        private_check_deeper(rectangle, constraints, next_depth, epsilon, coverage, silent, solver=solver, delta=delta, debug=debug)
+                            print(
+                                f"Using DFS method with {('dreal', 'z3')[solver == 'z3']} solver to solve spliced rectangle number {index + 1} of {numb_of_white_rectangles}")
+                        private_check_deeper(rectangle, constraints, next_depth, epsilon, coverage, silent,
+                                             solver=solver, delta=delta, debug=debug, timeout=timeout)
 
                         ## Showing the step refinements of respective rectangles from the white space
                         ## If the visualisation of the space did not succeed space_shown = (None, error message)
                         space_coverage = space.get_coverage()
                         if not where:
-                            space_shown = space.show(title=f"max_recursion_depth:{next_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version} \n Refinement took {socket.gethostname()} {round(time() - single_rectangle_start_time)} second(s)",
-                                                     green=True, red=True, save=save, where=where, show_all=not gui)
+                            space_shown = space.show(
+                                title=f"max_recursion_depth:{next_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version} \n Refinement took {socket.gethostname()} {round(time() - single_rectangle_start_time)} second(s)",
+                                green=True, red=True, save=save, where=where, show_all=not gui)
                         if not silent:
                             print()
                         if space_coverage >= coverage:
@@ -789,7 +831,9 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                         if debug:
                             print("Adding ", rectangle, "to queue")
                             print("with constraints", constraints)
-                        globals()["que"].enqueue([rectangle, constraints, next_depth, epsilon, coverage, silent, None, solver, delta, debug, gui])
+                        globals()["que"].enqueue(
+                            [rectangle, constraints, next_depth, epsilon, coverage, silent, None, solver, delta, debug,
+                             gui])
                     elif version == 5:
                         if debug:
                             print("Adding ", rectangle, "to queue")
@@ -801,7 +845,8 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                             egg = constraints_to_ineq(constraints, silent=silent, debug=debug)
                         if not egg:
                             return space
-                        globals()["que"].enqueue([rectangle, egg[0], egg[1], next_depth, epsilon, coverage, silent, debug, gui])
+                        globals()["que"].enqueue(
+                            [rectangle, egg[0], egg[1], next_depth, epsilon, coverage, silent, debug, gui])
                     else:
                         print(colored("Chosen version not found", "red"))
                         return space
@@ -811,13 +856,20 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
 
         if not silent and globals()["que"].size() > 0:
             if version == 2:
-                print(colored(f"Using BFS method with {('dreal', 'z3')[solver == 'z3']} solver to solve {numb_of_white_rectangles} white rectangles", "blue"))
+                print(colored(
+                    f"Using BFS method with {('dreal', 'z3')[solver == 'z3']} solver to solve {numb_of_white_rectangles} white rectangles",
+                    "blue"))
             elif version == 3:
-                print(colored(f"Using BFS method with passing examples with {('dreal', 'z3')[solver == 'z3']} solver to solve {numb_of_white_rectangles} white rectangles", "blue"))
+                print(colored(
+                    f"Using BFS method with passing examples with {('dreal', 'z3')[solver == 'z3']} solver to solve {numb_of_white_rectangles} white rectangles",
+                    "blue"))
             elif version == 4:
-                print(colored(f"Using BFS method with passing examples and counterexamples with {('dreal', 'z3')[solver == 'z3']} solver to solve {numb_of_white_rectangles} white rectangles", "blue"))
+                print(colored(
+                    f"Using BFS method with passing examples and counterexamples with {('dreal', 'z3')[solver == 'z3']} solver to solve {numb_of_white_rectangles} white rectangles",
+                    "blue"))
             elif version == 5:
-                print(colored(f"Using interval arithmetic to solve {numb_of_white_rectangles} white rectangles", "blue"))
+                print(
+                    colored(f"Using interval arithmetic to solve {numb_of_white_rectangles} white rectangles", "blue"))
 
             # print(colored(f"with proportional coverage: {next_coverage} and proportional depth {next_depth}", "blue")) ## old stuff
             print(colored(f"with proportional depth: {next_depth}", "blue"))
@@ -835,7 +887,9 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
 
             space_coverage = space.get_coverage()
             if not where:
-                space_shown = space.show(title=f"max_recursion_depth:{next_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version} \n Refinement took {socket.gethostname()} {round(time() - single_rectangle_start_time)} second(s)", green=True, red=True, save=save, where=where, show_all=not gui)
+                space_shown = space.show(
+                    title=f"max_recursion_depth:{next_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version} \n Refinement took {socket.gethostname()} {round(time() - single_rectangle_start_time)} second(s)",
+                    green=True, red=True, save=save, where=where, show_all=not gui)
             if not silent:
                 print()
             if space_coverage >= coverage:
@@ -850,12 +904,16 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
     if not sample_size:
         ## If the visualisation of the space did not succeed space_shown = (None, error message)
         if show_space:
-            space_shown = space.show(green=True, red=True, sat_samples=gui and len(space.params) <= 2, unsat_samples=gui and len(space.params) <= 2, save=save, where=where, show_all=not gui)
+            space_shown = space.show(green=True, red=True, sat_samples=gui and len(space.params) <= 2,
+                                     unsat_samples=gui and len(space.params) <= 2, save=save, where=where,
+                                     show_all=not gui)
         else:
             space_shown = [False]
     else:  ## TODO THIS IS A HOTFIX
         if show_space:
-            space_shown = space.show(green=True, red=True, sat_samples=gui and len(space.params) <= 2, unsat_samples=gui and len(space.params) <= 2, save=save, where=where, show_all=not gui)
+            space_shown = space.show(green=True, red=True, sat_samples=gui and len(space.params) <= 2,
+                                     unsat_samples=gui and len(space.params) <= 2, save=save, where=where,
+                                     show_all=not gui)
         else:
             space_shown = [False]
     print(colored(f"Result coverage is: {space_coverage}", "blue"))
@@ -869,7 +927,8 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         return space
 
 
-def private_check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent, solver="z3", delta=0.01, debug: bool = False, progress=False):
+def private_check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent, solver="z3", delta=0.01,
+                         debug: bool = False, progress=False, timeout=0):
     """ Refining the parameter space into safe and unsafe regions
 
     Args:
@@ -883,16 +942,19 @@ def private_check_deeper(region, constraints, recursion_depth, epsilon, coverage
         delta (number):: used for delta solving using dreal
         debug (bool): if True extensive print will be used
         progress (function or False): function(update_to, update_by) to update progress
+        timeout (int): timeout in seconds (set 0 for no timeout)
     """
     if debug:
         silent = False
 
-    ## TODO check consistency
+        ## TODO check consistency
     # print(region,prop,n,epsilon,coverage,silent)
     # print("check equal", globals()["non_white_area"],non_white_area)
     # print("check equal", globals()["whole_area"],whole_area)
 
     space = globals()["space"]
+
+    ## Halt if timeout - done after checking as it is sequential
 
     ## Stop if the given hyperrectangle is to small
     if get_rectangle_volume(region) < epsilon:
@@ -922,14 +984,16 @@ def private_check_deeper(region, constraints, recursion_depth, epsilon, coverage
     if check_unsafe(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
         result = "unsafe"
         if progress:
-            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))/(coverage - globals()["init_coverage"]))
+            progress(False, (2 ** (-(globals()["init_recursion_depth"] - recursion_depth))) / (
+                        coverage - globals()["init_coverage"]))
         if not silent:
             print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} {result} \n", "red"))
     elif check_safe(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
         result = "safe"
         if progress:
-            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))/(coverage - globals()["init_coverage"]))
+            progress(False, (2 ** (-(globals()["init_recursion_depth"] - recursion_depth))) / (
+                        coverage - globals()["init_coverage"]))
         if not silent:
             print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} {result} \n", "green"))
@@ -968,27 +1032,40 @@ def private_check_deeper(region, constraints, recursion_depth, epsilon, coverage
             print(f"maximal recursion reached here with coverage: {space.get_coverage()}")
         return result
 
+    ## Halt if timeout
+    if time() - globals()["start_time"] >= timeout > 0:
+        if not silent:
+            print(f"timeout reached here with coverage: {space.get_coverage()}")
+        return result
+
     ## Call the alg for the children
     # private_check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent, solver="z3", delta=0.01, debug: bool = False, progress=False)
     if silent:
-        private_check_deeper(foo, constraints, recursion_depth - 1, epsilon, coverage, silent, solver, delta, debug, progress)
+        private_check_deeper(foo, constraints, recursion_depth - 1, epsilon, coverage, silent, solver, delta, debug,
+                             progress, timeout)
         ## Probably not necessary
         # space_coverage = space.get_coverage()
         # if space_coverage >= coverage:
         #     print(colored(f"coverage {space.get_coverage()} is above the threshold", "blue"))
         #     return f"coverage {space.get_coverage()} is above the threshold"
-        private_check_deeper(foo2, constraints, recursion_depth - 1, epsilon, coverage, silent, solver, delta, debug, progress)
+        private_check_deeper(foo2, constraints, recursion_depth - 1, epsilon, coverage, silent, solver, delta, debug,
+                             progress, timeout)
     else:
-        print(recursion_depth, foo, space.get_coverage(), private_check_deeper(foo, constraints, recursion_depth - 1, epsilon, coverage, silent, solver, delta, debug, progress))
+        print(recursion_depth, foo, space.get_coverage(),
+              private_check_deeper(foo, constraints, recursion_depth - 1, epsilon, coverage, silent, solver, delta,
+                                   debug, progress, timeout))
         ## Probably not necessary
         #  space_coverage = space.get_coverage()
         #  if space_coverage >= coverage:
         #     print(colored(f"coverage {space.get_coverage()} is above the threshold", "blue"))
         #     return f"coverage {space.get_coverage()} is above the threshold"
-        print(recursion_depth, foo2, space.get_coverage(), private_check_deeper(foo2, constraints, recursion_depth - 1, epsilon, coverage, silent, solver, delta, debug, progress))
+        print(recursion_depth, foo2, space.get_coverage(),
+              private_check_deeper(foo2, constraints, recursion_depth - 1, epsilon, coverage, silent, solver, delta,
+                                   debug, progress, timeout))
 
 
-def private_check_deeper_queue(region, constraints, recursion_depth, epsilon, coverage, silent, model=None, solver="z3", delta=0.01, debug: bool = False, progress=False):
+def private_check_deeper_queue(region, constraints, recursion_depth, epsilon, coverage, silent, model=None, solver="z3",
+                               delta=0.01, debug: bool = False, progress=False, timeout=0):
     """ Refining the parameter space into safe and unsafe regions
 
     Args:
@@ -1003,6 +1080,7 @@ def private_check_deeper_queue(region, constraints, recursion_depth, epsilon, co
         delta (number):: used for delta solving using dreal
         debug (bool): if True extensive print will be used
         progress (function or False): function(update_to, update_by) to update progress
+        timeout (int): timeout in seconds (set 0 for no timeout)
     """
     if debug:
         silent = False
@@ -1013,6 +1091,12 @@ def private_check_deeper_queue(region, constraints, recursion_depth, epsilon, co
     # print("check equal", globals()["whole_area"],whole_area)
 
     space = globals()["space"]
+
+    ## Halt if timeout
+    if time() - globals()["start_time"] >= timeout > 0:
+        if not silent:
+            print(f"timeout reached here with coverage: {space.get_coverage()}")
+        return
 
     ## Stop if the given hyperrectangle is to small
     if get_rectangle_volume(region) < epsilon:
@@ -1040,14 +1124,16 @@ def private_check_deeper_queue(region, constraints, recursion_depth, epsilon, co
     if check_unsafe(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
         result = "unsafe"
         if progress:
-            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))/(coverage - globals()["init_coverage"]))
+            progress(False, (2 ** (-(globals()["init_recursion_depth"] - recursion_depth))) / (
+                        coverage - globals()["init_coverage"]))
         if not silent:
             print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} {result} \n", "red"))
     elif check_safe(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
         result = "safe"
         if progress:
-            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))/(coverage - globals()["init_coverage"]))
+            progress(False, (2 ** (-(globals()["init_recursion_depth"] - recursion_depth))) / (
+                        coverage - globals()["init_coverage"]))
         if not silent:
             print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} {result} \n", "green"))
@@ -1094,8 +1180,10 @@ def private_check_deeper_queue(region, constraints, recursion_depth, epsilon, co
 
     ## Add calls to the Queue
     # private_check_deeper_queue(region, constraints, recursion_depth, epsilon, coverage, silent, solver="z3", delta=0.01, debug: bool = False, progress = False):
-    globals()["que"].enqueue([copy.deepcopy(foo), constraints, recursion_depth - 1, epsilon, coverage, silent, None, solver, delta, debug, progress])
-    globals()["que"].enqueue([copy.deepcopy(foo2), constraints, recursion_depth - 1, epsilon, coverage, silent, None, solver, delta, debug, progress])
+    globals()["que"].enqueue([copy.deepcopy(foo), constraints, recursion_depth - 1, epsilon, coverage, silent, None,
+                              solver, delta, debug, progress, timeout])
+    globals()["que"].enqueue([copy.deepcopy(foo2), constraints, recursion_depth - 1, epsilon, coverage, silent, None,
+                              solver, delta, debug, progress, timeout])
 
     ## Execute the Queue
     # print(globals()["que"].printQueue())
@@ -1103,7 +1191,8 @@ def private_check_deeper_queue(region, constraints, recursion_depth, epsilon, co
         private_check_deeper_queue(*globals()["que"].dequeue())
 
 
-def private_check_deeper_queue_checking(region, constraints, recursion_depth, epsilon, coverage, silent, model=None, solver="z3", delta=0.01, debug: bool = False, progress=False):
+def private_check_deeper_queue_checking(region, constraints, recursion_depth, epsilon, coverage, silent, model=None,
+                                        solver="z3", delta=0.01, debug: bool = False, progress=False, timeout=0):
     """ THIS IS OBSOLETE METHOD, HERE JUST TO BE COMPARED WITH THE NEW ONE
 
     Refining the parameter space into safe and unsafe regions
@@ -1120,6 +1209,7 @@ def private_check_deeper_queue_checking(region, constraints, recursion_depth, ep
         delta (number):: used for delta solving using dreal
         debug (bool): if True extensive print will be used
         progress (function or False): function(update_to, update_by) to update progress
+        timeout (int): timeout in seconds (set 0 for no timeout)
     """
     if debug:
         silent = False
@@ -1130,6 +1220,12 @@ def private_check_deeper_queue_checking(region, constraints, recursion_depth, ep
     # print("check equal", globals()["whole_area"],whole_area)
 
     space = globals()["space"]
+
+    ## Halt if timeout
+    if time() - globals()["start_time"] >= timeout > 0:
+        if not silent:
+            print(f"timeout reached here with coverage: {space.get_coverage()}")
+        return
 
     ## Stop if the given hyperrectangle is to small
     if get_rectangle_volume(region) < epsilon:
@@ -1167,7 +1263,8 @@ def private_check_deeper_queue_checking(region, constraints, recursion_depth, ep
     if example is True:
         space.remove_white(region)
         if progress:
-            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))/(coverage - globals()["init_coverage"]))
+            progress(False, (2 ** (-(globals()["init_recursion_depth"] - recursion_depth))) / (
+                        coverage - globals()["init_coverage"]))
         if not silent:
             print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} is unsafe", "red"))
@@ -1175,7 +1272,8 @@ def private_check_deeper_queue_checking(region, constraints, recursion_depth, ep
     elif check_safe(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
         space.remove_white(region)
         if progress:
-            progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))/(coverage - globals()["init_coverage"]))
+            progress(False, (2 ** (-(globals()["init_recursion_depth"] - recursion_depth))) / (
+                        coverage - globals()["init_coverage"]))
         if not silent:
             print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()}  is safe", "red"))
@@ -1183,7 +1281,7 @@ def private_check_deeper_queue_checking(region, constraints, recursion_depth, ep
     else:  ## Unknown
         if not silent:
             print("depth, hyper-rectangle, current_coverage, result")
-            print(recursion_depth, region,  colored(f"{space.get_coverage()}, {example}, is unknown", "grey"))
+            print(recursion_depth, region, colored(f"{space.get_coverage()}, {example}, is unknown", "grey"))
 
     ## Parse example
     example_points = parse_model_values(str(example), solver)
@@ -1240,8 +1338,10 @@ def private_check_deeper_queue_checking(region, constraints, recursion_depth, ep
 
     ## Add calls to the Queue
     # private_check_deeper_queue_checking(region, constraints, recursion_depth, epsilon, coverage, silent, model=None, solver="z3", delta=0.01, debug: bool = False, progress = False):
-    globals()["que"].enqueue([copy.deepcopy(foo), constraints, recursion_depth - 1, epsilon, coverage, silent, model_low, solver, delta, debug, progress])
-    globals()["que"].enqueue([copy.deepcopy(foo2), constraints, recursion_depth - 1, epsilon, coverage, silent, model_high, solver, delta, debug, progress])
+    globals()["que"].enqueue([copy.deepcopy(foo), constraints, recursion_depth - 1, epsilon, coverage, silent,
+                              model_low, solver, delta, debug, progress, timeout])
+    globals()["que"].enqueue([copy.deepcopy(foo2), constraints, recursion_depth - 1, epsilon, coverage, silent,
+                              model_high, solver, delta, debug, progress, timeout])
 
     ## Execute the Queue
     # print(globals()["que"].printQueue())
@@ -1249,7 +1349,9 @@ def private_check_deeper_queue_checking(region, constraints, recursion_depth, ep
         private_check_deeper_queue_checking(*globals()["que"].dequeue())
 
 
-def private_check_deeper_queue_checking_both(region, constraints, recursion_depth, epsilon, coverage, silent, model=None, solver="z3", delta=0.01, debug: bool = False, progress=False):
+def private_check_deeper_queue_checking_both(region, constraints, recursion_depth, epsilon, coverage, silent,
+                                             model=None, solver="z3", delta=0.01, debug: bool = False, progress=False,
+                                             timeout=0):
     """ Refining the parameter space into safe and unsafe regions
 
     Args:
@@ -1264,6 +1366,7 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
         delta (number):: used for delta solving using dreal
         debug (bool): if True extensive print will be used
         progress (function or False): function(update_to, update_by) to update progress
+        timeout (int): timeout in seconds (set 0 for no timeout)
     """
 
     ## TODO check consistency
@@ -1272,6 +1375,12 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
     # print("check equal", globals()["whole_area"],whole_area)
 
     space = globals()["space"]
+
+    ## Halt if timeout
+    if time() - globals()["start_time"] >= timeout > 0:
+        if not silent:
+            print(f"timeout reached here with coverage: {space.get_coverage()}")
+        return f"timeout reached here with coverage: {space.get_coverage()}"
 
     ## Stop if the given hyperrectangle is to small
     if get_rectangle_volume(region) < epsilon:
@@ -1326,7 +1435,8 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
         space.remove_white(region)
         if progress:
             # progress(False, (((get_rectangle_volume(region) / space.get_volume()) / globals()["init_white_rectangles"]) / (coverage - globals()["init_coverage"])))
-            progress(False, (get_rectangle_volume(region) / space.get_volume())/(coverage - globals()["init_coverage"]))
+            progress(False,
+                     (get_rectangle_volume(region) / space.get_volume()) / (coverage - globals()["init_coverage"]))
         if not silent:
             print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} is unsafe", "red"))
@@ -1334,7 +1444,8 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
     elif counterexample is True:
         space.remove_white(region)
         if progress:
-            progress(False, (get_rectangle_volume(region) / space.get_volume())/(coverage - globals()["init_coverage"]))
+            progress(False,
+                     (get_rectangle_volume(region) / space.get_volume()) / (coverage - globals()["init_coverage"]))
         if not silent:
             print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()}  is safe", "green"))
@@ -1342,7 +1453,8 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
     else:  ## Unknown
         if not silent:
             print("depth, hyper-rectangle, current_coverage, result")
-            print(recursion_depth, region, colored(f"{space.get_coverage()} {(example, counterexample)} is unknown", "grey"))
+            print(recursion_depth, region,
+                  colored(f"{space.get_coverage()} {(example, counterexample)} is unknown", "grey"))
 
     ## Parse example
     example_points = parse_model_values(str(example), solver)
@@ -1371,7 +1483,13 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
     if recursion_depth == 0:
         return
 
-    ## Initialisation of example and counterexample
+    ## Halt if timeout
+    if time() - globals()["start_time"] >= timeout > 0:
+        if not silent:
+            print(f"timeout reached here with coverage: {space.get_coverage()}")
+        return f"timeout reached here with coverage: {space.get_coverage()}"
+
+        ## Initialisation of example and counterexample
     model_low = [9, 9]
     model_high = [9, 9]
 
@@ -1415,8 +1533,10 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
 
     ## Add calls to the Queue
     # private_check_deeper_queue_checking_both(region, constraints, recursion_depth, epsilon, coverage, silent, model=None, solver="z3", delta=0.01, debug: bool = False, progress=False):
-    globals()["que"].enqueue([copy.deepcopy(foo), constraints, recursion_depth - 1, epsilon, coverage, silent, model_low, solver, delta, debug, progress])
-    globals()["que"].enqueue([copy.deepcopy(foo2), constraints, recursion_depth - 1, epsilon, coverage, silent, model_high, solver, delta, debug, progress])
+    globals()["que"].enqueue([copy.deepcopy(foo), constraints, recursion_depth - 1, epsilon, coverage, silent,
+                              model_low, solver, delta, debug, progress, timeout])
+    globals()["que"].enqueue([copy.deepcopy(foo2), constraints, recursion_depth - 1, epsilon, coverage, silent,
+                              model_high, solver, delta, debug, progress, timeout])
 
     ## Execute the Queue
     # print(globals()["que"].printQueue())
@@ -1441,21 +1561,27 @@ def color_margins(greater, smaller):
     if len(smaller) == 1:
         ## Color 2 regions, to the left, to the right
         ## To the left
-        globals()["rectangles_unsat_added"].append(Rectangle((greater[0][0], 0), smaller[0][0] - greater[0][0], 1, fc='r'))
+        globals()["rectangles_unsat_added"].append(
+            Rectangle((greater[0][0], 0), smaller[0][0] - greater[0][0], 1, fc='r'))
         ## To the right
-        globals()["rectangles_unsat_added"].append(Rectangle((smaller[0][1], 0), greater[0][1] - smaller[0][1], 1, fc='r'))
+        globals()["rectangles_unsat_added"].append(
+            Rectangle((smaller[0][1], 0), greater[0][1] - smaller[0][1], 1, fc='r'))
 
     ## Else 2 dimensional coloring
     elif len(smaller) == 2:
         ## Color 4 regions, to the left, to the right, below, and above
         ## TODO
-        globals()["rectangles_unsat_added"].append(Rectangle((greater[0][0], 0), smaller[0][0] - greater[0][0], 1, fc='r'))
+        globals()["rectangles_unsat_added"].append(
+            Rectangle((greater[0][0], 0), smaller[0][0] - greater[0][0], 1, fc='r'))
         ## TODO
-        globals()["rectangles_unsat_added"].append(Rectangle((smaller[0][1], 0), greater[0][1] - smaller[0][1], 1, fc='r'))
+        globals()["rectangles_unsat_added"].append(
+            Rectangle((smaller[0][1], 0), greater[0][1] - smaller[0][1], 1, fc='r'))
         ## TODO
-        globals()["rectangles_unsat_added"].append(Rectangle((smaller[0][0], 0), smaller[0][1] - smaller[0][0], smaller[1][0], fc='r'))
+        globals()["rectangles_unsat_added"].append(
+            Rectangle((smaller[0][0], 0), smaller[0][1] - smaller[0][0], smaller[1][0], fc='r'))
         ## TODO
-        globals()["rectangles_unsat_added"].append(Rectangle((smaller[0][0], smaller[1][1]), smaller[0][1] - smaller[0][0], 1 - smaller[1][0], fc='r'))
+        globals()["rectangles_unsat_added"].append(
+            Rectangle((smaller[0][0], smaller[1][1]), smaller[0][1] - smaller[0][0], 1 - smaller[1][0], fc='r'))
     else:
         print("Error, trying to color more than 2 dimensional hyperrectangle")
 
@@ -1474,7 +1600,8 @@ def color_margins(greater, smaller):
     # pic.add_collection(pc)
 
 
-def check_deeper_iter(region, constraints, recursion_depth, epsilon, coverage, silent, solver="z3", delta=0.01, debug: bool = False):
+def check_deeper_iter(region, constraints, recursion_depth, epsilon, coverage, silent, solver="z3", delta=0.01,
+                      debug: bool = False, timeout=0):
     """ New Refining the parameter space into safe and unsafe regions with iterative method using alg1
 
     Args:
@@ -1487,6 +1614,7 @@ def check_deeper_iter(region, constraints, recursion_depth, epsilon, coverage, s
         solver (string):: specified solver, allowed: z3, dreal
         delta (number):: used for delta solving using dreal
         debug (bool): if True extensive print will be used
+        timeout (int): timeout in seconds (set 0 for no timeout)
     """
     new_tresh = copy.deepcopy(region)
 
@@ -1580,7 +1708,7 @@ def check_interval_in(region, constraints, intervals, silent: bool = False, call
             return False
         else:
             if debug:
-                print(f'property {constraints.index(prop)+1} ϵ {eval(prop)} {colored(" is safe", "green")}')
+                print(f'property {constraints.index(prop) + 1} ϵ {eval(prop)} {colored(" is safe", "green")}')
 
         i = i + 1
 
@@ -1627,7 +1755,8 @@ def check_interval_out(region, constraints, intervals, silent: bool = False, cal
             # print(mpi(region[i][0], region[i][1]))
             globals()[param] = mpi(region[i][0], region[i][1])
         except:
-            print(f"Error occurred while region: {region}, with param {globals()[param]} of interval {mpi(region[i][0], region[i][1])}")
+            print(
+                f"Error occurred while region: {region}, with param {globals()[param]} of interval {mpi(region[i][0], region[i][1])}")
 
         i = i + 1
 
@@ -1653,7 +1782,8 @@ def check_interval_out(region, constraints, intervals, silent: bool = False, cal
         ## If there exists an intersection (neither of these interval is greater in all points)
         if not (prop_eval > interval or prop_eval < interval):
             if debug:
-                print(f"property {constraints.index(prop) + 1} ϵ {eval(prop)}, which is not outside of interval {interval}")
+                print(
+                    f"property {constraints.index(prop) + 1} ϵ {eval(prop)}, which is not outside of interval {interval}")
         else:
             space.add_red(region)
             if debug:
@@ -1663,7 +1793,8 @@ def check_interval_out(region, constraints, intervals, silent: bool = False, cal
     return False
 
 
-def private_check_deeper_interval(region, constraints, intervals, recursion_depth, epsilon, coverage, silent, debug: bool = False, progress=False):
+def private_check_deeper_interval(region, constraints, intervals, recursion_depth, epsilon, coverage, silent,
+                                  debug: bool = False, progress=False, timeout=0):
     """ Refining the parameter space into safe and unsafe regions
 
     Args:
@@ -1676,6 +1807,7 @@ def private_check_deeper_interval(region, constraints, intervals, recursion_dept
         silent (bool): if silent printed output is set to minimum
         debug (bool): if True extensive print will be used
         progress (function or False): function(update_to, update_by) to update progress
+        timeout (int): timeout in seconds (set 0 for no timeout)
     """
     if debug:
         silent = False
@@ -1686,6 +1818,12 @@ def private_check_deeper_interval(region, constraints, intervals, recursion_dept
     # print("check equal", globals()["whole_area"],whole_area)
 
     space = globals()["space"]
+
+    ## Halt if timeout
+    if time() - globals()["start_time"] >= timeout > 0:
+        if not silent:
+            print(f"timeout reached here with coverage: {space.get_coverage()}")
+        return
 
     ## TODO
     # if presampled:
@@ -1726,7 +1864,8 @@ def private_check_deeper_interval(region, constraints, intervals, recursion_dept
                 ## Proportion of que lenght and initial number of white rectangles
                 progress(1 - globals()["que"].size() / globals()["numb_of_white_rectangles"])
             else:
-                progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))/(coverage - globals()["init_coverage"]))
+                progress(False, (2 ** (-(globals()["init_recursion_depth"] - recursion_depth))) / (
+                            coverage - globals()["init_coverage"]))
         if not silent:
             print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} {result} \n", "red"))
@@ -1739,7 +1878,8 @@ def private_check_deeper_interval(region, constraints, intervals, recursion_dept
                 ## Proportion of que lenght and initial number of white rectangles
                 progress(1 - globals()["que"].size() / globals()["numb_of_white_rectangles"])
             else:
-                progress(False, (2**(-(globals()["init_recursion_depth"] - recursion_depth)))/(coverage - globals()["init_coverage"]))
+                progress(False, (2 ** (-(globals()["init_recursion_depth"] - recursion_depth))) / (
+                            coverage - globals()["init_coverage"]))
         if not silent:
             print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()} {result} \n", "green"))
@@ -1779,6 +1919,12 @@ def private_check_deeper_interval(region, constraints, intervals, recursion_dept
     if recursion_depth == 0:
         return
 
+    ## Halt if timeout
+    if time() - globals()["start_time"] >= timeout > 0:
+        if not silent:
+            print(f"timeout reached here with coverage: {space.get_coverage()}")
+        return
+
     ## Check if the que created (if alg1 used before it is not)
     try:
         type(globals()["que"])
@@ -1787,8 +1933,10 @@ def private_check_deeper_interval(region, constraints, intervals, recursion_dept
 
     ## Add calls to the Queue
     # private_check_deeper_interval(region, constraints, intervals, recursion_depth, epsilon, coverage, silent, debug: bool = False, progress=False):
-    globals()["que"].enqueue([copy.deepcopy(foo), constraints, intervals, recursion_depth - 1, epsilon, coverage, silent, debug, progress])
-    globals()["que"].enqueue([copy.deepcopy(foo2), constraints, intervals, recursion_depth - 1, epsilon, coverage, silent, debug, progress])
+    globals()["que"].enqueue([copy.deepcopy(foo), constraints, intervals, recursion_depth - 1, epsilon, coverage,
+                              silent, debug, progress, timeout])
+    globals()["que"].enqueue([copy.deepcopy(foo2), constraints, intervals, recursion_depth - 1, epsilon, coverage,
+                              silent, debug, progress, timeout])
 
     ## Execute the queue
     # print(globals()["que"].printQueue())
