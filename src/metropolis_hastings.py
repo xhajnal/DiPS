@@ -283,6 +283,7 @@ class HastingsResults:
                 plt.ylabel(self.params[1])
                 plt.title("\n".join(wrapper.wrap(self.title)))
                 where[1] = plt.colorbar()
+                where[1].set_label('# of accepted points per bin', rotation=270, labelpad=20)
                 return where[0], where[1]
             else:
                 plt.figure(figsize=(12, 6))
@@ -291,6 +292,7 @@ class HastingsResults:
                 plt.xlabel(self.params[0])
                 plt.ylabel(self.params[1])
                 plt.title(self.title)
+                plt.set_label('# of accepted points per bin', rotation=270, labelpad=20)
                 plt.show()
 
     def show_iterations(self, where=False):

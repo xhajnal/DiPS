@@ -662,8 +662,8 @@ class Gui(Tk):
         self.sample_size_entry.grid(row=1, column=1)
         self.sample_size_entry.insert(END, '5')
 
-        Button(frame_left, text='Grid sampling', command=self.sample_space).grid(row=8, column=0, columnspan=2, padx=10, pady=4)
-        Button(frame_left, text='Grid quantitative sampling', command=self.sample_space_degree).grid(row=9, column=0,  columnspan=2, padx=10, pady=4)
+        Button(frame_left, text='Grid sampling', command=self.sample_space).grid(row=7, column=0, columnspan=2, padx=10, pady=4)
+        Button(frame_left, text='Grid quantitative sampling', command=self.sample_space_degree).grid(row=8, column=0,  columnspan=2, padx=10, pady=4)
 
         ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=2, rowspan=7, sticky='ns', padx=25, pady=25)
 
@@ -674,42 +674,42 @@ class Gui(Tk):
         # self.observations_samples_size_entry.grid(row=1, column=8)
         # self.observations_samples_size_entry.insert(END, '500')
 
-        label71 = Label(frame_left, text="# of iteration: ", anchor=W, justify=LEFT)
+        label71 = Label(frame_left, text="# of iterations: ", anchor=W, justify=LEFT)
         label71.grid(row=1, column=7, padx=0)
         createToolTip(label71, text='Number of iterations, steps in parameter space')
         self.MH_sampling_iterations_entry = Entry(frame_left)
         self.MH_sampling_iterations_entry.grid(row=1, column=8)
         self.MH_sampling_iterations_entry.insert(END, '500')
 
-        label72 = Label(frame_left, text="Eps: ", anchor=W, justify=LEFT)
-        label72.grid(row=2, column=7)
-        createToolTip(label72, text='Very small value used as probability of non-feasible values in prior')
-        self.eps_entry = Entry(frame_left)
-        self.eps_entry.grid(row=2, column=8)
-        self.eps_entry.insert(END, '0.0001')
+        # label72 = Label(frame_left, text="Eps: ", anchor=W, justify=LEFT)
+        # label72.grid(row=2, column=7)
+        # createToolTip(label72, text='Very small value used as probability of non-feasible values in prior')
+        # self.eps_entry = Entry(frame_left)
+        # self.eps_entry.grid(row=2, column=8)
+        # self.eps_entry.insert(END, '0.0001')
 
         label73 = Label(frame_left, text="Grid size: ", anchor=W, justify=LEFT)
-        label73.grid(row=3, column=7)
+        label73.grid(row=2, column=7)
         createToolTip(label73, text='Number of segments in the plot')
         self.bins = Entry(frame_left)
-        self.bins.grid(row=3, column=8)
+        self.bins.grid(row=2, column=8)
         self.bins.insert(END, '20')
 
         label73 = Label(frame_left, text="Burn-in: ", anchor=W, justify=LEFT)
-        label73.grid(row=4, column=7)
+        label73.grid(row=3, column=7)
         createToolTip(label73, text='Trim the fraction of accepted points from beginning')
         self.show = Entry(frame_left)
-        self.show.grid(row=4, column=8)
+        self.show.grid(row=3, column=8)
         self.show.insert(END, '0.25')
 
         label73 = Label(frame_left, text="Timeout: ", anchor=W, justify=LEFT)
-        label73.grid(row=5, column=7)
+        label73.grid(row=4, column=7)
         createToolTip(label73, text='Timeout in seconds')
         self.mh_timeout_entry = Entry(frame_left)
-        self.mh_timeout_entry.grid(row=5, column=8)
+        self.mh_timeout_entry.grid(row=4, column=8)
         self.mh_timeout_entry.insert(END, '3600')
 
-        Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=9, column=7, columnspan=2, pady=4)
+        Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=8, column=7, columnspan=2, pady=4)
 
         ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=5, rowspan=7, sticky='ns', padx=25, pady=25)
 
@@ -719,34 +719,36 @@ class Gui(Tk):
         label63 = Label(frame_left, text="Coverage: ", anchor=W, justify=LEFT)
         label63.grid(row=2, column=3, padx=0)
         createToolTip(label63, text='Proportion of the nonwhite area to be reached')
-        label64 = Label(frame_left, text="Epsilon: ", anchor=W, justify=LEFT)
-        label64.grid(row=3, column=3, padx=0)
-        createToolTip(label64, text='Minimal size of the rectangle to be checked (if 0 all rectangles are being checked)')
+
+        # label64 = Label(frame_left, text="Epsilon: ", anchor=W, justify=LEFT)
+        # label64.grid(row=3, column=3, padx=0)
+        # createToolTip(label64, text='Minimal size of the rectangle to be checked (if 0 all rectangles are being checked)')
+
         label65 = Label(frame_left, text="Algorithm: ", anchor=W, justify=LEFT)
-        label65.grid(row=4, column=3, padx=0)
+        label65.grid(row=3, column=3, padx=0)
         createToolTip(label65, text='Choose from algorithms:\n 1-4 - using SMT solvers \n 1 - DFS search \n 2 - BFS search \n 3 - BFS search with example propagation \n 4 - BFS with example and counterexample propagation \n 5 - interval algorithmic')
 
         label66 = Label(frame_left, text="SMT solver: ", anchor=W, justify=LEFT)
-        label66.grid(row=5, column=3, padx=0)
+        label66.grid(row=4, column=3, padx=0)
         createToolTip(label66, text='When using SMT solver (alg 1-4), two options are possible, z3 or dreal (with delta complete decision procedures)')
 
         label67 = Label(frame_left, text="Delta for dreal: ", anchor=W, justify=LEFT)
-        label67.grid(row=6, column=3, padx=0)
+        label67.grid(row=5, column=3, padx=0)
         createToolTip(label67, text='When using dreal solver, delta is used to set solver error boundaries for satisfiability.')
 
         label68 = Label(frame_left, text="Timeout: ", anchor=W, justify=LEFT)
-        label68.grid(row=7, column=3, padx=0)
+        label68.grid(row=6, column=3, padx=0)
         createToolTip(label68, text='Timeout in seconds')
 
         presampled_refinement_checkbutton = Checkbutton(frame_left, text="Use presampled refinement", variable=self.presampled_refinement)
-        presampled_refinement_checkbutton.grid(row=8, column=3, columnspan=2, padx=0)
+        presampled_refinement_checkbutton.grid(row=7, column=3, columnspan=2, padx=0)
 
         # iterative_refinement_checkbutton = Checkbutton(frame_left, text="Use iterative refinement (TBD)", variable=self.iterative_refinement)
         # iterative_refinement_checkbutton.grid(row=8, column=3, padx=0)
 
         self.max_dept_entry = Entry(frame_left)
         self.coverage_entry = Entry(frame_left)
-        self.epsilon_entry = Entry(frame_left)
+        # self.epsilon_entry = Entry(frame_left)
         self.alg_entry = ttk.Combobox(frame_left, values=('1', '2', '3', '4', '5'))
         self.solver_entry = ttk.Combobox(frame_left, values=('z3', 'dreal'))
         self.delta_entry = Entry(frame_left)
@@ -754,21 +756,21 @@ class Gui(Tk):
 
         self.max_dept_entry.grid(row=1, column=4)
         self.coverage_entry.grid(row=2, column=4)
-        self.epsilon_entry.grid(row=3, column=4)
-        self.alg_entry.grid(row=4, column=4)
-        self.solver_entry.grid(row=5, column=4)
-        self.delta_entry.grid(row=6, column=4)
-        self.refinement_timeout_entry.grid(row=7, column=4)
+        # self.epsilon_entry.grid(row=3, column=4)
+        self.alg_entry.grid(row=3, column=4)
+        self.solver_entry.grid(row=4, column=4)
+        self.delta_entry.grid(row=5, column=4)
+        self.refinement_timeout_entry.grid(row=6, column=4)
 
         self.max_dept_entry.insert(END, '5')
         self.coverage_entry.insert(END, '0.95')
-        self.epsilon_entry.insert(END, '0')
+        # self.epsilon_entry.insert(END, '0')
         self.alg_entry.current(3)
         self.solver_entry.current(0)
         self.delta_entry.insert(END, '0.01')
         self.refinement_timeout_entry.insert(END, '3600')
 
-        Button(frame_left, text='Refine space', command=self.refine_space).grid(row=9, column=3, columnspan=2, pady=4, padx=0)
+        Button(frame_left, text='Refine space', command=self.refine_space).grid(row=8, column=3, columnspan=2, pady=4, padx=0)
 
         ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=10, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
 
@@ -3197,7 +3199,8 @@ class Gui(Tk):
             assert isinstance(self.functions, list)
             self.mh_results = initialise_sampling(self.space, self.data, self.functions, int(self.n_samples_entry.get()),
                                                   int(self.MH_sampling_iterations_entry.get()),
-                                                  float(self.eps_entry.get()), theta_init=self.parameter_point,
+                                                  0,  #float(self.eps_entry.get()), ## setting eps=0
+                                                  theta_init=self.parameter_point,
                                                   where=[self.page6_figure2, self.page6_b],
                                                   progress=self.update_progress_bar, debug=self.debug.get(),
                                                   bins=int(self.bins.get()), burn_in=float(self.show.get()),
@@ -3265,7 +3268,8 @@ class Gui(Tk):
         ## Getting values from entry boxes
         self.max_depth = int(self.max_dept_entry.get())
         self.coverage = float(self.coverage_entry.get())
-        self.epsilon = float(self.epsilon_entry.get())
+        # self.epsilon = float(self.epsilon_entry.get())
+        self.epsilon = 0  ## no minimal size of hyperrectangle
         self.delta = float(self.delta_entry.get())
         if not isinstance(self.space, str):
             self.space_coverage = float(self.space.get_coverage())
