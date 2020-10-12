@@ -34,6 +34,8 @@ Feel free to leave response either via issues or an email.
 *****
 ## HOW TO INSTALL
 
+The tool was developed and optimised for Win10 and Ubuntu. The tool may not function properly on different operational systems.
+
 ### 1. INSTALL DEPENDENCIES:
 
 * [Python](https://www.python.org/) 3.7
