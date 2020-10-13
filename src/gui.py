@@ -230,6 +230,10 @@ class Gui(Tk):
         self.show_quantitative = None  ## flag telling whether to show quantitative sampling
         self.show_red_in_multidim_refinement = BooleanVar()  ## Chooses whether to show unsafe space over safe space in multidimensional plot
         self.show_red_in_multidim_refinement.set(False)
+        self.hide_legend_refinement = BooleanVar()  ## Chooses to hide legend in upper plot
+        self.hide_legend_refinement.set(False)
+        self.hide_title_refinement = BooleanVar()  ## Chooses to hide title in upper plot
+        self.hide_title_refinement.set(False)
         ## Metropolis-Hastings visualisation settings
         self.show_mh_as_scatter = BooleanVar()  ## Sets the MH plot to scatter plot (even for 2D)
         self.show_mh_metadata = BooleanVar()  ## Chooses whether to visualise MH metadata plots or not
@@ -309,43 +313,48 @@ class Gui(Tk):
         self.functions_label = Label(left_frame, textvariable=self.functions_file, anchor=W, justify=LEFT)
         self.functions_label.grid(row=2, column=1, sticky=W, padx=4)
 
-        Label(left_frame, text=f"Data file:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, padx=4)
-        self.data_label = Label(left_frame, textvariable=self.data_file, anchor=W, justify=LEFT)
-        self.data_label.grid(row=3, column=1, sticky=W, padx=4)
-
         center_frame = Frame(frame)
         center_frame.grid(row=0, column=1, sticky="nsew")
 
-        Label(center_frame, text=f"Data intervals file:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, padx=4)
+        Label(center_frame, text=f"Data file:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, padx=4)
+        self.data_label = Label(center_frame, textvariable=self.data_file, anchor=W, justify=LEFT)
+        self.data_label.grid(row=1, column=1, sticky=W, padx=4)
+
+        Label(center_frame, text=f"Data intervals file:", anchor=W, justify=LEFT).grid(row=2, column=0, sticky=W, padx=4)
         self.data_intervals_label = Label(center_frame, textvariable=self.data_intervals_file, anchor=W, justify=LEFT)
-        self.data_intervals_label.grid(row=1, column=1, columnspan=2, sticky=W, padx=4)
+        self.data_intervals_label.grid(row=2, column=1, columnspan=2, sticky=W, padx=4)
 
-        Label(center_frame, text=f"Constraints file:", anchor=W, justify=LEFT).grid(row=2, column=0, sticky=W, padx=4)
+        Label(center_frame, text=f"Constraints file:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, padx=4)
         self.constraints_label = Label(center_frame, textvariable=self.constraints_file, anchor=W, justify=LEFT)
-        self.constraints_label.grid(row=2, column=1, columnspan=2, sticky=W, padx=4)
+        self.constraints_label.grid(row=3, column=1, columnspan=2, sticky=W, padx=4)
 
-        Label(center_frame, text=f"Space file:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, padx=4)
-        self.space_label = Label(center_frame, textvariable=self.space_file, anchor=W, justify=LEFT)
-        self.space_label.grid(row=3, column=1, columnspan=2, sticky=W, padx=4)
+        right_frame = Frame(frame)
+        right_frame.grid(row=0, column=2, sticky="nsew")
 
-        Label(center_frame, text=f"Metropolis-Hastings file:", anchor=W, justify=LEFT).grid(row=4, column=0, sticky=W, padx=4)
-        self.hastings_label = Label(center_frame, textvariable=self.hastings_file, anchor=W, justify=LEFT)
-        self.hastings_label.grid(row=4, column=1, columnspan=2, sticky=W, padx=4)
+        Label(right_frame, text=f"Space file:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, padx=4)
+        self.space_label = Label(right_frame, textvariable=self.space_file, anchor=W, justify=LEFT)
+        self.space_label.grid(row=1, column=1, columnspan=2, sticky=W, padx=4)
+
+        Label(right_frame, text=f"Metropolis-Hastings file:", anchor=W, justify=LEFT).grid(row=2, column=0, sticky=W, padx=4)
+        self.hastings_label = Label(right_frame, textvariable=self.hastings_file, anchor=W, justify=LEFT)
+        self.hastings_label.grid(row=2, column=1, columnspan=2, sticky=W, padx=4)
+
+        autosave_figures_button = Checkbutton(right_frame, text="Autosave figures", variable=self.save)
+        autosave_figures_button.grid(row=3, column=0, sticky=W, padx=4)
+        createToolTip(autosave_figures_button, text='Check to autosave results figures in folder results/figures')
+        show_print_checkbutton = Checkbutton(right_frame, text="Minimal output", variable=self.silent)
+        show_print_checkbutton.grid(row=3, column=1, sticky=W, padx=4)
+        debug_checkbutton = Checkbutton(right_frame, text="Extensive output", variable=self.debug)
+        debug_checkbutton.grid(row=3, column=2, sticky=W, padx=4)
+        mh_metadata_button = Checkbutton(right_frame, text="Show MH metadata plots", variable=self.show_mh_metadata)
+        mh_metadata_button.grid(row=3, column=3, sticky=W, padx=4)
+        createToolTip(mh_metadata_button, text='Check to plot metadata plots of Metropolis-Hastings')
 
         frame.rowconfigure(0, weight=1)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
+        frame.columnconfigure(2, weight=1)
 
-        autosave_figures_button = Checkbutton(center_frame, text="Autosave figures", variable=self.save)
-        autosave_figures_button.grid(row=5, column=0, sticky=W, padx=4)
-        createToolTip(autosave_figures_button, text='Check to autosave results figures in folder results/figures')
-        show_print_checkbutton = Checkbutton(center_frame, text="Minimal output", variable=self.silent)
-        show_print_checkbutton.grid(row=5, column=1, sticky=W, padx=4)
-        debug_checkbutton = Checkbutton(center_frame, text="Extensive output", variable=self.debug)
-        debug_checkbutton.grid(row=5, column=2, sticky=W, padx=4)
-        mh_metadata_button = Checkbutton(center_frame, text="Show MH metadata plots", variable=self.show_mh_metadata)
-        mh_metadata_button.grid(row=5, column=3, sticky=W, padx=4)
-        createToolTip(mh_metadata_button, text='Check to plot metadata plots of Metropolis-Hastings')
         # print("self.silent", self.silent.get())
 
         ################################################################################################################
@@ -635,9 +644,9 @@ class Gui(Tk):
         # frame_left = Frame(page6, width=500, height=200)
         # frame_left.pack(side=LEFT, expand=False)
         if self.winfo_screenwidth() < 2500:
-            frame_left = Frame(page6, width=int(self.winfo_width() * 0.5), height=int(self.winfo_height()))
+            frame_left = Frame(page6, width=int(self.winfo_width() * 0.45), height=int(self.winfo_height()))
         else:
-            frame_left = Frame(page6, width=int(self.winfo_width() * 0.4), height=int(self.winfo_height()))
+            frame_left = Frame(page6, width=int(self.winfo_width() * 0.4), height=int(self.winfo_height()))  ##4K
         frame_left.pack(side=LEFT)
         frame_left.grid_propagate(0)
         frame_left.rowconfigure(16, weight=1)
@@ -665,7 +674,7 @@ class Gui(Tk):
         Button(frame_left, text='Grid sampling', command=self.sample_space).grid(row=7, column=0, columnspan=2, padx=10, pady=4)
         Button(frame_left, text='Grid quantitative sampling', command=self.sample_space_degree).grid(row=8, column=0,  columnspan=2, padx=10, pady=4)
 
-        ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=2, rowspan=7, sticky='ns', padx=25, pady=25)
+        # ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=2, rowspan=7, sticky='ns', padx=25, pady=25)
 
         # label71 = Label(frame_left, text="# of samples: ", anchor=W, justify=LEFT)
         # label71.grid(row=1, column=7)
@@ -675,7 +684,7 @@ class Gui(Tk):
         # self.observations_samples_size_entry.insert(END, '500')
 
         label71 = Label(frame_left, text="# of iterations: ", anchor=W, justify=LEFT)
-        label71.grid(row=1, column=7, padx=0)
+        label71.grid(row=1, column=7, padx=(0, 2))
         createToolTip(label71, text='Number of iterations, steps in parameter space')
         self.MH_sampling_iterations_entry = Entry(frame_left)
         self.MH_sampling_iterations_entry.grid(row=1, column=8)
@@ -711,7 +720,7 @@ class Gui(Tk):
 
         Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=8, column=7, columnspan=2, pady=4)
 
-        ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=5, rowspan=7, sticky='ns', padx=25, pady=25)
+        # ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=5, rowspan=7, sticky='ns', padx=25, pady=25)
 
         label62 = Label(frame_left, text="Max dept: ", anchor=W, justify=LEFT)
         label62.grid(row=1, column=3, padx=0)
@@ -777,14 +786,16 @@ class Gui(Tk):
         Label(frame_left, text="Textual representation of space", anchor=CENTER, justify=CENTER, padx=10).grid(row=11, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
         self.space_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_height() * 0.8/19), state=DISABLED)
         self.space_text.grid(row=13, column=0, columnspan=9, rowspan=2, sticky=W, padx=10)
-        Button(frame_left, text='Extend / Collapse text', command=self.collapse_space_text).grid(row=15, column=3, sticky=S, padx=4, pady=(10, 10))
-        Button(frame_left, text='Export text', command=self.export_space_text).grid(row=15, column=4, sticky=S, padx=4, pady=(10, 10))
+        Button(frame_left, text='Extend / Collapse text', command=self.collapse_space_text).grid(row=15, column=3, sticky=S, padx=0, pady=(10, 10))
+        Button(frame_left, text='Export text', command=self.export_space_text).grid(row=15, column=4, sticky=S, padx=0, pady=(10, 10))
 
         frame_right = Frame(page6)
         # frame_right.grid_propagate(0)
         # frame_right.rowconfigure(9, weight=1)
         # frame_right.columnconfigure(1, weight=1)
         frame_right.pack(side=RIGHT, fill=BOTH, anchor=W)
+
+        Button(frame_right, text='Set True point', command=self.set_true_point).grid(row=0, column=0, padx=(4, 4), pady=7)
 
         Button(frame_right, text='Open space', command=self.load_space).grid(row=1, column=0, padx=(4, 4), pady=7)
         Button(frame_right, text='Save space', command=self.save_space).grid(row=2, column=0, padx=(4, 4), pady=7)
@@ -805,11 +816,11 @@ class Gui(Tk):
         frame_right.rowconfigure(4, weight=1)
         frame_right.rowconfigure(8, weight=1)
 
-        Button(self.frame_center, text='Set True point', command=self.set_true_point).pack(side=TOP, pady=10)
+
 
         ##################################################### UPPER PLOT ###############################################
         self.page6_plotframe = Frame(self.frame_center)
-        self.page6_plotframe.pack(side=TOP, fill=Y, expand=True)
+        self.page6_plotframe.pack(side=TOP, fill=Y, expand=True, padx=5, pady=5)
         self.page6_figure = pyplt.figure(figsize=(8, 2))
         self.page6_figure.tight_layout()  ## By huypn
 
@@ -1860,7 +1871,8 @@ class Gui(Tk):
                     figure, axis = self.space.show(green=show_refinement, red=show_refinement, sat_samples=show_samples,
                                                    unsat_samples=show_samples, true_point=show_true_point, save=False,
                                                    where=[self.page6_figure, self.page6_a], show_all=show_all,
-                                                   prefer_unsafe=prefer_unsafe, quantitative=quantitative)
+                                                   prefer_unsafe=prefer_unsafe, quantitative=quantitative,
+                                                   hide_legend=self.hide_legend_refinement.get(), hide_title=self.hide_title_refinement.get())
                     ## If no plot provided
                     if figure is None:
                         messagebox.showinfo("Load Space", axis)
@@ -1892,14 +1904,15 @@ class Gui(Tk):
         else:
             # print(self.space.nice_print())
             assert isinstance(self.space, space.RefinedSpace)
+            if self.space.true_point:
+                self.space.true_point_object.remove()
             self.parameter_domains = self.space.region
             self.create_window_to_load_param_point(parameters=self.space.params)
             self.space.true_point = self.parameter_point
             self.show_true_point = True
 
             self.print_space()
-
-            figure, axis = self.space.show_true_point(where=[self.page6_figure, self.page6_a])
+            figure, axis = self.space.show_true_point(where=[self.page6_figure, self.page6_a], hide_legend=self.hide_legend_refinement.get())
 
             ## If no plot provided
             if figure is None:
@@ -3379,7 +3392,8 @@ class Gui(Tk):
             messagebox.showinfo("Space refinement", spam[1])
         else:
             self.space = spam
-            self.show_space(show_refinement=True, show_samples=self.show_samples, show_true_point=self.show_true_point, prefer_unsafe=self.show_red_in_multidim_refinement.get(), show_all=show_all)
+            self.show_space(show_refinement=True, show_samples=self.show_samples, show_true_point=self.show_true_point,
+                            prefer_unsafe=self.show_red_in_multidim_refinement.get(), show_all=show_all)
             self.page6_figure.tight_layout()  ## By huypn
             self.page6_figure.canvas.draw()
             self.page6_figure.canvas.flush_events()
@@ -3577,7 +3591,7 @@ class Gui(Tk):
     def customize_refinement_results(self):
         """ Customizes refinement Plot"""
         if self.refinement_results:
-            if not askyesno("Sample & Refine", "Sample & Refinem plot will be lost. Do you want to proceed?"):
+            if not askyesno("Sample & Refine", "Sample & Refinement plot will be lost. Do you want to proceed?"):
                 return
 
         self.new_window = Toplevel(self)
@@ -3586,6 +3600,10 @@ class Gui(Tk):
 
         show_red_in_multidim_refinement_chekbutton = Checkbutton(self.new_window, text="Show unsafe space instead of safe space in multidimensional plot.", variable=self.show_red_in_multidim_refinement)
         show_red_in_multidim_refinement_chekbutton.grid(row=1, column=0)
+        hide_legend_chekbutton = Checkbutton(self.new_window, text="Hide plot legend.", variable=self.hide_legend_refinement)
+        hide_legend_chekbutton.grid(row=2, column=0)
+        hide_title_chekbutton = Checkbutton(self.new_window, text="Hide plot legend.", variable=self.hide_title_refinement)
+        hide_title_chekbutton.grid(row=3, column=0)
 
         ## To be used to wait until the button is pressed
         self.button_pressed.set(False)
@@ -4057,7 +4075,7 @@ class Gui(Tk):
             self.page6_plotframe2.destroy()
 
         self.page6_plotframe2 = Frame(self.frame_center)
-        self.page6_plotframe2.pack(side=TOP, fill=Y, expand=True)
+        self.page6_plotframe2.pack(side=TOP, fill=Y, expand=True, padx=5)
 
         self.page6_figure2 = pyplt.figure(figsize=(8, 2))
         self.page6_figure2.tight_layout()  ## By huypn
@@ -4073,6 +4091,7 @@ class Gui(Tk):
 
 
 if __name__ == '__main__':
+    sys.setrecursionlimit(20000)
     info = sys.version_info
     if info[0] < 3:
         sys.exit(f"Python {info[0]} is not supported.")
@@ -4095,7 +4114,7 @@ if __name__ == '__main__':
     gui.autoload(True)
 
     gui.protocol('WM_DELETE_WINDOW', gui.ask_quit)
-    sys.setrecursionlimit(20000)
     gui.gui_init()
+
     gui.autoload()
     gui.mainloop()

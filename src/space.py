@@ -2,7 +2,7 @@ import os
 import socket
 import copy
 import numpy as np
-from matplotlib import colors
+from matplotlib import colors, patches
 from numpy import prod
 from collections.abc import Iterable
 from time import localtime, strftime
@@ -225,7 +225,8 @@ class RefinedSpace:
         ## TEXT WRAPPER
         self.wrapper = DocumentWrapper(width=70)
 
-    def show(self, title="", green=True, red=True, sat_samples=False, unsat_samples=False, quantitative=False, true_point=True, save=False, where=False, show_all=True, prefer_unsafe=None):
+    def show(self, title="", green=True, red=True, sat_samples=False, unsat_samples=False, quantitative=False,
+             true_point=True, save=False, where=False, show_all=True, prefer_unsafe=None, hide_legend=False, hide_title=False):
         """ Visualises the space
 
         Args:
@@ -234,7 +235,7 @@ class RefinedSpace:
             red (bool): if True showing unsafe space
             sat_samples (bool): if True showing sat samples
             unsat_samples (bool): if True showing unsat samples
-            quantitative (bool): if True show far is the point from satisfying / not satisfying the constraints
+            quantitative (bool): if True show sampling with how far is the point from satisfying / not satisfying the constraints
             true_point (bool): if True showing true point
             save (bool): if True, the output is saved
             where (tuple/list): output matplotlib sources to output created figure
@@ -289,11 +290,11 @@ class RefinedSpace:
 
             pretitle = ""
             if (green or red) and (sat_samples or unsat_samples):
-                pretitle = pretitle + "Refinement and Sampling, \n red = unsafe region / unsat points, green = safe region / sat points, white = in between"
+                pretitle = pretitle + "Refinement and Sampling,"  #\n red = unsafe region / unsat points, green = safe region / sat points, white = in between"
             elif green or red:
-                pretitle = pretitle + "Refinement, \n red = unsafe region, green = safe region, white = in between"
+                pretitle = pretitle + "Refinement,"  #\n red = unsafe region, green = safe region, white = in between"
             elif sat_samples or unsat_samples:
-                pretitle = pretitle + "Samples, \n red = unsat points, green = sat points"
+                pretitle = pretitle + "Samples,"  # \n red = unsat points, green = sat points"
             elif quantitative:
                 pretitle = pretitle + "Quantitative samples, \n Sum of L1 distances to dissatisfy constraints. \n The greener the point is the further it is from the threshold \n where it stops to satisfy constraints. \n  Note that green point can be unsat and vice versa."
             if (sat_samples or unsat_samples) and (self.sat_samples or self.unsat_samples):
@@ -302,26 +303,47 @@ class RefinedSpace:
                 pretitle = pretitle + f"\n Last refinement took {socket.gethostname()} {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole refinement time"
             if pretitle:
                 pretitle = pretitle + "\n"
-            if green:
-                axes.add_collection(self.show_green(show_all=show_all))
-            if red:
-                axes.add_collection(self.show_red(show_all=show_all))
+
             if not quantitative:
+                legend_objects, legend_labels = [], []
                 if len(self.region) == 1:
                     ## show 1D space sampling
                     if sat_samples and self.sat_samples:
-                        axes.scatter(np.array(list(self.sat_samples)), np.zeros(len(self.sat_samples)), c="green", alpha=0.5)
+                        axes.scatter(np.array(list(self.sat_samples)), np.zeros(len(self.sat_samples)), c="green", alpha=0.5, label="sat")
+                        legend_objects.append(plt.scatter([], [], c="green", alpha=0.5))
+                        legend_labels.append("sat")
                     if unsat_samples and self.unsat_samples:
-                        axes.scatter(np.array(list(self.unsat_samples)), np.zeros(len(self.unsat_samples)), c="red", alpha=0.5)
+                        axes.scatter(np.array(list(self.unsat_samples)), np.zeros(len(self.unsat_samples)), c="red", alpha=0.5, label="unsat")
+                        legend_objects.append(plt.scatter([], [], c="red", alpha=0.5))
+                        legend_labels.append("unsat")
                 elif len(self.region) == 2:
                     ## show 2D space sampling
                     if sat_samples and self.sat_samples:
-                        axes.scatter(np.array(list(self.sat_samples))[:, 0], np.array(list(self.sat_samples))[:, 1], c="green", alpha=0.5)
+                        axes.scatter(np.array(list(self.sat_samples))[:, 0], np.array(list(self.sat_samples))[:, 1], c="green", alpha=0.5, label="sat")
+                        legend_objects.append(plt.scatter([], [], c="green", alpha=0.5))
+                        legend_labels.append("sat")
                     if unsat_samples and self.unsat_samples:
-                        axes.scatter(np.array(list(self.unsat_samples))[:, 0], np.array(list(self.unsat_samples))[:, 1], c="red", alpha=0.5)
+                        axes.scatter(np.array(list(self.unsat_samples))[:, 0], np.array(list(self.unsat_samples))[:, 1], c="red", alpha=0.5, label="unsat")
+                        legend_objects.append(plt.scatter([], [], c="red", alpha=0.5))
+                        legend_labels.append("unsat")
+                if green:
+                    axes.add_collection(self.show_green(show_all=show_all))
+                    legend_objects.append(patches.Patch(color='green', alpha=0.5))
+                    legend_labels.append("safe")
+                if red:
+                    axes.add_collection(self.show_red(show_all=show_all))
+                    legend_objects.append(patches.Patch(color='red', alpha=0.5))
+                    legend_labels.append("unsafe")
+                if red or green:
+                    legend_objects.append(patches.Patch(facecolor='white', edgecolor='black'))
+                    legend_labels.append("unknown")
+                # axes.legend(legend_objects, legend_labels, bbox_to_anchor=(0, 1), loc='lower left', fontsize='small', frameon=False)
+                if not hide_legend:
+                    axes.legend(legend_objects, legend_labels, loc='upper left', fontsize='small')
+
             else:
                 ## Show quantitative space sampling
-                ## Get min, max sat degree
+                ## Get min, max sat degreeunsaunsa
                 min_value = round(min(self.dist_samples.values()), 16)
                 max_value = round(max(self.dist_samples.values()), 16)
                 ## Setup colour normalisation
@@ -351,7 +373,8 @@ class RefinedSpace:
                 cbar.set_label('Sum of L1 distances to dissatisfy constraints.')
 
             whole_title = "\n".join(self.wrapper.wrap(f"{pretitle} \n{self.title} \n {title}"))
-            axes.set_title(whole_title)
+            if not hide_title:
+                axes.set_title(whole_title)
 
             ## Save the figure
             if save:
@@ -395,7 +418,8 @@ class RefinedSpace:
                     ax.set_xlabel("param indices")
                     ax.set_ylabel("parameter value")
                     whole_title = "\n".join(self.wrapper.wrap(f"Sat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}. Last sampling took {socket.gethostname()} {round(self.time_last_sampling, 2)} of {round(self.time_sampling, 2)} sec. whole time. \n{self.title} \n {title}"))
-                    ax.set_title(whole_title)
+                    if not hide_title:
+                        ax.set_title(whole_title)
                     ax.autoscale()
                     ax.margins(0.1)
 
@@ -441,7 +465,8 @@ class RefinedSpace:
                     ax.set_xlabel("param indices")
                     ax.set_ylabel("parameter value")
                     whole_title = "\n".join(self.wrapper.wrap(f"Unsat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}. Last sampling took {socket.gethostname()} {round(self.time_last_sampling, 2)} of {round(self.time_sampling, 2)} sec. whole time. \n{self.title} \n{title}"))
-                    ax.set_title(whole_title)
+                    if not hide_title:
+                        ax.set_title(whole_title)
                     ax.autoscale()
                     ax.margins(0.1)
 
@@ -507,7 +532,8 @@ class RefinedSpace:
                     ax.set_xlabel("param indices")
                     ax.set_ylabel("parameter value")
                     whole_title = "\n".join(self.wrapper.wrap(f"Quantitative samples, \n Sum of L1 distances to dissatisfy constraints. \n The greener the point is the further it is from the threshold \n where it stops to satisfy constraints. \n  Note that green point can be unsat and vice versa. \n{self.title} \n {title}"))
-                    ax.set_title(whole_title)
+                    if not hide_title:
+                        ax.set_title(whole_title)
                     ax.autoscale()
                     ax.margins(0.1)
 
@@ -566,7 +592,7 @@ class RefinedSpace:
                         else:
                             print("No unsat rectangles so far, nothing to show")
 
-    def show_true_point(self, where=False, is_inside_of_show=False):
+    def show_true_point(self, where=False, is_inside_of_show=False, hide_legend=False):
         """ Showing true point
 
         Args:
@@ -580,10 +606,25 @@ class RefinedSpace:
             else:
                 fig, ax = plt.subplots()
 
+            legend_objects, legend_labels = [], []
+
+            legend_objects.append(plt.scatter([], [], facecolor='white', edgecolor='blue', label="true_point"))
+            legend_labels.append("true point")
+            if self.sat_samples or self.unsat_samples:
+                legend_objects.append(plt.scatter([], [], c="green", alpha=0.5))
+                legend_labels.append("sat")
+                legend_objects.append(plt.scatter([], [], c="red", alpha=0.5))
+                legend_labels.append("unsat")
+            if self.rectangles_sat or self.rectangles_unsat:
+                legend_objects.append(patches.Patch(color='green', alpha=0.5))
+                legend_labels.append("safe")
+                legend_objects.append(patches.Patch(color='red', alpha=0.5))
+                legend_labels.append("unsafe")
+
             max_region_size = self.region[0][1] - self.region[0][0]
             if len(self.params) == 1:
                 self.true_point_object = plt.Circle((self.true_point[0], self.true_point[1]), max_region_size/10, color='blue', fill=False, label="true_point")
-                ax.scatter([], [], color="blue", label="true_point")
+
                 if where:
                     ax.add_artist(self.true_point_object)
                 else:
@@ -595,7 +636,6 @@ class RefinedSpace:
                 else:
                     size_correction = min(1 / (len(self.sat_samples) + len(self.unsat_samples)) ** (1 / len(self.region)), 0.01)
                 self.true_point_object = plt.Circle((self.true_point[0], self.true_point[1]), size_correction * 1, color='blue', fill=False, label="true_point")
-                ax.scatter([], [], color="blue", label="true_point")
                 if where:
                     ax.add_artist(self.true_point_object)
                 else:
@@ -607,8 +647,8 @@ class RefinedSpace:
                 self.true_point_object = ax.scatter(x_axis, self.true_point, marker='$o$', label="true_point", color="blue")
                 ax.xaxis.set_major_locator(MaxNLocator(integer=True))
                 ax.plot(x_axis, self.true_point, color="blue")
-
-            ax.legend()
+            if not hide_legend:
+                ax.legend(legend_objects, legend_labels, loc='upper left', fontsize='small')
             if not is_inside_of_show:
                 if where:
                     return fig, ax
