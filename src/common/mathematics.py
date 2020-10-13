@@ -135,15 +135,15 @@ def create_interval_NEW(confidence, samples=False, n_samples=False, mean=False, 
 
 
 def create_interval(confidence, n_samples, data_point):
-    """ Returns interval of data_point +- margin
+    """ Returns interval of probabilistic data_point +- margin
 
     Args:
         confidence (float): confidence level, C
         n_samples (int): number of samples to compute margin
-        data_point (float): the value to be margined
+        data_point (float): the value to be margined from interval [0,1]
     """
     delta = margin(confidence, n_samples, data_point)
-    return Interval(data_point - delta, data_point + delta)
+    return Interval(float(max(data_point - delta, 0)), float(min(data_point + delta, 1)))
 
 
 ## TODO shortly describe this type of margin

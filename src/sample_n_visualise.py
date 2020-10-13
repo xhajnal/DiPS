@@ -32,8 +32,8 @@ def bar_err_plot(data, intervals, titles):
     else:
         errors = [[], []]
         for index, item in enumerate(intervals):
-            errors[0].append(abs(data[index] - item.start))
-            errors[1].append(abs(data[index] - item.end))
+            errors[0].append(float(abs(data[index] - item.start)))
+            errors[1].append(float(abs(data[index] - item.end)))
 
         ax.bar(list(range(1, len(data) + 1)), data, yerr=errors, color='r', capsize=10)
 
@@ -138,7 +138,7 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
                 distance = distance + (eval(functions[index]) - data[index])**2
             except IndexError as error:
                 raise Exception(f"Unable to show the intervals on the plot. Number of data point ({len(data)}) is not equal to number of functions ({len(functions)}).")
-        title = f"{title}\n Distance: {distance}"
+        title = f"{title}\n L2 Distance: {distance}"
 
     if where:
         fig = where[0]
@@ -173,8 +173,8 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
             # np.array(list(map(lambda x: np.array([x.start, x.end]), data_intervals))) # wrong shape (N,2) instead of (2,N)
             errors = [[], []]
             for index, item in enumerate(data_intervals):
-                errors[0].append(abs(data[index] - item.start))
-                errors[1].append(abs(data[index] - item.end))
+                errors[0].append(float(abs(data[index] - item.start)))
+                errors[1].append(float(abs(data[index] - item.end)))
 
             ax.bar(list(map(lambda x: x + width, range(1, len(data) + 1))), data, width, yerr=errors, color='r', capsize=10, label="data")
             title = f"{title}\n Data intervals visualised as error bars."

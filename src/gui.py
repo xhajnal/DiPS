@@ -2222,8 +2222,8 @@ class Gui(Tk):
         data_intervals = self.scrap_TextBox(self.data_intervals_text)
         ## Converting strings to intervals
         for index, interval in enumerate(data_intervals):
-            print(data_intervals[index])
-            print(type(data_intervals[index]))
+            # print(data_intervals[index])
+            # print(type(data_intervals[index]))
             data_intervals[index] = Interval(*parse_numbers(data_intervals[index]))
 
         if file:
