@@ -23,13 +23,14 @@ chain are compliant with the data measurements:
 
 
 The tool was primarily designed to facilitate flexible and efficient parameter search for stochastic models in computational systems biology, where scarcely available data measurements (e.g. only at the steady-state) can be naturally encoded as multiple-property specifications.
-However, the tool is directly applicable to any search problem, where multiple rational functions over unknown real variables are constrained by real-valued intervals.
+However, the tool is directly applicable to any search problem, where multiple functions over unknown real variables are constrained by real-valued intervals.
 
 
-![](architecture.jpg)
+A cheme showing tool components and communication among them:
+![Architecure of DiPS. Main GUI components in green, main functionality components in blue, and leveraged tools and libraries in red.](architecture.jpg)
 
 
-For a brief summary, you can see our poster (CMSB 19), and for more information, please read [[1]](#one).
+For more information, please  read [How to use section](#HOW-TO-INSTALL).
 Feel free to leave response either via issues or an email.
 *****
 ## HOW TO INSTALL
@@ -89,17 +90,20 @@ Now you can import the source code as a library or run the tool with GUI.
 
 `>> python gui.py`
 
-Graphical User Interface should appear now (With some output return in the command line). 
-We are currently working on the manual; by that time you have to manage on your own.
+Graphical User Interface should appear now (With some additional output returned in the command line). 
+
+For fully functional GUI (all the features fully visible) please set the scale of the screen to 100%.
 
 
 *****
 ## HOW TO USE
 
 *****
-To briefly present the main workflow of the tool using the graphical user interface, please see `tutorial.pdf`.
+For a brief summary, you can see our poster (CMSB 19), `cmsb_poster.pdf`.
 
-More information about the tool can be obtained from the paper [[1]](#one) (if not reachable, please write us an email.)
+To follow the main workflow of the tool using the graphical user interface, please see `tutorial.pdf`.
+
+For more information about the methods please follow the tool paper (submitted) or previous HSB paper [[1]](#one) (if not reachable, please write us an email.)
 
 
 *****
@@ -107,7 +111,6 @@ More information about the tool can be obtained from the paper [[1]](#one) (if n
 
 <a name="one"> </a>
 [1] Hajnal, M., Nouvian, M., Šafránek, D., Petrov, T.: Data-informed parameter synthesis for population markov chains. In: Češka, M., Paoletti, N. (eds.) Hybrid Systems Biology. pp. 147-164. Springer International Publishing, Cham (2019)
-
 
 *****
 ## ACKNOWLEDGMENT
@@ -118,6 +121,7 @@ I want to thank the following people who helped me with the code issues:
 * [Denis Repin](https://github.com/dennerepin)
 
 and I want to thank the following people for user testing and feedback:
+* [Nhat-Huy Phung](https://github.com/huypn12)
 * [Denis Repin](https://github.com/dennerepin)
 * [Samuel Pastva](https://github.com/daemontus)
 * [Stefano Tognazzi](https://github.com/stefanotognazzi)
