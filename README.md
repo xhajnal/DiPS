@@ -30,7 +30,7 @@ A cheme showing tool components and communication among them:
 ![Architecure of DiPS. Main GUI components in green, main functionality components in blue, and leveraged tools and libraries in red.](architecture.jpg)
 
 
-For more information, please  read [How to use section](#HOW-TO-INSTALL).
+For more information, please  read [How to use section](#HOW-TO-USE).
 Feel free to leave response either via issues or an email.
 *****
 ## HOW TO INSTALL
