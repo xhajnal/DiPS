@@ -1,14 +1,15 @@
+import re
 from termcolor import colored
 from sympy import Interval
 import locale
 locale.setlocale(locale.LC_ALL, '')
 
 
-def niceprint(text: str):
+def niceprint(text):
     """ Converts string into printable text
 
     Args:
-        text (string): input string
+        text (int or string): input string
     """
     return locale.format_string("%d", text, grouping=True)
 
@@ -23,17 +24,18 @@ def parse_numbers(text: str):
     return [float(i) for i in newstr.split()]
 
 
-def ineq_to_constraints(functions: list, intervals: list, silent: bool = True):
+def ineq_to_constraints(functions: list, intervals: list, decoupled=True, silent: bool = True):
     """ Converts expressions and intervals into constraints
         list of expressions, list of intervals -> constraints
 
     Args:
         functions:  (list of strings) array of functions
         intervals (list of intervals): array of pairs, low and high bound
+        decoupled (bool): if True returns 2 constraints for a single interval
         silent (bool): if silent printed output is set to minimum
 
     Example:
-        ["x+3"],[[0,1]] ->  ["x+3>=0","x+3<=1"]
+        ["x+3"],[[0,1]] ->  ["0<= x+3 <=1"]
 
     Returns:
         (list) of constraints
@@ -48,20 +50,44 @@ def ineq_to_constraints(functions: list, intervals: list, silent: bool = True):
     try:
         spam = []
         for index in range(len(functions)):
+            ## debug
+            print(colored(f"type of the function is {type(functions[index])}", "blue"))
+            ## name intervals
             if isinstance(intervals[index], Interval):
-                spam.append(functions[index] + ">=" + str(intervals[index].start))
-                spam.append(functions[index] + "<=" + str(intervals[index].end))
+                low = intervals[index].start
+                high = intervals[index].end
             else:
-                spam.append(functions[index] + ">=" + str(intervals[index][0]))
-                spam.append(functions[index] + "<=" + str(intervals[index][1]))
+                low = intervals[index][0]
+                high = intervals[index][1]
+
+            if decoupled or not isinstance(functions[index], str):
+                if not isinstance(functions[index], str):
+                    print("SYMPY")
+                    spam.append(functions[index] >= low)
+                    spam.append(functions[index] <= high)
+                else:
+                    spam.append(functions[index] + " >= " + str(low))
+                    spam.append(functions[index] + " <= " + str(high))
+            else:
+                ## Old
+                # spam.append(functions[index] + " >= " + str(low))
+                # spam.append(functions[index] + " <= " + str(high))
+                ## New
+                spam.append(str(low) + " <= " + functions[index] + " <= " + str(high))
+                ## Slightly slower
+                # spam.append(f"{low} <= {functions[index]} <= {high}")
+                ## Slow
+                # spam.append(f"{functions[index]} in Interval({low}, {high})")
+
         return spam
-    except Exception as error:
-        if "'EmptySet' object does not support indexing" in str(error):
+    except TypeError as error:
+        if "EmptySet" in str(error):
             raise Exception("ineq_to_constraints", "Some intervals are incorrect (lover bound > upper bound)")
-        elif "'FiniteSet' object does not support indexing" in str(error):
+        elif "FiniteSet" in str(error):
             raise Exception("ineq_to_constraints", "Some intervals are incorrect (empty)")
-        else:
-            raise error
+    except Exception as err:
+        print("Unhandled exception", err)
+        raise err
 
 
 def constraints_to_ineq(constraints: list, silent: bool = True, debug: bool = False):
@@ -81,7 +107,7 @@ def constraints_to_ineq(constraints: list, silent: bool = True, debug: bool = Fa
     if len(constraints) % 2:
         if not silent:
             print(colored("Number of properties is not even, some interval will be invalid", "red"))
-        return False
+        raise Exception(f"Number of properties is not even, some interval will be invalid")
     funcs = []
     intervals = []
     is_odd = False
@@ -165,11 +191,10 @@ def constraints_to_ineq(constraints: list, silent: bool = True, debug: bool = Fa
     ## Sort the intervals
     index = 0
     for interval_index in range(len(intervals)):
-        if len(intervals[interval_index]) is not 2:
+        if len(intervals[interval_index]) != 2:
             if not silent:
                 print(colored(f"Constraint {index + 1} does not have proper number of boundaries", "red"))
             raise Exception(f"Constraint {index + 1} does not have proper number of boundaries")
-            return False
         if debug:
             print("sorted([float(intervals[interval_index][0]), float(intervals[interval_index][1])])", sorted([float(intervals[interval_index][0]), float(intervals[interval_index][1])]))
         intervals[interval_index] = sorted([float(intervals[interval_index][0]), float(intervals[interval_index][1])])
@@ -183,6 +208,109 @@ def constraints_to_ineq(constraints: list, silent: bool = True, debug: bool = Fa
         print("intervals: ", intervals)
 
     return funcs, intervals
+
+
+def decouple_constraints(constraints: list, silent: bool = True, debug: bool = False):
+    """ Decouples constrains with more two inequalities into two separate constraints:
+
+    Args:
+        constraints  (list of strings): properties to be converted
+        silent (bool): if silent printed output is set to minimum
+        debug (bool): if True extensive print will be used
+
+    Example:
+        ["-8 <= x+3 <= 0"] -> ["-8 <= x+3", "x+3 <= 0"]
+    """
+    pattern = r" < | > | >= | <= | = | => | =<"
+    new_constraints = []
+    for index, constraint in enumerate(constraints):
+        match = re.findall(pattern, constraint)
+        if debug:
+            print("constraint", constraint)
+            print("match", match)
+        if len(match) == 0:
+            raise Exception("Constraints", f"No <,>,>=, <=,= symbols in constrain {index+1}")
+        elif len(match) == 1:
+            new_constraints.append(constraint)
+        elif len(match) == 2:
+            parts = re.split(pattern, constraint)
+            new_constraints.append(match[0].join(parts[:2]))
+            new_constraints.append(match[0].join(parts[1:]))
+        else:
+            raise Exception("Constraints", f"More than two <,>,>=, <=,= symbols in constrain {index+1}")
+    return new_constraints
+
+
+def add_white_spaces(expression):
+    just_equal = r"[^\s<>]=[^<>]|[^<>]=[^\s<>]"
+    match = re.findall(just_equal, expression)
+    print(match)
+    if match:
+        expression.replace("=", " = ")
+
+    with_equal = r"[^\s]>=|[^\s]<=|[^\s]=>|[^\s]=<|>=[^\s]|<=[^\s]|=>[^\s]|=<[^\s]"
+    match = re.findall(with_equal, expression)
+    print(match)
+    if match:
+        greater_eq_check = True
+        smaller_eq_check = True
+        eq_greater_check = True
+        eq_smaller_check = True
+        for item in match:
+            if ">=" in item and greater_eq_check:
+                expression = expression.replace(">=", " >= ")
+                greater_eq_check = False
+            if "<=" in item and smaller_eq_check:
+                expression = expression.replace("<=", " <= ")
+                smaller_eq_check = False
+            if "=>" in item and eq_greater_check:
+                expression = expression.replace("=>", " >= ")
+                greater_eq_check = False
+            if "=<" in item and eq_smaller_check:
+                expression = expression.replace("=<", " <= ")
+                smaller_eq_check = False
+
+    without_equal = r"<[^\s=]|>[^\s=]|[^\s=]<|[^\s=]>"
+    match = re.findall(without_equal, expression)
+    print(match)
+    if match:
+        greater_check = True
+        smaller_check = True
+        for item in match:
+            if ">" in item and greater_check:
+                expression = expression.replace(">", " > ")
+                greater_check = False
+            if "<" in item and smaller_check:
+                expression = expression.replace("<", " < ")
+                smaller_check = False
+
+    return expression
+
+# print(add_white_spaces("0.270794145078059 >= p*q >= 0.129205854921941"))
+# print(add_white_spaces("0.270794145078059>=p*q>=0.129205854921941"))
+
+
+def normalise_constraint(constraint: list, silent: bool = True, debug: bool = False):
+    """ Transforms the set constraint into normalised form
+
+    Args:
+        constraint  (string): constraint to be normalised
+        silent (bool): if silent printed output is set to minimum
+        debug (bool): if True extensive print will be used
+
+    Example:
+          0.2 >= p >= 0.1    --->  0.1 <= p <= 0.2
+          0.2 >= p           --->  p <= 0.2
+    """
+    add_white_spaces(constraint)
+    pattern = r" < | > | >= | <= | = | => | =<"
+    match = re.findall(pattern, constraint)
+    if debug:
+        print("constraint", constraint)
+        print("match", match)
+    print(re.split(pattern, constraint))
+
+# normalise_constraint("0.270794145078059 >= p*q >= 0.129205854921941", debug=True)
 
 
 def to_interval(points: list):

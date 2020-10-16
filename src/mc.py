@@ -118,21 +118,21 @@ def call_prism(args, seq=False, silent: bool = False, model_path=model_path, pro
         for arg in args:
             # print(arg)
             # print(re.compile('\.[a-z]').search(arg))
-            if re.compile('\.pm').search(arg) is not None:
+            if re.compile(r'\.pm').search(arg) is not None:
                 model_file_path = os.path.join(model_path, arg)
                 # print(model_file)
                 if not os.path.isfile(model_file_path):
                     print(f"{colored('model file', 'red')} {model_file_path} {colored('not found -- skipped', 'red')}")
                     return 404, f"model file  {model_file_path} not found -- skipped"
                 prism_args.append(model_file_path)
-            elif re.compile('\.pctl').search(arg) is not None:
+            elif re.compile(r'\.pctl').search(arg) is not None:
                 property_file_path = os.path.join(properties_path, arg)
                 # print(property_file)
                 if not os.path.isfile(property_file_path):
                     print(f"{colored('property file', 'red')} {property_file_path} {colored('not found -- skipped', 'red')}")
                     return 404, f"property file {property_file_path} not found -- skipped"
                 prism_args.append(property_file_path)
-            elif re.compile('\.txt').search(arg) is not None:
+            elif re.compile(r'\.txt').search(arg) is not None:
                 print("prism_output_path", prism_output_path)
                 if not os.path.isabs(prism_output_path):
                     prism_output_path = os.path.join(Path(prism_results), Path(prism_output_path))
@@ -253,7 +253,6 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
         no_prob_checks (bool or string): True if no noprobchecks option is to be used for prism
         model_path (string): path to load  models from
         properties_path (string): path to load properties from
-        param_intervals (list of pairs): parameter intervals
         property_file (string): file name of single property files to be used for all models
         output_path (string): path for the output
         memory (string or int): sets maximum memory in GB, see https://www.prismmodelchecker.org/manual/ConfiguringPRISM/OtherOptions
@@ -430,7 +429,7 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
                         gui(1, "Parameter synthesis", f"Unrecognised error occurred: \n {error[1]}")
                     continue
 
-            if error[0] is not 0:
+            if error[0] != 0:
                 ## If an error occurred call this function for this file again
                 print()
                 # print("seq",seq)
@@ -480,7 +479,7 @@ def call_storm(args, silent: bool = False, model_path=model_path, properties_pat
         for arg in args:
             # print(arg)
             # print(re.compile('\.[a-z]').search(arg))
-            if re.compile('\.pm').search(arg) is not None:
+            if re.compile(r'\.pm').search(arg) is not None:
                 model_file_path = os.path.join(model_path, arg)
                 # print(model_file)
                 if not os.path.isfile(model_file_path):
@@ -489,7 +488,7 @@ def call_storm(args, silent: bool = False, model_path=model_path, properties_pat
                     return 404
                 print(f"{model_file_path} {colored('found', 'blue')}")
                 storm_args.append(f"/DiPS/{os.path.relpath(model_file_path, os.path.join(model_path,'..'))}")
-            elif re.compile('\.pctl').search(arg) is not None:
+            elif re.compile(r'\.pctl').search(arg) is not None:
                 property_file_path = os.path.join(properties_path, arg)
                 # print(property_file)
                 if not os.path.isfile(property_file_path):
@@ -498,7 +497,7 @@ def call_storm(args, silent: bool = False, model_path=model_path, properties_pat
                     return 404
                 # storm_args.append(property_file_path)
                 storm_args.append("my_super_cool_string")
-            elif re.compile('\.txt').search(arg) is not None:
+            elif re.compile(r'\.txt').search(arg) is not None:
                 storm_file_path = os.path.join(properties_path, arg)
                 if not os.path.isabs(storm_file_path):
                     storm_file_path = os.path.join(Path(storm_results), Path(storm_file_path))
@@ -511,7 +510,7 @@ def call_storm(args, silent: bool = False, model_path=model_path, properties_pat
         args.extend(storm_args)
         if time:
             args.append(")")
-        if storm_file_path is not "":
+        if storm_file_path != "":
             args.append(">>")
             print(colored(storm_file_path, "blue"))
             args.append(f"/DiPS/{os.path.relpath(storm_file_path, os.path.join(model_path, '..'))}")
@@ -552,6 +551,7 @@ def call_storm_files(model_prefix, agents_quantities, param_intervals=False, mod
         param_intervals (list of pairs): list of intervals to be used for respective parameter (default all intervals are from 0 to 1)
         properties_path (string): path to load properties from
         property_file (string): file name of single property files to be used for all models
+        command_output_file (string): file to write the command
         output_path (string): path for the output
         time (bool): if True time measurement is added
     """

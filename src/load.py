@@ -4,11 +4,14 @@ import pickle
 import copy
 import re
 from pathlib import Path
+from time import time
+
 from termcolor import colored
 from sympy import factor
 
 ## Importing my code
 from common.config import load_config
+from common.files import pickle_load
 
 spam = load_config()
 data_path = spam["data"]
@@ -38,6 +41,9 @@ def load_functions(file_path, tool="unknown", factorize=True, rewards_only=False
         rewards (list of strings): rational functions for each reward
     """
 
+    ## Time statistics
+    time_to_factorise = 0
+
     ## Setting the current directory
     if not Path(file_path).is_absolute():
         if tool.lower().startswith("p"):
@@ -56,7 +62,7 @@ def load_functions(file_path, tool="unknown", factorize=True, rewards_only=False
         ## PARSING PRISM/STORM OUTPUT
         ## Getting the tool
         for line in file:
-            if tool is "unknown":
+            if tool == "unknown":
                 # print(line)
                 if line.lower().startswith("prism"):
                     tool = "prism"
@@ -64,7 +70,7 @@ def load_functions(file_path, tool="unknown", factorize=True, rewards_only=False
                     tool = "storm"
             else:
                 break
-        if tool is "unknown":
+        if tool == "unknown":
             print("Tool not recognised")
             return False, False
 
@@ -108,30 +114,39 @@ def load_functions(file_path, tool="unknown", factorize=True, rewards_only=False
                 line = line.replace("-*", "-")
                 if line.startswith('*'):
                     line = line[1:]
-                if line[-1] is "\n":
+                if line[-1] == "\n":
                     line = line[:-1]
                 if here == "r" and not f_only:
                     # print(f"formula: {i+1}", line)
                     if factorize:
+                        start_time = time()
                         try:
                             rewards.append(str(factor(line)))
                         except TypeError:
                             print("Error while factorising rewards, used not factorised instead")
                             rewards.append(line)
                             # os.chdir(cwd)
+                        finally:
+                            time_to_factorise = time_to_factorise + (time() - start_time)
                     else:
                         rewards.append(line)
                 elif not here == "r" and not rewards_only:
                     # print(f"formula: {i+1}", line[:-1])
                     if factorize:
+                        start_time = time()
                         try:
                             f.append(str(factor(line)))
                         except TypeError:
                             print(f"Error while factorising polynomial f[{i + 1}], used not factorised instead")
                             f.append(line)
+                        finally:
+                            time_to_factorise = time_to_factorise + (time() - start_time)
                     else:
                         f.append(line)
             line_index = line_index + 1
+
+    if factorize:
+        print(colored(f"Factorisation took {time_to_factorise} seconds", "blue"))
     return f, rewards
 
 
@@ -206,7 +221,7 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
             rewards[population_size] = []
             ## PARSING PRISM/STORM OUTPUT
             line_index = 0
-            if tool is "unknown":
+            if tool == "unknown":
                 # print(line)
                 if line.lower().startswith("prism"):
                     tool = "prism"
@@ -252,7 +267,7 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
                     line = line.replace("-*", "-")
                     if line.startswith('*'):
                         line = line[1:]
-                    if line[-1] is "\n":
+                    if line[-1] == "\n":
                         line = line[:-1]
                     if here == "r" and not f_only:
                         # print(f"pop: {N}, formula: {i+1}", line)
@@ -371,6 +386,7 @@ def load_data(path, silent: bool = False, debug: bool = False):
 
             for value in range(len(data)):
                 try:
+                    assert isinstance(data, list)
                     data[value] = float(data[value])
                 except ValueError:
                     print(colored(f"Warning while parsing line number {value + 1}. Expected number, got {type(data[value])}. Skipping this line: {line}", "red"))
@@ -402,32 +418,31 @@ def load_all_data(path):
     if not glob.glob(str(path)):
         raise OSError("No valid files in the given directory " + os.path.join(os.getcwd(), path))
 
-    for file in glob.glob(str(path)):
-        print(os.path.join(os.getcwd(), file))
-        file = open(file, "r")
-        population = 0
-        for line in file:
-            # print("line: ",line)
-            if re.search("population", line) is not None:
-                population = int(line.split(",")[0].split("=")[1])
-                # print("population, ",population)
-                data[population] = []
-                continue
-            data[population] = line[:-1].split(",")
-            # print(D[N])
-            for value in range(len(data[population])):
-                # print(D[N][value])
-                try:
-                    data[population][value] = float(data[population][value])
-                except:
-                    print("error while parsing population =", population, " i =", value, " of value =",
-                          data[population][value])
-                    data[population][value] = 0
-                # print(type(D[population][value]))
-            # D[population].append(1-sum(D[population]))
-            break
-            # print(D[population])
-        file.close()
+    for file_name in glob.glob(str(path)):
+        print(os.path.join(os.getcwd(), file_name))
+        with open(file_name, "r") as file:
+            population = 0
+            for line in file:
+                # print("line: ",line)
+                if re.search("population", line) is not None:
+                    population = int(line.split(",")[0].split("=")[1])
+                    # print("population, ",population)
+                    data[population] = []
+                    continue
+                data[population] = line[:-1].split(",")
+                # print(D[N])
+                for value in range(len(data[population])):
+                    # print(D[N][value])
+                    try:
+                        data[population][value] = float(data[population][value])
+                    except:
+                        print("error while parsing population =", population, " i =", value, " of value =",
+                              data[population][value])
+                        data[population][value] = 0
+                    # print(type(D[population][value]))
+                # D[population].append(1-sum(D[population]))
+                break
+                # print(D[population])
     os.chdir(cwd)
     if data:
         return data
@@ -441,7 +456,7 @@ def load_pickled_data(file):
     Args:
         file (string): filename of the data to be loaded
     """
-    return pickle.load(open(os.path.join(data_path, file + ".p"), "rb"))
+    pickle_load(os.path.join(data_path, file))
 
 
 #######################
@@ -463,6 +478,8 @@ def parse_params_from_model(file, silent: bool = False):
             if line.startswith('const'):
                 # print(line)
                 line = line.split(" ")[-1].split(";")[0]
+                if "=" in line:
+                    continue
                 params.append(line)
     if not silent:
         print("params", params)
@@ -479,6 +496,11 @@ def find_param(my_string, debug: bool = False):
     Returns:
          set of strings - parameters
     """
+    try:
+        return my_string.free_symbols
+    except AttributeError:
+        pass
+
     my_string = copy.copy(my_string)
     if debug:
         print("my_default_string ", my_string)
@@ -540,11 +562,11 @@ def find_param(my_string, debug: bool = False):
     return parameters
 
 
-def find_param_old(polynomial, debug: bool = False):
+def find_param_old(expression, debug: bool = False):
     """ Finds parameters of a polynomials (also deals with Z3 expressions)
 
     Args:
-        polynomial : polynomial as string
+        expression : polynomial as string
         debug (bool): if True extensive print will be used
 
     Returns:
@@ -552,17 +574,22 @@ def find_param_old(polynomial, debug: bool = False):
     """
 
     ## Get the e-/e+ notation away
-    parameters = re.sub('[0-9]e[+|-][0-9]', '0', polynomial)
+    try:
+        return expression.free_symbols
+    except AttributeError:
+        pass
+
+    parameters = re.sub('[0-9]e[+|-][0-9]', '0', expression)
 
     parameters = parameters.replace('(', '').replace(')', '').replace('**', '*').replace(' ', '')
     ## replace python expressions
-    parameters = parameters.replace("if", " ").replace("else", " ").replace("elif", " ")
-    parameters = parameters.replace("not", " ").replace("or", " ").replace("and", " ")
-    parameters = parameters.replace("min", " ").replace("max", " ")
+    parameters = re.sub(r"([^a-z, A-Z])(if|else|elif|not|or|and|min|max)", r"\1", parameters)
+    # parameters = parameters.replace("not", " ").replace("or", " ").replace("and", " ")
+    # parameters = parameters.replace("min", " ").replace("max", " ")
+
     ## Replace z3 expression
-    parameters = parameters.replace("Not", " ").replace("Or", " ").replace("And", " ").replace("Implies", " ")
-    parameters = parameters.replace("If", " ").replace(',', ' ')
-    parameters = parameters.replace("<", " ").replace(">", " ").replace("=", " ")
+    parameters = re.sub(r"(Not|Or|And|Implies|If|,|<|>|=)", " ", parameters)
+
     parameters = re.split('\+|\*|\-|/| ', parameters)
     parameters = [i for i in parameters if not i.replace('.', '', 1).isdigit()]
     parameters = set(parameters)
@@ -571,17 +598,17 @@ def find_param_old(polynomial, debug: bool = False):
     return set(parameters)
 
 
-def find_param_older(polynomial, debug: bool = False):
+def find_param_older(expression, debug: bool = False):
     """ Finds parameters of a polynomials
 
     Args:
-        polynomial : polynomial as string
+        expression : polynomial as string
         debug (bool): if True extensive print will be used
     
     Returns:
          set of strings - parameters
     """
-    parameters = polynomial.replace('(', '').replace(')', '').replace('**', '*').replace(' ', '')
+    parameters = expression.replace('(', '').replace(')', '').replace('**', '*').replace(' ', '')
     parameters = re.split('\+|\*|\-|/', parameters)
     parameters = [i for i in parameters if not i.replace('.', '', 1).isdigit()]
     parameters = set(parameters)

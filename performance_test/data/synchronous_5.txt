@@ -1,0 +1,173 @@
+PRISM
+=====
+
+Version: 4.4
+Date: Sun Mar 17 22:45:49 CET 2019
+Hostname: Freya
+Memory limits: cudd=1g, java(heap)=910.5m
+Command line: prism /home/matej/Git/mpm/models/synchronous_5.pm /home/matej/Git/mpm/properties/prop_5.pctl -param 'p=0:1,q=0:1'
+
+Parsing model file "/home/matej/Git/mpm/models/synchronous_5.pm"...
+
+Parsing properties file "/home/matej/Git/mpm/properties/prop_5.pctl"...
+
+8 properties:
+(1) P=? [ F (a0=0)&(a1=0)&(a2=0)&(a3=0)&(a4=0) ]
+(2) P=? [ F (a0=1)&(a1=0)&(a2=0)&(a3=0)&(a4=0) ]
+(3) P=? [ F (a0=1)&(a1=1)&(a2=0)&(a3=0)&(a4=0) ]
+(4) P=? [ F (a0=1)&(a1=1)&(a2=1)&(a3=0)&(a4=0) ]
+(5) P=? [ F (a0=1)&(a1=1)&(a2=1)&(a3=1)&(a4=0) ]
+(6) P=? [ F (a0=1)&(a1=1)&(a2=1)&(a3=1)&(a4=1) ]
+(7) R{"mean"}=? [ F b=1 ]
+(8) R{"mean_squared"}=? [ F b=1 ]
+
+Type:        DTMC
+Modules:     two_param_agents_5 
+Variables:   a0 a1 a2 a3 a4 b 
+
+---------------------------------------------------------------------
+
+Parametric model checking: P=? [ F (a0=0)&(a1=0)&(a2=0)&(a3=0)&(a4=0) ]
+
+Building model (parametric engine)...
+
+Computing reachable states...
+Reachable states exploration and model construction done in 0.023 secs.
+
+States:      18 (1 initial)
+Transitions: 33
+
+Time for model construction: 0.023 seconds.
+
+Time for model checking: 0.026 seconds.
+
+Result (probability): ([0.0,1.0],[0.0,1.0]): { ( -1 ) p^5 + 5 p^4 - 10 p^3 + 10 p^2 - 5 p + 1  }
+
+---------------------------------------------------------------------
+
+Parametric model checking: P=? [ F (a0=1)&(a1=0)&(a2=0)&(a3=0)&(a4=0) ]
+
+Building model (parametric engine)...
+
+Computing reachable states...
+Reachable states exploration and model construction done in 0.008 secs.
+
+States:      18 (1 initial)
+Transitions: 33
+
+Time for model construction: 0.008 seconds.
+
+Time for model checking: 0.01 seconds.
+
+Result (probability): ([0.0,1.0],[0.0,1.0]): { 5 q^4 * p^5 - 20 q^3 * p^5 - 20 q^4 * p^4 + 30 q^2 * p^5 + 80 q^3 * p^4 + 30 q^4 * p^3 - 20 q * p^5 - 120 q^2 * p^4 - 120 q^3 * p^3 - 20 q^4 * p^2 + 5 p^5 + 80 q * p^4 + 180 q^2 * p^3 + 80 q^3 * p^2 + 5 q^4 * p - 20 p^4 - 120 q * p^3 - 120 q^2 * p^2 - 20 q^3 * p + 30 p^3 + 80 q * p^2 + 30 q^2 * p - 20 p^2 - 20 q * p + 5 p }
+
+---------------------------------------------------------------------
+
+Parametric model checking: P=? [ F (a0=1)&(a1=1)&(a2=0)&(a3=0)&(a4=0) ]
+
+Building model (parametric engine)...
+
+Computing reachable states...
+Reachable states exploration and model construction done in 0.006 secs.
+
+States:      18 (1 initial)
+Transitions: 33
+
+Time for model construction: 0.006 seconds.
+
+Time for model checking: 0.009 seconds.
+
+Result (probability): ([0.0,1.0],[0.0,1.0]): { ( -20 ) q^4 * p^5 + 70 q^3 * p^5 + 80 q^4 * p^4 - 90 q^2 * p^5 - 270 q^3 * p^4 - 120 q^4 * p^3 + 50 q * p^5 + 330 q^2 * p^4 + 390 q^3 * p^3 + 80 q^4 * p^2 - 10 p^5 - 170 q * p^4 - 450 q^2 * p^3 - 250 q^3 * p^2 - 20 q^4 * p + 30 p^4 + 210 q * p^3 + 270 q^2 * p^2 + 60 q^3 * p - 30 p^3 - 110 q * p^2 - 60 q^2 * p + 10 p^2 + 20 q * p }
+
+---------------------------------------------------------------------
+
+Parametric model checking: P=? [ F (a0=1)&(a1=1)&(a2=1)&(a3=0)&(a4=0) ]
+
+Building model (parametric engine)...
+
+Computing reachable states...
+Reachable states exploration and model construction done in 0.004 secs.
+
+States:      18 (1 initial)
+Transitions: 33
+
+Time for model construction: 0.004 seconds.
+
+Time for model checking: 0.006 seconds.
+
+Result (probability): ([0.0,1.0],[0.0,1.0]): { 30 q^4 * p^5 - 90 q^3 * p^5 - 120 q^4 * p^4 + 100 q^2 * p^5 + 330 q^3 * p^4 + 180 q^4 * p^3 - 50 q * p^5 - 320 q^2 * p^4 - 450 q^3 * p^3 - 120 q^4 * p^2 + 10 p^5 + 130 q * p^4 + 370 q^2 * p^3 + 270 q^3 * p^2 + 30 q^4 * p - 20 p^4 - 110 q * p^3 - 180 q^2 * p^2 - 60 q^3 * p + 10 p^3 + 30 q * p^2 + 30 q^2 * p }
+
+---------------------------------------------------------------------
+
+Parametric model checking: P=? [ F (a0=1)&(a1=1)&(a2=1)&(a3=1)&(a4=0) ]
+
+Building model (parametric engine)...
+
+Computing reachable states...
+Reachable states exploration and model construction done in 0.002 secs.
+
+States:      18 (1 initial)
+Transitions: 33
+
+Time for model construction: 0.002 seconds.
+
+Time for model checking: 0.004 seconds.
+
+Result (probability): ([0.0,1.0],[0.0,1.0]): { ( -20 ) q^4 * p^5 + 50 q^3 * p^5 + 80 q^4 * p^4 - 50 q^2 * p^5 - 170 q^3 * p^4 - 120 q^4 * p^3 + 25 q * p^5 + 130 q^2 * p^4 + 210 q^3 * p^3 + 80 q^4 * p^2 - 5 p^5 - 45 q * p^4 - 110 q^2 * p^3 - 110 q^3 * p^2 - 20 q^4 * p + 5 p^4 + 20 q * p^3 + 30 q^2 * p^2 + 20 q^3 * p }
+
+---------------------------------------------------------------------
+
+Parametric model checking: P=? [ F (a0=1)&(a1=1)&(a2=1)&(a3=1)&(a4=1) ]
+
+Building model (parametric engine)...
+
+Computing reachable states...
+Reachable states exploration and model construction done in 0.002 secs.
+
+States:      18 (1 initial)
+Transitions: 33
+
+Time for model construction: 0.002 seconds.
+
+Time for model checking: 0.004 seconds.
+
+Result (probability): ([0.0,1.0],[0.0,1.0]): { 5 q^4 * p^5 - 10 q^3 * p^5 - 20 q^4 * p^4 + 10 q^2 * p^5 + 30 q^3 * p^4 + 30 q^4 * p^3 - 5 q * p^5 - 20 q^2 * p^4 - 30 q^3 * p^3 - 20 q^4 * p^2 + p^5 + 5 q * p^4 + 10 q^2 * p^3 + 10 q^3 * p^2 + 5 q^4 * p }
+
+---------------------------------------------------------------------
+
+Parametric model checking: R{"mean"}=? [ F b=1 ]
+
+Building model (parametric engine)...
+
+Computing reachable states...
+Reachable states exploration and model construction done in 0.002 secs.
+
+States:      18 (1 initial)
+Transitions: 33
+
+Time for model construction: 0.002 seconds.
+Building reward structure...
+
+Time for model checking: 0.014 seconds.
+
+Result (expected mean): ([0.0,1.0],[0.0,1.0]): { 5 q * p^5 - 25 q * p^4 + 50 q * p^3 - 50 q * p^2 + 20 q * p + 5 p }
+
+---------------------------------------------------------------------
+
+Parametric model checking: R{"mean_squared"}=? [ F b=1 ]
+
+Building model (parametric engine)...
+
+Computing reachable states...
+Reachable states exploration and model construction done in 0.002 secs.
+
+States:      18 (1 initial)
+Transitions: 33
+
+Time for model construction: 0.002 seconds.
+Building reward structure...
+
+Time for model checking: 0.002 seconds.
+
+Result (expected mean_squared): ([0.0,1.0],[0.0,1.0]): { 20 q^2 * p^5 + 5 q * p^5 - 100 q^2 * p^4 - 25 q * p^4 + 200 q^2 * p^3 + 50 q * p^3 - 180 q^2 * p^2 - 90 q * p^2 + 60 q^2 * p + 20 p^2 + 60 q * p + 5 p }
+

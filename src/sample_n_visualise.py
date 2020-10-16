@@ -16,6 +16,34 @@ from common.mathematics import cartesian_product
 wraper = DocumentWrapper(width=60)
 
 
+def bar_err_plot(data, intervals, titles):
+    """ Creates bar plot (with errors)
+
+    Args:
+        data (list of numbers): values to barplot
+        intervals (list of numbers or Intervals): if False (0,1) interval is used
+        titles (list of strings): (xlabel, ylabel, title)
+    """
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    if intervals == []:
+        ax.bar(list(range(1, len(data) + 1)), data, color='r')
+    else:
+        errors = [[], []]
+        for index, item in enumerate(intervals):
+            errors[0].append(float(abs(data[index] - item.start)))
+            errors[1].append(float(abs(data[index] - item.end)))
+
+        ax.bar(list(range(1, len(data) + 1)), data, yerr=errors, color='r', capsize=10)
+
+    ax.set_xticks(list(range(1, len(data) + 1)))
+    ax.set_xlabel(titles[0])
+    ax.set_ylabel(titles[1])
+    ax.set_title(titles[2])
+    fig.show()
+
+
 def get_param_values(parameters, sample_size, intervals=False, debug: bool = False):
     """ Creates linearly sampled parameter space from the given parameter intervals and number of samples
 
@@ -49,7 +77,7 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
         parameter_value: (list of numbers) array of param values
         parameters (list of strings): parameter names (used for faster eval)
         data (list of floats): Data comparison next to respective function
-        data_intervals (list of tuples): intervals obtained from the data to check if the function are within the intervals
+        data_intervals (list of Intervals): intervals obtained from the data to check if the function are within the intervals
         cumulative (bool): if True cdf instead of pdf is visualised
         debug (bool): if debug extensive output is provided
         where (tuple or list): output matplotlib sources to output created figure
@@ -62,14 +90,17 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
 
     if not parameters:
         parameters = set()
-        for polynomial in functions:
-            parameters.update(find_param(polynomial, debug))
+        for function in functions:
+            parameters.update(find_param(function, debug))
         parameters = sorted(list(parameters))
     if debug:
         print("Parameters: ", parameters)
 
-    title = "Rational functions sampling \n parameter values:"
-    values = []
+    if data:
+        title = "Rational functions and data \n Parameter values:"
+    else:
+        title = "Rational functions \n Parameter values:"
+    function_values = []
     add = 0
     for param in range(len(parameters)):
         if debug:
@@ -79,27 +110,35 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
         title = "{} {}={},".format(title, parameters[param], parameter_value[param])
     title = title[:-1]
 
-    title = f"{title}\n function(s) values: "
-    for polynomial in functions:
-        expression = eval(polynomial)
+    title = f"{title}\n Function values: "
+    for function in functions:
+        expression = eval(function)
         if debug:
-            print(polynomial)
-            print("Eval ", polynomial, expression)
+            print(function)
+            print("Eval ", function, expression)
         if cumulative:
             ## Add sum of all values
             add = add + expression
-            values.append(add)
+            function_values.append(add)
             title = f"{title} {add} , "
             del expression
         else:
-            values.append(expression)
+            function_values.append(expression)
             title = f"{title} {expression} ,"
     title = title[:-2]
     if data:
-        title = f"{title}\n Comparing with the data: \n{data}"
+        # data_to_str = str(data).replace(" ", "\u00A0") does not work
+        title = f"{title}\n Data values: {str(data)[1:-1]}"
         if cumulative:
             for index in range(1, len(data)):
                 data[index] = data[index] + data[index - 1]
+        distance = 0
+        for index in range(len(data)):
+            try:
+                distance = distance + (eval(functions[index]) - data[index])**2
+            except IndexError as error:
+                raise Exception(f"Unable to show the intervals on the plot. Number of data point ({len(data)}) is not equal to number of functions ({len(functions)}).")
+        title = f"{title}\n L2 Distance: {distance}"
 
     if where:
         fig = where[0]
@@ -111,39 +150,48 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
     width = 0.2
     ax.set_ylabel(f'{("Value", "Cumulative value")[cumulative]}')
     if data:
-        ax.set_xlabel('Rational function indices (blue), Data point indices (red)')
-        if data_intervals:
-            functions_inside_of_intervals = []
-            for index in range(len(data)):
-                try:
-                    if values[index] in data_intervals[index]:
-                        functions_inside_of_intervals.append(True)
-                    else:
-                        functions_inside_of_intervals.append(False)
-                except IndexError as error:
-                    raise Exception(f"Unable to show the data on the plot. Data intervals do not share the size.")
-
-            title = f"{title} \n Function value within the respective interval:\n {functions_inside_of_intervals} \n Intervals: {data_intervals}"
+        ax.set_xlabel('Rational function indices (blue bars), Data point indices (red bars)')
+        # if data_intervals:
+        #     functions_inside_of_intervals = []
+        #     for index in range(len(data)):
+        #         try:
+        #             if function_values[index] in data_intervals[index]:
+        #                 functions_inside_of_intervals.append(True)
+        #             else:
+        #                 functions_inside_of_intervals.append(False)
+        #         except IndexError as error:
+        #             raise Exception(f"Unable to show the intervals on the plot. Number of data intervals ({len(data_intervals)}) is not equal to number of functions ({len(functions)}).")
+        #
+        #     # functions_inside_of_intervals_to_str = str(functions_inside_of_intervals).replace(" ", "\u00A0") - does not work
+        #     title = f"{title} \n Function value within the respective interval: {functions_inside_of_intervals}"
     else:
         ax.set_xlabel('Rational function indices')
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-    if debug:
-        print("title: \n", title)
+    ax.bar(range(1, len(function_values) + 1), function_values, width, color='b', label="function")
+    if data:
+        if data_intervals:
+            # np.array(list(map(lambda x: np.array([x.start, x.end]), data_intervals))) # wrong shape (N,2) instead of (2,N)
+            errors = [[], []]
+            for index, item in enumerate(data_intervals):
+                errors[0].append(float(abs(data[index] - item.start)))
+                errors[1].append(float(abs(data[index] - item.end)))
+
+            ax.bar(list(map(lambda x: x + width, range(1, len(data) + 1))), data, width, yerr=errors, color='r', capsize=10, label="data")
+            title = f"{title}\n Data intervals visualised as error bars."
+        else:
+            ax.bar(list(map(lambda x: x + width, range(1, len(data) + 1))), data, width, color='r', label="data")
     ax.set_title(wraper.fill(title))
+    # fig.legend()
     if debug:
         print("Len(fun_list): ", len(functions))
-        print("values:", values)
-        print("range:", range(1, len(values) + 1))
+        print("values:", function_values)
+        print("range:", range(1, len(function_values) + 1))
         print("title", title)
-    ax.bar(range(1, len(values) + 1), values, width, color='b')
-    if data:
-        ax.bar(list(map(lambda x: x + width, range(1, len(data) + 1))), data, width, color='r')
-
     if where:
         return fig, ax
     else:
         plt.show()
-    return values
+    return function_values
 
 
 def sample_dictionary_funs(dictionary, sample_size, keys=None, debug: bool = False):
@@ -242,32 +290,32 @@ def sample_list_funs(functions, sample_size, parameters=False, intervals=False, 
     return arr
 
 
-def visualise(dic_fun, agents_quantities, sample_size, cumulative=False, debug: bool = False, show_all_in_one=False, where=False):
+def visualise(dic_fun, indices, sample_size, cumulative=False, debug: bool = False, show_all_in_one=False, where=False):
     """ Creates bar plot of probabilities of i successes for sampled parametrisation
 
     Args:
-        dic_fun (dictionary population_size -> list of rational functions)
+        dic_fun (dictionary index -> list of rational functions)
         sample_size (int): sample size in each parameter
-        agents_quantities (list of ints): pop sizes to be used
+        indices (list of ints): list of indices to show
         cumulative (bool): if True cdf instead of pdf is visualised
         debug (bool): if debug extensive output is provided
         show_all_in_one (bool): if True all plots are put into one window
         where (tuple/list): output matplotlib sources to output created figure
     """
 
-    for population_size in agents_quantities:
+    for index in indices:
         parameters = set()
-        for index, polynomial in enumerate(dic_fun[population_size]):
-            if is_this_z3_function(polynomial):
-                dic_fun[population_size][index] = translate_z3_function(polynomial)
+        for index, expression in enumerate(dic_fun[index]):
+            if is_this_z3_function(expression):
+                dic_fun[index][index] = translate_z3_function(expression)
 
             if debug:
-                print("Polynomial: ", polynomial)
-            parameters.update(find_param(polynomial, debug))
+                print("Polynomial: ", expression)
+            parameters.update(find_param(expression, debug))
 
             ## THIS THING IS WORKING ONLY FOR THE CASE STUDY
-            # if len(parameters) < population_size:
-            #    parameters.update(find_param(polynomial, debug))
+            # if len(parameters) < index:
+            #    parameters.update(find_param(expression, debug))
         if debug:
             print("Parameters: ", parameters)
         parameters = sorted(list(parameters))
@@ -280,11 +328,11 @@ def visualise(dic_fun, agents_quantities, sample_size, cumulative=False, debug: 
             if debug:
                 print("Parameter_value: ", parameter_value)
             add = 0
-            a = [population_size, dic_fun[population_size].index(polynomial)]
-            if population_size == 0:
+            a = [index, dic_fun[index].index(expression)]
+            if index == 0:
                 title = f"Rational functions sampling \n parameters:"
             else:
-                title = f"Rational functions sampling \n population_size={population_size}, parameters:"
+                title = f"Rational functions sampling \n index={index}, parameters:"
             for param in range(len(parameters)):
                 a.append(parameter_value[param])
                 if debug:
@@ -294,9 +342,9 @@ def visualise(dic_fun, agents_quantities, sample_size, cumulative=False, debug: 
                 title = "{} {}={},".format(title, parameters[param], parameter_value[param])
             title = title[:-1]
             if debug:
-                print("Eval ", polynomial, eval(polynomial))
-            for polynomial in dic_fun[population_size]:
-                value = eval(polynomial)
+                print("Eval ", expression, eval(expression))
+            for expression in dic_fun[index]:
+                value = eval(expression)
                 if cumulative:
                     ## Add sum of all values
                     add = add + value
@@ -312,7 +360,7 @@ def visualise(dic_fun, agents_quantities, sample_size, cumulative=False, debug: 
             ax.set_xlabel('Rational function indices')
             ax.set_title(wraper.fill(title))
             # print(title)
-            rects1 = ax.bar(range(len(dic_fun[population_size])), a[len(parameters) + 2:], width, color='b')
+            rects1 = ax.bar(range(len(dic_fun[index])), a[len(parameters) + 2:], width, color='b')
             plt.show()
 
 
@@ -323,8 +371,10 @@ def visualise_by_param(hyper_rectangles, colour='g', title="", where=False):
 
     Args:
         hyper_rectangles (list of (hyper)rectangles)
-        title (string):  title used for the Figure
+        colour (string): colour of the lines in the figure
+        title (string): title used for the figure
         where (tuple/list): output matplotlib sources to output created figure
+
     """
     from sympy import Interval
 
@@ -371,7 +421,7 @@ def visualise_by_param(hyper_rectangles, colour='g', title="", where=False):
             return None
 
 
-def heatmap(function, region, sampling_sizes, posttitle="", where=False, parameters=False):
+def heatmap(function, region, sampling_sizes, posttitle="", where=False, parameters=False, verbose=False):
     """ Creates 2D heatmap plot of sampled points of given function
 
     Args:
@@ -380,7 +430,8 @@ def heatmap(function, region, sampling_sizes, posttitle="", where=False, paramet
         sampling_sizes (list of ints): tuple of sample size of respective parameter
         posttitle (string): A string to be put after the title
         where (tuple/list): output matplotlib sources to output created figure
-        parameters (list):: list of parameters
+        parameters (list): list of parameters
+        verbose (bool): will input maximum information
 
     Example:
         heatmap("p+q",[[0,1],[3,4]],[5,5])
@@ -419,15 +470,18 @@ def heatmap(function, region, sampling_sizes, posttitle="", where=False, paramet
     # d = d.pivot("p", "q", "E")
     heatmap_data = heatmap_data.pivot(parameters[0], parameters[1], "E")
 
+    vmin = min(arr[:, 2])
+    vmax = max(arr[:, 2])
+
     if where:
         f, ax = plt.subplots()
-        ax = sns.heatmap(heatmap_data)
+        ax = sns.heatmap(heatmap_data, vmin=vmin, vmax=vmax, annot=verbose)
         title = f"Heatmap \n{posttitle}"
         ax.set_title(wraper.fill(title))
         ax.invert_yaxis()
         return f
     else:
-        ax = sns.heatmap(heatmap_data)
+        ax = sns.heatmap(heatmap_data, vmin=vmin, vmax=vmax, annot=verbose)
         title = f"Heatmap of the parameter space \n function: {function}"
         ax.set_title(wraper.fill(title))
         ax.invert_yaxis()

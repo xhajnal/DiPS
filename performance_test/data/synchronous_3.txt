@@ -1,0 +1,95 @@
+PRISM
+=====
+
+Version: 4.4
+Date: Wed May 29 19:49:26 CEST 2019
+Hostname: Freya
+Memory limits: cudd=1g, java(heap)=910.5m
+Command line: prism /home/matej/Git/mpm/models/synchronous_3.pm /home/matej/Git/mpm/properties/prop_3.pctl -param 'p=0:1,q=0:1'
+
+Parsing model file "/home/matej/Git/mpm/models/synchronous_3.pm"...
+
+Parsing properties file "/home/matej/Git/mpm/properties/prop_3.pctl"...
+
+4 properties:
+(1) P=? [ F (a0=0)&(a1=0)&(a2=0) ]
+(2) P=? [ F (a0=1)&(a1=0)&(a2=0) ]
+(3) P=? [ F (a0=1)&(a1=1)&(a2=0) ]
+(4) P=? [ F (a0=1)&(a1=1)&(a2=1) ]
+
+Type:        DTMC
+Modules:     two_param_agents_3 
+Variables:   a0 a1 a2 b 
+
+---------------------------------------------------------------------
+
+Parametric model checking: P=? [ F (a0=0)&(a1=0)&(a2=0) ]
+
+Building model (parametric engine)...
+
+Computing reachable states...
+Reachable states exploration and model construction done in 0.011 secs.
+
+States:      12 (1 initial)
+Transitions: 18
+
+Time for model construction: 0.011 seconds.
+
+Time for model checking: 0.015 seconds.
+
+Result (probability): ([0.0,1.0],[0.0,1.0]): { ( -1 ) p^3 + 3 p^2 - 3 p + 1  }
+
+---------------------------------------------------------------------
+
+Parametric model checking: P=? [ F (a0=1)&(a1=0)&(a2=0) ]
+
+Building model (parametric engine)...
+
+Computing reachable states...
+Reachable states exploration and model construction done in 0.003 secs.
+
+States:      12 (1 initial)
+Transitions: 18
+
+Time for model construction: 0.003 seconds.
+
+Time for model checking: 0.006 seconds.
+
+Result (probability): ([0.0,1.0],[0.0,1.0]): { 3 q^2 * p^3 - 6 q * p^3 - 6 q^2 * p^2 + 3 p^3 + 12 q * p^2 + 3 q^2 * p - 6 p^2 - 6 q * p + 3 p }
+
+---------------------------------------------------------------------
+
+Parametric model checking: P=? [ F (a0=1)&(a1=1)&(a2=0) ]
+
+Building model (parametric engine)...
+
+Computing reachable states...
+Reachable states exploration and model construction done in 0.002 secs.
+
+States:      12 (1 initial)
+Transitions: 18
+
+Time for model construction: 0.002 seconds.
+
+Time for model checking: 0.004 seconds.
+
+Result (probability): ([0.0,1.0],[0.0,1.0]): { ( -6 ) q^2 * p^3 + 9 q * p^3 + 12 q^2 * p^2 - 3 p^3 - 15 q * p^2 - 6 q^2 * p + 3 p^2 + 6 q * p }
+
+---------------------------------------------------------------------
+
+Parametric model checking: P=? [ F (a0=1)&(a1=1)&(a2=1) ]
+
+Building model (parametric engine)...
+
+Computing reachable states...
+Reachable states exploration and model construction done in 0.003 secs.
+
+States:      12 (1 initial)
+Transitions: 18
+
+Time for model construction: 0.003 seconds.
+
+Time for model checking: 0.003 seconds.
+
+Result (probability): ([0.0,1.0],[0.0,1.0]): { 3 q^2 * p^3 - 3 q * p^3 - 6 q^2 * p^2 + p^3 + 3 q * p^2 + 3 q^2 * p }
+

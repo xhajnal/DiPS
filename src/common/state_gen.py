@@ -46,12 +46,12 @@ def gen_semisync_statespace(population_size):
     for i in range(population_size):
         init_state = [0] * (population_size - i)
         state_encoding = range(-i, 1)
-        sub_statespace = backtrack(0, population_size - i, init_state, state_encoding)
-        set_sub_statespace = set(tuple(sorted(l)) for l in sub_statespace)
-        for s in set_sub_statespace:
+        sub_state_space = backtrack(0, population_size - i, init_state, state_encoding)
+        set_sub_state_space = set(tuple(sorted(state)) for state in sub_state_space)
+        for s in set_sub_state_space:
             state = [1] * i + list(s)
             state_space.append(state)
-    state_space = set(tuple(sorted(l, reverse=True)) for l in state_space)
+    state_space = set(tuple(sorted(state, reverse=True)) for state in state_space)
 
     return state_space
 
@@ -63,12 +63,12 @@ def gen_async_statespace(population_size):
         init_state = [0] * (population_size - i)
         state_encoding = list(range(-i, 1))
         state_encoding.append(k_init_state_encoding)
-        sub_statespace = backtrack(0, population_size - i, init_state, state_encoding)
-        set_sub_statespace = set(tuple(sorted(l)) for l in sub_statespace)
-        for s in set_sub_statespace:
+        sub_state_space = backtrack(0, population_size - i, init_state, state_encoding)
+        set_sub_state_space = set(tuple(sorted(state)) for state in sub_state_space)
+        for s in set_sub_state_space:
             state = [1] * i + list(s)
             state_space.append(state)
-    state_space = set(tuple(sorted(l, reverse=True)) for l in state_space)
+    state_space = set(tuple(sorted(state, reverse=True)) for state in state_space)
     state_space = sorted(list(state_space))
     return state_space
 

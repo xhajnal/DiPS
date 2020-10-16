@@ -91,13 +91,14 @@ def find_max_rectangle(sampled_space, starting_point, silent=True):
     """ Finds the largest hyperrectangles such that rectangle is all sat or all unsat from starting point in positive direction
 
     Args:
-        sampled_space (space.RefinedSpace): space
+        sampled_space: sampled space
         starting_point (list of floats): a point in the space to start search in
         silent (bool): if silent printed output is set to minimum
 
     Returns:
         (triple) : (starting point, end point, is_sat)
     """
+    assert isinstance(sampled_space, (np.ndarray, np.generic))
     sample_size = len(sampled_space[0])
     dimensions = len(sampled_space.shape) - 1
     if dimensions == 2:

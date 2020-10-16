@@ -1,20 +1,27 @@
 import unittest
 from src.common.my_z3 import *
-from termcolor import colored
 
 
 class MyTestCase(unittest.TestCase):
     def test_z3_eval(self):
+        self.assertEqual(z3_eval("8+3"), 11)
         ## TODO
-        pass
 
     def test_is_this_z3_function(self):
-        ## TODO
-        pass
+        self.assertEqual(is_this_z3_function("(1/10)**n"), False)
+        self.assertEqual(is_this_z3_function("6 ** r"), False)
+        self.assertEqual(is_this_z3_function("(1/10)*n + 6*6"), False)
+        self.assertEqual(is_this_z3_function("2**2"), False)
+        self.assertEqual(is_this_z3_function(
+            "(-210)*If(r_0 + 4*delta > 1, 1, r_0 + 4*delta )**6*r_0**4+840*If(r_0 + 4*delta > 1, 1, r_0 + 4*delta )"),
+                         True)
 
     def test_is_this_python_function(self):
-        ## TODO
-        pass
+        self.assertEqual(is_this_python_function("(1/10)**n"), True)
+        self.assertEqual(is_this_python_function("6 ** r"), True)
+        self.assertEqual(is_this_python_function("(1/10)*n + 6*6"), True)
+        self.assertEqual(is_this_python_function("2**2"), True)
+        self.assertEqual(is_this_python_function("(-210)*If(r_0 + 4*delta > 1, 1, r_0 + 4*delta )**6*r_0**4+840*If(r_0 + 4*delta > 1, 1, r_0 + 4*delta )"), False)
 
     def test_is_this_exponential_function(self):
         self.assertEqual(is_this_exponential_function("((1/10)**n"), True)
@@ -23,8 +30,12 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(is_this_exponential_function("2**2"), False)
 
     def test_is_this_general_function(self):
-        ## TODO
-        pass
+        self.assertEqual(is_this_general_function("(1/10)**n"), False)
+        self.assertEqual(is_this_general_function("6 ** r"), False)
+        self.assertEqual(is_this_general_function("(1/10)*n + 6*6"), False)
+        self.assertEqual(is_this_general_function("2**2"), False)
+        self.assertEqual(is_this_general_function("(-210)*If(r_0 + 4*delta > 1, 1, r_0 + 4*delta )**6*r_0**4+840*If(r_0 + 4*delta > 1, 1, r_0 + 4*delta )"), False)
+        self.assertEqual(is_this_general_function("("), True)
 
     def test_translate_z3_function(self):
         ## TODO

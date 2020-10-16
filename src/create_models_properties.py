@@ -1604,28 +1604,28 @@ def create_bee_multiparam_semisynchronous_model(file, population_size):
                 continue
             ## skipping the rest of final states
             ## if for all non ones the item is equal to ones, it means they cannot update any more
-            if all(map(lambda x: x == -state.count(1), list(filter(lambda x: x is not 1, state)))):
+            if all(map(lambda x: x == -state.count(1), list(filter(lambda x: x != 1, state)))):
                 continue
 
             # print("solving state", state)
 
             ## Number of stinging bees
-            succes_count = state.count(1)
+            success_count = state.count(1)
             ## Number of not stinging bees
-            fails_count = population_size - succes_count
+            fails_count = population_size - success_count
 
             ## updatable not stinging bees
-            to_be_updated = list(filter(lambda x: x is not 1 and abs(x) < succes_count, state))
+            to_be_updated = list(filter(lambda x: x != 1 and abs(x) < success_count, state))
             print("state", state)
             print("to_be_updated", to_be_updated)
             to_be_updated_count = len(to_be_updated)
             print("to_be_updated_count", to_be_updated_count)
 
             ## Distinct bee states which failed
-            distinct_fails = list(set(filter(lambda x: x is not 1, state)))
+            distinct_fails = list(set(filter(lambda x: x != 1, state)))
             ## Filter those who can be updated
             # print(distinct_fails)
-            distinct_fails = list(filter(lambda x: abs(x) < succes_count, distinct_fails))
+            distinct_fails = list(filter(lambda x: abs(x) < success_count, distinct_fails))
             print("distinct_fails", distinct_fails)
 
             ## Double checking if at least one guy can be updated
@@ -1661,15 +1661,15 @@ def create_bee_multiparam_semisynchronous_model(file, population_size):
 
                     ## The bee either stings (success) or not, hence 2 outgoing states
                     if successes:
-                        file.write(f"((r_{succes_count:0{decimals}d} - r_{fail_value:0{decimals}d})/(1 - r_{fail_value:0{decimals}d}))")
+                        file.write(f"((r_{success_count:0{decimals}d} - r_{fail_value:0{decimals}d})/(1 - r_{fail_value:0{decimals}d}))")
                         new_state = list(state)
                         new_state[new_state.index(-fail_value)] = 1
                         new_state.sort(reverse=True)
                         # print("new state", new_state)
                     else:
-                        file.write(f"(1-(r_{succes_count:0{decimals}d} - r_{fail_value:0{decimals}d})/(1 - r_{fail_value:0{decimals}d}))")
+                        file.write(f"(1-(r_{success_count:0{decimals}d} - r_{fail_value:0{decimals}d})/(1 - r_{fail_value:0{decimals}d}))")
                         new_state = list(state)
-                        new_state[new_state.index(-fail_value)] = - succes_count
+                        new_state[new_state.index(-fail_value)] = - success_count
                         new_state.sort(reverse=True)
                         # print("new state", new_state)
                     file.write(f": ")
