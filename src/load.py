@@ -478,6 +478,8 @@ def parse_params_from_model(file, silent: bool = False):
             if line.startswith('const'):
                 # print(line)
                 line = line.split(" ")[-1].split(";")[0]
+                if "=" in line:
+                    continue
                 params.append(line)
     if not silent:
         print("params", params)

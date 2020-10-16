@@ -253,7 +253,6 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
         no_prob_checks (bool or string): True if no noprobchecks option is to be used for prism
         model_path (string): path to load  models from
         properties_path (string): path to load properties from
-        param_intervals (list of pairs): parameter intervals
         property_file (string): file name of single property files to be used for all models
         output_path (string): path for the output
         memory (string or int): sets maximum memory in GB, see https://www.prismmodelchecker.org/manual/ConfiguringPRISM/OtherOptions
