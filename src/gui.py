@@ -78,7 +78,7 @@ except Exception as error:
 
 try:
     from mc_informed import general_create_data_informed_properties
-    from load import load_functions, find_param, load_data, find_param_old, parse_constraints, parse_functions
+    from load import load_functions, find_param, load_data, find_param_old, parse_constraints, parse_functions, parse_params_from_model
     from common.mathematics import create_intervals
     import space
     from refine_space import check_deeper
@@ -1102,13 +1102,14 @@ class Gui(Tk):
             if not file:
                 self.save_property(os.path.join(self.tmp_dir, "properties"))
 
-    def load_mc_output_file(self, file=False, ask=True, program=False):
+    def load_mc_output_file(self, file=False, ask=True, program=False, reset_param_and_intervals=True):
         """ Loads parameter synthesis output text file
 
         Args:
             file (path/string): direct path to load the function file
             ask (Bool): if False it will not ask questions
             program (string): overrides the sel.program setting
+            reset_param_and_intervals (Bool): if True the params will be reset
         """
         if program is False:
             program = self.program.get()
@@ -1178,9 +1179,6 @@ class Gui(Tk):
             except TclError:
                 return
 
-        if not self.silent.get():
-            print("Unparsed rational functions: ", self.functions)
-
         self.unfold_functions()
 
         if isinstance(self.functions, dict):
@@ -1209,8 +1207,9 @@ class Gui(Tk):
         # self.functions_text.configure(state='disabled')
 
         ## Resetting parsed intervals
-        self.parameters = []
-        self.parameter_domains = []
+        if reset_param_and_intervals:
+            self.parameters = []
+            self.parameter_domains = []
 
         ## Check whether loaded
         if not self.functions:
@@ -2403,11 +2402,20 @@ class Gui(Tk):
                 self.status_set("Load property for parameter synthesis")
                 self.load_property()
 
+            ## Get model parameters, reset param domains and load new
+            self.parameters = parse_params_from_model(self.model_file.get(), silent=True)
+            self.parameter_domains = []
+            self.validate_parameters(where="model", intervals=True, force=True)
+            # self.load_param_intervals_from_window()
+
+            print("param domains", self.parameter_domains)
+            print()
+
             try:
                 if self.program.get().lower() == "prism":
                     self.cursor_toggle_busy(True)
                     self.status_set("Parameter synthesis is running ...")
-                    call_prism_files(self.model_file.get(), [], param_intervals=False, seq=False, no_prob_checks=False,
+                    call_prism_files(self.model_file.get(), [], param_intervals=self.parameter_domains, seq=False, no_prob_checks=False,
                                      memory="", model_path="", properties_path=self.property_dir,
                                      property_file=self.property_file.get(), output_path=self.prism_results,
                                      gui=show_message, silent=self.silent.get())
@@ -2416,7 +2424,7 @@ class Gui(Tk):
                                                              str(Path(self.model_file.get()).stem) + "_" + str(
                                                                  Path(self.property_file.get()).stem) + ".txt")))
                     self.status_set("Parameter synthesised finished. Output here: {}", self.functions_file.get())
-                    self.load_mc_output_file(self.functions_file.get())
+                    self.load_mc_output_file(self.functions_file.get(), reset_param_and_intervals=False)
 
                 elif self.program.get().lower() == "storm":
                     self.cursor_toggle_busy(True)
@@ -2425,11 +2433,14 @@ class Gui(Tk):
                     self.functions_file.set(str(os.path.join(Path(self.storm_results),
                                                              str(Path(self.model_file.get()).stem) + "_" + str(
                                                                  Path(self.property_file.get()).stem) + ".cmd")))
-                    call_storm_files(os.path.relpath(self.model_file.get(), self.model_dir), [], model_path=self.model_dir, properties_path=self.property_dir,
-                                     property_file=self.property_file.get(), command_output_file=self.functions_file.get(), output_path=self.storm_results, time=False)
+                    call_storm_files(os.path.relpath(self.model_file.get(), self.model_dir), [],
+                                     param_intervals=self.parameter_domains, model_path=self.model_dir,
+                                     properties_path=self.property_dir, property_file=self.property_file.get(),
+                                     command_output_file=self.functions_file.get(), output_path=self.storm_results,
+                                     time=False)
 
                     self.status_set("Command to run the parameter synthesis saved here: {}", self.functions_file.get())
-                    self.load_mc_output_file(self.functions_file.get())
+                    self.load_mc_output_file(self.functions_file.get(), reset_param_and_intervals=False)
                 else:
                     ## Show window to inform to select the program
                     self.status_set("Program for parameter synthesis not selected")
@@ -2444,8 +2455,8 @@ class Gui(Tk):
             self.model_changed = False
             self.property_changed = False
             ## Resetting parsed intervals
-            self.parameters = []
-            self.parameter_domains = []
+            # self.parameters = []
+            # self.parameter_domains = []
 
             # self.save_parsed_functions(os.path.join(self.tmp_dir, "parsed_functions"))
             self.cursor_toggle_busy(False)
@@ -2465,7 +2476,7 @@ class Gui(Tk):
             return
 
         self.status_set("Sampling functions.")
-        self.validate_parameters(where=self.functions)
+        self.validate_parameters(where=self.functions, force=True)
 
         try:
             self.cursor_toggle_busy(True)
@@ -3419,12 +3430,13 @@ class Gui(Tk):
         self.status_set("Space refinement finished.")
 
     ## VALIDATE VARIABLES (PARAMETERS, constraints, SPACE)
-    def validate_parameters(self, where: Iterable, intervals=True):
+    def validate_parameters(self, where: Iterable, intervals=True, force=False):
         """ Validates (functions, constraints, and space) parameters.
 
         Args:
             where (Iterable): a structure pars parameters from (e.g. self.functions)
             intervals (bool): whether to check also parameter intervals
+            force (bool): if True the param_intervals will be redone with possibly of values as default
         """
         if not self.parameters:
             print("Parsing parameters ...")
@@ -3436,7 +3448,7 @@ class Gui(Tk):
             if not self.silent.get():
                 print("parameters", self.parameters)
 
-        if (not self.parameter_domains) and intervals:
+        if (not self.parameter_domains) and intervals or force:
             ## TODO Maybe rewrite this as key and pass the argument to load_param_intervals
             self.key = StringVar()
             self.status_set("Choosing ranges of parameters:")
@@ -3448,14 +3460,18 @@ class Gui(Tk):
             i = 1
             ## For each param create an entry
             self.parameter_domains_entries = []
-            for param in self.parameters:
+            for index, param in enumerate(self.parameters):
                 Label(self.new_window, text=param, anchor=W, justify=LEFT).grid(row=i, column=0)
                 spam_low = Entry(self.new_window)
                 spam_high = Entry(self.new_window)
                 spam_low.grid(row=i, column=1)
                 spam_high.grid(row=i, column=2)
-                spam_low.insert(END, '0')
-                spam_high.insert(END, '1')
+                if self.parameter_domains:
+                    spam_low.insert(END, str(self.parameter_domains[index][0]))
+                    spam_high.insert(END, str(self.parameter_domains[index][1]))
+                else:
+                    spam_low.insert(END, '0')
+                    spam_high.insert(END, '1')
                 self.parameter_domains_entries.append([spam_low, spam_high])
                 i = i + 1
 
@@ -3763,11 +3779,12 @@ class Gui(Tk):
         if not file:
             self.status_set("Textual representation of accepted points of MH saved.")
 
-    def validate_space(self, position=False):
+    def validate_space(self, position=False, force=False):
         """ Validates space.
 
         Args:
             position (string): Name of the place from which is being called e.g. "Refine Space"/"Sample space"
+            force (bool): if True the param_intervals will be redone with possibly of values as default
         """
         print("Checking space ...")
         if position is False:
@@ -3777,7 +3794,7 @@ class Gui(Tk):
             if not self.silent.get():
                 print("Space is empty - creating a new one.")
             ## Parse params and its intervals
-            self.validate_parameters(where=self.constraints)
+            self.validate_parameters(where=self.constraints, force=False)
 
             ## Check whether param interval loading went good
             if isinstance(self.parameter_domains, list):

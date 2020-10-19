@@ -93,6 +93,8 @@ def load_functions(file_path, tool="unknown", factorize=True, rewards_only=False
                     line = line.split(":")[2]
                 elif tool.lower().startswith("s"):
                     line = line.split(":")[1]
+                if line[-1] == "\n":
+                    line = line[:-1]
                 ## CONVERT THE EXPRESSION TO PYTHON FORMAT
                 line = line.replace("{", "")
                 line = line.replace("}", "")
@@ -108,14 +110,18 @@ def load_functions(file_path, tool="unknown", factorize=True, rewards_only=False
                 line = line.replace(" ", "")
                 line = line.replace("*|", "|")
                 line = line.replace("|*", "|")
-                line = line.replace("|", "/")
+                ## Redoing PRISM non-standard operator orders
+                if tool.lower().startswith("p"):
+                    if "|" in line:
+                        line = f"({line})"
+                        line = line.replace("|", ")/(")
+                else:
+                    line = line.replace("|", "/")
                 line = line.replace("(*", "(")
                 line = line.replace("+*", "+")
                 line = line.replace("-*", "-")
                 if line.startswith('*'):
                     line = line[1:]
-                if line[-1] == "\n":
-                    line = line[:-1]
                 if here == "r" and not f_only:
                     # print(f"formula: {i+1}", line)
                     if factorize:
@@ -476,11 +482,16 @@ def parse_params_from_model(file, silent: bool = False):
     with open(file, 'r') as input_file:
         for line in input_file:
             if line.startswith('const'):
-                # print(line)
-                line = line.split(" ")[-1].split(";")[0]
+                print(line[-1])
+                line = line.split(";")[0]
+                print(line)
                 if "=" in line:
+                    print()
                     continue
+                line = line.split(" ")[-1]
+                print(line)
                 params.append(line)
+                print()
     if not silent:
         print("params", params)
     return params
