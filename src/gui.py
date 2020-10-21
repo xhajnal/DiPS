@@ -1044,8 +1044,8 @@ class Gui(Tk):
             self.model_file.set(spam)
             # self.model_text.configure(state='normal')
             self.model_text.delete('1.0', END)
-            with open(self.model_file.get(), 'r') as file:
-                self.model_text.insert('end', file.read())
+            with open(self.model_file.get(), 'r') as f:
+                self.model_text.insert('end', f.read())
             # self.model_text.configure(state='disabled')
             self.status_set("Model loaded.")
             # print("self.model", self.model.get())
@@ -1086,14 +1086,14 @@ class Gui(Tk):
             self.property_file.set(spam)
             self.property_text.configure(state='normal')
             self.property_text.delete('1.0', END)
-            with open(self.property_file.get(), 'r') as file:
-                self.property_text.insert('end', file.read())
+            with open(self.property_file.get(), 'r') as f:
+                self.property_text.insert('end', f.read())
             # self.property_text.configure(state='disabled')
 
             self.property_text2.configure(state='normal')
             self.property_text2.delete('1.0', END)
-            with open(self.property_file.get(), 'r') as file:
-                self.property_text2.insert('end', file.read())
+            with open(self.property_file.get(), 'r') as f:
+                self.property_text2.insert('end', f.read())
             # self.property_text2.configure(state='disabled')
             self.status_set("Property loaded.")
             # print("self.property", self.property.get())
@@ -1202,8 +1202,8 @@ class Gui(Tk):
         ## Print functions into TextBox
         self.functions_text.configure(state='normal')
         self.functions_text.delete('1.0', END)
-        with open(self.functions_file.get(), 'r') as file:
-            self.functions_text.insert('1.0', file.read())
+        with open(self.functions_file.get(), 'r') as f:
+            self.functions_text.insert('1.0', f.read())
         # self.functions_text.configure(state='disabled')
 
         ## Resetting parsed intervals
@@ -1657,8 +1657,8 @@ class Gui(Tk):
                         return
                     # self.constraints = []
                     #
-                    # with open(self.constraints_file.get(), 'r') as file:
-                    #     for line in file:
+                    # with open(self.constraints_file.get(), 'r') as f:
+                    #     for line in f:
                     #         print(line[:-1])
                     #         self.constraints.append(line[:-1])
             if self.debug.get():
@@ -1964,8 +1964,8 @@ class Gui(Tk):
             save_model_file = save_model_file + ".pm"
         # print("save_model_file", save_model_file)
 
-        with open(save_model_file, "w") as file:
-            file.write(self.model_text.get(1.0, END))
+        with open(save_model_file, "w") as f:
+            f.write(self.model_text.get(1.0, END))
 
         if not file:
             self.model_file.set(save_model_file)
@@ -1998,8 +1998,8 @@ class Gui(Tk):
             save_property_file = save_property_file + ".pctl"
         # print("save_property_file", save_property_file)
 
-        with open(save_property_file, "w") as file:
-            file.write(self.property_text.get(1.0, END))
+        with open(save_property_file, "w") as f:
+            f.write(self.property_text.get(1.0, END))
 
         if not file:
             self.property_file.set(save_property_file)
@@ -2059,8 +2059,8 @@ class Gui(Tk):
             save_data_informed_property_file = save_data_informed_property_file + ".pctl"
         # print("save_property_file", save_property_file)
 
-        with open(save_data_informed_property_file, "w") as file:
-            file.write(self.data_informed_property_text.get('1.0', END))
+        with open(save_data_informed_property_file, "w") as f:
+            f.write(self.data_informed_property_text.get('1.0', END))
 
         if not file:
             self.data_informed_property_file.set(save_data_informed_property_file)
@@ -2105,9 +2105,9 @@ class Gui(Tk):
         if "." not in basename(save_functions_file):
             save_functions_file = save_functions_file + ".txt"
 
-        with open(save_functions_file, "w") as file:
+        with open(save_functions_file, "w") as f:
             for line in self.functions:
-                file.write(line)
+                f.write(line)
 
         if not file:
             self.functions_file.set(save_functions_file)
@@ -2580,11 +2580,11 @@ class Gui(Tk):
         time_stamp = str(strftime("%d-%b-%Y-%H-%M-%S", localtime())) + ".png"
         self.page3_figure.savefig(os.path.join(self.figures_dir, f"{plot_type}_{time_stamp}"), bbox_inches='tight')
         print("Figure stored here: ", os.path.join(self.figures_dir, f"{plot_type}_{time_stamp}"))
-        with open(os.path.join(self.figures_dir, "figure_to_title.txt"), "a+") as file:
-            file.write(f"{plot_type}_{time_stamp} :\n")
-            file.write(f"      functions: {self.functions_file.get()}\n")
+        with open(os.path.join(self.figures_dir, "figure_to_title.txt"), "a+") as f:
+            f.write(f"{plot_type}_{time_stamp} :\n")
+            f.write(f"      functions: {self.functions_file.get()}\n")
             if self.data:
-                file.write(f"      data: {self.data_file.get()}\n")
+                f.write(f"      data: {self.data_file.get()}\n")
 
     def show_funs_in_all_points(self):
         """ Shows sampled functions in all sampled points. """
@@ -2827,10 +2827,10 @@ class Gui(Tk):
         if "." not in basename(save_opt_result_file):
             save_opt_result_file = save_opt_result_file + ".txt"
 
-        with open(save_opt_result_file, "w") as file:
-            file.write(f"parameter point {self.optimised_param_point} \n")
-            file.write(f"function values {self.optimised_function_value} \n")
-            file.write(f"distance {self.optimised_distance} \n")
+        with open(save_opt_result_file, "w") as f:
+            f.write(f"parameter point {self.optimised_param_point} \n")
+            f.write(f"function values {self.optimised_function_value} \n")
+            f.write(f"distance {self.optimised_distance} \n")
 
     ## First, it asks whether it is changed, then selects (text, file, text) accordingly
     def check_changes(self, what):
@@ -3064,10 +3064,10 @@ class Gui(Tk):
             time_stamp = str(strftime("%d-%b-%Y-%H-%M-%S", localtime())) + ".png"
             self.page6_figure.savefig(os.path.join(self.refinement_results, f"Space_sampling_{time_stamp}"), bbox_inches='tight')
             print("Figure stored here: ", os.path.join(self.refinement_results, f"Space_sampling_{time_stamp}"))
-            with open(os.path.join(self.refinement_results, "figure_to_title.txt"), "a+") as file:
-                file.write(f"Space_sampling_{time_stamp} :\n")
-                file.write(f"      grid_size: {self.sample_size}\n")
-                file.write(f"      constraints: {self.constraints_file.get()}\n")
+            with open(os.path.join(self.refinement_results, "figure_to_title.txt"), "a+") as f:
+                f.write(f"Space_sampling_{time_stamp} :\n")
+                f.write(f"      grid_size: {self.sample_size}\n")
+                f.write(f"      constraints: {self.constraints_file.get()}\n")
 
         self.space_changed = False
         self.constraints_changed = False
@@ -3140,10 +3140,10 @@ class Gui(Tk):
             time_stamp = str(strftime("%d-%b-%Y-%H-%M-%S", localtime())) + ".png"
             self.page6_figure.savefig(os.path.join(self.refinement_results, f"Space_sampling_{time_stamp}"), bbox_inches='tight')
             print("Figure stored here: ", os.path.join(self.refinement_results, f"Space_sampling_{time_stamp}"))
-            with open(os.path.join(self.refinement_results, "figure_to_title.txt"), "a+") as file:
-                file.write(f"Space_sampling_{time_stamp} :\n")
-                file.write(f"      grid_size: {self.sample_size}\n")
-                file.write(f"      constraints: {self.constraints_file.get()}\n")
+            with open(os.path.join(self.refinement_results, "figure_to_title.txt"), "a+") as f:
+                f.write(f"Space_sampling_{time_stamp} :\n")
+                f.write(f"      grid_size: {self.sample_size}\n")
+                f.write(f"      constraints: {self.constraints_file.get()}\n")
 
         self.space_changed = False
         self.constraints_changed = False
@@ -3265,10 +3265,10 @@ class Gui(Tk):
             time_stamp = str(strftime("%d-%b-%Y-%H-%M-%S", localtime())) + ".png"
             self.page6_figure2.savefig(os.path.join(self.mh_results_dir, f"Metropolis-Hastings_{time_stamp}"), bbox_inches='tight')
             print("Figure stored here: ", os.path.join(self.mh_results_dir, f"Metropolis-Hastings_{time_stamp}"))
-            with open(os.path.join(self.mh_results_dir, "figure_to_title.txt"), "a+") as file:
-                file.write(f"Metropolis-Hastings_{time_stamp} :\n")
-                file.write(f"      data: {self.data_file.get()}\n")
-                file.write(f"      functions: {self.functions_file.get()}\n")
+            with open(os.path.join(self.mh_results_dir, "figure_to_title.txt"), "a+") as f:
+                f.write(f"Metropolis-Hastings_{time_stamp} :\n")
+                f.write(f"      data: {self.data_file.get()}\n")
+                f.write(f"      functions: {self.functions_file.get()}\n")
 
                 # try:
         #     self.cursor_toggle_busy(True)
@@ -3417,9 +3417,9 @@ class Gui(Tk):
                 self.page6_figure.savefig(os.path.join(self.refinement_results, f"Space_refinement_{time_stamp}"),
                                           bbox_inches='tight')
                 print("Figure stored here: ", os.path.join(self.refinement_results, f"Space_refinement_{time_stamp}"))
-                with open(os.path.join(self.refinement_results, "figure_to_title.txt"), "a+") as file:
-                    file.write(f"Space_refinement_{time_stamp} :\n")
-                    file.write(f"      constraints: {self.constraints_file.get()}\n")
+                with open(os.path.join(self.refinement_results, "figure_to_title.txt"), "a+") as f:
+                    f.write(f"Space_refinement_{time_stamp} :\n")
+                    f.write(f"      constraints: {self.constraints_file.get()}\n")
 
         self.print_space()
 
@@ -3773,10 +3773,10 @@ class Gui(Tk):
         if not self.silent.get():
             print("Saving the textual representation of accepted points of MH as a file:", acc_mh_export_text_file)
 
-        with open(acc_mh_export_text_file, "w") as file:
+        with open(acc_mh_export_text_file, "w") as f:
             assert isinstance(self.mh_results, HastingsResults)
             for item in self.mh_results.get_acc_as_a_list():
-                file.write(str(item)+",\n")
+                f.write(str(item)+",\n")
 
         if not file:
             self.status_set("Textual representation of accepted points of MH saved.")
