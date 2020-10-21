@@ -4,6 +4,8 @@ import socket
 import numpy
 
 ## Importing my code
+from termcolor import colored
+
 from mc import call_prism
 from load import find_param, parse_params_from_model
 from common.config import load_config
@@ -195,7 +197,7 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
                             filter(lambda x: x == i, experiments[model_type][population_size][n_sample][column_values]))) / n_sample)
                 print("states: ", experiments[model_type][population_size][max_sample][column_values])
 
-    print(f"  It took {socket.gethostname()} {time.time() - start_time} seconds to run")
+    print(colored(f"  It took {socket.gethostname()} {time.time() - start_time} seconds to run", "yellow"))
     return experiments, data
 
 

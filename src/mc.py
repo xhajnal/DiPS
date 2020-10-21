@@ -339,7 +339,7 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
 
             # print(f"  Return code is: {error}")
             if not silent:
-                print(f"  It took {socket.gethostname()}, {time() - start_time} seconds to run")
+                print(colored(f"  It took {socket.gethostname()}, {time() - start_time} seconds to run", "yellow"))
 
             ## Check for missing files
             if error[0] == 404:

@@ -51,7 +51,7 @@ def ineq_to_constraints(functions: list, intervals: list, decoupled=True, silent
         spam = []
         for index in range(len(functions)):
             ## debug
-            print(colored(f"type of the function is {type(functions[index])}", "blue"))
+            # print(colored(f"type of the function is {type(functions[index])}", "blue"))
             ## name intervals
             if isinstance(intervals[index], Interval):
                 low = intervals[index].start

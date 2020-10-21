@@ -152,7 +152,7 @@ def load_functions(file_path, tool="unknown", factorize=True, rewards_only=False
             line_index = line_index + 1
 
     if factorize:
-        print(colored(f"Factorisation took {time_to_factorise} seconds", "blue"))
+        print(colored(f"Factorisation took {time_to_factorise} seconds", "yellow"))
     return f, rewards
 
 
@@ -481,7 +481,7 @@ def parse_params_from_model(file, silent: bool = False):
     # print("file", file)
     with open(file, 'r') as input_file:
         for line in input_file:
-            if line.startswith('const'):
+            if line.startswith("const"):
                 print(line[-1])
                 line = line.split(";")[0]
                 print(line)

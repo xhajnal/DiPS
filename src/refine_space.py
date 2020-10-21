@@ -699,7 +699,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                 print("No unsat points in the samples")
 
         print("Presampling resulted in splicing the region into these subregions: ", space.get_white())
-        print(f"Presampling took {socket.gethostname()} {round(time() - start_time)} second(s)")
+        print(colored(f"Presampling took {socket.gethostname()} {round(time() - start_time)} second(s)", "yellow"))
         print()
 
     # NORMAL REFINEMENT - WITHOUT/AFTER PRESAMPLING
@@ -917,7 +917,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         else:
             space_shown = [False]
     print(colored(f"Result coverage is: {space_coverage}", "blue"))
-    print(colored(f"Refinement took: {space.time_last_refinement} seconds", "blue"))
+    print(colored(f"Refinement took: {space.time_last_refinement} seconds", "yellow"))
     if where:
         if space_shown[0] is None:
             return space, space_shown[1]

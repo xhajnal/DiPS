@@ -3,6 +3,7 @@ import pickle
 import os
 import time
 import webbrowser
+from time import time, localtime, strftime
 from collections.abc import Iterable
 from copy import deepcopy
 from tkinter import *
@@ -796,17 +797,16 @@ class Gui(Tk):
         frame_right.pack(side=RIGHT, fill=BOTH, anchor=W)
 
         Button(frame_right, text='Set True point', command=self.set_true_point).grid(row=0, column=0, padx=(4, 4), pady=7)
-
         Button(frame_right, text='Open space', command=self.load_space).grid(row=1, column=0, padx=(4, 4), pady=7)
         Button(frame_right, text='Save space', command=self.save_space).grid(row=2, column=0, padx=(4, 4), pady=7)
         Button(frame_right, text='Delete space', command=self.refresh_space).grid(row=3, column=0, padx=(4, 4), pady=7)
-        Button(frame_right, text='Costumize Plot', command=self.customize_refinement_results).grid(row=4, column=0, padx=(4, 4), pady=7)
+        Button(frame_right, text='Customize Plot', command=self.customize_refinement_results).grid(row=4, column=0, padx=(4, 4), pady=7)
 
         Button(frame_right, text='Load MH Results', command=self.load_mh_results).grid(row=5, column=0, padx=(4, 4), pady=7)
         Button(frame_right, text='Save MH Results', command=self.save_mh_results).grid(row=6, column=0, padx=(4, 4), pady=7)
         Button(frame_right, text='Delete MH Results', command=self.refresh_mh).grid(row=7, column=0, padx=(4, 4), pady=7)
 
-        Button(frame_right, text='Costumize Plot', command=self.customize_mh_results).grid(row=8, column=0, padx=(4, 4), pady=0)
+        Button(frame_right, text='Customize Plot', command=self.customize_mh_results).grid(row=8, column=0, padx=(4, 4), pady=0)
         Button(frame_right, text='Show MH iterations', command=self.show_mh_iterations).grid(row=9, column=0, padx=(4, 4), pady=0)
         Button(frame_right, text='Show Acc points', command=self.show_mh_acc_points).grid(row=10, column=0, padx=(4, 4), pady=0)
         Button(frame_right, text='Export Acc points', command=self.export_acc_points).grid(row=11, column=0, padx=(4, 4), pady=0)
@@ -2577,7 +2577,7 @@ class Gui(Tk):
         Args:
             plot_type (str): plot type
         """
-        time_stamp = str(time.strftime("%d-%b-%Y-%H-%M-%S", time.localtime())) + ".png"
+        time_stamp = str(strftime("%d-%b-%Y-%H-%M-%S", localtime())) + ".png"
         self.page3_figure.savefig(os.path.join(self.figures_dir, f"{plot_type}_{time_stamp}"), bbox_inches='tight')
         print("Figure stored here: ", os.path.join(self.figures_dir, f"{plot_type}_{time_stamp}"))
         with open(os.path.join(self.figures_dir, "figure_to_title.txt"), "a+") as file:
@@ -2752,7 +2752,9 @@ class Gui(Tk):
             assert isinstance(self.functions, list)
             assert isinstance(self.parameters, list)
             assert isinstance(self.data, list)
+            start_time = time()
             result = optimize(self.functions, self.parameters, self.parameter_domains, self.data, debug=self.debug.get())
+            print(colored(f"Optimisation took {time() - start_time} seconds", "yellow"))
         except Exception as error:
             messagebox.showerror("Optimize", f"Error occurred during Optimization: {error}")
             raise error
@@ -3059,7 +3061,7 @@ class Gui(Tk):
 
         ## Autosave figure
         if self.save.get():
-            time_stamp = str(time.strftime("%d-%b-%Y-%H-%M-%S", time.localtime())) + ".png"
+            time_stamp = str(strftime("%d-%b-%Y-%H-%M-%S", localtime())) + ".png"
             self.page6_figure.savefig(os.path.join(self.refinement_results, f"Space_sampling_{time_stamp}"), bbox_inches='tight')
             print("Figure stored here: ", os.path.join(self.refinement_results, f"Space_sampling_{time_stamp}"))
             with open(os.path.join(self.refinement_results, "figure_to_title.txt"), "a+") as file:
@@ -3135,7 +3137,7 @@ class Gui(Tk):
 
         ## Autosave figure
         if self.save.get():
-            time_stamp = str(time.strftime("%d-%b-%Y-%H-%M-%S", time.localtime())) + ".png"
+            time_stamp = str(strftime("%d-%b-%Y-%H-%M-%S", localtime())) + ".png"
             self.page6_figure.savefig(os.path.join(self.refinement_results, f"Space_sampling_{time_stamp}"), bbox_inches='tight')
             print("Figure stored here: ", os.path.join(self.refinement_results, f"Space_sampling_{time_stamp}"))
             with open(os.path.join(self.refinement_results, "figure_to_title.txt"), "a+") as file:
@@ -3260,7 +3262,7 @@ class Gui(Tk):
 
         ## Autosave figure
         if self.save.get():
-            time_stamp = str(time.strftime("%d-%b-%Y-%H-%M-%S", time.localtime())) + ".png"
+            time_stamp = str(strftime("%d-%b-%Y-%H-%M-%S", localtime())) + ".png"
             self.page6_figure2.savefig(os.path.join(self.mh_results_dir, f"Metropolis-Hastings_{time_stamp}"), bbox_inches='tight')
             print("Figure stored here: ", os.path.join(self.mh_results_dir, f"Metropolis-Hastings_{time_stamp}"))
             with open(os.path.join(self.mh_results_dir, "figure_to_title.txt"), "a+") as file:
@@ -3411,7 +3413,7 @@ class Gui(Tk):
 
             ## Autosave figure
             if self.save.get():
-                time_stamp = str(time.strftime("%d-%b-%Y-%H-%M-%S", time.localtime())) + ".png"
+                time_stamp = str(strftime("%d-%b-%Y-%H-%M-%S", localtime())) + ".png"
                 self.page6_figure.savefig(os.path.join(self.refinement_results, f"Space_refinement_{time_stamp}"),
                                           bbox_inches='tight')
                 print("Figure stored here: ", os.path.join(self.refinement_results, f"Space_refinement_{time_stamp}"))
@@ -3611,7 +3613,7 @@ class Gui(Tk):
                 return
 
         self.new_window = Toplevel(self)
-        label = Label(self.new_window, text="Costumize Refinement Plot")
+        label = Label(self.new_window, text="Customize Refinement Plot")
         label.grid(row=0)
 
         show_red_in_multidim_refinement_chekbutton = Checkbutton(self.new_window, text="Show unsafe space instead of safe space in multidimensional plot.", variable=self.show_red_in_multidim_refinement)
@@ -3666,11 +3668,11 @@ class Gui(Tk):
             if not askyesno("Metropolis-Hastings", "Metropolis-Hastings plot will be lost. Do you want to proceed?"):
                 return
         else:
-            messagebox.showinfo("Metropolis-Hastings", "There is no plot to costumise")
+            messagebox.showinfo("Metropolis-Hastings", "There is no plot to customize!")
             return
 
         self.new_window = Toplevel(self)
-        label = Label(self.new_window, text="Costumize MH Plot")
+        label = Label(self.new_window, text="Customize MH Plot")
         label.grid(row=0)
 
         Label(self.new_window, text="Grid size", anchor=W, justify=LEFT).grid(row=1, column=0)
