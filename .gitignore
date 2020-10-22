@@ -136,6 +136,7 @@ performance_test/backup*
 results/data_intervals/*
 results/constraints/*
 results/prism_results/*
+!results/prism_results/example/
 results/storm_results/*
 results/performance_results/*
 results/optimisation_results/*
