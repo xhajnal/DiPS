@@ -2,7 +2,7 @@ import datetime
 import os
 import socket
 import sys
-import platform
+from platform import system
 import itertools
 from time import strftime, localtime, time
 from collections.abc import Iterable
@@ -24,11 +24,15 @@ from common.queue import Queue
 from common.config import load_config
 from common.space_stuff import refine_by
 
-if "wind" not in platform.system().lower():
+gIsDrealAvailable = False
+
+if "wind" not in system().lower():
     try:
         from dreal import logical_and, logical_or, logical_not, Variable, CheckSatisfiability
+        gIsDrealAvailable = True
     except ImportError as err:
         print(f"Error while loading dreal {err}")
+        gIsDrealAvailable = False
 
 config = load_config()
 results_dir = config["results"]
@@ -70,7 +74,7 @@ except ImportError:
     else:
         if z3_path_short not in os.environ["PATH"]:
             if z3_path_short.replace("/", "\\") not in os.environ["PATH"]:
-                if "wind" in platform.system().lower():
+                if "wind" in system().lower():
                     os.environ["PATH"] = os.environ["PATH"] + ";" + z3_path_short
                 else:
                     os.environ["PATH"] = os.environ["PATH"] + ":" + z3_path_short
@@ -82,13 +86,13 @@ except ImportError:
     else:
         if z3_path not in os.environ["PYTHONPATH"]:
 
-            if "wind" in platform.system().lower():
+            if "wind" in system().lower():
                 os.environ["PYTHONPATH"] = os.environ["PYTHONPATH"] + ";" + z3_path
             else:
                 os.environ["PYTHONPATH"] = os.environ["PYTHONPATH"] + ":" + z3_path
 
     ## Add z3 to LDLIB PATH
-    if "wind" not in platform.system().lower():
+    if "wind" not in system().lower():
         if "LD_LIBRARY_PATH" in os.environ:
             os.environ["LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"] + ":" + z3_path_short
         else:
@@ -126,8 +130,8 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
         constraints  (list of strings): array of functions (rational functions in the case of Markov Chains)
         silent (bool): if silent printed output is set to minimum
         called (bool): True for standalone call - it updates the global variables and creates new space
-        solver (string):: specified solver, allowed: z3, dreal
-        delta (number):: used for delta solving using dreal
+        solver (string): specified solver, allowed: z3, dreal
+        delta (number): used for delta solving using dreal
         debug (bool): if True extensive print will be used
     """
     ## Initialisation
@@ -140,6 +144,9 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
 
     if solver == "z3":  ## avoiding collision name
         del delta
+    elif solver == "dreal":
+        if not gIsDrealAvailable:
+            raise Exception("Dreal is not properly loaded, install it or use z3 instead, please.")
 
     if called:
         globals()["parameters"] = set()
@@ -267,6 +274,9 @@ def check_safe(region, constraints, silent: bool = False, called=False, solver="
 
     if solver == "z3":  ## avoiding collision name
         del delta
+    elif solver == "dreal":
+        if not gIsDrealAvailable:
+            raise Exception("Dreal is not properly loaded, install it or use z3 instead, please.")
 
     if called:
         globals()["parameters"] = set()
@@ -397,6 +407,9 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
 
     # INITIALISATION
     initialisation_start_time = time()
+
+    if version == 5:
+        solver = "interval"
 
     if debug:
         silent = False
@@ -820,7 +833,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                         space_coverage = space.get_coverage()
                         if not where:
                             space_shown = space.show(
-                                title=f"max_recursion_depth:{next_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version} \n Refinement took {socket.gethostname()} {round(time() - single_rectangle_start_time)} second(s)",
+                                title=f"max_recursion_depth:{next_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version}, {solver}, \n Refinement took {socket.gethostname()} {round(time() - single_rectangle_start_time)} second(s)",
                                 green=True, red=True, save=save, where=where, show_all=not gui)
                         if not silent:
                             print()
@@ -900,7 +913,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
     space.refinement_took(time() - start_time)
 
     ## VISUALISATION
-    space.title = f"using max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version}"
+    space.title = f"using max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version}, {solver}"
     if not sample_size:
         ## If the visualisation of the space did not succeed space_shown = (None, error message)
         if show_space:

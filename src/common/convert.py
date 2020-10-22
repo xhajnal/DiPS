@@ -24,6 +24,11 @@ def parse_numbers(text: str):
     return [float(i) for i in newstr.split()]
 
 
+def to_sympy_intervals(intervals):
+    """ converts list of lists or pairs into list of Intervals"""
+    return list(map(lambda x: x if isinstance(x, Interval) else Interval(x[0], x[1]), intervals))
+
+
 def ineq_to_constraints(functions: list, intervals: list, decoupled=True, silent: bool = True):
     """ Converts expressions and intervals into constraints
         list of expressions, list of intervals -> constraints
@@ -242,6 +247,7 @@ def decouple_constraints(constraints: list, silent: bool = True, debug: bool = F
 
 
 def add_white_spaces(expression):
+    """ Adds white spaces in between <,>,=,<=, and >= so it can be easily parsed """
     just_equal = r"[^\s<>]=[^<>]|[^<>]=[^\s<>]"
     match = re.findall(just_equal, expression)
     print(match)

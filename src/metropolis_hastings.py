@@ -1,11 +1,11 @@
 import os
+from platform import system
 from time import time
 from socket import gethostname
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 from matplotlib.ticker import MaxNLocator
-import pickle
 from matplotlib.figure import Figure
 
 # from termcolor import colored
@@ -16,7 +16,7 @@ from termcolor import colored
 from common.files import pickle_dump
 from space import RefinedSpace
 from common.config import load_config
-from common.document_wrapper import DocumentWrapper, show_message
+from common.document_wrapper import DocumentWrapper
 from common.convert import niceprint
 
 import warnings
@@ -27,6 +27,17 @@ tmp_dir = spam["tmp"]
 del spam
 
 wrapper = DocumentWrapper(width=75)
+
+
+def maximize_plot():
+    try:
+        mng = plt.get_current_fig_manager()
+        if "wind" in system().lower():
+            mng.window.state('zoomed')
+        else:
+            mng.resize(*mng.window.maxsize())
+    except:
+        pass
 
 
 class HastingsResults:
@@ -275,6 +286,7 @@ class HastingsResults:
             if where:
                 return fig, ax
             else:
+                maximize_plot()
                 plt.show()
         else:
             if where:
@@ -288,11 +300,12 @@ class HastingsResults:
             else:
                 plt.figure(figsize=(12, 6))
                 plt.hist2d(self.accepted[keep_index:, 0], self.accepted[keep_index:, 1], bins=self.bins)
-                plt.colorbar()
+                figure = plt.colorbar()
                 plt.xlabel(self.params[0])
                 plt.ylabel(self.params[1])
                 plt.title(self.title)
-                plt.set_label('# of accepted points per bin', rotation=270, labelpad=20)
+                figure.ax.set_ylabel('# of accepted points per bin', rotation=270, labelpad=20)
+                maximize_plot()
                 plt.show()
 
     def show_iterations(self, where=False):
@@ -359,6 +372,7 @@ class HastingsResults:
             ax.legend()
             ax.set_title("Trace of Accepted and Rejected points in a plane.")
         if not where:
+            maximize_plot()
             plt.show()
         else:
             where(fig)
@@ -414,6 +428,7 @@ class HastingsResults:
             ax.set_title("Trace of Accepted points in a plane.")
 
         if not where:
+            maximize_plot()
             plt.show()
         else:
             where(fig)

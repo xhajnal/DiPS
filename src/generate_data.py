@@ -113,7 +113,7 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
             if not silent:
                 print("model: ", model)
 
-            parameters = parse_params_from_model(model)
+            consts, parameters = parse_params_from_model(model, silent=silent)
             if not silent:
                 print("parameters: ", parameters)
 

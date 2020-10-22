@@ -1,8 +1,8 @@
-import platform
 import pickle
 import os
 import time
 import webbrowser
+from platform import system
 from time import time, localtime, strftime
 from collections.abc import Iterable
 from copy import deepcopy
@@ -18,7 +18,7 @@ import matplotlib.pyplot as pyplt
 import matplotlib
 from termcolor import colored
 
-sys.setrecursionlimit(4000000)
+# sys.setrecursionlimit(4000000)
 
 ## Importing my code
 from common.convert import ineq_to_constraints, parse_numbers
@@ -2403,7 +2403,7 @@ class Gui(Tk):
                 self.load_property()
 
             ## Get model parameters, reset param domains and load new
-            self.parameters = parse_params_from_model(self.model_file.get(), silent=True)
+            self.constants, self.parameters = parse_params_from_model(self.model_file.get(), silent=True)
             self.parameter_domains = []
             self.validate_parameters(where="model", intervals=True, force=True)
             # self.load_param_intervals_from_window()
@@ -3829,7 +3829,7 @@ class Gui(Tk):
     def edit_config(self):
         """ Opens config file in editor """
         print("Editing config ...")
-        if "wind" in platform.system().lower():
+        if "wind" in system().lower():
             os.startfile(f'{os.path.join(workspace, "../config.ini")}')
         else:
             os.system(f'gedit {os.path.join(workspace, "../config.ini")}')
@@ -3877,7 +3877,7 @@ class Gui(Tk):
         """ Inner function to update cursor """
         if busy:
             ## System dependent cursor setting
-            if "wind" in platform.system().lower():
+            if "wind" in system().lower():
                 self.config(cursor='wait')
             else:
                 self.config(cursor='clock')
@@ -4110,7 +4110,8 @@ class Gui(Tk):
 
 
 if __name__ == '__main__':
-    sys.setrecursionlimit(20000)
+    sys.setrecursionlimit(4000000)
+    # sys.setrecursionlimit(20000)
     info = sys.version_info
     if info[0] < 3:
         sys.exit(f"Python {info[0]} is not supported.")
@@ -4126,7 +4127,7 @@ if __name__ == '__main__':
 
     gui = Gui()
     ## System dependent fullscreen setting
-    if "wind" in platform.system().lower():
+    if "wind" in system().lower():
         gui.state('zoomed')
     else:
         gui.attributes('-zoomed', True)

@@ -1,10 +1,9 @@
 import glob
 import os
-import platform
 import re
 import socket
 import subprocess
-import sys
+from platform import system
 from time import time, strftime, localtime
 from pathlib import Path
 import psutil
@@ -26,7 +25,7 @@ del spam
 
 if "prism" not in os.environ["PATH"]:
     print("prism was probably not in PATH, adding it there")
-    if "wind" in platform.system().lower():
+    if "wind" in system().lower():
         os.environ["PATH"] = os.environ["PATH"] + ";" + prism_path
     else:
         os.environ["PATH"] = os.environ["PATH"] + ":" + prism_path
@@ -150,8 +149,8 @@ def call_prism(args, seq=False, silent: bool = False, model_path=model_path, pro
         # prism_args.append(" ".join(args.split(" ")[-2:]))
         # print(prism_args)
 
-        # print(sys.platform)
-        if sys.platform.startswith("win"):
+        # print(system().lower())
+        if "wind" in system().lower():
             args = ["prism.bat"]
         else:
             args = ["prism"]
@@ -182,7 +181,7 @@ def call_prism(args, seq=False, silent: bool = False, model_path=model_path, pro
                             args[-1] = f"{memory}g"
                             args.append("-property")
                             args.append(str(i))
-                            if sys.platform.startswith("win"):
+                            if "wind" in system().lower():
                                 previous_memory = set_java_heap_win(f"{memory}g")
                             if not silent:
                                 print("calling \"", " ".join(args), "\"")
@@ -191,14 +190,14 @@ def call_prism(args, seq=False, silent: bool = False, model_path=model_path, pro
                             if 'OutOfMemoryError' in output:
                                 write_to_file(output_file_path, output, silent, append=True)
                                 print(colored(f"A memory error occurred while seq even after increasing the memory, close some programs and try again", "red"))
-                                if sys.platform.startswith("win"):
+                                if "wind" in system().lower():
                                     set_java_heap_win(previous_memory)
                                 return "memory_fail", "A memory error occurred while seq even after increasing the memory, close some programs and try again"
                         else:
                             write_to_file(output_file_path, output, silent, append=True)
                             print(colored(f"A memory error occurred while seq with given amount of memory", "red"))
                             ## Changing the memory setting back
-                            if sys.platform.startswith("win"):
+                            if "wind" in system().lower():
                                 set_java_heap_win(previous_memory)
                             return "memory", "A memory error occurred while seq with given amount of memory"
 
@@ -296,10 +295,10 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
             # print("{} seq={}{} >> {}".format(file, seq, noprobchecks, str(prism_results)))
 
             ## Parsing the parameters from the files
-            spam = parse_params_from_model(file, silent)
+            model_consts, model_parameters = parse_params_from_model(file, silent)
             params = ""
             i = 0
-            for param in spam:
+            for param in model_parameters:
                 if param_intervals:
                     params = f"{params}{param}={param_intervals[i][0]}:{param_intervals[i][1]},"
                 else:
@@ -363,7 +362,7 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
                     ## Remove the file because appending would not overwrite the file
                     os.remove(os.path.join(output_path, "{}.txt".format(file.stem)))
                     memory = round(psutil.virtual_memory()[0] / 1024 / 1024 / 1024)  ## total memory converted to GB
-                    if sys.platform.startswith("win"):
+                    if "wind" in system().lower():
                         previous_memory = set_java_heap_win(f"{memory}g")
                     print(colored(f"A memory error occurred while seq, max memory increased to {memory}GB", "red"))
                     if gui:
@@ -439,7 +438,7 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
             print()
 
     ## Setting the previous memory on windows
-    if sys.platform.startswith("win"):
+    if "wind" in system().lower():
         try:
             set_java_heap_win(previous_memory)
         except UnboundLocalError:

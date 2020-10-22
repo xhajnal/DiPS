@@ -1,4 +1,7 @@
 import unittest
+
+import sympy
+
 from src.common.convert import *
 
 

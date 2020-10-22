@@ -464,7 +464,7 @@ class MyTestCase(unittest.TestCase):
         spacee = check_deeper([(0, 1), (0, 0.9)], ineq_to_constraints(f[N], create_intervals(alpha, n_samples, D3[("synchronous_", N, n_samples, v_p, v_q)])),
                               max_depth, min_rect_size, coverage_thresh, False, algorithm, show_space=show_space)
         ## Dreal
-        solver = "z3"
+        solver = "dreal"
         delta = 0.001
         spacee = check_deeper([(0, 1), (0, 0.9)], ineq_to_constraints(f[N], create_intervals(alpha, n_samples, D3[("synchronous_", N, n_samples, v_p, v_q)])),
                               max_depth, min_rect_size, coverage_thresh, False, algorithm, solver=solver, delta=delta, show_space=show_space)
@@ -518,8 +518,8 @@ class MyTestCase(unittest.TestCase):
 
         # start_time = time()
         # check_deeper(region, constraints, n, epsilon, coverage, silent, version, size_q=False, debug=False, save=False, title="", where=False, solver="z3", delta=0.001, show_space=show_space)
-
-        check_deeper([(0, 2)], ineq_to_constraints(["x**2", "x+3"], [Interval(0, 1), Interval(0, 1)]), 6, 0.01 ** 2, 0.9, False, 4, show_space=show_space)
+        # check_deeper(region,                                             constraints,          recursion_depth, epsilon, coverage, silent, version, sample_size, debug, save, title, where, show_space, solver, delta, gui, iterative, timeout):
+        check_deeper([(0, 2)], ineq_to_constraints(["x**2", "x+3"], [Interval(0, 1), Interval(0, 1)]),    6,    0.01 ** 2,   0.9,    False,    4,                                           show_space=show_space)
         # print("  It took", socket.gethostname(), time() - start_time, "seconds to run")
 
     def test_space_sample(self):

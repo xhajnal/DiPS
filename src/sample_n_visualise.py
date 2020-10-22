@@ -4,10 +4,11 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib import collections as mc
-from matplotlib.ticker import MaxNLocator
+from matplotlib.ticker import MaxNLocator, FixedLocator
 from termcolor import colored
 
 ## Importing my code
+from common.convert import to_sympy_intervals
 from common.my_z3 import is_this_z3_function, translate_z3_function
 from load import find_param
 from common.document_wrapper import DocumentWrapper
@@ -16,20 +17,30 @@ from common.mathematics import cartesian_product
 wraper = DocumentWrapper(width=60)
 
 
-def bar_err_plot(data, intervals, titles):
+def bar_err_plot(data, intervals=None, titles=""):
     """ Creates bar plot (with errors)
 
     Args:
-        data (list of numbers): values to barplot
-        intervals (list of numbers or Intervals): if False (0,1) interval is used
+        data (list of floats): values to barplot
+        intervals (list of tuples or list of floats or Intervals): if False (0,1) interval is used, if [] no intervals used
         titles (list of strings): (xlabel, ylabel, title)
     """
+    if intervals is None:
+        intervals = []
+    if titles == "":
+        if intervals:
+            titles = ["Data indices", "Data values", "Data barplot with data intervals as error bars"]
+        else:
+            titles = ["Data indices", "Data values", "Data barplot"]
+
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
-    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    ax.xaxis.set_major_locator(FixedLocator(range(1, len(data)+1)))
     if intervals == []:
         ax.bar(list(range(1, len(data) + 1)), data, color='r')
     else:
+        ## Uniformize data intervals
+        intervals = to_sympy_intervals(intervals)
         errors = [[], []]
         for index, item in enumerate(intervals):
             errors[0].append(float(abs(data[index] - item.start)))
@@ -82,6 +93,9 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
         debug (bool): if debug extensive output is provided
         where (tuple or list): output matplotlib sources to output created figure
     """
+    ## Uniformize the intervals
+    if data_intervals:
+        data_intervals = to_sympy_intervals(data_intervals)
 
     ## Convert z3 functions
     for index, function in enumerate(functions):
@@ -107,7 +121,7 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
             print("Parameters[param]", parameters[param])
             print("Parameter_value[param]", parameter_value[param])
         globals()[parameters[param]] = parameter_value[param]
-        title = "{} {}={},".format(title, parameters[param], parameter_value[param])
+        title = f"{title} {parameters[param]}={parameter_value[param]},"
     title = title[:-1]
 
     title = f"{title}\n Function values: "
@@ -166,7 +180,7 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
         #     title = f"{title} \n Function value within the respective interval: {functions_inside_of_intervals}"
     else:
         ax.set_xlabel('Rational function indices')
-    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    ax.xaxis.set_major_locator(FixedLocator(range(1, len(function_values)+1)))
     ax.bar(range(1, len(function_values) + 1), function_values, width, color='b', label="function")
     if data:
         if data_intervals:

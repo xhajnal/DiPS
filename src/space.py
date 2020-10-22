@@ -282,7 +282,7 @@ class RefinedSpace:
             if len(self.region) == 1:
                 if region[0][1] - region[0][0] < 0.1:
                     region[0] = (region[0][0] - 0.2, region[0][1] + 0.2)
-                axes.axis([region[0][0], region[0][1], -0.1, 0.1])
+                axes.axis([region[0][0], region[0][1], -0.5, 0.5])
             max_region_size = region[0][1] - region[0][0]
 
             if len(self.region) == 2:
@@ -879,7 +879,7 @@ class RefinedSpace:
             for rectangle in (self.rectangles_sat_to_show, self.rectangles_sat)[show_all]:
                 ## (Rectangle((low_x,low_y), width, height, fc= color)
                 rectangles_sat.append(
-                    Rectangle((rectangle[0][0], 0.33), rectangle[0][1] - rectangle[0][0], 0.33, fc='g'))
+                    Rectangle((rectangle[0][0], -0.33), rectangle[0][1] - rectangle[0][0], 0.66, fc='g'))
         self.rectangles_sat_to_show = []
         return PatchCollection(rectangles_sat, facecolor='g', alpha=0.5)
 
@@ -902,7 +902,7 @@ class RefinedSpace:
             for rectangle in (self.rectangles_unsat_to_show, self.rectangles_unsat)[show_all]:
                 ## (Rectangle((low_x,low_y), width, height, fc= color)
                 rectangles_unsat.append(
-                    Rectangle((rectangle[0][0], 0.33), rectangle[0][1] - rectangle[0][0], 0.33, fc='r'))
+                    Rectangle((rectangle[0][0], -0.33), rectangle[0][1] - rectangle[0][0], 0.66, fc='r'))
         self.rectangles_unsat_to_show = []
         return PatchCollection(rectangles_unsat, facecolor='r', alpha=0.5)
 

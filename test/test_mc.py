@@ -31,7 +31,7 @@ class MyTestCase(unittest.TestCase):
         print(colored('Test_changing_javaheap on Windows', 'blue'))
         # if not admin.isUserAdmin():
         #   admin.runAsAdmin()
-        if sys.platform.startswith("win"):
+        if system().startswith("win"):
             a = (set_java_heap_win("9g"))
             print("previous memory:", a)
             set_java_heap_win(a)

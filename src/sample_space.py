@@ -1,5 +1,4 @@
 import os
-import pickle
 import re
 from time import time, strftime, localtime
 import numpy as np

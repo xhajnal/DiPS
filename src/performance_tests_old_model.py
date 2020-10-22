@@ -9,7 +9,7 @@ import socket
 from common.convert import ineq_to_constraints
 from common.files import pickle_dump, pickle_load
 from refine_space import check_deeper
-from load import get_f, load_pickled_data
+from load import get_f
 from common.mathematics import create_intervals
 
 
@@ -18,7 +18,7 @@ test = os.path.join(cwd, "../performance_test")
 
 ## LOAD DATA
 start_time = time.time()
-D3 = load_pickled_data(os.path.join(test, "data/Data_two_param"))
+D3 = pickle_load(os.path.join(test, "data/Data_two_param"))
 print(f"  It took {socket.gethostname()} {time.time() - start_time} seconds to load data")
 
 ## LOAD POLYNOMIALS

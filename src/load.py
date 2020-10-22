@@ -1,6 +1,5 @@
 import glob
 import os
-import pickle
 import copy
 import re
 from pathlib import Path
@@ -11,7 +10,6 @@ from sympy import factor
 
 ## Importing my code
 from common.config import load_config
-from common.files import pickle_load
 
 spam = load_config()
 data_path = spam["data"]
@@ -209,7 +207,7 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
     ## Choosing files with the given pattern
     for functions_file in glob.glob(str(path)):
         try:
-            population_size = int(re.findall('\d+', functions_file)[0])
+            population_size = int(re.findall(r'\d+', functions_file)[0])
         except IndexError:
             population_size = 0
         ## Parsing only selected agents quantities
@@ -360,7 +358,7 @@ def to_variance(dic):
 ###########################
 ###       DATA HERE     ###
 ###########################
-
+## TODO rewrite this to be able to load pickled data
 def load_data(path, silent: bool = False, debug: bool = False):
     """ Loads experimental data, returns as list "data"
 
@@ -456,15 +454,6 @@ def load_all_data(path):
         print("Error, No data loaded, please check path")
 
 
-def load_pickled_data(file):
-    """ returns pickled data
-    
-    Args:
-        file (string): filename of the data to be loaded
-    """
-    pickle_load(os.path.join(data_path, file))
-
-
 #######################
 ###   PARAMETERS    ###
 #######################
@@ -477,6 +466,7 @@ def parse_params_from_model(file, silent: bool = False):
         file: ((path/string)) a prism model file to be parsed
         silent (bool): if silent command line output is set to minimum
     """
+    consts = []
     params = []
     # print("file", file)
     with open(file, 'r') as input_file:
@@ -488,13 +478,19 @@ def parse_params_from_model(file, silent: bool = False):
                 if "=" in line:
                     print()
                     continue
-                line = line.split(" ")[-1]
-                print(line)
-                params.append(line)
+                if "bool" in line or "int" in line:  ## parsing constants
+                    line = line.split(" ")[-1]
+                    print(f"const {line}")
+                    consts.append(line)
+                else:
+                    line = line.split(" ")[-1]
+                    print(f"param {line}")
+                    params.append(line)
                 print()
     if not silent:
         print("params", params)
-    return params
+        print("consts", consts)
+    return consts, params
 
 
 def find_param(my_string, debug: bool = False):
@@ -601,7 +597,7 @@ def find_param_old(expression, debug: bool = False):
     ## Replace z3 expression
     parameters = re.sub(r"(Not|Or|And|Implies|If|,|<|>|=)", " ", parameters)
 
-    parameters = re.split('\+|\*|\-|/| ', parameters)
+    parameters = re.split(r'\+|\*|\-|/| ', parameters)
     parameters = [i for i in parameters if not i.replace('.', '', 1).isdigit()]
     parameters = set(parameters)
     parameters.discard("")
@@ -620,7 +616,7 @@ def find_param_older(expression, debug: bool = False):
          set of strings - parameters
     """
     parameters = expression.replace('(', '').replace(')', '').replace('**', '*').replace(' ', '')
-    parameters = re.split('\+|\*|\-|/', parameters)
+    parameters = re.split(r'\+|\*|\-|/', parameters)
     parameters = [i for i in parameters if not i.replace('.', '', 1).isdigit()]
     parameters = set(parameters)
     parameters.discard("")

@@ -1,8 +1,25 @@
 import unittest
+from time import sleep
+
+from sympy import Interval
+
 from src.sample_n_visualise import *
 
 
 class MyTestCase(unittest.TestCase):
+    def test_bar_err_plot(self):
+        bar_err_plot([5])
+
+        bar_err_plot([5], [[0, 7]])
+
+        bar_err_plot([5], titles=["Data indices", "Data values", "single point"])
+
+        bar_err_plot([5], [[0, 7]], ["Data indices", "Data values", "single point, single interval"])
+
+        bar_err_plot([5, 6], [], ["Data indices", "Data values", "two points"])
+
+        bar_err_plot([5, 6], [[0, 7], [5.7, 6.8]], ["Data indices", "Data values", "two points two intervals"])
+
     def test_eval_and_show(self):
         ## returns [N, dic_fun[N].index(polynome), datapoint]
 
@@ -28,6 +45,9 @@ class MyTestCase(unittest.TestCase):
 
         ## With data and intervals
         eval_and_show(spam, [delta, r_0], ["delta", "r_0"], data=[0.1, 0.2, 0.7], data_intervals=[[0, 1], [0.1, 0.2], [0.1, 0.2]], debug=True)
+
+        ## With data and intervals
+        eval_and_show(spam, [delta, r_0], ["delta", "r_0"], data=[0.1, 0.2, 0.7], data_intervals=[Interval(0, 1), Interval(0.1, 0.2), Interval(0.1, 0.2)], debug=True)
 
         spam = ["r_0**2-2*r_0+1"]
 

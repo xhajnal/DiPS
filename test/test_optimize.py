@@ -1,11 +1,17 @@
 import unittest
+
+from common.files import pickle_load
 from src.optimize import *
 import os
 from termcolor import colored
-from load import get_all_f, load_pickled_data
+from load import get_all_f
 
 curr_dir = os.path.dirname(__file__)
 cwd = os.getcwd()
+cwd = os.getcwd()
+test = cwd
+model_dir = os.path.join(cwd, "models")
+data_dir = os.path.join(cwd, "data")
 
 
 class MyTestCase(unittest.TestCase):
@@ -14,7 +20,7 @@ class MyTestCase(unittest.TestCase):
         functions = get_all_f(os.path.join(cwd, "results/prism_results/asynchronous_2.txt"), "prism", True)
         functions = functions[2]
         print(functions)
-        d = load_pickled_data("data")
+        d = pickle_load(os.path.join(data_dir, "data.p"))
         print("data_point", d)
         result = optimize(functions, ["p", "q"], [[0, 1], [0, 1]], d)
         print("parameter point", result[0])

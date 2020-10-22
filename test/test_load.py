@@ -3,6 +3,7 @@ from src.load import *
 cwd = os.getcwd()
 test = cwd
 model_dir = os.path.join(cwd, "models")
+data_dir = os.path.join(cwd, "data")
 prism_results = os.path.join(cwd, "results/prism_results")
 storm_results = os.path.join(cwd, "results/storm_results")
 
@@ -10,7 +11,7 @@ storm_results = os.path.join(cwd, "results/storm_results")
 class MyTestCase(unittest.TestCase):
     def test_parse_params_from_model(self):
         print(colored('Parse parameters from a given model', 'blue'))
-        self.assertEqual(parse_params_from_model(os.path.join(model_dir, "asynchronous_2.pm")), ["p", "q"])
+        self.assertEqual(parse_params_from_model(os.path.join(model_dir, "asynchronous_2.pm")), ([], ["p", "q"]))
 
     def test_find_param(self):
         print(colored('Parse parameters from a string', 'blue'))
@@ -84,8 +85,8 @@ class MyTestCase(unittest.TestCase):
 
     def test_load_data(self):
         print(colored('Parsing single data file', 'blue'))
-        self.assertEqual(load_data(os.path.join(test, "data/data.csv")), [0.04, 0.02, 0.94])
-        self.assertEqual(load_pickled_data(os.path.join(test, "data/data.p")), [0.8166666667, 0.1166666667, 0.06666666667])
+        self.assertEqual(load_data(os.path.join(data_dir, "data.csv")), [0.04, 0.02, 0.94])  ## GOES WITH WARING: Warning while parsing line number 1. Expected number, got <class 'str'>. Skipping this line: "n=2, p_v=0.81, q_v=0.92"
+        self.assertEqual(pickle_load(os.path.join(data_dir, "data.p")), [0.8166666667, 0.1166666667, 0.06666666667])
 
     def test_load_all_data(self):
         print(colored('Parsing multiple data files', 'blue'))
