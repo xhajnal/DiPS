@@ -93,10 +93,6 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
         debug (bool): if debug extensive output is provided
         where (tuple or list): output matplotlib sources to output created figure
     """
-    ## Uniformize the intervals
-    if data_intervals:
-        data_intervals = to_sympy_intervals(data_intervals)
-
     ## Convert z3 functions
     for index, function in enumerate(functions):
         if is_this_z3_function(function):
@@ -111,6 +107,9 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
         print("Parameters: ", parameters)
 
     if data:
+        ## Check the sizes of data and functions
+        if len(data) != len(functions):
+            raise Exception(f"Number of data points, {len(data)}, is not equal to number of functions, {len(functions)}.")
         title = "Rational functions and data \n Parameter values:"
     else:
         title = "Rational functions \n Parameter values:"
@@ -123,6 +122,13 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
         globals()[parameters[param]] = parameter_value[param]
         title = f"{title} {parameters[param]}={parameter_value[param]},"
     title = title[:-1]
+
+    if data_intervals:
+        ## Check the sizes of data and functions
+        if len(data_intervals) != len(functions):
+            raise Exception(f"Number of data intervals, {len(data_intervals)}, is not equal to number of functions, {len(functions)}.")
+        ## Uniformize the intervals
+        data_intervals = to_sympy_intervals(data_intervals)
 
     title = f"{title}\n Function values: "
     for function in functions:

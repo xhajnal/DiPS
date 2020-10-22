@@ -3348,6 +3348,10 @@ class Gui(Tk):
             messagebox.showwarning("Refine space", "No sampling to be used, please run it before Presampled refinement.")
             return
 
+        if int(self.max_depth) > 14:
+            if not askyesno("Space refinement", "Recursion this deep may cause segmentation fault. Do you want to continue?"):
+                return
+
         self.status_set("Space refinement is running ...")
         # print(colored(f"self.space, {self.space.nice_print()}]", "blue"))
         try:
