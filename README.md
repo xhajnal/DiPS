@@ -2,12 +2,12 @@
 
 ## A Tool for Data-informed Parameter Synthesis for Discrete-Time Stochastic Processes from Multiple-Property Specifications
 
-DiPS ia a tool for parameter synthesis for discrete time Markov chains (DTMCs) against multiple-property specifications provided in Probabilistic Computation Tree Logic (PCTL). 
+DiPS is a tool for parameter synthesis for discrete time Markov chains (DTMCs) against multiple-property specifications provided in Probabilistic Computation Tree Logic (PCTL). 
 The probability of satisfaction of each property is constrained by intervals obtained from data. 
 For a single property, the existing parameter synthesis tools can compute a rational function over the chain’s parameters, which will evaluate exactly to the satisfaction probability for that single property in the given chain.
 DiPS first computes these rational functions for each among the multiple properties by invoking the existing parameter synthesis tools [PRISM](http://www.prismmodelchecker.org) and [Storm](http://www.stormchecker.org/). 
 
-Further, data measuments serve as an experimental estimation of the probability of satisfaction of PCTL formulae.
+Further, data measurements serve as an experimental estimation of the probability of satisfaction of PCTL formulae.
 With intervals derived from the data, DiPS allows to further constrain the rational functions.
 
 Finally, by coupling the obtained rational functions and interval constraints, DiPS implements four distinct methods for exploring which parameters of the
@@ -26,16 +26,16 @@ The tool was primarily designed to facilitate flexible and efficient parameter s
 However, the tool is directly applicable to any search problem, where multiple functions over unknown real variables are constrained by real-valued intervals.
 
 
-A cheme showing tool components and communication among them:
+A scheme showing tool components and communication among them:
 ![Architecure of DiPS. Main GUI components in green, main functionality components in blue, and leveraged tools and libraries in red.](architecture.jpg)
 
 
-For more information, please  read [How to use section](#HOW-TO-USE).
+For more information, please read [How to use section](#HOW-TO-USE).
 Feel free to leave response either via issues or an email.
 *****
 ## HOW TO INSTALL
 
-The tool was developed and optimised for Win10 and Ubuntu. The tool may not function properly on different operational systems.
+The tool was developed and optimised for Win10 and Ubuntu. The tool may not function properly on different operating systems.
 
 ### 1. INSTALL DEPENDENCIES:
 
@@ -103,14 +103,14 @@ For a brief summary, you can see our poster (CMSB 19), `cmsb_poster.pdf`.
 
 To follow the main workflow of the tool using the graphical user interface, please see `tutorial.pdf`.
 
-For more information about the methods please follow the tool paper (submitted) or previous HSB paper [[1]](#one) (if not reachable, please write us an email.)
+For more information about the methods, please follow the tool paper (submitted) or previous HSB paper [[1]](#one) (if not reachable, please write us an email.)
 
 
 *****
 ## HOW TO CITE US
 
 <a name="one"> </a>
-[1] Hajnal, M., Nouvian, M., Šafránek, D., Petrov, T.: Data-informed parameter synthesis for population markov chains. In: Češka, M., Paoletti, N. (eds.) Hybrid Systems Biology. pp. 147-164. Springer International Publishing, Cham (2019)
+[1] Hajnal, M., Nouvian, M., Šafránek, D., Petrov, T.: Data-informed parameter synthesis for population Markov chains. In: Češka, M., Paoletti, N. (eds.) Hybrid Systems Biology. pp. 147-164. Springer International Publishing, Cham (2019)
 
 *****
 ## ACKNOWLEDGMENT
