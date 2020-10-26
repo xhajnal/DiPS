@@ -2578,8 +2578,11 @@ class Gui(Tk):
             plot_type (str): plot type
         """
         time_stamp = str(strftime("%d-%b-%Y-%H-%M-%S", localtime())) + ".png"
-        self.page3_figure.savefig(os.path.join(self.figures_dir, f"{plot_type}_{time_stamp}"), bbox_inches='tight')
-        print("Figure stored here: ", os.path.join(self.figures_dir, f"{plot_type}_{time_stamp}"))
+        try:
+            self.page3_figure.savefig(os.path.join(self.figures_dir, f"{plot_type}_{time_stamp}"), bbox_inches='tight')
+            print("Figure stored here: ", os.path.join(self.figures_dir, f"{plot_type}_{time_stamp}"))
+        except:
+            print("This figure could not be saved.")
         with open(os.path.join(self.figures_dir, "figure_to_title.txt"), "a+") as f:
             f.write(f"{plot_type}_{time_stamp} :\n")
             f.write(f"      functions: {self.functions_file.get()}\n")
@@ -2703,8 +2706,9 @@ class Gui(Tk):
             self.initialise_plot3(what=self.page3_figure)
 
             ## Autosave figure
-            if self.save.get():
-                self.save_functions_plot(f"Heatmap_function_{i}_of_{len(self.functions)}_")
+            ## TODO as this feature creates so far unfixable bugs it will be commented
+            # if self.save.get():
+            #     self.save_functions_plot(f"Heatmap_function_{i}_of_{len(self.functions)}_")
 
             self.Next_sample_button.wait_variable(self.button_pressed)
         # self.Next_sample_button.config(state="disabled")
