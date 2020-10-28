@@ -701,16 +701,16 @@ class Gui(Tk):
         label73 = Label(frame_left, text="Grid size: ", anchor=W, justify=LEFT)
         label73.grid(row=2, column=7)
         createToolTip(label73, text='Number of segments in the plot')
-        self.bins = Entry(frame_left)
-        self.bins.grid(row=2, column=8)
-        self.bins.insert(END, '20')
+        self.bins_entry = Entry(frame_left)
+        self.bins_entry.grid(row=2, column=8)
+        self.bins_entry.insert(END, '20')
 
         label73 = Label(frame_left, text="Burn-in: ", anchor=W, justify=LEFT)
         label73.grid(row=3, column=7)
         createToolTip(label73, text='Trim the fraction of accepted points from beginning')
-        self.show = Entry(frame_left)
-        self.show.grid(row=3, column=8)
-        self.show.insert(END, '0.25')
+        self.burn_in_entry = Entry(frame_left)
+        self.burn_in_entry.grid(row=3, column=8)
+        self.burn_in_entry.insert(END, '0.25')
 
         label73 = Label(frame_left, text="Timeout: ", anchor=W, justify=LEFT)
         label73.grid(row=4, column=7)
@@ -899,6 +899,9 @@ class Gui(Tk):
 
     def load_config(self):
         """ Loads variables from the config file """
+        ## TODO try catch of paths
+        ## TODO ADD EVERYWHERE print(f"current config entry {entry name} could be loaded, used the GUI default value")
+
         os.chdir(workspace)
         config.read(os.path.join(workspace, "../config.ini"))
 
@@ -993,12 +996,87 @@ class Gui(Tk):
             os.makedirs(self.tmp_dir)
         # print("self.tmp_dir", self.tmp_dir)
 
+        ## Interval settings
+        try:
+            n_samples = config.get("settings", "number_of_samples")
+            self.n_samples_entry.delete(0, 'end')
+            self.n_samples_entry.insert(END, n_samples)
+        except configparser.NoOptionError:
+            pass
+        try:
+            confidence_level = config.get("settings", "confidence_level")
+            self.confidence_entry.delete(0, 'end')
+            self.confidence_entry.insert(END, confidence_level)
+        except configparser.NoOptionError:
+            pass
+
+        # Space sampling setting
+        try:
+            grid_size = config.get("settings", "grid_size")
+            self.sample_size_entry.delete(0, 'end')
+            self.sample_size_entry.insert(END, grid_size)
+        except configparser.NoOptionError:
+            pass
+
+        # Space refinement setting
+        try:
+            self.max_depth = config.get("settings", "max_depth")
+            self.max_dept_entry.delete(0, 'end')
+            self.max_dept_entry.insert(END, self.max_depth)
+        except configparser.NoOptionError:
+            pass
+        try:
+            self.coverage = config.get("settings", "coverage")
+            self.coverage_entry.delete(0, 'end')
+            self.coverage_entry.insert(END, self.coverage)
+        except configparser.NoOptionError:
+            pass
+        try:
+            alg = config.get("settings", "algorithm")
+            self.alg_entry.set(alg)
+        except configparser.NoOptionError:
+            pass
+        try:
+            solver = str(config.get("settings", "solver"))
+            self.solver_entry.delete(0, 'end')
+            self.solver_entry.insert(END, solver)
+        except configparser.NoOptionError:
+            pass
+        try:
+            self.delta = config.get("settings", "delta")
+            self.delta_entry.delete(0, 'end')
+            self.delta_entry.insert(END, self.delta)
+        except configparser.NoOptionError:
+            pass
         try:
             self.refinement_timeout = config.get("settings", "refine_timeout")
             self.refinement_timeout_entry.delete(0, 'end')
             self.refinement_timeout_entry.insert(END, self.refinement_timeout)
         except configparser.NoOptionError:
             pass
+
+        # Metropolis-Hastings setting
+        try:
+            mh_iterations = config.get("settings", "iterations")
+            self.MH_sampling_iterations_entry.delete(0, 'end')
+            self.MH_sampling_iterations_entry.insert(END, mh_iterations)
+        except configparser.NoOptionError:
+            pass
+
+        try:
+            mh_grid_size = config.get("settings", "mh_grid_size")
+            self.bins_entry.delete(0, 'end')
+            self.bins_entry.insert(END, mh_grid_size)
+        except configparser.NoOptionError:
+            pass
+
+        try:
+            burn_in = config.get("settings", "burn_in")
+            self.burn_in_entry.delete(0, 'end')
+            self.burn_in_entry.insert(END, burn_in)
+        except configparser.NoOptionError:
+            pass
+
         try:
             self.mh_timeout = config.get("settings", "mh_timeout")
             self.mh_timeout_entry.delete(0, 'end')
@@ -3233,7 +3311,7 @@ class Gui(Tk):
                                                   theta_init=self.parameter_point,
                                                   where=[self.page6_figure2, self.page6_b],
                                                   progress=self.update_progress_bar, debug=self.debug.get(),
-                                                  bins=int(self.bins.get()), burn_in=float(self.show.get()),
+                                                  bins=int(self.bins_entry.get()), burn_in=float(self.burn_in_entry.get()),
                                                   timeout=int(self.mh_timeout_entry.get()), draw_plot=self.draw_plot_window,
                                                   metadata=self.show_mh_metadata.get())
             spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b])
@@ -3684,16 +3762,16 @@ class Gui(Tk):
         label.grid(row=0)
 
         Label(self.new_window, text="Grid size", anchor=W, justify=LEFT).grid(row=1, column=0)
-        self.grid_size_entry = Entry(self.new_window)
-        self.grid_size_entry.grid(row=1, column=1)
-        self.grid_size_entry.insert(END, str(self.mh_results.bins))
+        self.mh_grid_size_entry = Entry(self.new_window)
+        self.mh_grid_size_entry.grid(row=1, column=1)
+        self.mh_grid_size_entry.insert(END, str(self.mh_results.bins))
 
         burn_in_label = Label(self.new_window, text="Burn-in", anchor=W, justify=LEFT)
         burn_in_label.grid(row=2, column=0)
         createToolTip(burn_in_label, text='Trim the fraction of accepted points from beginning')
-        self.burn_in_entry = Entry(self.new_window)
-        self.burn_in_entry.grid(row=2, column=1)
-        self.burn_in_entry.insert(END, str(self.mh_results.get_burn_in()))
+        self.burn_in_entry_2 = Entry(self.new_window)
+        self.burn_in_entry_2.grid(row=2, column=1)
+        self.burn_in_entry_2.insert(END, str(self.mh_results.get_burn_in()))
 
         # Label(self.new_window, text="Show 2D MH plot as scatter line plot", anchor=W, justify=LEFT).grid(row=3, column=0)
         show_mh_as_scatter_checkbutton = Checkbutton(self.new_window, text="Show 2D MH plot as scatter line plot", variable=self.show_mh_as_scatter)
@@ -3711,8 +3789,8 @@ class Gui(Tk):
     def change_MH_Plot(self):
         """ Parses window changing MH Plot"""
         try:
-            bins = int(self.grid_size_entry.get())
-            burn_in = float(self.burn_in_entry.get())
+            bins = int(self.mh_grid_size_entry.get())
+            burn_in = float(self.burn_in_entry_2.get())
             as_scatter = bool(self.show_mh_as_scatter.get())
 
             ## Clear figure
