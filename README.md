@@ -74,8 +74,29 @@ In the main folder, there is `config.ini` file. Please fill 'prism_path' to use 
 * `tmp`: path to save temporal/intermidiate files  eg. `MyDiPS/tmp`
 
 [settings]
+
+Intervals
+* `number_of_samples` :  number of samples/observation
+* `confidence_level` : 1 - alpha
+
+Methods
+
+Sampling
+* `grid_size` : number of samples per dimension
+
+Refinement
+* `max_depth` : maximal number of splits
+* `coverage` : proportion of nonwhite area to be reached
+* `algorithm` : methods how to choose which region to pick after splitting
+* `solver` : SMT solver - z3 or dreal
+* `delta` : dealta for dreal option
 * `refine_timeout`: refinement timeout
-* `mh_timeout`: = Metropolis-Hastings timeout
+
+Metropolis-Hastings
+* `iterations` : number of iterations, steps in parameter space
+* `mh_grid_size` : number of segments/bins in the heatmap plot
+* `burn_in` : trims the fraction of first accepted points
+* `mh_timeout`: Metropolis-Hastings timeout
 
 *****
 ## HOW TO RUN
