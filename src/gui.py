@@ -3344,23 +3344,6 @@ class Gui(Tk):
                 self.page6_figure2.canvas.draw()
                 self.page6_figure2.canvas.flush_events()
                 self.update()
-            else:
-                spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b])
-
-                if spam[0] is not False:
-                    self.page6_figure2, self.page6_b = spam
-                    self.page6_figure2.tight_layout()
-                    self.page6_figure2.canvas.draw()
-                    self.page6_figure2.canvas.flush_events()
-                    self.update()
-                else:
-                    messagebox.showwarning("Metropolis Hastings", "No accepted point found, not showing the plot")
-                    ## Clear figure
-                    self.page6_figure2.clf()
-                    self.page6_b = self.page6_figure2.add_subplot(111)
-                    self.page6_figure2.canvas.draw()
-                    self.page6_figure2.canvas.flush_events()
-                    self.update()
         finally:
             try:
                 self.new_window.destroy()
