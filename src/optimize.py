@@ -80,6 +80,7 @@ def optimize(functions: [list], params: [list], param_intervals: [list], data_po
         # print("param values", spam)
         print("param values", list(res.x))
         print("function values", list(map(eval, functions)))
+        print("data values", data_point)
         print("distance values", list(res.fun))
         print("total distance according to scipy - not transformed", res.cost)
         ## !!! THIS IS NOT UPDATED RESULT

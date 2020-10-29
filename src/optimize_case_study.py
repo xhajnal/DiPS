@@ -169,6 +169,7 @@ def optimize_case_study(functions: [list], params: [list], param_intervals: [lis
             print("param names", params)
             print("param values", list(res.x))
             print("function values", list(map(eval, functions)))
+            print("data values", data_point)
             for index, value in enumerate(params):
                 locals()[str(value)] = res.x[index]
             print("L1 distance", sum([abs(x - y) for x, y in zip(list(map(eval, functions)), data_point)]))
@@ -196,6 +197,7 @@ def optimize_case_study(functions: [list], params: [list], param_intervals: [lis
             # print("param values", spam)
             print("param values", list(res.x))
             print("function values", list(map(eval, functions)))
+            print("data values", data_point)
             print("distance values", list(res.fun))
             print("total distance according to scipy - not transformed", res.cost)
             ## !!! THIS IS NOT UPDATED RESULT
