@@ -615,10 +615,7 @@ def manual_log_like_normal(space, theta, functions, data, sample_size, eps, debu
     @author: tpetrov
     @edit: xhajnal
     """
-    if debug:
-        warnings.filterwarnings("error")
-    else:
-        warnings.filterwarnings("default")  ## normal state
+    warnings.filterwarnings("error")
 
     res = 0
     # print("data", data)
@@ -644,11 +641,21 @@ def manual_log_like_normal(space, theta, functions, data, sample_size, eps, debu
             pseudo_log_lik = (data_point * sample_size * np.log(point) + (1 - data_point) * sample_size * np.log(1 - point))
         except RuntimeWarning as warn:
             if debug:
+                print(warn)
                 print("function/data index:", index)
                 print("theta:", theta)
                 print(f"functions[{index}]:", point)
                 print(f"data[{index}]:", data_point)
-            pseudo_log_lik = float("-inf")
+            # if "divide by zero encountered in log" in str(warn):
+            #     pseudo_log_lik = float("-inf")
+            if point <= 0 or point >= 1:
+                ## When the point is exactly 1 or 0 and data is respective value as well
+                if (data_point == 0 or data_point == 1) and (point == 0 or point == 1):
+                    raise warn
+                else:
+                    pseudo_log_lik = float("-inf")
+            else:
+                raise warn
             # show_message(2, "MH", f"function value {point} is invalid for log")
         res = res + pseudo_log_lik
         if debug:
@@ -657,6 +664,9 @@ def manual_log_like_normal(space, theta, functions, data, sample_size, eps, debu
             print(f"function {eval(functions[index])}")
             print(colored(f"log-likelihood {pseudo_log_lik}", "blue"))
             print()
+        if str(res) == "-inf":
+            warnings.filterwarnings("default")  ## normal state
+            return res
 
 
     # for index, data_point in enumerate(data):
@@ -686,6 +696,7 @@ def manual_log_like_normal(space, theta, functions, data, sample_size, eps, debu
     #     res = res + np.log(temp)  # +np.log(prior(x))
 
     # print(res)
+    warnings.filterwarnings("default")  ## normal state
     return res
 
 
