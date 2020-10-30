@@ -731,7 +731,7 @@ class Gui(Tk):
         Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=8, column=7, columnspan=2, pady=4)
 
         constrained_optimize_button = Checkbutton(frame_left, text="Apply non-decreasing params", variable=self.non_decreasing_params)
-        constrained_optimize_button.grid(row=8, column=7, sticky=W, padx=4, pady=4)
+        constrained_optimize_button.grid(row=7, column=7, sticky=W, padx=4, pady=4)
 
         # ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=5, rowspan=7, sticky='ns', padx=25, pady=25)
 

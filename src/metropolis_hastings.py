@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 from matplotlib.ticker import MaxNLocator
 from matplotlib.figure import Figure
+from scipy.stats import truncnorm
 
 from common.document_wrapper import DocumentWrapper
 
@@ -464,6 +465,10 @@ def sample_functions(functions, data_means):
     return i - 1
 
 
+def get_truncated_normal(mean=0, sd=1, low=0, upp=10):
+    return truncnorm((low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd).rvs()
+
+
 def transition_model_a(theta, parameter_intervals, sort=False):
     """" Defines how to walk around the parameter space, set a new point,
         using normal distribution around the old point
@@ -481,6 +486,19 @@ def transition_model_a(theta, parameter_intervals, sort=False):
     """
     sd = 0.3  ## Standard deviation of the normal distribution
     theta_new = np.zeros(len(theta))  ## New point initialisation
+
+    ## TODO CHECK NEXT LINE
+    ## LINEAR SPECIFIC - theta = delta, r_0
+    if len(theta) == 2:
+        if globals()["mh_results"].params[0] == "delta":
+            try:
+                theta_new[1] = get_truncated_normal(mean=theta[1], sd=sd, low=0, upp=1)
+                theta_new[0] = get_truncated_normal(mean=theta[0], sd=sd, low=0, upp=(1 - theta_new[1])/9)  ## probably should go with 10
+            except:
+                pass
+            if theta_new[1] + 9*theta_new[0] > 1:
+                raise Exception("This linear point goes over 1, Matej made a mistake in math.")
+            return theta_new
 
     ## For each parameter
     ## TODO why we change all params and not just one in random?
@@ -549,6 +567,15 @@ def acceptance(x_likelihood, x_new_likelihood):
     else:
         ## Chance to accept even if the likelihood of the new point is lower (than likelihood of current point)
         accept = np.random.uniform(0, 1)
+
+        # ## TODO REMOVE THIS after test
+        # warnings.filterwarnings("error")
+        # try:
+        #     a = accept < (np.exp(x_new_likelihood - x_likelihood))
+        # except RuntimeWarning as warn:
+        #     print(warn)
+        # warnings.filterwarnings("default")
+
         return accept < (np.exp(x_new_likelihood - x_likelihood))
 
 
