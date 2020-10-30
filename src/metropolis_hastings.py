@@ -183,6 +183,9 @@ class HastingsResults:
         # mpl.rcParams.update(mpl.rcParamsDefault)
         # plt.style.use('default')
 
+        if self.accepted.size == 0:
+            raise Exception("Set of accepted points is empty!")
+
         ## Backwards compatibility
         if len(self.params) == len(self.accepted[0]):
             print("old data")
@@ -314,6 +317,9 @@ class HastingsResults:
         Args:
            where (bool or callable): method to forward the figure
         """
+        if self.accepted.size == 0:
+            raise Exception("Set of accepted points is empty")
+
         if where:
             fig = Figure(figsize=(10, 10))
         else:
@@ -383,6 +389,10 @@ class HastingsResults:
         Args:
            where (bool or callable): method to forward the figure
         """
+
+        if self.accepted.size == 0:
+            raise Exception("Set of accepted points is empty")
+
         if where:
             fig = Figure(figsize=(20, 10))
         else:
@@ -578,7 +588,11 @@ def manual_log_like_normal(space, theta, functions, data, sample_size, eps, debu
     @author: tpetrov
     @edit: xhajnal
     """
-    warnings.filterwarnings("error")
+    if debug:
+        warnings.filterwarnings("error")
+    else:
+        warnings.filterwarnings("default")  ## normal state
+
     res = 0
     # print("data", data)
     # print("functions", functions)
@@ -603,10 +617,10 @@ def manual_log_like_normal(space, theta, functions, data, sample_size, eps, debu
             pseudo_log_lik = (data_point * sample_size * np.log(point) + (1 - data_point) * sample_size * np.log(1 - point))
         except RuntimeWarning as warn:
             if debug:
-                print("index", index)
-                print("theta", theta)
-                print("functions[index]", point)
-                print("data[index]", data_point)
+                print("function/data index:", index)
+                print("theta:", theta)
+                print(f"functions[{index}]:", point)
+                print(f"data[{index}]:", data_point)
             pseudo_log_lik = float("-inf")
             # show_message(2, "MH", f"function value {point} is invalid for log")
         res = res + pseudo_log_lik
@@ -616,7 +630,7 @@ def manual_log_like_normal(space, theta, functions, data, sample_size, eps, debu
             print(f"function {eval(functions[index])}")
             print(colored(f"log-likelihood {pseudo_log_lik}", "blue"))
             print()
-    warnings.filterwarnings("default")
+
 
     # for index, data_point in enumerate(data):
     #     sigma = np.sqrt((data_point - eval(functions[index])) ** 2 / sample_size)
