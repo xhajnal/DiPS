@@ -5,8 +5,11 @@ from socket import gethostname
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
-from matplotlib.ticker import MaxNLocator
 from matplotlib.figure import Figure
+from matplotlib.ticker import MaxNLocator
+from bokeh.plotting import gridplot, output_file, show
+import bokeh.plotting.figure as bokeh_figure
+from bokeh.models import Span
 from scipy.stats import truncnorm
 
 from common.document_wrapper import DocumentWrapper
@@ -322,6 +325,7 @@ class HastingsResults:
             raise Exception("Set of accepted points is empty")
 
         if where:
+            # fig = plt.subplots()
             fig = Figure(figsize=(10, 10))
         else:
             fig = plt.figure()
@@ -384,17 +388,63 @@ class HastingsResults:
         else:
             where(fig)
 
-    def show_accepted(self, where=False):
-        """ Trace and histogram of accepted points
+    def show_iterations2(self, where=False):
+        """ Create Scatter plot showing accepted and rejected points in its given order using bokeh
 
         Args:
            where (bool or callable): method to forward the figure
         """
+        if self.accepted.size == 0:
+            raise Exception("Set of accepted points is empty")
 
+        plots = []
+
+        for index, param in enumerate(self.params):
+            ## Scatter plot
+            tools = "hover,crosshair,pan,wheel_zoom,zoom_in,zoom_out,box_zoom,undo,redo,reset,tap,save,box_select,poly_select,lasso_select,"
+            p = bokeh_figure(title=f"Trace of accepted points for {param}", tools=tools)
+            # p.scatter(range(len(self.accepted[:, index])), self.accepted[:, index], fill_alpha=0.6, line_color=None)
+            borderline_index = self.accepted[:, -1][int(self.get_burn_in() * len(self.accepted)) - 1]
+            vline = Span(location=borderline_index + 0.5, dimension='height', line_color='black', line_width=1)
+            p.renderers.extend([vline])
+            p.scatter(self.rejected[:, -1], self.rejected[:, index], color="red", fill_alpha=0.6, legend_label='Rejected')
+            p.scatter(self.accepted[:, -1], self.accepted[:, index], color="blue", fill_alpha=0.6, legend_label='Accepted')
+            p.xaxis.axis_label = 'MH Iteration'
+            p.yaxis.axis_label = f'{param}'
+            p.legend.location = "top_left"
+            plots.append([p])
+
+        if len(self.params) == 2:
+            both = self.merge_acc_and_rej()
+            p = bokeh_figure(title=f"Trace of Accepted and Rejected points in a plane", tools=tools)
+            p.line(both[:, 0], both[:, 1], color="grey", alpha=0.1, legend_label='Path')
+            p.scatter(both[:, 0][0], both[:, 1][0], legend_label="Start")
+            if both[0][-1]:  ## if the first point is accepted
+                p.scatter(self.accepted[:, 0][1:], self.accepted[:, 1][1:], alpha=0.3, legend_label='Accepted', color="blue")
+                p.scatter(self.rejected[:, 0], self.rejected[:, 1], alpha=0.3, legend_label='Rejected', color="red")
+            else:
+                p.scatter(self.accepted[:, 0], self.accepted[:, 1], alpha=0.3, legend_label='Accepted', color="blue")
+                p.scatter(self.rejected[:, 0][1:], self.rejected[:, 1][1:], alpha=0.3, legend_label='Rejected', color="red")
+            del both
+            p.xaxis.axis_label = self.params[0]
+            p.yaxis.axis_label = self.params[1]
+            p.legend.location = "top_left"
+            plots.append([p])
+
+        output_file("Trace_of_Accepted_and_Rejected_points.html", title=f"Trace of Accepted and Rejected points in a plane.")
+        show(gridplot(plots))  # open a browser
+
+    def show_accepted(self, where=False):
+        """ Trace and histogram of accepted points using matplotlib
+
+        Args:
+           where (bool or callable): method to forward the figure
+        """
         if self.accepted.size == 0:
             raise Exception("Set of accepted points is empty")
 
         if where:
+            # fig = plt.figure()
             fig = Figure(figsize=(20, 10))
         else:
             fig = plt.figure()
@@ -443,6 +493,62 @@ class HastingsResults:
             plt.show()
         else:
             where(fig)
+
+    def show_accepted2(self, where=False):
+        """ Trace and histogram of accepted points using bokeh
+
+        Args:
+           where (bool or callable): unused in this method
+        """
+        if self.accepted.size == 0:
+            raise Exception("Set of accepted points is empty")
+
+        plots = []
+        for index, param in enumerate(self.params):
+            pair = []
+
+            ## Scatter plot
+            tools = "hover,crosshair,pan,wheel_zoom,zoom_in,zoom_out,box_zoom,undo,redo,reset,tap,save,box_select,poly_select,lasso_select,"
+            p = bokeh_figure(title=f"Trace of accepted points for {param}", tools=tools)
+            # p.scatter(range(len(self.accepted[:, index])), self.accepted[:, index], fill_alpha=0.6, line_color=None)
+            vline = Span(location=int(self.get_burn_in() * len(self.accepted[:, index])) + 0.5, dimension='height', line_color='black', line_width=1)
+            p.renderers.extend([vline])
+            p.line(range(len(self.accepted[:, index])), self.accepted[:, index])
+            p.xaxis.axis_label = 'Index'
+            p.yaxis.axis_label = f'{param}'
+            p.legend.location = "top_left"
+            pair.append(p)
+
+            ## Histogram
+            bins = 20
+            hist, edges = np.histogram(self.accepted[:, index], density=True, bins=bins)
+            # p = bokeh_figure(title=f"Histogram of of accepted points for {param}, {bins} bins", tools='', background_fill_color="#fafafa")
+            p = bokeh_figure(title=f"Histogram of of accepted points for {param}, {bins} bins", tools='')
+            # p.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:], fill_color="navy", line_color="white", alpha=0.5)
+            p.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:], line_color="white")
+            p.y_range.start = 0
+            p.legend.location = "center_right"
+            # p.legend.background_fill_color = "#fefefe"
+            p.xaxis.axis_label = f'{param}'
+            p.yaxis.axis_label = 'Occurrence'
+            p.legend.location = "top_left"
+            p.grid.grid_line_color = "white"
+
+            pair.append(p)
+            plots.append(pair)
+
+        if len(self.params) == 2:
+            p = bokeh_figure(title=f"Trace of Accepted points in a plane", tools=tools)
+            p.line(self.accepted[:, 0], self.accepted[:, 1], color="grey", alpha=0.1, legend_label='Path')
+            p.scatter(self.accepted[:, 0], self.accepted[:, 1], alpha=0.3, legend_label='Accepted')
+            p.scatter(self.accepted[:, 0][0], self.accepted[:, 1][0], color="green", legend_label='First accepted point')
+            p.xaxis.axis_label = self.params[0]
+            p.yaxis.axis_label = self.params[1]
+            p.legend.location = "top_left"
+            plots.append([p])
+
+        output_file(f"Trace_of_accepted_points.html", title=f"Trace_of_accepted_points")
+        show(gridplot(plots))  # open a browser
 
 
 ## Now unused

@@ -828,8 +828,6 @@ class Gui(Tk):
         frame_right.rowconfigure(4, weight=1)
         frame_right.rowconfigure(8, weight=1)
 
-
-
         ##################################################### UPPER PLOT ###############################################
         self.page6_plotframe = Frame(self.frame_center)
         self.page6_plotframe.pack(side=TOP, fill=Y, expand=True, padx=5, pady=5)
@@ -3840,6 +3838,8 @@ class Gui(Tk):
         else:
             assert isinstance(self.mh_results, HastingsResults)
             self.mh_results.show_iterations(where=self.draw_plot_window)
+            self.mh_results.show_iterations2()
+            # self.mh_results.show_iterations(where=self.draw_plot_window)
 
     def show_mh_acc_points(self):
         """ Shows trace and histogram of accepted points """
@@ -3848,6 +3848,11 @@ class Gui(Tk):
         else:
             assert isinstance(self.mh_results, HastingsResults)
             self.mh_results.show_accepted(where=self.draw_plot_window)
+            self.mh_results.show_accepted2()
+            # try:
+            #     self.mh_results.show_accepted(where=self.draw_plot_window)
+            # except:
+            #     self.mh_results.show_accepted2()
 
     def export_acc_points(self, file=False):
         """ Exports accepted points of metropolis Hastings
@@ -4015,12 +4020,17 @@ class Gui(Tk):
         new_plot_toolbar.update()
         new_plot_canvas.get_tk_widget().pack(fill=BOTH, expand=True)
 
-        try:
-            new_plot_canvas.draw()
-        except OverflowError as err:
-            pyplt.rcParams['agg.path.chunksize'] = 10000
-            new_plot_canvas.draw()
-            show_message(2, "Ploting window", err)
+        matplotlib.rcParams['agg.path.chunksize'] = 100000
+        print(matplotlib.rcParams['agg.path.chunksize'])
+        new_plot_canvas.draw()
+        #
+        # try:
+        #     matplotlib.rcParams['agg.path.chunksize'] = 90000000  ## max int
+        #     print(matplotlib.rcParams['agg.path.chunksize'])
+        #     new_plot_canvas.draw()
+        # except OverflowError as err:
+        #     raise err  ## now caught at higher level
+        #     # show_message(2, "Ploting window", err)
 
         # canvas.flush_events()
         # self.new_window.update()
@@ -4225,6 +4235,7 @@ if __name__ == '__main__':
     if info[1] != 7:
         sys.exit(f"Please python use 3.7.*")
 
+    matplotlib.rcParams['agg.path.chunksize'] = 100000
     gui = Gui()
     ## System dependent fullscreen setting
     if "wind" in system().lower():
