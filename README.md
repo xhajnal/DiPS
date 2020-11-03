@@ -98,6 +98,12 @@ Metropolis-Hastings
 * `burn_in` : trims the fraction of first accepted points
 * `mh_timeout`: Metropolis-Hastings timeout
 
+Meta settings
+* `autosave_figures` : autosave figures
+* `minimal_output` : set minimal console output
+* `extensive_output` : set maximum console output
+* `show_mh_metadata` : show metadata plot when running Metropolis-Hastings
+
 *****
 ## HOW TO RUN
 
