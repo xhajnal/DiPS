@@ -213,6 +213,8 @@ class Gui(Tk):
         self.z3_constraints = ""  ## Constrains with z3 expressions inside  ##TODO rewrite as [], need to go through checks
         self.space = ""  ## Instance of a RefinedSpace class
         self.mh_results = ""  ## Instance of HastingsResults class
+        self.init_mh_with_optimised_point = BooleanVar()
+        self.init_mh_with_optimised_point.set(False)
 
         ## Results
         self.sampled_functions = []  ## List of values of sampled functions True/False
