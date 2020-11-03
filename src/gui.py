@@ -719,7 +719,10 @@ class Gui(Tk):
         self.mh_timeout_entry.grid(row=4, column=8)
         self.mh_timeout_entry.insert(END, '3600')
 
-        Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=8, column=7, columnspan=2, pady=4)
+        use_optimised_point_button = Checkbutton(frame_left, text="Use optimised point as initial", variable=self.init_mh_with_optimised_point)
+        use_optimised_point_button.grid(row=8, column=7, sticky=W, padx=4, pady=4)
+
+        Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=9, column=7, columnspan=2, pady=4)
 
         # ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=5, rowspan=7, sticky='ns', padx=25, pady=25)
 
@@ -1081,6 +1084,27 @@ class Gui(Tk):
             self.mh_timeout = config.get("settings", "mh_timeout")
             self.mh_timeout_entry.delete(0, 'end')
             self.mh_timeout_entry.insert(END, self.mh_timeout)
+        except configparser.NoOptionError:
+            pass
+
+        # Meta setting
+        try:
+            self.save.set(config.get("settings", "autosave_figures").lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh'])
+        except configparser.NoOptionError:
+            pass
+
+        try:
+            self.silent.set(config.get("settings", "minimal_output").lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh'])
+        except configparser.NoOptionError:
+            pass
+
+        try:
+            self.debug.set(config.get("settings", "extensive_output").lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh'])
+        except configparser.NoOptionError:
+            pass
+
+        try:
+            self.show_mh_metadata.set(config.get("settings", "show_mh_metadata").lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh'])
         except configparser.NoOptionError:
             pass
 
@@ -4027,7 +4051,10 @@ class Gui(Tk):
             spam.grid(row=i, column=1)
             ## Insert the middle of respective domain
             try:
-                spam.insert(END, str((self.parameter_domains[index][0] + self.parameter_domains[index][1])/2))
+                if self.init_mh_with_optimised_point.get():
+                    spam.insert(END, str(self.optimised_param_point[index]))
+                else:
+                    spam.insert(END, str((self.parameter_domains[index][0] + self.parameter_domains[index][1])/2))
             except IndexError:
                 pass
             self.parameter_point.append(spam)
