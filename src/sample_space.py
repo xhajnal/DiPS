@@ -72,6 +72,7 @@ def sample(space, constraints, sample_size, compress=False, silent=True, save=Fa
         print("sampling here")
         print("sample_size", sample_size)
         print("space.params", space.params)
+    if debug:
         print("sampling", sampling)
     parameter_values = cartesian_product(*parameter_values)
     parameter_indices = cartesian_product(*parameter_indices)

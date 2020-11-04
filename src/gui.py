@@ -815,23 +815,25 @@ class Gui(Tk):
 
         Button(frame_right, text='Set True point', command=self.set_true_point).grid(row=0, column=0, padx=(4, 4), pady=7)
         Button(frame_right, text='Open space', command=self.load_space).grid(row=1, column=0, padx=(4, 4), pady=7)
-        Button(frame_right, text='Save space', command=self.save_space).grid(row=2, column=0, padx=(4, 4), pady=7)
-        Button(frame_right, text='Delete space', command=self.refresh_space).grid(row=3, column=0, padx=(4, 4), pady=7)
-        Button(frame_right, text='Customize Plot', command=self.customize_refinement_results).grid(row=4, column=0, padx=(4, 4), pady=7)
+        Button(frame_right, text='Edit space', command=self.edit_space).grid(row=2, column=0, padx=(4, 4), pady=7)
+        Button(frame_right, text='Save space', command=self.save_space).grid(row=3, column=0, padx=(4, 4), pady=7)
+        Button(frame_right, text='Delete space', command=self.refresh_space).grid(row=4, column=0, padx=(4, 4), pady=7)
+        Button(frame_right, text='Customize Plot', command=self.customize_refinement_results).grid(row=5, column=0, padx=(4, 4), pady=7)
 
-        Button(frame_right, text='Load MH Results', command=self.load_mh_results).grid(row=5, column=0, padx=(4, 4), pady=7)
-        Button(frame_right, text='Save MH Results', command=self.save_mh_results).grid(row=6, column=0, padx=(4, 4), pady=7)
-        Button(frame_right, text='Delete MH Results', command=self.refresh_mh).grid(row=7, column=0, padx=(4, 4), pady=7)
+        Button(frame_right, text='Load MH Results', command=self.load_mh_results).grid(row=6, column=0, padx=(4, 4), pady=7)
+        Button(frame_right, text='Save MH Results', command=self.save_mh_results).grid(row=7, column=0, padx=(4, 4), pady=7)
+        Button(frame_right, text='Delete MH Results', command=self.refresh_mh).grid(row=8, column=0, padx=(4, 4), pady=7)
 
-        Button(frame_right, text='Customize Plot', command=self.customize_mh_results).grid(row=8, column=0, padx=(4, 4), pady=0)
-        Button(frame_right, text='Show MH iterations', command=self.show_mh_iterations).grid(row=9, column=0, padx=(4, 4), pady=0)
-        Button(frame_right, text='Show Acc points', command=self.show_mh_acc_points).grid(row=10, column=0, padx=(4, 4), pady=0)
-        Button(frame_right, text='Export Acc points', command=self.export_acc_points).grid(row=11, column=0, padx=(4, 4), pady=0)
+        Button(frame_right, text='Customize Plot', command=self.customize_mh_results).grid(row=9, column=0, padx=(4, 4), pady=0)
+        Button(frame_right, text='Show MH iterations', command=self.show_mh_iterations).grid(row=10, column=0, padx=(4, 4), pady=0)
+        Button(frame_right, text='Show Acc points', command=self.show_mh_acc_points).grid(row=11, column=0, padx=(4, 4), pady=0)
+        Button(frame_right, text='Export Acc points', command=self.export_acc_points).grid(row=12, column=0, padx=(4, 4), pady=0)
 
         frame_right.columnconfigure(0, weight=1)
+
         frame_right.rowconfigure(0, weight=1)
-        frame_right.rowconfigure(4, weight=1)
-        frame_right.rowconfigure(8, weight=1)
+        frame_right.rowconfigure(5, weight=4)
+        frame_right.rowconfigure(9, weight=4)
 
         ##################################################### UPPER PLOT ###############################################
         self.page6_plotframe = Frame(self.frame_center)
@@ -3555,16 +3557,38 @@ class Gui(Tk):
 
         self.status_set("Space refinement finished.")
 
+    def edit_space(self):
+        """ Edits space values """
+
+        if self.space == "":
+            messagebox.showwarning("Edit space", "There is no space to be edit.")
+            return
+
+        print("Editing the space.")
+        self.validate_parameters(self.space, intervals=True, keep_space=True)
+        self.space.params = self.parameters
+        self.space.region = self.parameter_domains
+        self.print_space()
+        ## TODO add changing the parameter types
+
     ## VALIDATE VARIABLES (PARAMETERS, constraints, SPACE)
-    def validate_parameters(self, where: Iterable, intervals=True, force=False):
+    def validate_parameters(self, where: Iterable, intervals=True, force=False, keep_space=False):
         """ Validates (functions, constraints, and space) parameters.
 
         Args:
             where (Iterable): a structure pars parameters from (e.g. self.functions)
             intervals (bool): whether to check also parameter intervals
             force (bool): if True the param_intervals will be redone with possibly of values as default
+            keep_space (bool): if Ture it will keep the previous values -- used to edit space
         """
+        if keep_space:
+            # Apply space values
+            self.parameters = self.space.params
+            self.parameter_domains = self.space.region
+            force = True  # Force the values to be changed
+
         if not self.parameters:
+            ## Parse parameters
             print("Parsing parameters ...")
             globals()["parameters"] = set()
             for polynome in where:
@@ -3575,6 +3599,7 @@ class Gui(Tk):
                 print("parameters", self.parameters)
 
         if (not self.parameter_domains) and intervals or force:
+            ## Create window to load new parameter domains
             ## TODO Maybe rewrite this as key and pass the argument to load_param_intervals
             self.key = StringVar()
             self.status_set("Choosing ranges of parameters:")
@@ -3585,6 +3610,7 @@ class Gui(Tk):
 
             i = 1
             ## For each param create an entry
+            ## TODO add changing the parameter types
             self.parameter_domains_entries = []
             for index, param in enumerate(self.parameters):
                 Label(self.new_window, text=param, anchor=W, justify=LEFT).grid(row=i, column=0)
@@ -3939,6 +3965,8 @@ class Gui(Tk):
         else:
             if position == "Space Metropolis-Hastings":
                 return True
+            if force:
+                self.validate_parameters(where=self.constraints, force=True)
             if self.constraints_changed:
                 messagebox.showwarning(position, "Using previously created space with new constraints. Consider using fresh new space.")
                 ## Check if the properties and data are valid
