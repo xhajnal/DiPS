@@ -143,12 +143,33 @@ class HastingsResults:
         #     spam.append(np.append(self.rejected[rej_index][:-1], False))
         # return spam
 
+    def keep_index(self, burn_in=False):
+        if not burn_in:
+            burn_in = self.burn_in
+
+        if 0 < burn_in < 1:
+            keep_index = int(burn_in * self.accepted.shape[0]) + 1
+        else:
+            keep_index = int(burn_in) + 1
+            burn_in = round(burn_in / self.accepted.shape[0], 2)
+
+        return keep_index, burn_in
+
     def get_not_burn_in(self):
         """ Returns fraction of not burned-in part"""
         if self.get_burn_in() is not None:
             return 1 - self.get_burn_in()
         else:
             return None
+
+    def get_all_accepted(self):
+        """ Returns the list of ALL accepted point"""
+        return self.accepted
+
+    def get_accepted(self):
+        """ Return the list of TRIMMED accepted points"""
+        keep_index, burn_in = self.keep_index(self.burn_in)
+        return self.accepted[keep_index:]
 
     def set_accepted(self, accepted):
         """ Sets the accepted points"""
@@ -233,11 +254,7 @@ class HastingsResults:
             raise Exception("MH - Burn-in values set higher than accepted point. Nothing to show.")
 
         ## Convert fraction to show into exact number
-        if 0 < burn_in < 1:
-            keep_index = int(burn_in * self.accepted.shape[0]) + 1
-        else:
-            keep_index = int(burn_in) + 1
-            burn_in = round(burn_in / self.accepted.shape[0], 2)
+        keep_index, burn_in = self.keep_index(burn_in)
 
         if self.last_iter > 0:
             self.title = f'Estimate of MH algorithm, {niceprint(self.last_iter)} iterations, sample size = {self.observations_count}, \n trimming first {burn_in * 100}% of {niceprint(self.accepted.shape[0])} acc points, init point: {self.theta_init}, \n It took {gethostname()} {round(self.time_it_took, 2)} second(s)'
