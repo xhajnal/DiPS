@@ -74,7 +74,10 @@ def get_param_values(parameters, sample_size, intervals=False, debug: bool = Fal
             parameter_values.append(np.linspace(0, 1, sample_size, endpoint=True))
     parameter_values = cartesian_product(*parameter_values)
     if (len(parameters) - 1) == 0:
-        parameter_values = np.linspace(0, 1, sample_size, endpoint=True)[np.newaxis, :].T
+        if intervals:
+            parameter_values = np.linspace(intervals[0][0], intervals[0][1], sample_size, endpoint=True)[np.newaxis, :].T
+        else:
+            parameter_values = np.linspace(0, 1, sample_size, endpoint=True)[np.newaxis, :].T
     if debug:
         print("Parameter_values: ", parameter_values)
     return parameter_values

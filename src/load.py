@@ -582,7 +582,11 @@ def find_param_old(expression, debug: bool = False):
 
     ## Get the e-/e+ notation away
     try:
-        return expression.free_symbols
+        symbols = list(expression.free_symbols)
+        for index, item in enumerate(symbols):
+            symbols[index] = str(item)
+        return symbols
+
     except AttributeError:
         pass
 

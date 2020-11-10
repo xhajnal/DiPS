@@ -2737,7 +2737,7 @@ class Gui(Tk):
         self.reinitialise_plot(set_onclick=True)
 
         assert isinstance(self.parameters, list)
-        for parameter_point in get_param_values(self.parameters, int(self.fun_sample_size_entry.get()), False):
+        for parameter_point in get_param_values(self.parameters, int(self.fun_sample_size_entry.get()), intervals=self.parameter_domains, debug=self.debug):
             if self.page3_figure_in_use.get() != "2":
                 return
 
@@ -3717,8 +3717,8 @@ class Gui(Tk):
         self.show_space(False, False, False, clear=True)
         self.space_file.set("")
         self.space = ""
-        self.parameters = ""
-        self.parameter_domains = []
+        # self.parameters = ""
+        # self.parameter_domains = []
         self.status_set("Space refreshed.")
 
     def export_space_text(self, file=False):
