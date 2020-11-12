@@ -46,14 +46,14 @@ def generate_all_data_two_param(agents_quantities, dic_fun, p_v=None, q_v=None):
     # 0.03 -- 0.45 -- 0.002 -- 0.3 (for N=5, there are 4 entries)
 
     for N in agents_quantities:
-        with open('data_n=' + str(N) + ".csv", "w") as file:
-            file.write('n=' + str(N) + ', p_v=' + str(p_v) + ', q_v=' + str(q_v) + "\n")
+        with open(f"data_n={N}.csv", "w") as file:
+            file.write(f"n={N}, p_v={p_v}, q_v={q_v}\n")
             second_line = ""
 
-            for polynome in dic_fun[N]:
+            for polynomial in dic_fun[N]:
                 parameters = set()
                 if len(parameters) < N:
-                    parameters.update(find_param(polynome))
+                    parameters.update(find_param(polynomial))
                 parameters = sorted(list(parameters))
                 parameter_value = [p_v, q_v]
 
@@ -61,15 +61,15 @@ def generate_all_data_two_param(agents_quantities, dic_fun, p_v=None, q_v=None):
                     a.append(parameter_value[param])
                     globals()[parameters[param]] = parameter_value[param]
 
-                x = eval(polynome)
+                x = eval(polynomial)
                 x = round(x, 2)
-                second_line = second_line + str(x) + ","
+                second_line = f"{second_line}{x},"
 
             file.write(second_line[:-1])
 
 
-def generate_experiments_and_data(model_types, n_samples, populations, dimension_sample_size,
-                                  sim_length=False, modular_param_space=None, folder=False, silent=False, debug=False):
+def generate_experiments_and_data(model_types, n_samples, populations, dimension_sample_size, sim_length=False,
+                                  modular_param_space=None, input_folder=False, output_folder=False, silent=False, debug=False):
     """ Generate experiment data for given settings
 
     Args:
@@ -79,12 +79,16 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
         dimension_sample_size (int): number of samples of in each parameter dimension to be used
         sim_length (int): length of the simulation
         modular_param_space (numpy array): parameter space to be used
-        folder (str or path): folder where to search for models
+        input_folder (str or path): folder where to search for models
+        output_folder (str or path): folder to save output -  PRISM path file
         silent (bool): if silent printed output is set to minimum
         debug (bool): if True extensive print will be used
     """
     max_sample = max(n_samples)
     start_time = time.time()
+
+    if output_folder is False:
+        output_folder = tmp
 
     i = 1
     experiments = {}
@@ -103,10 +107,10 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
                 sim_length = 2 * population_size
             if "asynchronous" in model_type and not sim_length:
                 sim_length = 2 * population_size
-            if folder is False:
+            if input_folder is False:
                 model = os.path.join(model_path, (model_type + str(population_size) + ".pm"))
             else:
-                model = os.path.join(folder, (model_type + str(population_size) + ".pm"))
+                model = os.path.join(input_folder, (model_type + str(population_size) + ".pm"))
             # A bad way how to deal with model without N
             if isinstance(population_size, str):
                 population_size = 0
@@ -161,7 +165,7 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
 
                     ## More profound path name here
                     ## path_file = f"path_{model_type}{N}_{max_sample}_{parameter_values}.txt"
-                    path_file = os.path.join(tmp, "dump_file_{}_{}_{}_{}.txt".format(model_type, population_size, max_sample, str(time.time()).replace(".", "")))
+                    path_file = os.path.join(output_folder, "dump_file_{}_{}_{}_{}.txt".format(model_type, population_size, max_sample, str(time.time()).replace(".", "")))
                     # print(path_file)
 
                     ## Here is the PRISM called

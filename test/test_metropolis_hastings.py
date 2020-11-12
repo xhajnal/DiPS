@@ -1,11 +1,23 @@
 import unittest
 from termcolor import colored
+import src.metropolis_hastings
 from src.metropolis_hastings import *
+import os
+
+cwd = os.getcwd()
+
+try:
+    os.mkdir("tmp")
+except FileExistsError:
+    pass
+
+tmp_dir = model_dir = os.path.join(cwd, "tmp")
 
 
 class MyTestCase(unittest.TestCase):
     def test_without_data_nor_observation(self):
         print(colored('Metropolis-Hastings without data - it is sampled', 'blue'))
+        src.metropolis_hastings.tmp_dir = tmp_dir
         #                     (region, params, types=None, rectangles_sat=False, rectangles_unsat=False, rectangles_unknown=None, sat_samples=None, unsat_samples=None, dist_samples=False, true_point=False, title=False, prefer_unsafe=False):
         space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"], types=["Real", "Real"], rectangles_sat=[[[0, 0.5], [0, 0.5]]], rectangles_unsat=[], true_point=[0.82, 0.92])
         g = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -32,6 +44,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_without_data_nor_observation2(self):
         print(colored('Metropolis-Hastings without data - it is sampled', 'blue'))
+        src.metropolis_hastings.tmp_dir = tmp_dir
         space = RefinedSpace([(0, 1), (0, 1)], ["p", "q"], ["Real", "Real"], [[[0, 0.5], [0, 0.5]]], [], true_point=[0.82, 0.92])
         f = ["p**2-2*p+1", "2*q*p**2-2*p**2-2*q*p+2*p", "(-2)*q*p**2+p**2+2*q*p"]
         initialise_sampling(space, data=[], functions=f, sample_size=100, mh_sampling_iterations=100, eps=0, debug=True)
@@ -45,6 +58,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_given_data(self):
         print(colored('Metropolis-Hastings with data', 'blue'))
+        src.metropolis_hastings.tmp_dir = tmp_dir
         space = RefinedSpace([(0, 1), (0, 1)], ["p", "q"], ["Real", "Real"], [[[0, 0.5], [0, 0.5]]], [], true_point=[0.82, 0.92])
         f = ["p**2-2*p+1", "2*q*p**2-2*p**2-2*q*p+2*p", "(-2)*q*p**2+p**2+2*q*p"]
         initialise_sampling(space, data=[0.2, 0.5, 0.3], functions=f, sample_size=100, mh_sampling_iterations=100, eps=0, debug=True)
