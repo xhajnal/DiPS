@@ -1,4 +1,6 @@
 import unittest
+
+from common.files import pickle_load
 from src.load import *
 cwd = os.getcwd()
 test = cwd
