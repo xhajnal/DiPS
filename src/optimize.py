@@ -1,33 +1,62 @@
 import scipy
 import numpy as np
 from scipy.optimize import least_squares
+import warnings
 
 ## Importing my code
 from common.my_z3 import is_this_z3_function, translate_z3_function
 
+global params
+global functions
+global data_point
 
-def dist(x):
+
+def dist(param_point):
     """ Computes the distance between functions and data point.
 
     Args:
-        x (list): point in parameter space
+        param_point (list): point in parameter space
 
     Returns:
         (list): of distances of the function from the data point
     """
-    # global functions
-    # global data_point
-    for index, param in enumerate(globals()["params"]):
-        globals()[str(param)] = float(x[index])
+    for index, param in enumerate(params):
+        globals()[str(param)] = float(param_point[index])
     result = []
-    for index, function in enumerate(globals()["functions"]):
+    for index, function in enumerate(functions):
         ## Function value - data point
-        result.append(eval(function) - float(globals()["data_point"][index]))
+        result.append(abs(eval(function) - float(data_point[index])))
     # print("semiresult", result)
     return np.array(result)
 
 
-def optimize(functions: [list], params: [list], param_intervals: [list], data_point: [list], debug=False):
+def weighted_dist(param_point, weights):
+    """ Computes weighted distance between functions and data
+    
+    Args:
+        param_point (list): point in parameter space
+        weights (list): of weights to multiply the respective distance with 
+
+    Returns:
+        (list): of weighted distances of the function from the data point
+    """
+    spam = dist(param_point)
+
+    if len(weights) > len(spam):
+        warnings.warn("The list of weights is longer than list of functions, last weights are not used!!", RuntimeWarning)
+
+    if len(weights) > len(spam):
+        warnings.warn("The list of weights is shorter than list of functions, last functions are not weighted!!", RuntimeWarning)
+
+    try:
+        for index, item in enumerate(spam):
+            spam[index] = spam[index] * weights[index]
+    except IndexError:
+        pass
+    return spam
+
+
+def optimize(functions: [list], params: [list], param_intervals: [list], data_point: [list], weights=False, debug=False):
     """ Search for parameter values minimizing the distance of function to data.
 
     Args:
@@ -35,6 +64,7 @@ def optimize(functions: [list], params: [list], param_intervals: [list], data_po
         params (list): of functions parameters
         param_intervals (list): of intervals of functions parameters
         data_point (list): of values of functions to be optimized
+        weights (list): of weights to multiply the respective distance with
         debug (bool): if True extensive print will be used
 
     Returns:
@@ -62,7 +92,10 @@ def optimize(functions: [list], params: [list], param_intervals: [list], data_po
         bounds[1].append(interval[1])
     # print("bounds", bounds)
 
-    res = scipy.optimize.least_squares(dist, x0, bounds=bounds)
+    if weights:
+        res = scipy.optimize.least_squares(weighted_dist, x0, bounds=bounds, args=[weights])
+    else:
+        res = scipy.optimize.least_squares(dist, x0, bounds=bounds)
     # print(res.x)
 
     ## VALUES OF PARAMS, VALUES OF FUNCTIONS, DISTANCE
