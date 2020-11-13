@@ -8,46 +8,50 @@ from scipy.optimize import least_squares, NonlinearConstraint, LinearConstraint,
 from termcolor import colored
 
 from common.my_z3 import is_this_z3_function, translate_z3_function
+from optimize import dist, weighted_dist
+import optimize
 
 
 def dist_l1(param_point):
     """ L1 norm distance """
+
+    optimize.functions = globals()["functions"]
+    optimize.params = globals()["params"]
+    optimize.data_point = globals()["data_point"]
+
     spam = dist(param_point)
     spam = list(map(lambda a: abs(float(a)), spam))
     return sum(spam)
 
 
+def weighted_dist_l1(param_point, weights):
+    """ L1 weighted distance """
+    optimize.functions = globals()["functions"]
+    optimize.params = globals()["params"]
+    optimize.data_point = globals()["data_point"]
+
+    spam = weighted_dist(param_point, weights)
+    return sum(spam)
+
+
 def dist_l2(param_point):
     """ L2 norm distance """
+    optimize.functions = globals()["functions"]
+    optimize.params = globals()["params"]
+    optimize.data_point = globals()["data_point"]
+
     spam = dist(param_point)
     spam = list(map(lambda a: float(a*a), spam))
     return sqrt(sum(spam))
 
 
-def dist2(param_point):
-    return sum(dist(param_point))
-
-
-def dist(param_point):
-    """ Computes the distance between functions and data point.
-
-    Args:
-        param_point (list): point in parameter space
-
-    Returns:
-        (list): of distances of the function from the data point
-    """
-    # global functions
-    # global data_point
-    for index, param in enumerate(globals()["params"]):
-        globals()[str(param)] = float(param_point[index])
-    result = []
-    for index, function in enumerate(globals()["functions"]):
-        ## Function value - data point
-        # print(f'{index} {abs(eval(function) - float(globals()["data_point"][index]))}')
-        result.append(abs(eval(function) - float(globals()["data_point"][index])))
-    # print("semiresult", result)
-    return np.array(result)
+def weighted_dist_l2(param_point, weights):
+    """ L2 weighted distance """
+    ## TODO HARDCODED PART FOR CASE STUDY FOLLOWS
+    # weights = [92, 92, 70, 56, 37, 26, 22, 12, 4, 2, 0]
+    spam = weighted_dist(param_point, weights)
+    spam = list(map(lambda a: float(a * a), spam))
+    return sqrt(sum(spam))
 
 
 def dist_single(param_point, parameter_values):
@@ -85,7 +89,7 @@ def dist_single(param_point, parameter_values):
     return np.array(result)
 
 
-def optimize_case_study(functions: [list], params: [list], param_intervals: [list], data_point: [list], sort=False, debug=False):
+def optimize_case_study(functions: [list], params: [list], param_intervals: [list], data_point: [list], weights=False, sort=False, debug=False):
     """ Search for parameter values minimizing the distance of function to data.
 
     Args:
@@ -93,12 +97,15 @@ def optimize_case_study(functions: [list], params: [list], param_intervals: [lis
         params (list): of functions parameters
         param_intervals (list): of intervals of functions parameters
         data_point (list): of values of functions to be optimized
+        weights (list): of weights to multiply the respective distance with
         sort (bool): sort (Bool): tag whether the params are non-decreasing (CASE STUDY SPECIFIC SETTING)
         debug (bool): if True extensive print will be used
 
     Returns:
         (list): [point of parameter space with the least distance, values of functions in the point, the distance between the data and functions values]
     """
+    ## TODO HARDCODED PART FOR CASE STUDY FOLLOWS
+    weights = [92, 92, 70, 56, 37, 26, 22, 12, 4, 2, 0]
 
     ## Convert z3 functions
     for index, function in enumerate(functions):
@@ -108,10 +115,13 @@ def optimize_case_study(functions: [list], params: [list], param_intervals: [lis
     ## Get the average value of parameter intervals
     x0 = np.array(list(map(lambda lst: (lst[0]+lst[1])/2, param_intervals)))
 
+    optimize.functions = functions
     globals()["functions"] = functions
     # print("globals()[functions]", globals()["functions"])
+    optimize.params = params
     globals()["params"] = params
     # print("globals()[params]", globals()["params"])
+    optimize.data_point = data_point
     globals()["data_point"] = data_point
     # print("globals()[data_point]", globals()["data_point"])
 
@@ -154,7 +164,10 @@ def optimize_case_study(functions: [list], params: [list], param_intervals: [lis
         for method in methods:
             # print("method", method)
             # res = scipy.optimize.minimize(dist_l2, x0, method=method, options={"maxiter": 100}, bounds=bounds, constraints=[lc])
-            res = scipy.optimize.minimize(dist_l2, x0, method=method, bounds=bounds, constraints=[lc])
+            if weights:
+                res = scipy.optimize.minimize(weighted_dist_l2, x0, args=weights, method=method, bounds=bounds, constraints=[lc])
+            else:
+                res = scipy.optimize.minimize(dist_l2, x0, method=method, bounds=bounds, constraints=[lc])
             results[method] = res
 
         for key in results.keys():
@@ -178,35 +191,72 @@ def optimize_case_study(functions: [list], params: [list], param_intervals: [lis
         ## parameter point, function values, distance
         return list(res.x), list(map(eval, functions)), res.fun
     else:
-        bounds = [[], []]
-        for interval in param_intervals:
-            bounds[0].append(interval[0])
-            bounds[1].append(interval[1])
+        # bounds = [[], []]
+        # for interval in param_intervals:
+        #     bounds[0].append(interval[0])
+        #     bounds[1].append(interval[1])
         # print("bounds", bounds)
+        bounds = param_intervals
 
         # print(x0)
         # print(dist(x0))
-        res = scipy.optimize.least_squares(dist, x0, bounds=bounds)
-        if debug:
-            print(res)
-            print("param names", params)
-            ## !!! THIS IS NOT UPDATED RESULT
-            # spam = []
-            # for item in params:
-            #     spam.append(globals()[item])
-            # print("param values", spam)
-            print("param values", list(res.x))
-            print("function values", list(map(eval, functions)))
-            print("data values", data_point)
-            print("distance values", list(res.fun))
-            print("total distance according to scipy - not transformed", res.cost)
-            ## !!! THIS IS NOT UPDATED RESULT
-            # print("L1 distance", sum([abs(x - y) for x, y in zip(list(map(eval, functions)), data_point)]))
-            # print("L2 distance", (sum([(x - y)**2 for x, y in zip(list(map(eval, functions)), data_point)]))**(1/2))
+        ## THE USABLE SET OF METHODS
+        # methods = ["trf", "dogbox"]  ## lm cannot handle bounds
+        methods = ['Powell', 'L-BFGS-B', 'TNC', 'SLSQP', 'trust-constr', 'trust-exact', 'trust-krylov']  # 'Nelder-Mead', 'CG', 'BFGS', Newton-CG, COBYLA, dogleg, trust-ncg  cannot handle bounds
 
-            for index, value in enumerate(params):
-                globals()[str(value)] = res.x[index]
-            print("L1 distance", sum([abs(x - y) for x, y in zip(list(map(eval, functions)), data_point)]))
-            print("L2 distance",
-                  (sum([(x - y) ** 2 for x, y in zip(list(map(eval, functions)), data_point)])) ** (1 / 2))
-        return list(res.x), list(map(eval, functions)), (2 * res.cost) ** (1 / 2)
+        results = dict()
+        for method in methods:
+            # res = scipy.optimize.least_squares(dist, x0, method=method, bounds=bounds, verbose=verbose)
+            try:
+                if weights:
+                    spam = scipy.optimize.minimize(weighted_dist_l2, x0, args=weights, method=method, bounds=bounds)
+                else:
+                    spam = scipy.optimize.minimize(dist_l2, x0, method=method, bounds=bounds)
+            except ValueError as err:
+                if debug:
+                    print(err)
+                continue
+
+            res = spam
+            results[method] = res
+
+            if debug:
+                ## Update param point
+                for index, item in enumerate(params):
+                    locals()[item] = list(res.x)[index]
+
+                print(res)
+                print("param names", params)
+                ## !!! THIS IS NOT UPDATED RESULT
+                # spam = []
+                # for item in params:
+                #     spam.append(globals()[item])
+                # print("param values", spam)
+                print("param values", list(res.x))
+                print("function values", list(map(eval, functions)))
+                print("data values", data_point)
+                print("total distance according to scipy - not transformed", res.fun)
+                ## !!! THIS IS NOT UPDATED RESULT
+                # print("L1 distance", sum([abs(x - y) for x, y in zip(list(map(eval, functions)), data_point)]))
+                # print("L2 distance", (sum([(x - y)**2 for x, y in zip(list(map(eval, functions)), data_point)]))**(1/2))
+
+                for index, value in enumerate(params):
+                    globals()[str(value)] = res.x[index]
+                print("L1 distance", sum([abs(x - y) for x, y in zip(list(map(eval, functions)), data_point)]))
+                print("L2 distance",
+                      (sum([(x - y) ** 2 for x, y in zip(list(map(eval, functions)), data_point)])) ** (1 / 2))
+
+        for key in results.keys():
+            print(colored(key, "red"))
+            print(results[key])
+            print()
+            ## Find the method with minimal distance
+            if results[key].fun < res.fun:
+                res = results[key]
+
+        ## Update param point
+        for index, item in enumerate(params):
+            locals()[item] = list(res.x)[index]
+        return list(res.x), list(map(eval, functions)), res.fun
+
+result = optimize_case_study(["z+y+1"], ["z", "y"], [[0, 1], [2, 3]], [6], weights=[0.5], sort=False, debug=True)

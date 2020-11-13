@@ -85,6 +85,7 @@ try:
     from refine_space import check_deeper
     from mc import call_prism_files, call_storm_files
     from sample_n_visualise import sample_list_funs, eval_and_show, get_param_values, heatmap, bar_err_plot
+    from optimize import optimize
     from optimize_case_study import optimize_case_study
 except Exception as error:
     print(colored(f"An error occurred during importing module: {error}", "red"))
@@ -2874,8 +2875,8 @@ class Gui(Tk):
             assert isinstance(self.data, list)
             
             start_time = time()
-            # result = optimize(self.functions, self.parameters, self.parameter_domains, self.data, debug=self.debug.get())
-            result = optimize_case_study(self.functions, self.parameters, self.parameter_domains, self.data, self.non_decreasing_params.get(), debug=self.debug.get())
+            result = optimize_case_study(self.functions, self.parameters, self.parameter_domains, self.data, debug=self.debug.get())
+            # result = optimize_case_study(self.functions, self.parameters, self.parameter_domains, self.data, self.non_decreasing_params.get(), debug=self.debug.get())
             print(colored(f"Optimisation took {time() - start_time} seconds", "yellow"))
         except Exception as error:
             messagebox.showerror("Optimize", f"Error occurred during Optimization: {error}")

@@ -70,6 +70,8 @@ def optimize(functions: [list], params: [list], param_intervals: [list], data_po
     Returns:
         (list): [point of parameter space with the least distance, values of functions in the point, the distance between the data and functions values]
     """
+    ## TODO HARDCODED PART FOR CASE STUDY FOLLOWS
+    # weights = [92, 92, 70, 56, 37, 26, 22, 12, 4, 2, 0]
 
     ## Convert z3 functions
     for index, function in enumerate(functions):
