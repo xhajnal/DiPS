@@ -50,7 +50,7 @@ def weighted_dist(param_point, weights):
 
     try:
         for index, item in enumerate(spam):
-            spam[index] = spam[index] * weights[index]
+            spam[index] = float(spam[index]) * weights[index]
     except IndexError:
         pass
     return spam
@@ -92,10 +92,15 @@ def optimize(functions: [list], params: [list], param_intervals: [list], data_po
         bounds[1].append(interval[1])
     # print("bounds", bounds)
 
-    if weights:
-        res = scipy.optimize.least_squares(weighted_dist, x0, bounds=bounds, args=[weights])
+    if debug:
+        verbose = 2
     else:
-        res = scipy.optimize.least_squares(dist, x0, bounds=bounds)
+        verbose = 0
+
+    if weights:
+        res = scipy.optimize.least_squares(weighted_dist, x0, bounds=bounds, args=weights, verbose=verbose)
+    else:
+        res = scipy.optimize.least_squares(dist, x0, bounds=bounds, verbose=verbose)
     # print(res.x)
 
     ## VALUES OF PARAMS, VALUES OF FUNCTIONS, DISTANCE
