@@ -1,3 +1,4 @@
+import ast
 import glob
 import os
 import copy
@@ -154,12 +155,12 @@ def load_functions(file_path, tool="unknown", factorize=True, rewards_only=False
     return f, rewards
 
 
-def get_f(path, tool, factorize):
+def get_f(path, tool="unknown", factorize=False):
     """ Loads all nonreward results of parameter synthesis from *path* folder """
     return load_functions(path, tool, factorize, rewards_only=False, f_only=True)[0]
 
 
-def get_rewards(path, tool, factorize):
+def get_rewards(path, tool="unknown", factorize=False):
     """ Loads all reward results of parameter synthesis from *path* folder """
     return load_functions(path, tool, factorize, rewards_only=True, f_only=False)[1]
 
@@ -645,6 +646,9 @@ def parse_constraints(file, silent=True, debug=False):
         for line in content:
             line = re.sub(r', *\n', '', line)
             constraints.append(line)
+    if len(constraints) == 1:
+        if constraints[0][0] == "[":
+            constraints = ast.literal_eval(constraints[0])
     return constraints
 
 
