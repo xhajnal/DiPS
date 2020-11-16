@@ -2902,7 +2902,8 @@ class Gui(Tk):
         window.resizable(False, False)
         Label(window, text=f"Parameter point: ").grid(row=1)
         Label(window, text=f"Function values: ").grid(row=2)
-        Label(window, text=f"Distance: ").grid(row=3)
+        Label(window, text=f"Data point: ").grid(row=3)
+        Label(window, text=f"Distance: ").grid(row=4)
 
         var = StringVar()
         var.set(str(result[0]))
@@ -2915,15 +2916,20 @@ class Gui(Tk):
         ent.grid(row=2, column=1)
 
         var = StringVar()
-        var.set(str(result[2]))
+        var.set(str(self.data))
         ent = Entry(window, state='readonly', textvariable=var, width=width, relief='flat', readonlybackground='white', fg='black')
         ent.grid(row=3, column=1)
 
+        var = StringVar()
+        var.set(str(result[2]))
+        ent = Entry(window, state='readonly', textvariable=var, width=width, relief='flat', readonlybackground='white', fg='black')
+        ent.grid(row=4, column=1)
+
         save_optimisation_button = Button(window, text="Save Result", command=self.save_optimisation_result)
-        save_optimisation_button.grid(row=4, column=1)
+        save_optimisation_button.grid(row=5, column=1)
 
         ## Autosave
-        self.save_optimisation_result(os.path.join(self.tmp_dir, "optimisation_results"))
+        self.save_optimisation_result(os.path.join(self.tmp_dir, "optimisation_results.txt"))
 
         print("parameter point", self.optimised_param_point)
         print("function values", self.optimised_function_value)
