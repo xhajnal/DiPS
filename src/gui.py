@@ -2875,8 +2875,8 @@ class Gui(Tk):
             assert isinstance(self.data, list)
             
             start_time = time()
-            result = optimize_case_study(self.functions, self.parameters, self.parameter_domains, self.data, debug=self.debug.get())
-            # result = optimize_case_study(self.functions, self.parameters, self.parameter_domains, self.data, self.non_decreasing_params.get(), debug=self.debug.get())
+            # result = optimize(self.functions, self.parameters, self.parameter_domains, self.data, debug=self.debug.get())
+            result = optimize_case_study(self.functions, self.parameters, self.parameter_domains, self.data, sort=self.non_decreasing_params.get(), debug=self.debug.get())
             print(colored(f"Optimisation took {time() - start_time} seconds", "yellow"))
         except Exception as error:
             messagebox.showerror("Optimize", f"Error occurred during Optimization: {error}")

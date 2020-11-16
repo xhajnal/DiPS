@@ -189,6 +189,8 @@ def optimize_case_study(functions: [list], params: [list], param_intervals: [lis
             print("L2 distance", (sum([(x - y) ** 2 for x, y in zip(list(map(eval, functions)), data_point)])) ** (1 / 2))
 
         ## parameter point, function values, distance
+        for index, item in enumerate(params):
+            locals()[item] = list(res.x)[index]
         return list(res.x), list(map(eval, functions)), res.fun
     else:
         # bounds = [[], []]
@@ -258,5 +260,3 @@ def optimize_case_study(functions: [list], params: [list], param_intervals: [lis
         for index, item in enumerate(params):
             locals()[item] = list(res.x)[index]
         return list(res.x), list(map(eval, functions)), res.fun
-
-result = optimize_case_study(["z+y+1"], ["z", "y"], [[0, 1], [2, 3]], [6], weights=[0.5], sort=False, debug=True)
