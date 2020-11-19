@@ -8,7 +8,8 @@ from scipy.optimize import least_squares, NonlinearConstraint, LinearConstraint,
 from termcolor import colored
 
 from common.my_z3 import is_this_z3_function, translate_z3_function
-from optimize import dist, weighted_dist
+from common.mathematics import weight_list
+from optimize import dist
 import optimize
 
 
@@ -30,7 +31,7 @@ def weighted_dist_l1(param_point, weights):
     optimize.params = globals()["params"]
     optimize.data_point = globals()["data_point"]
 
-    spam = weighted_dist(param_point, weights)
+    spam = weight_list(dist(param_point), weights)
     return sum(spam)
 
 
@@ -49,8 +50,9 @@ def weighted_dist_l2(param_point, weights):
     """ L2 weighted distance """
     ## TODO HARDCODED PART FOR CASE STUDY FOLLOWS
     # weights = [92, 92, 70, 56, 37, 26, 22, 12, 4, 2, 0]
-    spam = weighted_dist(param_point, weights)
+    spam = dist(param_point)
     spam = list(map(lambda a: float(a * a), spam))
+    spam = weight_list(spam, weights)
     return sqrt(sum(spam))
 
 
@@ -106,6 +108,9 @@ def optimize_case_study(functions: [list], params: [list], param_intervals: [lis
     """
     ## TODO HARDCODED PART FOR CASE STUDY FOLLOWS
     weights = [92, 92, 70, 56, 37, 26, 22, 12, 4, 2, 0]
+
+    assert len(functions) == len(data_point)
+    assert len(params) == len(param_intervals)
 
     ## Convert z3 functions
     for index, function in enumerate(functions):
@@ -204,7 +209,7 @@ def optimize_case_study(functions: [list], params: [list], param_intervals: [lis
         # print(dist(x0))
         ## THE USABLE SET OF METHODS
         # methods = ["trf", "dogbox"]  ## lm cannot handle bounds
-        methods = ['Powell', 'L-BFGS-B', 'TNC', 'SLSQP', 'trust-constr', 'trust-exact', 'trust-krylov']  # 'Nelder-Mead', 'CG', 'BFGS', Newton-CG, COBYLA, dogleg, trust-ncg  cannot handle bounds
+        methods = ['L-BFGS-B', 'TNC', 'SLSQP', 'trust-constr', 'trust-exact', 'trust-krylov']  # 'Powell', 'Nelder-Mead', 'CG', 'BFGS', Newton-CG, COBYLA, dogleg, trust-ncg  cannot handle bounds
 
         results = dict()
         for method in methods:
