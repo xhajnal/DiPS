@@ -48,8 +48,6 @@ def dist_l2(param_point):
 
 def weighted_dist_l2(param_point, weights):
     """ L2 weighted distance """
-    ## TODO HARDCODED PART FOR CASE STUDY FOLLOWS
-    # weights = [92, 92, 70, 56, 37, 26, 22, 12, 4, 2, 0]
     spam = dist(param_point)
     spam = list(map(lambda a: float(a * a), spam))
     spam = weight_list(spam, weights)
@@ -106,11 +104,10 @@ def optimize_case_study(functions: [list], params: [list], param_intervals: [lis
     Returns:
         (list): [point of parameter space with the least distance, values of functions in the point, the distance between the data and functions values]
     """
-    ## TODO HARDCODED PART FOR CASE STUDY FOLLOWS
-    weights = [92, 92, 70, 56, 37, 26, 22, 12, 4, 2, 0]
-
     assert len(functions) == len(data_point)
     assert len(params) == len(param_intervals)
+    if weights:
+        assert len(weights) == len(data_point)
 
     ## Convert z3 functions
     for index, function in enumerate(functions):
