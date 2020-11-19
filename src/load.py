@@ -665,3 +665,19 @@ def parse_functions(file, silent=True, debug=False):
     """
     return parse_constraints(file, silent, debug)
 
+
+def parse_weights(file, silent=True, debug=False):
+    """ Loads weights from text file, returns as list of strings "weights"
+
+    Args:
+        file (string/Path): file path to parse functions
+        silent (bool): if silent printed output is set to minimum
+        debug (bool): if debug extensive print will be used
+
+    Returns:
+    (list of string) weights
+    """
+    return list(map(lambda x: float(x), parse_constraints(file, silent, debug)))
+
+
+
