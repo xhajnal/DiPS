@@ -688,6 +688,8 @@ class RefinedSpace:
 
     def get_flat_white(self):
         """ Returns white space as a flat list"""
+        if isinstance(self.rectangles_unknown, list):
+            return self.rectangles_unknown
         rectangles_unknown = []
         for key in self.rectangles_unknown.keys():
             rectangles_unknown.extend(self.rectangles_unknown[key])
@@ -886,6 +888,8 @@ class RefinedSpace:
 
     def count_white_rectangles(self):
         """ Returns number of white hyper rectangles"""
+        if isinstance(self.rectangles_unknown, list):
+            return len(self.rectangles_unknown)
         count = 0
         for rectangles in self.rectangles_unknown.keys():
             count = count + len(self.rectangles_unknown[rectangles])

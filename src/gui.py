@@ -2970,6 +2970,7 @@ class Gui(Tk):
         with open(save_opt_result_file, "w") as f:
             f.write(f"parameter point {self.optimised_param_point} \n")
             f.write(f"function values {self.optimised_function_value} \n")
+            f.write(f"data values {self.data} \n")
             f.write(f"distance {self.optimised_distance} \n")
 
     ## First, it asks whether it is changed, then selects (text, file, text) accordingly

@@ -1,4 +1,5 @@
 import math
+import warnings
 from collections.abc import Iterable
 import scipy.stats as st
 from sympy import Interval
@@ -252,3 +253,30 @@ def private_create_matrix(sample_size, dim, n_param):
             point.append(0)
         return [point, 9]
     return [private_create_matrix(sample_size, dim - 1, n_param) for _ in range(sample_size)]
+
+
+def weight_list(spam, weights, warn=True):
+    """ Returns weighted list
+
+    Args:
+        spam(list): list to multiply with weights
+        weights (list): of weights to multiply the respective distance with
+        warn (bool): if warn, it will warn instead of raising error
+
+    Returns:
+        (list): weighted list
+    """
+
+    if warn:
+        if len(weights) > len(spam):
+            warnings.warn("The list of weights is longer than the list, last weights are not used!!", RuntimeWarning)
+
+        if len(weights) > len(spam):
+            warnings.warn("The list of weights is shorter than the list, last items are not weighted!!", RuntimeWarning)
+
+    try:
+        for index, item in enumerate(spam):
+            spam[index] = float(spam[index]) * weights[index]
+    except IndexError:
+        pass
+    return spam
