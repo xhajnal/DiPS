@@ -79,7 +79,7 @@ except Exception as error:
 
 try:
     from mc_informed import general_create_data_informed_properties
-    from load import load_functions, find_param, load_data, find_param_old, parse_constraints, parse_functions, parse_params_from_model
+    from load import load_functions, find_param, load_data, find_param_old, parse_constraints, parse_functions, parse_params_from_model, parse_weights
     from common.mathematics import create_intervals
     import space
     from refine_space import check_deeper
@@ -159,6 +159,7 @@ class Gui(Tk):
         self.model_dir = ""  ## Path to model
         self.property_dir = ""  ## Path to temporal properties
         self.data_dir = ""  ## Path to data
+        self.data_weights_dir = ""  ## Path to data weights
 
         self.results_dir = ""  ## Path to results
         self.data_intervals_dir = ""  ## Path to data intervals
@@ -176,6 +177,7 @@ class Gui(Tk):
         self.property_file = StringVar()  ## Property file
         self.data_informed_property_file = StringVar()  ## Data informed property file
         self.data_file = StringVar()  ## Data file
+        self.data_weights_file = StringVar()  ## Data weights file
         self.data_intervals_file = StringVar()  ## Data intervals file
         self.functions_file = StringVar()  ## Rational functions file
         self.constraints_file = StringVar()  ## constraints file
@@ -188,6 +190,7 @@ class Gui(Tk):
         self.functions_changed = False
         self.data_changed = False
         self.data_intervals_changed = False
+        self.data_weights_changed = False
         self.constraints_changed = False
         self.space_changed = False
         self.mh_results_changed = False
@@ -198,12 +201,14 @@ class Gui(Tk):
         self.parsed_functions_text_modified = BooleanVar()
         self.data_text_modified = BooleanVar()
         self.data_intervals_text_modified = BooleanVar()
+        self.data_weights_text_modified = BooleanVar()
         self.constraints_text_modified = BooleanVar()
 
         ## True Variables
         # self.model = ""
         # self.property = ""
         self.data = []  ## Experimental estimation of probabilities of functions
+        self.data_weights = []  ## weights for the experimental estimation of probabilities of functions
         self.data_informed_property = ""  ## Property containing the interval boundaries from the data  ##TODO rewrite as [], need to go through checks
         self.functions = ""  ## Parameter synthesis results (rational functions)  ##TODO rewrite as [], need to go through checks
         self.z3_functions = ""  ## functions with z3 expressions inside  ##TODO rewrite as [], need to go through checks
@@ -548,8 +553,6 @@ class Gui(Tk):
 
         frame_left = Frame(page4, width=int(self.winfo_width() / 2), height=int(self.winfo_height() * 0.8))
         frame_left.grid_propagate(0)
-        frame_left.rowconfigure(8, weight=1)
-        frame_left.columnconfigure(6, weight=1)
         frame_left.pack(side=LEFT, fill=X)
 
         frame_right = Frame(page4, width=int(self.winfo_width() / 2), height=int(self.winfo_height() * 0.8))
@@ -559,7 +562,7 @@ class Gui(Tk):
         frame_right.pack(side=RIGHT, fill=X)
 
         label43 = Label(frame_left, text="N_samples, number of samples: ", anchor=W, justify=LEFT)
-        label43.grid(row=0)
+        label43.grid(row=0, column=0, sticky=W, padx=4, pady=4)
         createToolTip(label43, text='Number of samples')
 
         self.n_samples_entry = Entry(frame_left)
@@ -573,13 +576,36 @@ class Gui(Tk):
         label10.grid(row=2, column=0, sticky=W, padx=4, pady=4)
         createToolTip(label10, text='For each function exactly one data point should be assigned.')
 
-        self.data_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_height() * 0.8 / 40))  # , height=10, width=30
+        a = 21
+        Button(frame_left, text='Open weights file', command=self.load_data_weights).grid(row=1, column=a, sticky=W, padx=4, pady=4)
+        Button(frame_left, text='Save weights', command=self.save_data_weights).grid(row=1, column=a + 1, sticky=W, padx=4)
+        Button(frame_left, text='Discard weights', command=self.discard_data_weights).grid(row=1, column=a + 2, sticky=W, padx=4)
+
+        label10 = Label(frame_left, text=f"Loaded weights:", anchor=W, justify=LEFT)
+        label10.grid(row=2, column=a, sticky=W, pady=4)
+        createToolTip(label10, text='For each data point exactly one weight should be assigned.')
+        del a
+
+        small_frame = ttk.Frame(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_height() * 0.8))
+        small_frame.grid(row=3, column=0, columnspan=50, sticky=W+E, padx=4, pady=4)
+
+        self.data_text = scrolledtext.ScrolledText(small_frame)  # , height=10, width=30
         ## self.data_text.bind("<FocusOut>", self.parse_data)
         # self.data_text = Text(page4, height=12, state=DISABLED)  # , height=10, width=30
         # self.data_text.config(state="disabled")
         # self.data_text.bind("<FocusOut>", self.refresh_data)
         self.data_text.bind("<Key>", lambda x: self.data_text_modified.set(True) if x.char != "" else None)
-        self.data_text.grid(row=3, column=0, columnspan=16, sticky=W, padx=4, pady=4)
+        self.data_text.pack(side=LEFT, fill=BOTH, expand=True)
+
+        self.data_weights_text = scrolledtext.ScrolledText(small_frame)  # , height=10, width=30
+        ## self.data_text.bind("<FocusOut>", self.parse_data)
+        # self.data_text = Text(page4, height=12, state=DISABLED)  # , height=10, width=30
+        # self.data_text.config(state="disabled")
+        # self.data_text.bind("<FocusOut>", self.refresh_data)
+        self.data_weights_text.bind("<Key>", lambda x: self.data_weights_text_modified.set(True) if x.char != "" else None)
+        self.data_weights_text.pack(side=RIGHT, fill=BOTH, expand=True)
+
+
 
         ## SET THE INTERVAL COMPUTATION SETTINGS
         button41 = Button(frame_left, text='Optimize parameters', command=self.optimize)
@@ -590,8 +616,7 @@ class Gui(Tk):
         constrained_optimize_button.grid(row=4, column=1, sticky=W, padx=4, pady=4)
         
         label42 = Label(frame_left, text="C, confidence level:", anchor=W, justify=LEFT)
-        label42.grid(row=5)       
-        
+        label42.grid(row=5, column=0, sticky=W, padx=4, pady=4)
         createToolTip(label42, text='Confidence level')
 
         self.confidence_entry = Entry(frame_left)
@@ -610,8 +635,11 @@ class Gui(Tk):
         # self.data_intervals_text.config(state="disabled")
         # self.data_intervals_text.bind("<FocusOut>", self.refresh_data_intervals)
         self.data_intervals_text.bind("<Key>", lambda x: self.data_intervals_text_modified.set(True) if x.char != "" else None)
-        self.data_intervals_text.grid(row=8, column=0, rowspan=2, columnspan=16, sticky=W, padx=4, pady=4)
+        self.data_intervals_text.grid(row=8, column=0, rowspan=2, columnspan=50, sticky=W, padx=4, pady=4)
         # ttk.Separator(frame_left, orient=VERTICAL).grid(row=0, column=17, rowspan=10, sticky='ns', padx=50, pady=10)
+        for i in range(50):
+            frame_left.columnconfigure(i, weight=1)
+        ## RIGHT FRAME
 
         Label(frame_right, text=f"Data informed property section.", anchor=W, justify=LEFT).grid(row=0, column=1, sticky=W, padx=5, pady=4)
         Label(frame_right, text=f"Loaded property file:", anchor=W, justify=LEFT).grid(row=1, column=1, sticky=W, padx=5, pady=4)
@@ -964,6 +992,15 @@ class Gui(Tk):
         if not os.path.exists(self.data_dir):
             os.makedirs(self.data_dir)
         # print("self.data_dir", self.data_dir)
+
+        self.data_weights_dir = config.get("paths", "data_weights")
+        if self.data_weights_dir == "":
+            self.data_weights_dir = "data"
+        if not os.path.isabs(self.data_weights_dir):
+            self.data_weights_dir = os.path.join(self.cwd, self.data_weights_dir)
+        if not os.path.exists(self.data_weights_dir):
+            os.makedirs(self.data_weights_dir)
+        # print("self.data_weights_dir", self.data_weights_dir)
 
         ## Results
         self.results_dir = config.get("paths", "results")
@@ -1363,6 +1400,9 @@ class Gui(Tk):
     def unfold_functions(self):
         """" Unfolds the function dictionary into a single list """
 
+        from functools import partial
+
+        unfold_functions2 = partial(self.unfold_something_2, [self.functions, "functions", self.functions_window, self.unfold_functions])
         if isinstance(self.functions, dict):
             ## TODO Maybe rewrite this as key and pass the argument to unfold_functions2
             ## NO because dunno how to send it to the function as a argument
@@ -1389,11 +1429,11 @@ class Gui(Tk):
                 if first:
                     spam.select()
                     first = False
-            spam = Button(self.functions_window, text="OK", command=self.unfold_functions2)
+            spam = Button(self.functions_window, text="OK", command=unfold_functions2)
             spam.pack()
             spam.focus()
             spam.bind('<Return>', self.unfold_functions2)
-            self.functions_window.bind('<Return>', self.unfold_functions2)
+            self.functions_window.bind('<Return>', unfold_functions2)
         else:
             functions = ""
             for function in self.functions:
@@ -1404,6 +1444,18 @@ class Gui(Tk):
             self.functions_parsed_text.delete('1.0', END)
             self.functions_parsed_text.insert('end', functions)
             # self.functions_parsed_text.configure(state='disabled')
+
+    def unfold_something_2(self, something, something_in_text, window_to_destroy, this_function):
+        """" Dummy method of unfold_something """
+        try:
+            something = something[self.key.get()]
+        except KeyError:
+            something = something[eval(self.key.get())]
+
+        if not self.silent.get():
+            print(f"Parsed list of {something_in_text}: ", something)
+        window_to_destroy.destroy()
+        this_function()
 
     def unfold_functions2(self):
         """" Dummy method of unfold_functions """
@@ -1656,6 +1708,62 @@ class Gui(Tk):
         self.new_window.destroy()
         self.unfold_data()
 
+    def load_data_weights(self, file=False, ask=True):
+        """ Loads data weights from a given file
+        Args:
+            file (path/string): direct path to load the data weights file
+            ask (Bool): if False it will not ask questions
+        """
+        if file:
+            if not os.path.isfile(file):
+                return
+            spam = file
+        else:
+            print("Loading data weights ...")
+
+            if self.data_weights and ask:
+                if not askyesno("Loading data weights", "Previously obtained weights will be lost. Do you want to proceed?"):
+                    return
+
+            self.status_set("Please select the data weights to be loaded.")
+            spam = filedialog.askopenfilename(initialdir=self.data_weights_dir, title="Data weights loading - Select file",
+                                              filetypes=(("pickled or text files", "*.p .txt"), ("all files", "*.*")))
+
+        ## If no file selected
+        if spam == "":
+            self.status_set("No file selected.")
+            return
+        else:
+            self.data_weights_changed = True
+            self.data_weights_file.set(spam)
+
+            if os.path.splitext(self.data_weights_file.get())[1] == ".txt":
+                self.data_weights = parse_weights(self.data_weights_file.get())
+            elif os.path.splitext(self.data_weights_file.get())[1] == ".p":
+                self.data_weights = pickle_load(self.data_weights_file.get())
+
+            weights = ""
+            if not self.silent.get():
+                print("Loaded data weights", self.data_weights)
+            for weight in self.data_weights:
+                weights = f"{weights},\n{weight}"
+            # print("weights", weights)
+            weights = weights[2:]
+            self.data_weights_text.configure(state='normal')
+            self.data_weights_text.delete('1.0', END)
+            self.data_weights_text.insert('end', weights)
+
+            self.data_weights_changed = True
+
+            if not self.data_weights:
+                messagebox.showwarning("Loading data weights", "No data weights loaded. Please check input file.")
+                self.status_set("No data weights loaded.")
+            else:
+                ## Autosave
+                if not file:
+                    self.save_data_weights(os.path.join(self.tmp_dir, "data_weights.p"))
+                self.status_set("Data weights loaded.")
+
     def load_data_intervals(self, file=False, ask=True):
         """ Loads data intervals from a given file
         Args:
@@ -1670,7 +1778,7 @@ class Gui(Tk):
             print("Loading data intervals ...")
 
             if self.data_intervals and ask:
-                if not askyesno("Loading data intervals", "Previously obtained space will be lost. Do you want to proceed?"):
+                if not askyesno("Loading data intervals", "Previously obtained intervals will be lost. Do you want to proceed?"):
                     return
 
             self.status_set("Please select the data intervals to be loaded.")
@@ -1714,6 +1822,10 @@ class Gui(Tk):
         print("Checking the inputs.")
         self.check_changes("functions")
         self.check_changes("data_intervals")
+        self.check_changes("data_weights")
+
+        if self.data_weights:
+            raise NotImplementedError("Weighted constraints are not Implemented yet")
 
         ## If there is some constraints
         if len(self.constraints_text.get('1.0', END)) > 1:
@@ -2370,6 +2482,54 @@ class Gui(Tk):
         else:
             bar_err_plot(self.data, self.data_intervals, titles=["Data indices", "Data values", f"Summary of {self.n_samples_entry.get()} observations."])
 
+    def save_data_weights(self, file=False):
+        """ Saves data weights as a pickled file.
+
+        Args:
+            file (bool or str or Path):  file to save the data weights
+        """
+
+        data_weights = self.scrap_TextBox(self.data_weights_text)
+        ## Converting strings to weights
+
+        if file:
+            save_data_weights_file = file
+        else:
+            print("Saving the data weights ...")
+
+            if not data_weights:
+                messagebox.showwarning("Saving data weights", "There are no data weights to be saved.")
+                self.status_set("There are no data weights to be saved.")
+                return
+
+            self.status_set("Please select folder to store the data weights in.")
+            save_data_weights_file = filedialog.asksaveasfilename(initialdir=self.data_weights_dir,
+                                                                  title="Data weights saving - Select file",
+                                                                  filetypes=(("pickle files", "*.p"),
+                                                                             ("text files", "*.txt"),
+                                                                             ("all files", "*.*")))
+            if save_data_weights_file == "":
+                self.status_set("No file selected to store the data weights.")
+                return
+
+        if "." not in basename(save_data_weights_file):
+            save_data_weights_file = save_data_weights_file + ".p"
+
+        if not self.silent.get():
+            print("Saving data weights as a file:", save_data_weights_file)
+
+        self.save_file(data_weights, save_data_weights_file)
+
+        if not file:
+            self.data_weights_file.set(save_data_weights_file)
+            self.status_set("Data weights saved.")
+
+    def discard_data_weights(self):
+        """ Deletes the data weights """
+        self.data_weights = []
+        self.data_weights_text.delete('1.0', END)
+        self.data_weights_file.set("")
+
     def save_data_intervals(self, file=False):
         """ Saves data intervals as a pickled file.
 
@@ -2864,6 +3024,7 @@ class Gui(Tk):
         print("Checking the inputs.")
         self.check_changes("functions")
         self.check_changes("data")
+        self.check_changes("data_weights")
 
         print("Optimizing the distance between functions and data ...")
         self.status_set("Optimizing the distance between functions and data.")
@@ -2899,8 +3060,10 @@ class Gui(Tk):
             assert isinstance(self.functions, list)
             assert isinstance(self.parameters, list)
             assert isinstance(self.data, list)
-            
+            assert isinstance(self.data_weights, list)
+
             start_time = time()
+            result = optimize(self.functions, self.parameters, self.parameter_domains, self.data, weights=self.data_weights, debug=self.debug.get())
             # result = optimize(self.functions, self.parameters, self.parameter_domains, self.data, debug=self.debug.get())
             result = optimize_case_study(self.functions, self.parameters, self.parameter_domains, self.data, sort=self.non_decreasing_params.get(), debug=self.debug.get())
             print(colored(f"Optimisation took {time() - start_time} seconds", "yellow"))
@@ -2926,10 +3089,15 @@ class Gui(Tk):
 
         window.minsize(400, width+20)
         window.resizable(False, False)
+
         Label(window, text=f"Parameter point: ").grid(row=1)
         Label(window, text=f"Function values: ").grid(row=2)
         Label(window, text=f"Data point: ").grid(row=3)
-        Label(window, text=f"Distance: ").grid(row=4)
+        i = 4
+        if self.data_weights:
+            Label(window, text=f"Weights: ").grid(row=i)
+            i = i + 1
+        Label(window, text=f"Distance: ").grid(row=i)
 
         var = StringVar()
         var.set(str(result[0]))
@@ -2946,20 +3114,32 @@ class Gui(Tk):
         ent = Entry(window, state='readonly', textvariable=var, width=width, relief='flat', readonlybackground='white', fg='black')
         ent.grid(row=3, column=1)
 
+        i = 4
+        if self.data_weights:
+            var = StringVar()
+            var.set(str(self.data_weights))
+            ent = Entry(window, state='readonly', textvariable=var, width=width, relief='flat', readonlybackground='white', fg='black')
+            ent.grid(row=i, column=1)
+            i = i + 1
+
         var = StringVar()
         var.set(str(result[2]))
         ent = Entry(window, state='readonly', textvariable=var, width=width, relief='flat', readonlybackground='white', fg='black')
-        ent.grid(row=4, column=1)
+        ent.grid(row=i, column=1)
+        i = i + 1
 
         save_optimisation_button = Button(window, text="Save Result", command=self.save_optimisation_result)
-        save_optimisation_button.grid(row=5, column=1)
+        save_optimisation_button.grid(row=i, column=1)
 
         ## Autosave
         self.save_optimisation_result(os.path.join(self.tmp_dir, "optimisation_results.txt"))
 
-        print("parameter point", self.optimised_param_point)
-        print("function values", self.optimised_function_value)
-        print("distance", self.optimised_distance)
+        print("Parameter point: ", self.optimised_param_point)
+        print("Function values: ", self.optimised_function_value)
+        print("Data points: ", self.data)
+        if self.data_weights:
+            print("Weights: ", self.data_weights)
+        print("Distance: ", self.optimised_distance)
 
     def save_optimisation_result(self, file=False):
         """ Stores optimisation results as a file
@@ -2983,10 +3163,12 @@ class Gui(Tk):
             save_opt_result_file = save_opt_result_file + ".txt"
 
         with open(save_opt_result_file, "w") as f:
-            f.write(f"parameter point {self.optimised_param_point} \n")
-            f.write(f"function values {self.optimised_function_value} \n")
-            f.write(f"data values {self.data} \n")
-            f.write(f"distance {self.optimised_distance} \n")
+            f.write(f"Parameter point: {self.optimised_param_point} \n")
+            f.write(f"Function values: {self.optimised_function_value} \n")
+            f.write(f"Data values: {self.data} \n")
+            if self.data_weights:
+                f.write(f"Weights: {self.data} \n")
+            f.write(f"Distance: {self.optimised_distance} \n")
 
     ## First, it asks whether it is changed, then selects (text, file, text) accordingly
     def check_changes(self, what):
@@ -3002,6 +3184,7 @@ class Gui(Tk):
                   "properties": (self.properties_text_modified, self.property_file, "properties", self.save_property, self.load_property),
                   "functions": (self.parsed_functions_text_modified, self.functions_file, "functions", self.save_parsed_functions, self.load_parsed_functions),
                   "data": (self.data_text_modified, self.data_file, "data", self.save_data, self.load_data),
+                  "data_weights": (self.data_weights_text_modified, self.data_weights_file, "data_weights", self.save_data_weights, self.load_data_weights),
                   "data_intervals": (self.data_intervals_text_modified, self.data_intervals_file, "data_intervals", self.save_data_intervals, self.load_data_intervals),
                   "constraints": (self.constraints_text_modified, self.constraints_file, "constraints", self.save_constraints, self.load_constraints),
                   }
@@ -3316,6 +3499,10 @@ class Gui(Tk):
         print("Checking the inputs.")
         self.check_changes("functions")
         self.check_changes("data")
+        self.check_changes("data_weights")
+
+        if self.data_weights:
+            raise NotImplementedError("Weighted constraints are not Implemented yet")
 
         print("Space Metropolis-Hastings ...")
         self.status_set("Space Metropolis-Hastings - checking inputs")
@@ -4284,6 +4471,7 @@ class Gui(Tk):
             # self.load_functions(file=os.path.join(self.tmp_dir, "functions_prism.txt"))
             # self.load_functions(file=os.path.join(self.tmp_dir, "functions_storm.txt"))
             self.load_data(file=os.path.join(self.tmp_dir, "data.p"))
+            self.load_data_weights(file=os.path.join(self.tmp_dir, "data_weights.p"))
             self.load_data_intervals(file=os.path.join(self.tmp_dir, "data_intervals.p"))
             self.load_constraints(file=os.path.join(self.tmp_dir, "constraints.p"))
             self.load_space(file=os.path.join(self.tmp_dir, "space.p"))

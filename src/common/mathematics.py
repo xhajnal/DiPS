@@ -276,7 +276,7 @@ def weight_list(spam, weights, warn=True):
 
     try:
         for index, item in enumerate(spam):
-            spam[index] = float(spam[index]) * weights[index]
+            spam[index] = float(spam[index]) * float(weights[index])
     except IndexError:
         pass
     return spam

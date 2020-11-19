@@ -53,6 +53,8 @@ def optimize(functions: [list], params: [list], param_intervals: [list], data_po
 
     assert len(functions) == len(data_point)
     assert len(params) == len(param_intervals)
+    if weights:
+        assert len(weights) == len(data_point)
 
     ## Convert z3 functions
     for index, function in enumerate(functions):
@@ -81,7 +83,7 @@ def optimize(functions: [list], params: [list], param_intervals: [list], data_po
         verbose = 0
 
     if weights:
-        res = scipy.optimize.least_squares(weighted_dist, x0, bounds=bounds, args=weights, verbose=verbose)
+        res = scipy.optimize.least_squares(weighted_dist, x0, bounds=bounds, args=[weights], verbose=verbose)
     else:
         res = scipy.optimize.least_squares(dist, x0, bounds=bounds, verbose=verbose)
     # print(res.x)
