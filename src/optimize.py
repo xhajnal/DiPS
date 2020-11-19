@@ -1,9 +1,9 @@
 import scipy
 import numpy as np
 from scipy.optimize import least_squares
-import warnings
 
 ## Importing my code
+from common.mathematics import weight_list
 from common.my_z3 import is_this_z3_function, translate_z3_function
 
 global params
@@ -31,29 +31,7 @@ def dist(param_point):
 
 
 def weighted_dist(param_point, weights):
-    """ Computes weighted distance between functions and data
-    
-    Args:
-        param_point (list): point in parameter space
-        weights (list): of weights to multiply the respective distance with 
-
-    Returns:
-        (list): of weighted distances of the function from the data point
-    """
-    spam = dist(param_point)
-
-    if len(weights) > len(spam):
-        warnings.warn("The list of weights is longer than list of functions, last weights are not used!!", RuntimeWarning)
-
-    if len(weights) > len(spam):
-        warnings.warn("The list of weights is shorter than list of functions, last functions are not weighted!!", RuntimeWarning)
-
-    try:
-        for index, item in enumerate(spam):
-            spam[index] = float(spam[index]) * weights[index]
-    except IndexError:
-        pass
-    return spam
+    return weight_list(dist(param_point), weights)
 
 
 def optimize(functions: [list], params: [list], param_intervals: [list], data_point: [list], weights=False, debug=False):
@@ -72,6 +50,9 @@ def optimize(functions: [list], params: [list], param_intervals: [list], data_po
     """
     ## TODO HARDCODED PART FOR CASE STUDY FOLLOWS
     # weights = [92, 92, 70, 56, 37, 26, 22, 12, 4, 2, 0]
+
+    assert len(functions) == len(data_point)
+    assert len(params) == len(param_intervals)
 
     ## Convert z3 functions
     for index, function in enumerate(functions):

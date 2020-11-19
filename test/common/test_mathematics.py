@@ -153,6 +153,17 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(round(get_rectangle_volume([[0.0, 0.5]]), 1), 0.5)
         self.assertEqual(round(get_rectangle_volume([[0.0, 0.2], [0, 0.2]]), 2), 0.04)
 
+    def test_weight_list(self):
+        print(colored("Weight list", 'blue'))
+        self.assertEqual(weight_list([1, 2, 3], [1, 2, 3]), [1, 4, 9])
+
+        self.assertEqual(weight_list([1, 2, 3], [1, 1, 1]), [1, 2, 3])
+        self.assertEqual(weight_list([1, 2, 3], [1, 1]), [1, 2, 3])
+        self.assertEqual(weight_list([1, 2, 3], [1]), [1, 2, 3])
+        self.assertEqual(weight_list([1, 2, 3], []), [1, 2, 3])
+
+        self.assertEqual(weight_list([1, 2, 3], [0, 0, 0]), [0, 0, 0])
+
 
 if __name__ == '__main__':
     unittest.main()
