@@ -1,5 +1,7 @@
 import pickle
 import unittest
+import warnings
+
 from src.space import *
 
 curr_dir = os.path.dirname(__file__)
@@ -63,6 +65,47 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(space.get_sat_samples(), [[0.3333333333333333, 0.16666666666666666]])
         self.assertEqual(space.get_unsat_samples(), [[0.0, 0.0], [0.0, 0.16666666666666666], [0.0, 0.3333333333333333], [0.0, 0.5], [0.0, 0.6666666666666666], [0.0, 0.8333333333333333], [0.0, 1.0], [0.16666666666666666, 0.0], [0.16666666666666666, 0.16666666666666666], [0.16666666666666666, 0.3333333333333333], [0.16666666666666666, 0.5], [0.16666666666666666, 0.6666666666666666], [0.16666666666666666, 0.8333333333333333], [0.16666666666666666, 1.0], [0.3333333333333333, 0.0], [0.3333333333333333, 0.3333333333333333], [0.3333333333333333, 0.5], [0.3333333333333333, 0.6666666666666666], [0.3333333333333333, 0.8333333333333333], [0.3333333333333333, 1.0], [0.5, 0.0], [0.5, 0.16666666666666666], [0.5, 0.3333333333333333], [0.5, 0.5], [0.5, 0.6666666666666666], [0.5, 0.8333333333333333], [0.5, 1.0], [0.6666666666666666, 0.0], [0.6666666666666666, 0.16666666666666666], [0.6666666666666666, 0.3333333333333333], [0.6666666666666666, 0.5], [0.6666666666666666, 0.6666666666666666], [0.6666666666666666, 0.8333333333333333], [0.6666666666666666, 1.0], [0.8333333333333333, 0.0], [0.8333333333333333, 0.16666666666666666], [0.8333333333333333, 0.3333333333333333], [0.8333333333333333, 0.5], [0.8333333333333333, 0.6666666666666666], [0.8333333333333333, 0.8333333333333333], [0.8333333333333333, 1.0], [1.0, 0.0], [1.0, 0.16666666666666666], [1.0, 0.3333333333333333], [1.0, 0.5], [1.0, 0.6666666666666666], [1.0, 0.8333333333333333], [1.0, 1.0]])
         self.assertEqual(space.get_all_samples(), [[0.3333333333333333, 0.16666666666666666], [0.0, 0.0], [0.0, 0.16666666666666666], [0.0, 0.3333333333333333], [0.0, 0.5], [0.0, 0.6666666666666666], [0.0, 0.8333333333333333], [0.0, 1.0], [0.16666666666666666, 0.0], [0.16666666666666666, 0.16666666666666666], [0.16666666666666666, 0.3333333333333333], [0.16666666666666666, 0.5], [0.16666666666666666, 0.6666666666666666], [0.16666666666666666, 0.8333333333333333], [0.16666666666666666, 1.0], [0.3333333333333333, 0.0], [0.3333333333333333, 0.3333333333333333], [0.3333333333333333, 0.5], [0.3333333333333333, 0.6666666666666666], [0.3333333333333333, 0.8333333333333333], [0.3333333333333333, 1.0], [0.5, 0.0], [0.5, 0.16666666666666666], [0.5, 0.3333333333333333], [0.5, 0.5], [0.5, 0.6666666666666666], [0.5, 0.8333333333333333], [0.5, 1.0], [0.6666666666666666, 0.0], [0.6666666666666666, 0.16666666666666666], [0.6666666666666666, 0.3333333333333333], [0.6666666666666666, 0.5], [0.6666666666666666, 0.6666666666666666], [0.6666666666666666, 0.8333333333333333], [0.6666666666666666, 1.0], [0.8333333333333333, 0.0], [0.8333333333333333, 0.16666666666666666], [0.8333333333333333, 0.3333333333333333], [0.8333333333333333, 0.5], [0.8333333333333333, 0.6666666666666666], [0.8333333333333333, 0.8333333333333333], [0.8333333333333333, 1.0], [1.0, 0.0], [1.0, 0.16666666666666666], [1.0, 0.3333333333333333], [1.0, 0.5], [1.0, 0.6666666666666666], [1.0, 0.8333333333333333], [1.0, 1.0]])
+
+    def test_is(self):
+        print(colored("Testing is methods", 'blue'))
+        space = RefinedSpace((0, 1), ["x"])
+        self.assertEqual(space.is_refined(), False)
+        self.assertEqual(space.is_sampled(), False)
+        space.add_red([0, 0.2])
+        self.assertEqual(space.is_refined(), True)
+        self.assertEqual(space.is_sampled(), False)
+        space.add_sat_samples([5])
+        self.assertEqual(space.is_refined(), True)
+        self.assertEqual(space.is_sampled(), True)
+        space = RefinedSpace((0, 1), ["x"])
+        space.add_sat_samples([5])
+        self.assertEqual(space.is_refined(), False)
+        self.assertEqual(space.is_sampled(), True)
+
+        space = RefinedSpace((0, 1), ["x"])
+        space.add_red([0, 0.2])
+        space.remove_red([0, 0.2])
+        self.assertEqual(space.is_refined(), False)
+        self.assertEqual(space.is_sampled(), False)
+
+    def test_sets(self):
+        print(colored("Testing set methods", 'blue'))
+        space = RefinedSpace((0, 1), ["x"])
+
+        ## Setting region of new space
+        space.set_region([0, 2])
+        self.assertEqual(space.get_region(), [0, 2])
+
+        ## Setting region of not empty space
+        space.add_red([0, 0.2])
+        with self.assertRaises(NotImplementedError):
+            space.set_region([0, 2])
+
+        ## Setting region of space which was made empty
+        space.remove_red([0, 0.2])
+        self.assertEqual(space.is_refined(), False)
+        space.set_region([0, 2])
+        self.assertEqual(space.get_region(), [0, 2])
 
     def test_space_basics(self):
         print(colored("Basic space tests", 'blue'))
@@ -133,17 +176,33 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(round(space.get_nonwhite_volume(), 2), 0.16)
 
     def test_add_white(self):
+        print(colored("Space adding white rectangles", 'blue'))
         space = RefinedSpace((0, 1), ["x"])
+        self.assertEqual(space.is_refined(), False)
+        self.assertEqual(space.get_region(), [[0, 1]])
+        self.assertEqual(space.get_flat_white(), [[[0, 1]]])
+
+        ## Adding white region
         space.add_white([[0, 0.5]])
+        self.assertEqual(space.is_refined(), True)
+        self.assertEqual(space.get_region(), [[0, 1]])
+        self.assertEqual(space.get_flat_white(), [[[0, 1]], [[0, 0.5]]])
 
-        print(space)
+        ## Removing white region
         space.remove_white([[0, 1]])
-        space.add_white([[0.5, 1]])
+        self.assertEqual(space.is_refined(), True)
+        self.assertEqual(space.get_region(), [[0, 1]])
+        self.assertEqual(space.get_flat_white(), [[[0, 0.5]]])
 
-        print(space)
+        ## Adding another white region
+        space.add_white([[0.5, 1]])
+        self.assertEqual(space.is_refined(), True)
+        self.assertEqual(space.get_region(), [[0, 1]])
+        self.assertEqual(space.get_flat_white(), [[[0, 0.5]], [[0.5, 1]]])
 
     def test_visualisation(self):
         print(colored("Space visualisations tests", 'blue'))
+        warnings.warn("This test does not contain any assert, please check the produced visualisations.", RuntimeWarning)
 
         # os.chdir(cwd)
         print("curr dir", curr_dir)
@@ -157,6 +216,8 @@ class MyTestCase(unittest.TestCase):
 
     def test_visualisation_multidim(self):
         print(colored("Multidimensional space visualisations tests", 'blue'))
+        warnings.warn("This test does not contain any assert, please check the produced visualisations.",
+                      RuntimeWarning)
         space = RefinedSpace([[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]], ['r_0', 'r_1', 'r_2'], ['Real', 'Real', 'Real'], [[(0.75, 1.0), (0.0, 0.5), (0.0, 0.5)]], [[(0.75, 1.0), (0.0, 0.5), (0.5, 1.0)], [(0.75, 1.0), (0.5, 1.0), (0.0, 0.5)], [(0.75, 1.0), (0.5, 1.0), (0.5, 1.0)], [(0.0, 0.25), (0.0, 0.25), (0.0, 0.5)], [(0.25, 0.5), (0.0, 0.25), (0.0, 0.5)], [(0.0, 0.25), (0.0, 0.25), (0.5, 1.0)], [(0.25, 0.5), (0.0, 0.25), (0.5, 1.0)], [(0.0, 0.25), (0.75, 1.0), (0.0, 0.5)], [(0.25, 0.5), (0.75, 1.0), (0.0, 0.5)], [(0.0, 0.25), (0.75, 1.0), (0.5, 1.0)], [(0.25, 0.5), (0.75, 1.0), (0.5, 1.0)], [(0.5, 0.75), (0.0, 0.25), (0.0, 0.5)], [(0.5, 0.75), (0.0, 0.25), (0.5, 1.0)], [(0.5, 0.75), (0.75, 1.0), (0.0, 0.5)], [(0.5, 0.75), (0.75, 1.0), (0.5, 1.0)]], [[(0.0, 0.25), (0.25, 0.5), (0.0, 0.5)], [(0.25, 0.5), (0.25, 0.5), (0.0, 0.5)], [(0.0, 0.25), (0.25, 0.5), (0.5, 1.0)], [(0.25, 0.5), (0.25, 0.5), (0.5, 1.0)], [(0.0, 0.25), (0.5, 0.75), (0.0, 0.5)], [(0.25, 0.5), (0.5, 0.75), (0.0, 0.5)], [(0.0, 0.25), (0.5, 0.75), (0.5, 1.0)], [(0.25, 0.5), (0.5, 0.75), (0.5, 1.0)], [(0.5, 0.75), (0.25, 0.5), (0.0, 0.5)], [(0.5, 0.75), (0.25, 0.5), (0.5, 1.0)], [(0.5, 0.75), (0.5, 0.75), (0.0, 0.5)], [(0.5, 0.75), (0.5, 0.75), (0.5, 1.0)]], [], [], None)
 
         ## Multiple lines connecting values of respective parameter should appear now

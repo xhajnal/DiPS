@@ -1499,8 +1499,9 @@ class Gui(Tk):
                         return
 
             ## Check for z3 expressions
-            for function in self.functions:
-                print("function, ", function)
+            for index, function in enumerate(self.functions):
+                if self.debug.get():
+                    print(f"function {index}, {function}")
                 if is_this_z3_function(function):
                     self.store_z3_functions()
                     messagebox.showinfo("Loading functions", "Some of the functions contains z3 expressions, these are being stored and used only for z3 refinement, shown functions are translated into python expressions.")
@@ -3160,8 +3161,8 @@ class Gui(Tk):
             return
 
         self.status_set("Space sampling is running ...")
-        if not self.silent.get():
-            assert isinstance(self.space, space.RefinedSpace)
+        assert isinstance(self.space, space.RefinedSpace)
+        if self.debug.get():
             print("space parameters: ", self.space.params)
             print("constraints: ", self.constraints)
             print("grid size: ", self.sample_size)
@@ -3574,6 +3575,21 @@ class Gui(Tk):
 
         self.status_set("Space refinement finished.")
 
+    def edit_space(self):
+        """ Edits space values """
+
+        if self.space == "":
+            messagebox.showwarning("Edit space", "There is no space to be edit.")
+            return
+
+        print("Editing the space.")
+        self.validate_parameters(self.space, intervals=True, keep_space=True)
+        assert isinstance(self.space, space.RefinedSpace)
+        self.space.params = self.parameters
+        self.space.set_region(self.parameter_domains)
+        self.print_space()
+        ## TODO add changing the parameter types
+
     ## VALIDATE VARIABLES (PARAMETERS, constraints, SPACE)
     def validate_parameters(self, where: Iterable, intervals=True, force=False):
         """ Validates (functions, constraints, and space) parameters.
@@ -3679,7 +3695,7 @@ class Gui(Tk):
             assert isinstance(self.functions, list)
             assert isinstance(self.data_intervals, list)
             self.constraints = ineq_to_constraints(self.functions, self.data_intervals, decoupled=True, silent=self.silent.get())
-            if self.debug:
+            if self.debug.get():
                 print("self.constraints", self.constraints)
             if self.z3_functions:
                 assert isinstance(self.z3_functions, list)

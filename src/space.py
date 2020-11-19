@@ -765,6 +765,46 @@ class RefinedSpace:
         """ Returns the true point """
         return self.true_point
 
+    def is_refined(self):
+        """ Answers whether the space is refined, refinement was run"""
+        return bool((len(self.rectangles_unknown) != 1) or self.rectangles_sat or self.rectangles_unsat)
+
+    def is_sampled(self):
+        """ Answers whether the space is sampled, sampling was run"""
+        return bool(self.sat_samples or self.unsat_samples)
+
+    # ## TODO maybe implement this later
+    # def set_param_bound(self, index, left=False, right=False):
+    #     for rectangle_type in [self.rectangles_sat, self.rectangles_unsat, self.rectangles_unknown,
+    #                            self.rectangles_sat_to_show, self.rectangles_unsat_to_show]:
+    #         for rectangle in rectangle_type:
+    #             DO THE TRICK, harder than I though
+
+    def set_region(self, region):
+        """ Changes the region of space"""
+        # for index, item in enumerate(region):
+        #     try:
+        #         if region[index] != self.region[index]:
+        #             ## Both intervals are changed
+        #             if region[index][0] > self.region[index][0] and region[index][1] < self.region[index][1]:
+        #                 self.set_param_bound(index, left=True, right=True)
+        #             ## only
+        #             elif region[index][0] > self.region[index][0]:
+        #                 self.set_param_bound(index, left=True, right=False)
+        #             else:
+        #                 self.set_param_bound(index, left=False, right=True)
+        #
+        #     except IndexError as err:
+        #         if "region" in str(err):
+        #             raise NotImplemented("Setting new region with different dimensions.")
+        #         else:
+        #             raise err
+        if self.is_refined():
+            raise NotImplementedError("Changing region of already refined space not implemented yet, sorry!")
+        else:
+            self.rectangles_unknown = [region]
+            self.region = region
+
     def add_green(self, green):
         """ Adds green (hyper)rectangle """
         self.rectangles_sat.append(green)
