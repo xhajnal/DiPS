@@ -1402,7 +1402,7 @@ class Gui(Tk):
 
         from functools import partial
 
-        unfold_functions2 = partial(self.unfold_something_2, [self.functions, "functions", self.functions_window, self.unfold_functions])
+
         if isinstance(self.functions, dict):
             ## TODO Maybe rewrite this as key and pass the argument to unfold_functions2
             ## NO because dunno how to send it to the function as a argument
@@ -1417,6 +1417,7 @@ class Gui(Tk):
             self.status_set(
                 "Loaded functions are in a form of dictionary, please select which item you would like to choose:")
             self.functions_window = Toplevel(self)
+            # unfold_functions2 = partial(self.unfold_something_2, [self.functions, "functions", self.functions_window, self.unfold_functions])
             label = Label(self.functions_window,
                           text="Loaded functions are in a form of dictionary, please select which item you would like to choose:")
             label.pack()
@@ -1429,11 +1430,11 @@ class Gui(Tk):
                 if first:
                     spam.select()
                     first = False
-            spam = Button(self.functions_window, text="OK", command=unfold_functions2)
+            spam = Button(self.functions_window, text="OK", command=self.unfold_functions2)
             spam.pack()
             spam.focus()
             spam.bind('<Return>', self.unfold_functions2)
-            self.functions_window.bind('<Return>', unfold_functions2)
+            self.functions_window.bind('<Return>', self.unfold_functions2)
         else:
             functions = ""
             for function in self.functions:
@@ -1445,17 +1446,18 @@ class Gui(Tk):
             self.functions_parsed_text.insert('end', functions)
             # self.functions_parsed_text.configure(state='disabled')
 
-    def unfold_something_2(self, something, something_in_text, window_to_destroy, this_function):
-        """" Dummy method of unfold_something """
-        try:
-            something = something[self.key.get()]
-        except KeyError:
-            something = something[eval(self.key.get())]
-
-        if not self.silent.get():
-            print(f"Parsed list of {something_in_text}: ", something)
-        window_to_destroy.destroy()
-        this_function()
+    ## NOT WORKING WITH DATA
+    # def unfold_something_2(self, something, something_in_text, window_to_destroy, this_function):
+    #     """" Dummy method of unfold_something """
+    #     try:
+    #         something = something[self.key.get()]
+    #     except KeyError:
+    #         something = something[eval(self.key.get())]
+    #
+    #     if not self.silent.get():
+    #         print(f"Parsed list of {something_in_text}: ", something)
+    #     window_to_destroy.destroy()
+    #     this_function()
 
     def unfold_functions2(self):
         """" Dummy method of unfold_functions """
