@@ -3,6 +3,8 @@ import numpy as np
 from scipy.optimize import least_squares
 
 ## Importing my code
+from termcolor import colored
+
 from common.mathematics import weight_list
 from common.my_z3 import is_this_z3_function, translate_z3_function
 
@@ -25,7 +27,19 @@ def dist(param_point):
     result = []
     for index, function in enumerate(functions):
         ## Function value - data point
-        result.append(abs(eval(function) - float(data_point[index])))
+        try:
+            result.append(abs(eval(function) - float(data_point[index])))
+        except TypeError as err:
+            str(function)
+            result.append(abs(eval(function) - float(data_point[index])))
+            # if isinstance(function, sympy.core.numbers.Float):
+            #     function = float(function)
+            #     result.append(abs(eval(function) - float(data_point[index])))
+            # else:
+            #     print(colored(f"function {function}, type {type(function)}", "red"))
+            #     print(colored(f"data_point[index] {data_point[index]}, type {type(data_point[index])}", "red"))
+            #     print(colored(eval(function), "red"))
+            #     raise err
     # print("semiresult", result)
     return np.array(result)
 

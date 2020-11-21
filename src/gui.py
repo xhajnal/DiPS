@@ -767,7 +767,7 @@ class Gui(Tk):
 
         label62 = Label(frame_left, text="Max dept: ", anchor=W, justify=LEFT)
         label62.grid(row=1, column=3, padx=0)
-        createToolTip(label62, text='Maximal number of splits')
+        createToolTip(label62, text='Maximal number of splits, set negative for infinite')
         label63 = Label(frame_left, text="Coverage: ", anchor=W, justify=LEFT)
         label63.grid(row=2, column=3, padx=0)
         createToolTip(label63, text='Proportion of the nonwhite area to be reached')
@@ -3155,7 +3155,7 @@ class Gui(Tk):
             f.write(f"Function values: {self.optimised_function_value} \n")
             f.write(f"Data values: {self.data} \n")
             if self.data_weights:
-                f.write(f"Weights: {self.data} \n")
+                f.write(f"Weights: {self.data_weights} \n")
             f.write(f"Distance: {self.optimised_distance} \n")
 
     ## First, it asks whether it is changed, then selects (text, file, text) accordingly
@@ -3622,8 +3622,14 @@ class Gui(Tk):
         print("Refining space ...")
         self.status_set("Space refinement - checking inputs")
 
+        ## Inner settings
+        no_max_depth = False
+
         ## Getting values from entry boxes
         self.max_depth = int(self.max_dept_entry.get())
+        if self.max_depth < 0:
+            no_max_depth = True
+            self.max_depth = 10
         self.coverage = float(self.coverage_entry.get())
         # self.epsilon = float(self.epsilon_entry.get())
         self.epsilon = 0  ## no minimal size of hyperrectangle
@@ -3764,7 +3770,10 @@ class Gui(Tk):
         ## Autosave
         self.save_space(os.path.join(self.tmp_dir, "space.p"))
 
-        self.status_set("Space refinement finished.")
+        if no_max_depth and self.space.get_coverage() < self.coverage:
+            self.refine_space()
+        else:
+            self.status_set("Space refinement finished.")
 
     def edit_space(self):
         """ Edits space values """
