@@ -137,7 +137,12 @@ def parse_model_values(model: str, solver="z3"):
         ## Parse the values
         values = []
         for value in model:
-            values.append(float(eval(value.split("=")[1])))
+            try:
+                values.append(float(eval(value.split("=")[1])))
+            except IndexError as err:
+                print("value", value)
+                print("eval(value)", eval(value))
+                raise err
 
         return values
 
