@@ -2077,7 +2077,7 @@ class Gui(Tk):
         self.space_collapsed = not self.space_collapsed
         self.print_space()
 
-    def show_space(self, show_refinement, show_samples, show_true_point, clear=False, show_all=False, prefer_unsafe=False, quantitative=False):
+    def show_space(self, show_refinement, show_samples, show_true_point, clear=False, show_all=False, prefer_unsafe=False, quantitative=False, warnings=True):
         """ Visualises the space in the plot.
 
         Args:
@@ -2088,6 +2088,7 @@ class Gui(Tk):
             show_all (bool):  if True, not only newly added rectangles are shown
             prefer_unsafe: if True unsafe space is shown in multidimensional space instead of safe
             quantitative (bool): if True show far is the point from satisfying / not satisfying the constraints
+            warnings (bool): if False will not show any warnings
         """
         try:
             self.cursor_toggle_busy(True)
@@ -2102,7 +2103,10 @@ class Gui(Tk):
                                                    hide_legend=self.hide_legend_refinement.get(), hide_title=self.hide_title_refinement.get())
                     ## If no plot provided
                     if figure is None:
-                        messagebox.showinfo("Load Space", axis)
+                        if warnings:
+                            messagebox.showinfo("Show Space", axis)
+                        else:
+                            return
                     else:
                         self.page6_figure = figure
                         self.page6_a = axis
@@ -3705,7 +3709,7 @@ class Gui(Tk):
 
             ## Refresh of plot before refinement
             if self.show_quantitative:
-                self.show_space(False, False, False, clear=True)
+                self.show_space(False, False, False, clear=True, warnings=not(no_max_depth and self.space.get_coverage() < self.coverage))
                 self.show_quantitative = False
                 show_all = True
 
@@ -3743,11 +3747,15 @@ class Gui(Tk):
         ## If the visualisation of the space did not succeed
         if isinstance(spam, tuple):
             self.space = spam[0]
-            messagebox.showinfo("Space refinement", spam[1])
+            if no_max_depth and self.space.get_coverage() < self.coverage:
+                pass
+            else:
+                messagebox.showinfo("Space refinement", spam[1])
         else:
             self.space = spam
             self.show_space(show_refinement=True, show_samples=self.show_samples, show_true_point=self.show_true_point,
-                            prefer_unsafe=self.show_red_in_multidim_refinement.get(), show_all=show_all)
+                            prefer_unsafe=self.show_red_in_multidim_refinement.get(), show_all=show_all,
+                            warnings=not(no_max_depth and self.space.get_coverage() < self.coverage))
             self.page6_figure.tight_layout()  ## By huypn
             self.page6_figure.canvas.draw()
             self.page6_figure.canvas.flush_events()
