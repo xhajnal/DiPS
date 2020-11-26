@@ -293,6 +293,8 @@ class Gui(Tk):
     def gui_init(self):
         ## GUI INIT
         self.title('DiPS')
+        self.iconphoto(True, PhotoImage(file=os.path.join(workspace, "../icon.png")))
+
         self.minsize(1000, 300)
 
         ## Temporal gui features
