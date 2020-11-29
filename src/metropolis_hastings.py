@@ -144,6 +144,7 @@ class HastingsResults:
         # return spam
 
     def keep_index(self, burn_in=False):
+        """ Translates burn-in into index which should be kept"""
         if not burn_in:
             burn_in = self.burn_in
 
@@ -178,6 +179,14 @@ class HastingsResults:
     def set_rejected(self, rejected):
         """ Sets rejected points"""
         self.rejected = rejected
+
+    def set_burn_in(self, burn_in):
+        """ Sets burn-in period"""
+        self.burn_in = burn_in
+
+    def set_bins(self, bins):
+        """ Sets bins, used in the plots"""
+        self.bins = bins
 
     def get_acc_as_a_list(self):
         """ Returns accepted points in a list"""
@@ -345,10 +354,12 @@ class HastingsResults:
             plots = 3
         else:
             plots = len(self.params)
+
+        borderline_index = self.keep_index(self.get_burn_in())[0]
         for index, param in enumerate(self.params):
             ax = fig.add_subplot(plots, 1, index + 1)
-            borderline_index = self.accepted[:, -1][int(self.get_burn_in() * len(self.accepted))-1]
-            ax.axvline(x=borderline_index + 0.5, color='black', linestyle='-', label="burn-in threshold")
+            if borderline_index > 1:
+                ax.axvline(x=borderline_index + 0.5, color='black', linestyle='-', label="burn-in threshold")
 
             ax.scatter(self.rejected[:, -1], self.rejected[:, index], marker='x', c="r", label='Rejected', alpha=0.5)
             ax.scatter(self.accepted[:, -1], self.accepted[:, index], marker='.', c="b", label='Accepted', alpha=0.5)
@@ -368,9 +379,6 @@ class HastingsResults:
             # ax.scatter(X_reject, Y_reject, marker='x', c="r", label='Rejected', alpha=0.5)
             # ax.scatter(X_accept, Y_accept, marker='.', c="b", label='Accepted', alpha=0.5)
 
-            ## TODO calculate how many burned samples from burned accepted
-            # borderline_index = X_accept[int(self.get_burn_in() * len(self.accepted))-1]
-            # ax.axvline(x=borderline_index + 0.5, color='black', linestyle='-', label="burn-in threshold")
             ax.xaxis.set_major_locator(MaxNLocator(integer=True))
             ax.set_xlabel("MH Iteration")
             ## Previous code before that information
@@ -400,6 +408,53 @@ class HastingsResults:
         else:
             where(fig)
 
+    def show_iterations2(self, where=False):
+        """ Create Scatter plot showing accepted and rejected points in its given order using bokeh
+
+        Args:
+           where (bool or callable): method to forward the figure
+        """
+        if self.accepted.size == 0:
+            raise Exception("Set of accepted points is empty")
+
+        plots = []
+        borderline_index = self.keep_index(self.get_burn_in())[0]
+
+        for index, param in enumerate(self.params):
+            ## Scatter plot
+            tools = "hover,crosshair,pan,wheel_zoom,zoom_in,zoom_out,box_zoom,undo,redo,reset,tap,save,box_select,poly_select,lasso_select,"
+            p = bokeh_figure(title=f"Trace of accepted points for {param}", tools=tools)
+            # p.scatter(range(len(self.accepted[:, index])), self.accepted[:, index], fill_alpha=0.6, line_color=None)
+            if borderline_index > 1:
+                vline = Span(location=borderline_index + 0.5, dimension='height', line_color='black', line_width=1)
+                p.renderers.extend([vline])
+            p.scatter(self.rejected[:, -1], self.rejected[:, index], color="red", fill_alpha=0.6, legend_label='Rejected')
+            p.scatter(self.accepted[:, -1], self.accepted[:, index], color="blue", fill_alpha=0.6, legend_label='Accepted')
+            p.xaxis.axis_label = 'MH Iteration'
+            p.yaxis.axis_label = f'{param}'
+            p.legend.location = "top_left"
+            plots.append([p])
+
+        if len(self.params) == 2:
+            both = self.merge_acc_and_rej()
+            p = bokeh_figure(title=f"Trace of Accepted and Rejected points in a plane", tools=tools)
+            p.line(both[:, 0], both[:, 1], color="grey", alpha=0.1, legend_label='Path')
+            p.scatter(both[:, 0][0], both[:, 1][0], legend_label="Start")
+            if both[0][-1]:  ## if the first point is accepted
+                p.scatter(self.accepted[:, 0][1:], self.accepted[:, 1][1:], alpha=0.3, legend_label='Accepted', color="blue")
+                p.scatter(self.rejected[:, 0], self.rejected[:, 1], alpha=0.3, legend_label='Rejected', color="red")
+            else:
+                p.scatter(self.accepted[:, 0], self.accepted[:, 1], alpha=0.3, legend_label='Accepted', color="blue")
+                p.scatter(self.rejected[:, 0][1:], self.rejected[:, 1][1:], alpha=0.3, legend_label='Rejected', color="red")
+            del both
+            p.xaxis.axis_label = self.params[0]
+            p.yaxis.axis_label = self.params[1]
+            p.legend.location = "top_left"
+            plots.append([p])
+
+        output_file("Trace_of_Accepted_and_Rejected_points.html", title=f"Trace of Accepted and Rejected points in a plane.")
+        show(gridplot(plots))  # open a browser
+
     def show_accepted(self, where=False):
         """ Trace and histogram of accepted points
 
@@ -410,6 +465,11 @@ class HastingsResults:
         if self.accepted.size == 0:
             raise Exception("Set of accepted points is empty")
 
+        try:
+            bins = self.bins
+        except:
+            bins = 20
+
         if where:
             fig = Figure(figsize=(20, 10))
         else:
@@ -418,12 +478,15 @@ class HastingsResults:
             gs = gridspec.GridSpec(3, 2, figure=fig)
         else:
             gs = gridspec.GridSpec(len(self.params), 2, figure=fig)
+
+        borderline_index = self.keep_index(self.get_burn_in())[0]
+
         for index, param in enumerate(self.params):
             ## Trace of accepted points for respective parameter
             ax = fig.add_subplot(gs[index, 0])
             ax.plot(self.accepted[:, index])
-            ax.axvline(x=int(self.get_burn_in() * len(self.accepted[:, index])) + 0.5, color='black', linestyle='-',
-                       label="burn-in threshold")
+            if borderline_index > 1:
+                ax.axvline(x=borderline_index - 0.5, color='black', linestyle='-', label="burn-in threshold")
             ax.xaxis.set_major_locator(MaxNLocator(integer=True))
             ax.set_title(f"Trace of accepted points for ${param}$")
             ax.set_xlabel(f"Index")
@@ -437,7 +500,6 @@ class HastingsResults:
             #     Y.append(list(accepted[:, index]).count(i))
             # ax.bar(X, Y)
             # plt.xticks(range(len(functions)), range(len(functions) + 1))
-            bins = 20
             ax.hist(self.accepted[:, index], bins=bins, density=True)
             ax.set_ylabel("Occurrence")
             ax.set_xlabel(f"${param}$")
@@ -459,6 +521,87 @@ class HastingsResults:
             plt.show()
         else:
             where(fig)
+
+    def show_accepted2(self, where=False):
+        """ Trace and histogram of accepted points using bokeh
+        
+        Args:
+           where (bool or callable): unused in this method
+        """
+        if self.accepted.size == 0:
+            raise Exception("Set of accepted points is empty")
+
+        try:
+            bins = self.bins
+        except:
+            bins = 20
+
+        plots = []
+        borderline_index = self.keep_index(self.get_burn_in())[0]
+
+        for index, param in enumerate(self.params):
+            triplets = []
+
+            ## Scatter plot of accepted points
+            tools = "hover,crosshair,pan,wheel_zoom,zoom_in,zoom_out,box_zoom,undo,redo,reset,tap,save,box_select,poly_select,lasso_select,"
+            p = bokeh_figure(title=f"Trace of accepted points for {param}", tools=tools)
+            # p.scatter(range(len(self.accepted[:, index])), self.accepted[:, index], fill_alpha=0.6, line_color=None)
+            if borderline_index > 1:
+                vline = Span(location=borderline_index - 0.5, dimension='height', line_color='black', line_width=1)
+                p.renderers.extend([vline])
+            p.line(range(len(self.accepted[:, index])), self.accepted[:, index])
+            p.xaxis.axis_label = 'Index'
+            p.yaxis.axis_label = f'{param}'
+            p.legend.location = "top_left"
+            triplets.append(p)
+
+            ## Histogram of accepted points
+            hist, edges = np.histogram(self.accepted[:, index], density=True, bins=bins)
+            # p = bokeh_figure(title=f"Histogram of accepted points for {param}, {bins} bins", tools='', background_fill_color="#fafafa")
+            p = bokeh_figure(title=f"Histogram of accepted points for {param}, {bins} bins", tools='')
+            # p.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:], fill_color="navy", line_color="white", alpha=0.5)
+            p.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:], line_color="white")
+            p.y_range.start = 0
+            p.legend.location = "center_right"
+            # p.legend.background_fill_color = "#fefefe"
+            p.xaxis.axis_label = f'{param}'
+            p.yaxis.axis_label = 'Occurrence'
+            p.legend.location = "top_left"
+            p.grid.grid_line_color = "white"
+
+            triplets.append(p)
+
+            ## Histogram of trimmed accepted points
+            if borderline_index > 1:
+                hist, edges = np.histogram(self.accepted[borderline_index:, index], density=True, bins=bins)
+                # p = bokeh_figure(title=f"Histogram of accepted points for {param}, {bins} bins", tools='', background_fill_color="#fafafa")
+                p = bokeh_figure(title=f"Histogram of not-trimmed accepted points for {param}, {bins} bins", tools='')
+                # p.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:], fill_color="navy", line_color="white", alpha=0.5)
+                p.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:], line_color="white")
+                p.y_range.start = 0
+                p.legend.location = "center_right"
+                # p.legend.background_fill_color = "#fefefe"
+                p.xaxis.axis_label = f'{param}'
+                p.yaxis.axis_label = 'Occurrence'
+                p.legend.location = "top_left"
+                p.grid.grid_line_color = "white"
+
+                triplets.append(p)
+
+            plots.append(triplets)
+
+        if len(self.params) == 2:
+            p = bokeh_figure(title=f"Trace of Accepted points in a plane", tools=tools)
+            p.line(self.accepted[:, 0], self.accepted[:, 1], color="grey", alpha=0.1, legend_label='Path')
+            p.scatter(self.accepted[:, 0], self.accepted[:, 1], alpha=0.3, legend_label='Accepted')
+            p.scatter(self.accepted[:, 0][0], self.accepted[:, 1][0], color="green", legend_label='First accepted point')
+            p.xaxis.axis_label = self.params[0]
+            p.yaxis.axis_label = self.params[1]
+            p.legend.location = "top_left"
+            plots.append([p])
+
+        output_file(f"Trace_of_accepted_points.html", title=f"Trace_of_accepted_points")
+        show(gridplot(plots))  # open a browser
 
 
 ## Now unused

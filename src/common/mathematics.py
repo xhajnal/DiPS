@@ -1,8 +1,9 @@
 import math
+import multiprocessing
 import warnings
 from collections.abc import Iterable
 import scipy.stats as st
-from sympy import Interval
+from sympy import Interval, factor
 import numpy as np
 from mpmath import mpi
 from numpy import prod
@@ -220,8 +221,8 @@ def get_rectangle_volume(rectangle):
         intervals.append(interval[1] - interval[0])
 
     product = prod(intervals)
-    if isinstance(product, np.float64):
-        product = float(product)
+    # if isinstance(product, np.float64):
+    #     product = float(product)
 
     return product
 
@@ -280,3 +281,36 @@ def weight_list(spam, weights, warn=True):
     except IndexError:
         pass
     return spam
+
+
+def bar(expression, index, return_dict):
+    """ Private method of simplify_functions_parallel """
+    return_dict[index] = factor(expression)
+    print(index)
+
+
+def simplify_functions_parallel(expressions):
+    """ Factorise the given list of expressions
+
+    Args
+        expressions: (list) of expressions to factorise in parallel
+    """
+    manager = multiprocessing.Manager()
+    return_dict = manager.dict()
+
+    processes = []
+    factorised_expressions = []
+    for index, item in enumerate(expressions):
+        # print("item ", item, "index", index)
+        processes.append(multiprocessing.Process(target=bar, args=(item, index, return_dict)))
+    for p in processes:
+        p.start()
+
+    for p in processes:
+        p.join()
+
+    ## Showing the difference in an example:
+    # print(return_dict)
+    for i in sorted(return_dict.keys()):
+        factorised_expressions.append(return_dict[i])
+    return factorised_expressions

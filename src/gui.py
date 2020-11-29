@@ -295,6 +295,11 @@ class Gui(Tk):
         self.title('DiPS')
         self.iconphoto(True, PhotoImage(file=os.path.join(workspace, "../icon.png")))
 
+        if self.winfo_screenwidth() < 1600:
+            messagebox.showwarning("Screen resolution", "Some features of the tool may not be visible due to low resolution.")
+        elif self.winfo_screenwidth() < 1900:
+            messagebox.showwarning("Screen resolution", "Some features of the tool may not be fully visible due to low resolution.")
+
         self.minsize(1000, 300)
 
         ## Temporal gui features
@@ -850,7 +855,7 @@ class Gui(Tk):
         Button(frame_right, text='Save MH Results', command=self.save_mh_results).grid(row=6, column=0, padx=(4, 4), pady=7)
         Button(frame_right, text='Delete MH Results', command=self.refresh_mh).grid(row=7, column=0, padx=(4, 4), pady=7)
 
-        Button(frame_right, text='Customize Plot', command=self.customize_mh_results).grid(row=8, column=0, padx=(4, 4), pady=0)
+        Button(frame_right, text='Customize Plots', command=self.customize_mh_results).grid(row=8, column=0, padx=(4, 4), pady=0)
         Button(frame_right, text='Show MH iterations', command=self.show_mh_iterations).grid(row=9, column=0, padx=(4, 4), pady=0)
         Button(frame_right, text='Show Acc points', command=self.show_mh_acc_points).grid(row=10, column=0, padx=(4, 4), pady=0)
         Button(frame_right, text='Export Acc points', command=self.export_acc_points).grid(row=11, column=0, padx=(4, 4), pady=0)
@@ -4083,6 +4088,8 @@ class Gui(Tk):
             self.page6_figure2.canvas.flush_events()
 
             assert isinstance(self.mh_results, HastingsResults)
+            self.mh_results.set_burn_in(burn_in)
+            self.mh_results.set_bins(bins)
             spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b], bins=bins, burn_in=burn_in, as_scatter=as_scatter)
 
             if spam[0] is not False:
