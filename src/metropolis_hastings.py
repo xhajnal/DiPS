@@ -457,7 +457,7 @@ class HastingsResults:
             p.legend.location = "top_left"
             plots.append([p])
 
-        output_file("Trace_of_Accepted_and_Rejected_points.html", title=f"Trace of Accepted and Rejected points in a plane.")
+        output_file(os.path.join(tmp_dir, "Trace_of_Accepted_and_Rejected_points.html"), title=f"Trace of Accepted and Rejected points in a plane.")
         show(gridplot(plots))  # open a browser
 
     def show_accepted(self, where=False):
@@ -605,7 +605,7 @@ class HastingsResults:
             p.legend.location = "top_left"
             plots.append([p])
 
-        output_file(f"Trace_of_accepted_points.html", title=f"Trace_of_accepted_points")
+        output_file(os.path.join(tmp_dir, f"Trace_of_accepted_points.html"), title=f"Trace_of_accepted_points")
         show(gridplot(plots))  # open a browser
 
 
