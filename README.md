@@ -113,7 +113,11 @@ Now you can import the source code as a library or run the tool with GUI.
 
 Graphical User Interface should appear now (With some additional output returned in the command line). 
 
-For fully functional GUI (all the features fully visible) please use screen with resolution 1680x900 (HD+) or higher and set the scale of the screen to 100%.
+For fully functional GUI please use screen with resolution
+ * minimal 1680x900 (HD+) or higher (all buttons visible but the text may be trimmed) 
+ * recommended 1920x1080 (FullHD) or higher (all the features fully visible) 
+ 
+run application in fullscreen and set the scale of the screen to 100%.
 
 
 *****
