@@ -115,10 +115,11 @@ def translate_to_z3_function(function: str):
 
 
 def parse_model_values(model: str, solver="z3"):
-    """ Parses z3.solver.model() into list of values
-        Ignores /0
+    """ Parses z3.solver.model() or dreal model into list of values
+        In case of z3 it ignores /0
 
-    Example: [r_0 = 1/8, r_1 = 9/16, /0 = [(7/16, 7/8) -> 1/2, else -> 0]] -> [0.125, 0.5625]
+    Example z3: [r_0 = 1/8, r_1 = 9/16, /0 = [(7/16, 7/8) -> 1/2, else -> 0]] -> [0.125, 0.5625]
+    Example dreal: "r_0 : [] \nr_1: []"
     """
     if solver == "z3":
         ## Delete brackets
@@ -157,7 +158,10 @@ def parse_model_values(model: str, solver="z3"):
             line = line.split("]")[0]
             line = line.split(",")
             line = list(map(lambda x: float(x), line))
-            values.append(float(mean(line)))
-            print(values)
-            print()
+            try:
+                values.append(float(mean(line)))
+            except Exception as err:
+                print("model", model)
+                print("single parameter intervals", line)
+                raise err
         return values
