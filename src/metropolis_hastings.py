@@ -281,7 +281,7 @@ class HastingsResults:
             self.bins = bins
 
         ## Multidimensional case
-        if len(self.accepted[0]) > 3 or as_scatter:
+        if len(self.params) > 3 or as_scatter:
             if where:
                 fig = where[0]
                 ax = where[1]
@@ -321,7 +321,7 @@ class HastingsResults:
             else:
                 maximize_plot()
                 plt.show()
-        else:
+        elif len(self.params) == 2:
             if where:
                 plt.hist2d(self.accepted[keep_index:, 0], self.accepted[keep_index:, 1], bins=self.bins)
                 plt.xlabel(self.params[0])
@@ -336,6 +336,26 @@ class HastingsResults:
                 figure = plt.colorbar()
                 plt.xlabel(self.params[0])
                 plt.ylabel(self.params[1])
+                plt.title(self.title)
+                figure.ax.set_ylabel('# of accepted points per bin', rotation=270, labelpad=20)
+                maximize_plot()
+                plt.show()
+        else:
+            spam = np.ones(len(self.accepted[keep_index:, 0]))
+            if where:
+                plt.hist2d(self.accepted[keep_index:, 0], spam, bins=self.bins)
+                plt.xlabel(self.params[0])
+                plt.ylabel("")
+                plt.title("\n".join(wrapper.wrap(self.title)))
+                where[1] = plt.colorbar()
+                where[1].set_label('# of accepted points per bin', rotation=270, labelpad=20)
+                return where[0], where[1]
+            else:
+                plt.figure(figsize=(12, 6))
+                plt.hist2d(self.accepted[keep_index:, 0], spam, bins=self.bins)
+                figure = plt.colorbar()
+                plt.xlabel(self.params[0])
+                plt.ylabel("")
                 plt.title(self.title)
                 figure.ax.set_ylabel('# of accepted points per bin', rotation=270, labelpad=20)
                 maximize_plot()
