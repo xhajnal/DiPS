@@ -2157,7 +2157,7 @@ class Gui(Tk):
             if self.space.true_point:
                 self.space.true_point_object.remove()
             self.parameter_domains = self.space.region
-            self.create_window_to_load_param_point(parameters=self.space.params)
+            self.create_window_to_load_param_point(parameters=self.space.params, opt=True)
             self.space.true_point = self.parameter_point
             self.show_true_point = True
 
@@ -4339,8 +4339,17 @@ class Gui(Tk):
         # self.new_window.update()
         # self.update()
 
-    def create_window_to_load_param_point(self, parameters):
-        """ Creates a window a functionality to load values of parameters"""
+    def create_window_to_load_param_point(self, parameters, opt=False):
+        """ Creates a window a functionality to load values of parameters
+
+        Args:
+            parameters (list): list of param names
+            opt (bool): whether to use optimised point as default values
+
+        """
+        if not self.optimised_param_point:
+            opt = False
+
         self.new_window = Toplevel(self)
         label = Label(self.new_window, text="Please choose values of the parameters to be used:")
         label.grid(row=0)
@@ -4354,7 +4363,7 @@ class Gui(Tk):
             spam.grid(row=i, column=1)
             ## Insert the middle of respective domain
             try:
-                if self.init_mh_with_optimised_point.get():
+                if self.init_mh_with_optimised_point.get() or opt:
                     spam.insert(END, str(self.optimised_param_point[index]))
                 else:
                     spam.insert(END, str((self.parameter_domains[index][0] + self.parameter_domains[index][1])/2))

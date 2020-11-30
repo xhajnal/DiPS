@@ -634,7 +634,7 @@ class RefinedSpace:
 
             max_region_size = self.region[0][1] - self.region[0][0]
             if len(self.params) == 1:
-                self.true_point_object = plt.Circle((self.true_point[0], self.true_point[1]), max_region_size/10, color='blue', fill=False, label="true_point")
+                self.true_point_object = plt.Circle((self.true_point[0], 0), max_region_size/75, color='blue', fill=False, label="true_point")
 
                 if where:
                     ax.add_artist(self.true_point_object)
@@ -736,7 +736,10 @@ class RefinedSpace:
 
     def get_white_volume(self):
         """ Returns volume of white subspace """
-        return self.get_volume() - self.get_nonwhite_volume()
+        if not self.get_flat_white():
+            return 0
+        else:
+            return self.get_volume() - self.get_nonwhite_volume()
 
     def get_nonwhite_volume(self):
         """ Returns volume of nonwhite subspace """
@@ -748,6 +751,8 @@ class RefinedSpace:
         # print("self.get_volume()", self.get_volume())
         if self.get_nonwhite_volume() == 0:
             return 0
+        elif self.get_white_volume() == 0:
+            return 1
         else:
             return self.get_nonwhite_volume() / self.get_volume()
 
