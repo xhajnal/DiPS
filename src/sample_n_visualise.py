@@ -467,44 +467,64 @@ def heatmap(function, region, sampling_sizes, posttitle="", where=False, paramet
     if not parameters:
         parameters = sorted(list(find_param(function)))
     # print(parameters)
-    if len(parameters) != 2:
-        raise Exception(f"Number of parameters of given function is not equal to 2 but {len(parameters)}")
-
-    arr = np.zeros((sampling_sizes[0] * sampling_sizes[1], 3))
+    if len(parameters) > 2:
+        raise Exception(f"Number of parameters of given function is bigger than 2!")
 
     # f = lambda locals()[parameters[0]),locals()[parameters[1]): fun
 
-    ii = -1
-    jj = -1
-    for i in np.linspace(region[0][0], region[0][1], sampling_sizes[0], endpoint=True):
-        ii += 1
-        # print("ii: ",ii)
-        locals()[parameters[0]] = i
-        for j in np.linspace(region[1][0], region[1][1], sampling_sizes[1], endpoint=True):
-            jj += 1
-            # print("jj: ",jj)
-            locals()[parameters[1]] = j
-            arr[jj, 0] = round(i, 2)
-            arr[jj, 1] = round(j, 2)
-            arr[jj, 2] = eval(function)
-    # print(arr)
-    # d = pd.DataFrame(arr, columns=["p","q","E"])
-    heatmap_data = pd.DataFrame(arr, columns=[parameters[0], parameters[1], "E"])
-    # d = d.pivot("p", "q", "E")
-    heatmap_data = heatmap_data.pivot(parameters[0], parameters[1], "E")
+    sampling_sizes[0] = sampling_sizes[0] + 1
+    if len(parameters) == 1:
 
-    vmin = min(arr[:, 2])
-    vmax = max(arr[:, 2])
+        arr = np.zeros((sampling_sizes[0], 3))
+        ii = -1
+        for i in np.linspace(region[0][0], region[0][1], sampling_sizes[0], endpoint=True):
+            ii += 1
+            # print("ii: ",ii)
+            locals()[parameters[0]] = i
+            arr[ii, 0] = round(i, 8)
+            arr[ii, 2] = eval(function)
+
+        # print(arr)
+        heatmap_data = pd.DataFrame(arr, columns=[parameters[0], "", "E"])
+        heatmap_data = heatmap_data.pivot(parameters[0], "", "E")
+
+        vmin = min(arr[:, 2])
+        vmax = max(arr[:, 2])
+        sqaure = True
+
+    else:
+        sampling_sizes[1] = sampling_sizes[1] + 1
+        arr = np.zeros((sampling_sizes[0] * sampling_sizes[1], 3))
+        ii = -1
+        jj = -1
+        for i in np.linspace(region[0][0], region[0][1], sampling_sizes[0], endpoint=True):
+            ii += 1
+            # print("ii: ",ii)
+            locals()[parameters[0]] = i
+            for j in np.linspace(region[1][0], region[1][1], sampling_sizes[1], endpoint=True):
+                jj += 1
+                # print("jj: ",jj)
+                locals()[parameters[1]] = j
+                arr[jj, 0] = round(i, 2)
+                arr[jj, 1] = round(j, 2)
+                arr[jj, 2] = eval(function)
+        # print(arr)
+        heatmap_data = pd.DataFrame(arr, columns=[parameters[0], parameters[1], "E"])
+        heatmap_data = heatmap_data.pivot(parameters[0], parameters[1], "E")
+
+        vmin = min(arr[:, 2])
+        vmax = max(arr[:, 2])
+        sqaure = False
 
     if where:
         f, ax = plt.subplots()
-        ax = sns.heatmap(heatmap_data, vmin=vmin, vmax=vmax, annot=verbose)
+        ax = sns.heatmap(heatmap_data, vmin=vmin, vmax=vmax, annot=verbose, square=sqaure)
         title = f"Heatmap \n{posttitle}"
         ax.set_title(wraper.fill(title))
         ax.invert_yaxis()
         return f
     else:
-        ax = sns.heatmap(heatmap_data, vmin=vmin, vmax=vmax, annot=verbose)
+        ax = sns.heatmap(heatmap_data, vmin=vmin, vmax=vmax, annot=verbose, square=sqaure)
         title = f"Heatmap of the parameter space \n function: {function}"
         ax.set_title(wraper.fill(title))
         ax.invert_yaxis()
