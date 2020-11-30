@@ -793,7 +793,10 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         ## To get more similar result substituting the number of splits from the max_depth
         ## Setting the depth as a proportion
         ## TODO discuss this setting
-        next_depth = max(0, recursion_depth - (int(log(numb_of_white_rectangles, 2))))
+        try:
+            next_depth = max(0, recursion_depth - (int(log(numb_of_white_rectangles, 2))))
+        except ValueError:
+            next_depth = 0
         if debug:
             print("max_depth = ", next_depth)
 
