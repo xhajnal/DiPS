@@ -2991,8 +2991,8 @@ class Gui(Tk):
 
         self.validate_parameters(where=self.functions)
 
-        if len(self.parameters) != 2:
-            messagebox.showerror("Plot heatmap", f"Could not show this 2D heatmap. Parsed function(s) contain {len(self.parameters)} parameter(s), expected 2.")
+        if len(self.parameters) > 2:
+            messagebox.showerror("Plot heatmap", f"Could not show this 2D heatmap. Parsed function(s) contain {len(self.parameters)} parameter(s), expected 1 or 2.")
             return
 
         self.page3_figure_in_use.set("3")
