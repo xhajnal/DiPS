@@ -12,7 +12,7 @@ import bokeh.plotting.figure as bokeh_figure
 from bokeh.models import Span
 from scipy.stats import truncnorm
 
-from common.document_wrapper import DocumentWrapper
+from common.document_wrapper import DocumentWrapper, niceprint
 
 ## Importing my code
 from termcolor import colored
@@ -21,7 +21,6 @@ from common.files import pickle_dump
 from space import RefinedSpace
 from common.config import load_config
 from common.document_wrapper import DocumentWrapper
-from common.convert import niceprint
 
 import warnings
 

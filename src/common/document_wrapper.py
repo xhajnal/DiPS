@@ -1,3 +1,4 @@
+import locale
 import textwrap
 
 
@@ -22,3 +23,12 @@ def show_message(typee, where, message):
         messagebox.showwarning(where, message)
     if typee == 3 or str(typee).lower() == "info":
         messagebox.showinfo(where, message)
+
+
+def niceprint(text):
+    """ Converts string into printable text
+
+    Args:
+        text (int or string): input string
+    """
+    return locale.format_string("%d", text, grouping=True)

@@ -88,7 +88,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(space.is_refined(), False)
         self.assertEqual(space.is_sampled(), False)
 
-    def test_sets(self):
+    def test_set_methods(self):
         print(colored("Testing set methods", 'blue'))
         space = RefinedSpace((0, 1), ["x"])
 
@@ -175,7 +175,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(round(space.get_red_volume(), 2), 0.08)
         self.assertEqual(round(space.get_nonwhite_volume(), 2), 0.16)
 
-    def test_add_white(self):
+    def test_add_white_rectangles(self):
         print(colored("Space adding white rectangles", 'blue'))
         space = RefinedSpace((0, 1), ["x"])
         self.assertEqual(space.is_refined(), False)
@@ -213,6 +213,8 @@ class MyTestCase(unittest.TestCase):
 
         ## Normal refinement should appear now
         space.show(green=True, red=True)
+
+        ## TODO - add qunatitative sampling results
 
     def test_visualisation_multidim(self):
         print(colored("Multidimensional space visualisations tests", 'blue'))

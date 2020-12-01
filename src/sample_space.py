@@ -1,10 +1,13 @@
+import multiprocessing
 import os
 import re
+from copy import copy
 from time import time, strftime, localtime
 import numpy as np
 from termcolor import colored
 
 ## Importing my code
+from common.convert import normalise_constraint, split_constraints
 from common.files import pickle_dump
 from common.mathematics import create_matrix, cartesian_product
 from common.my_z3 import is_this_z3_function, translate_z3_function
@@ -19,8 +22,110 @@ z3_path = spam["z3_path"]
 del spam
 
 
-def sample(space, constraints, sample_size, compress=False, silent=True, save=False, debug: bool = False,
-           progress=False, quantitative=False, sort=False):
+global glob_sort
+global glob_space
+global glob_debug
+global glob_compress
+global glob_constraints
+
+
+# def bar(parameter_value, constraints, sort, space, debug, compress, return_dict):
+#     """ Private method of sample_space """
+#     ## If sort constraint is not sat we simply skipp the point and not put it in the space.samples
+#     parameter_value = tuple(parameter_value)
+#     if sort:
+#         if (parameter_value != np.sort(parameter_value)).any():
+#             return
+#     for param in range(len(space.params)):
+#         locals()[space.params[param]] = float(parameter_value[param])
+#         if debug:
+#             print("type(locals()[space.params[param]])", type(locals()[space.params[param]]))
+#             print(f"locals()[space.params[param]] = {space.params[param]} = {float(parameter_value[param])}")
+#
+#     ## By default it is True
+#     space.add_sat_samples(parameter_value)
+#     return_dict[parameter_value] = True
+#
+#     ## For each constraint (inequality - interval bound)
+#     for constraint_index, constraint in enumerate(constraints):
+#         if debug:
+#             print(f"constraints[{constraint_index}]", constraint)
+#             print(f"eval(constraints[{constraint_index}])", eval(constraint))
+#
+#         is_sat = eval(constraint)
+#         if compress and not is_sat:
+#             ## Skip evaluating other point as one of the constraint is not sat
+#             space.add_unsat_samples(parameter_value)
+#             return_dict[parameter_value] = False
+#             break
+
+
+def check_sample(parameter_value):
+    """ Checks whether constraints are satisfied in the given point """
+    ## If sort constraint is not sat we simply skipp the point and not put it in the space.samples
+    if glob_sort:
+        if (parameter_value != np.sort(parameter_value)).any():
+            return None
+    for param in range(len(glob_space.params)):
+        locals()[glob_space.params[param]] = float(parameter_value[param])
+        if glob_debug:
+            print("type(locals()[space.params[param]])", type(locals()[glob_space.params[param]]))
+            print(f"locals()[space.params[param]] = {glob_space.params[param]} = {float(parameter_value[param])}")
+
+    sat_list = []
+    ## For each constraint (inequality - interval bound)
+    for constraint_index, constraint in enumerate(glob_constraints):
+        if glob_debug:
+            print(f"constraints[{constraint_index}]", constraint)
+            print(f"eval(constraints[{constraint_index}])", eval(constraint))
+
+        is_sat = eval(constraint)
+        if glob_compress and not is_sat:
+            ## Skip evaluating other point as one of the constraint is not sat
+            # print(f"{parameter_value} unsat")
+            # print(f"new space {glob_space}")
+            return False
+        sat_list.append(is_sat)
+    if glob_compress:
+        return True
+    else:
+        return sat_list
+
+
+def sample_sat_degree(parameter_value):
+    """ Computes satisfaction degree of constraints in the given point """
+    if glob_sort:
+        if (parameter_value != np.sort(parameter_value)).any():
+            return None
+    for param in range(len(glob_space.params)):
+        locals()[glob_space.params[param]] = float(parameter_value[param])
+        if glob_debug:
+            print("type(locals()[space.params[param]])", type(locals()[glob_space.params[param]]))
+            print(f"locals()[space.params[param]] = {glob_space.params[param]} = {float(parameter_value[param])}")
+
+    distance_list = []
+
+    for constraint_index, constraint in enumerate(glob_constraints):
+        if glob_debug:
+            print(f"constraints[{constraint_index}]", constraint)
+            print(f"eval(constraints[{constraint_index}])", eval(constraint))
+
+        mid = eval(constraint[1])
+        if constraint[2] is None:
+            dist = eval(f"{mid} - {eval(constraint[0])}")
+        else:
+            dist = min(eval(f"{mid} - {eval(constraint[0])}"), eval(f"{eval(constraint[2])} - {mid}"))
+
+        distance_list.append(dist)
+
+    if glob_compress:
+        return sum(distance_list)
+    else:
+        return distance_list
+
+
+def sample_space(space, constraints, sample_size, compress=False, silent=True, save=False, debug: bool = False,
+                 progress=False, quantitative=False, sort=False, parallel=True):
     """ Samples the space in **sample_size** samples in each dimension and saves if the point is in respective interval
 
     Args:
@@ -35,6 +140,7 @@ def sample(space, constraints, sample_size, compress=False, silent=True, save=Fa
         progress (Tkinter element): progress bar
         quantitative (bool): if True return how far is the point from satisfying / not satisfying the constraints
         sort (Bool): tag whether the params are non-decreasing (CASE STUDY SPECIFIC SETTING)
+        parallel (Bool): flag to run this in parallel mode
 
     Returns:
         (dict) of point to list of Bools whether f(point) in interval[index]
@@ -42,6 +148,11 @@ def sample(space, constraints, sample_size, compress=False, silent=True, save=Fa
         (dict) of point to list of numbers, sum of distances to satisfy constraints
     """
     start_time = time()
+    global glob_sort
+    global glob_space
+    global glob_debug
+    global glob_compress
+    global glob_constraints
 
     assert isinstance(space, RefinedSpace)
     if debug:
@@ -50,16 +161,23 @@ def sample(space, constraints, sample_size, compress=False, silent=True, save=Fa
     ## TODO maybe normalise constraints before
     ## check whether constraints are in normal form
     if quantitative:
-        for constraint in constraints:
-            if len(re.findall(">", constraint)) >= 1:
-                raise Exception("Constraints", "Please rewrite constraints using < / <= instead of > / >=")
+        constraints = copy(constraints)
+        constraints = list(map(normalise_constraint, constraints))
+
+        ## Split constraints into two pairs ((left, mid)(mid, right)) or ((left, right), None)
+        constraints = split_constraints(constraints)
+
+        ##
+
+        # for constraint in constraints:
+        #     if len(re.findall(">", constraint)) >= 1:
+        #         raise Exception("Constraints", "Please rewrite constraints using < / <= instead of > / >=")
 
     ## Convert z3 functions
     for index, constraint in enumerate(constraints):
         if is_this_z3_function(constraint):
             constraints[index] = translate_z3_function(constraint)
 
-    start_time = time()
     parameter_values = []
     parameter_indices = []
     if debug:
@@ -85,12 +203,74 @@ def sample(space, constraints, sample_size, compress=False, silent=True, save=Fa
     if not silent:
         print("parameter_values", parameter_values)
         print("parameter_indices", parameter_indices)
-        # print("a sample:", sampling[0][0])
+        # print("a sample_space:", sampling[0][0])
     parameter_index = 0
     ## For each parametrisation eval the constraints
     print(colored(f"Sampling initialisation took {round(time() - start_time, 4)} seconds", "yellow"))
+
+    ## Set variables for multiprocessing
+    if parallel:
+        del sampling
+        del parameter_indices
+        del parameter_index
+
+        glob_sort = sort
+        glob_space = space
+        glob_debug = debug
+        glob_compress = compress
+        glob_constraints = constraints
+
+    if parallel and not quantitative:
+        with multiprocessing.Pool(5) as p:
+            sat_list = list(p.map(check_sample, parameter_values))
+
+        # print(a)
+        # print(parameter_values)
+
+        ## TODO this can be optimised by putting two lists separately
+        for index, item in enumerate(parameter_values):
+            if sat_list[index]:
+                space.add_sat_samples([item])
+            elif not sat_list[index]:
+                space.add_unsat_samples([item])
+            else:
+                ## skipped point
+                pass
+
+        # Implementations with Processes
+        # manager = multiprocessing.Manager()
+        # return_dict = manager.dict()
+        # processes = []
+        # for index, parameter_value in enumerate(parameter_values):
+        #     # print("item ", item, "index", index)
+        #     processes.append(multiprocessing.Process(target=bar, args=(parameter_value, constraints, sort, space, debug, compress, return_dict)))
+        # print(colored(f"With making processes it took {round(time() - start_time, 4)} seconds", "yellow"))
+        # for p in processes:
+        #     p.start()
+        #
+        # for p in processes:
+        #     p.join()
+        #
+        # print(return_dict)
+        # print(return_dict.keys())
+        #
+        # for item in return_dict.keys():
+        #     if return_dict[item]:
+        #         space.add_sat_samples([item])
+        #     else:
+        #         space.add_unsat_samples([item])
+    elif parallel and quantitative:
+        # raise NotImplementedError("Parallel quantitative sampling is not implemented yet")
+
+        with multiprocessing.Pool(5) as p:
+            dist_list = list(p.map(sample_sat_degree, parameter_values))
+
+        for index, item in enumerate(parameter_values):
+            space.add_degree_samples({tuple(item): dist_list[index]})
+
+    else:
     for index, parameter_value in enumerate(parameter_values):
-        ## For each parameter set the current sample point value
+        ## For each parameter set the current sample_space point value
         if progress:
             progress(index / len(parameter_values))
         if sort:
@@ -226,12 +406,18 @@ def sample(space, constraints, sample_size, compress=False, silent=True, save=Fa
     space.gridsampled = True
 
     ## Saving the sampled space as pickled dictionary
-    if save:
-        if save is True:
-            save = str(strftime("%d-%b-%Y-%H-%M-%S", localtime()))
+    if save is True:
+        save = str(strftime("%d-%b-%Y-%H-%M-%S", localtime()))
+    try:
         pickle_dump(sampling, os.path.join(refinement_results, ("Sampled_space_" + save).split(".")[0] + ".p"))
+    except UnboundLocalError as err:
+        pass
 
     space.sampling_took(time() - start_time)
     space.title = f"using grid_size:{sample_size}"
     print(colored(f"Sampling took {round(time()-start_time, 4)} seconds", "yellow"))
-    return sampling
+
+    try:
+        return sampling
+    except UnboundLocalError as err:
+        return True

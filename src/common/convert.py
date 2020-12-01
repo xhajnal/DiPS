@@ -5,15 +5,6 @@ import locale
 locale.setlocale(locale.LC_ALL, '')
 
 
-def niceprint(text):
-    """ Converts string into printable text
-
-    Args:
-        text (int or string): input string
-    """
-    return locale.format_string("%d", text, grouping=True)
-
-
 def parse_numbers(text: str):
     """ Converts string into a list of numbers
 
@@ -21,10 +12,21 @@ def parse_numbers(text: str):
         text (string): input string
     """
     newstr = ''.join((ch if ch in '0123456789.-e' else ' ') for ch in text)
+    newstr = newstr.split(" e ")
+    newstr = ''.join(newstr)
+    # print("newstr", newstr)
     return [float(i) for i in newstr.split()]
 
 
-def to_sympy_intervals(intervals):
+def is_float(value):
+    try:
+        float(value)
+        return True
+    except:
+        return False
+
+
+def to_sympy_intervals(intervals: list):
     """ converts list of lists or pairs into list of Intervals"""
     return list(map(lambda x: x if isinstance(x, Interval) else Interval(x[0], x[1]), intervals))
 
@@ -67,7 +69,8 @@ def ineq_to_constraints(functions: list, intervals: list, decoupled=True, silent
 
             if decoupled or not isinstance(functions[index], str):
                 if not isinstance(functions[index], str):
-                    print("SYMPY")
+                    if not silent:
+                        print("SYMPY")
                     spam.append(functions[index] >= low)
                     spam.append(functions[index] <= high)
                 else:
@@ -226,23 +229,39 @@ def decouple_constraints(constraints: list, silent: bool = True, debug: bool = F
     Example:
         ["-8 <= x+3 <= 0"] -> ["-8 <= x+3", "x+3 <= 0"]
     """
-    pattern = r" < | > | >= | <= | = | => | =<"
     new_constraints = []
     for index, constraint in enumerate(constraints):
-        match = re.findall(pattern, constraint)
-        if debug:
-            print("constraint", constraint)
-            print("match", match)
-        if len(match) == 0:
-            raise Exception("Constraints", f"No <,>,>=, <=,= symbols in constrain {index+1}")
-        elif len(match) == 1:
-            new_constraints.append(constraint)
-        elif len(match) == 2:
-            parts = re.split(pattern, constraint)
-            new_constraints.append(match[0].join(parts[:2]))
-            new_constraints.append(match[0].join(parts[1:]))
-        else:
-            raise Exception("Constraints", f"More than two <,>,>=, <=,= symbols in constrain {index+1}")
+        new_constraints.extend(decouple_constraint(constraint, silent=silent, debug=debug))
+    return new_constraints
+
+
+def decouple_constraint(constraint: str, silent: bool = True, debug: bool = False):
+    """ Decouples constrains with more two inequalities into two separate constraints:
+
+    Args:
+        constraint  (string): property to be converted
+        silent (bool): if silent printed output is set to minimum
+        debug (bool): if True extensive print will be used
+
+    Example:
+        "-8 <= x+3 <= 0" -> ["-8 <= x+3", "x+3 <= 0"]
+    """
+    new_constraints = []
+    pattern = r" < | > | >= | <= | = | => | =<"
+    match = re.findall(pattern, constraint)
+    if debug:
+        print("constraint", constraint)
+        print("match", match)
+    if len(match) == 0:
+        raise Exception(f"No <,>,>=, <=,= symbols in constrain")
+    elif len(match) == 1:
+        new_constraints.append(constraint)
+    elif len(match) == 2:
+        parts = re.split(pattern, constraint)
+        new_constraints.append(match[0].join(parts[:2]))
+        new_constraints.append(match[0].join(parts[1:]))
+    else:
+        raise Exception(f"More than two <,>,>=, <=,= symbols in constrain!")
     return new_constraints
 
 
@@ -250,13 +269,13 @@ def add_white_spaces(expression):
     """ Adds white spaces in between <,>,=,<=, and >= so it can be easily parsed """
     just_equal = r"[^\s<>]=[^<>]|[^<>]=[^\s<>]"
     match = re.findall(just_equal, expression)
-    print(match)
+    # print(match)
     if match:
         expression.replace("=", " = ")
 
     with_equal = r"[^\s]>=|[^\s]<=|[^\s]=>|[^\s]=<|>=[^\s]|<=[^\s]|=>[^\s]|=<[^\s]"
     match = re.findall(with_equal, expression)
-    print(match)
+    # print(match)
     if match:
         greater_eq_check = True
         smaller_eq_check = True
@@ -278,7 +297,7 @@ def add_white_spaces(expression):
 
     without_equal = r"<[^\s=]|>[^\s=]|[^\s=]<|[^\s=]>"
     match = re.findall(without_equal, expression)
-    print(match)
+    # print(match)
     if match:
         greater_check = True
         smaller_check = True
@@ -290,13 +309,11 @@ def add_white_spaces(expression):
                 expression = expression.replace("<", " < ")
                 smaller_check = False
 
+    expression = re.sub(r' +', ' ', expression).strip()
     return expression
 
-# print(add_white_spaces("0.270794145078059 >= p*q >= 0.129205854921941"))
-# print(add_white_spaces("0.270794145078059>=p*q>=0.129205854921941"))
 
-
-def normalise_constraint(constraint: list, silent: bool = True, debug: bool = False):
+def normalise_constraint(constraint: str, silent: bool = True, debug: bool = False):
     """ Transforms the set constraint into normalised form
 
     Args:
@@ -305,28 +322,90 @@ def normalise_constraint(constraint: list, silent: bool = True, debug: bool = Fa
         debug (bool): if True extensive print will be used
 
     Example:
-          0.2 >= p >= 0.1    --->  0.1 <= p <= 0.2
-          0.2 >= p           --->  p <= 0.2
+          "0.2 >= p >= 0.1"    --->  "0.1 <= p <= 0.2"
+          "0.2 >= p"           --->  "p <= 0.2"
     """
-    add_white_spaces(constraint)
+    constraint = add_white_spaces(constraint)
     pattern = r" < | > | >= | <= | = | => | =<"
     match = re.findall(pattern, constraint)
+    spam = re.split(pattern, constraint)
     if debug:
         print("constraint", constraint)
         print("match", match)
-    print(re.split(pattern, constraint))
+        print("split", spam)
 
-# normalise_constraint("0.270794145078059 >= p*q >= 0.129205854921941", debug=True)
+    if match == [' >= ']:
+        return f"{spam[1]} <= {spam[0]}"
+    elif match == [' > ']:
+        return f"{spam[1]} < {spam[0]}"
+    elif match == [' = '] and is_float(spam[0]):
+        return f"{spam[1]} = {spam[0]}"
+
+    if match == [' >= ', ' >= ']:
+        return f"{spam[2]} <= {spam[1]} <= {spam[0]}"
+    elif match == [' > ', ' > ']:
+        return f"{spam[2]} < {spam[1]} < {spam[0]}"
+    elif match == [' > ', ' >= ']:
+        return f"{spam[2]} <= {spam[1]} < {spam[0]}"
+    elif match == [' >= ', ' > ']:
+        return f"{spam[2]} < {spam[1]} <= {spam[0]}"
+
+    return constraint
+
+
+def split_constraints(constraints):
+    """ Splits constraint in parts divided by (in)equality sign
+
+        Example constraint:
+            ["0.7 < p+q < 0.8"]  --> [(0.7, "p+q", 0.8)]
+            ["0.7 < p+q"]        --> [(0.7, "p+q", None)]
+    """
+    return list(map(split_constraint, constraints))
+
+
+def split_constraint(constraint):
+    """ Splits constraint in parts divided by (in)equality sign
+
+    Example constraint:
+        "0.7 < p+q < 0.8"  --> (0.7, "p+q", 0.8)
+        "0.7 < p+q"        --> (0.7, "p+q", None)
+    """
+    constraint.replace("<=", "<")
+    constraint.replace(">=", "<")
+    match = re.findall("<", constraint)
+    if len(match) == 2:
+        ## Double interval bound
+        # print(item)
+        parts = constraint.split("<")
+        constraint = [parts[0], parts[1], parts[2]]
+    elif len(match) == 1:
+        ## Single interval bound
+        # print(item)
+        constraint = constraint.split("<")
+        constraint = [constraint[0], constraint[1], None]
+    else:
+        raise Exception("Given constrain more than two (in)equality signs")
+    return constraint
 
 
 def to_interval(points: list):
-    """ Transforms the set of points into set of intervals
+    """ Transforms the set of points into set of intervals - Orthogonal hull
 
     Args:
-        points (list of pairs): which are the points
+        points (list of tuples): which are the points
 
     Example:
+             POINT               INTERVALS
+            A       B            X       Y
         [(0, 2), (1, 3)] --> [[0, 1], [2, 3]]
+
+    Example 2:
+            A       B       C            X       Y
+        [(0, 2), (1, 5), (4, 3)] --> [[0, 4], [2, 5]]
+
+    Example 3:
+            A            B          C             X       Y     Z
+        [(0, 2, 9), (1, 5, 0), (4, 3, 6)] --> [[0, 4], [2, 5], [0, 9]]
     """
     intervals = []
     for dimension in range(len(points[0])):
