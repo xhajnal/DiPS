@@ -2,6 +2,7 @@ import os
 import re
 from time import time, strftime, localtime
 import numpy as np
+from termcolor import colored
 
 ## Importing my code
 from common.files import pickle_dump
@@ -40,6 +41,8 @@ def sample(space, constraints, sample_size, compress=False, silent=True, save=Fa
         if quantitative
         (dict) of point to list of numbers, sum of distances to satisfy constraints
     """
+    start_time = time()
+
     assert isinstance(space, RefinedSpace)
     if debug:
         silent = False
@@ -85,6 +88,7 @@ def sample(space, constraints, sample_size, compress=False, silent=True, save=Fa
         # print("a sample:", sampling[0][0])
     parameter_index = 0
     ## For each parametrisation eval the constraints
+    print(colored(f"Sampling initialisation took {round(time() - start_time, 4)} seconds", "yellow"))
     for index, parameter_value in enumerate(parameter_values):
         ## For each parameter set the current sample point value
         if progress:
@@ -136,8 +140,12 @@ def sample(space, constraints, sample_size, compress=False, silent=True, save=Fa
             if not quantitative:
                 is_sat = eval(constraint)
                 satisfaction_list.append(is_sat)
+                ## Skips evaluating other point as one of the constraint is not sat
+                if compress and not is_sat:
+                    break
             else:
                 ## Two interval bounds
+                ## TODO this may be expensive and can be optimised by changing the constraints once in beginning
                 if len(re.findall("<", constraint)) == 2:
                     # print(constraint)
                     ## LEFT SIDE
@@ -225,4 +233,5 @@ def sample(space, constraints, sample_size, compress=False, silent=True, save=Fa
 
     space.sampling_took(time() - start_time)
     space.title = f"using grid_size:{sample_size}"
+    print(colored(f"Sampling took {round(time()-start_time, 4)} seconds", "yellow"))
     return sampling
