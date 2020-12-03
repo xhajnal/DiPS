@@ -127,7 +127,7 @@ def sample_space(space, constraints, sample_size, compress=False, silent=True, s
     if isinstance(parallel, int):
         pool_size = parallel
     else:
-        pool_size = multiprocessing.cpu_count()
+        pool_size = multiprocessing.cpu_count() - 1
 
     ## Convert z3 functions
     for index, constraint in enumerate(constraints):
