@@ -114,8 +114,8 @@ def constraints_to_ineq(constraints: list, silent: bool = True, debug: bool = Fa
         silent = False
     if len(constraints) % 2:
         if not silent:
-            print(colored("Number of properties is not even, some interval will be invalid", "red"))
-        raise Exception(f"Number of properties is not even, some interval will be invalid")
+            print(colored("Number of constraints is not even, some intervals would be invalid", "red"))
+        raise Exception(f"Number of constraints is not even, some intervals would be invalid")
     funcs = []
     intervals = []
     is_odd = False

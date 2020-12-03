@@ -817,10 +817,20 @@ class RefinedSpace:
         self.rectangles_sat.append(green)
         self.rectangles_sat_to_show.append(green)
 
+    def extend_green(self, greens):
+        """ Adds green (hyper)rectangles """
+        self.rectangles_sat.extend(greens)
+        self.rectangles_sat_to_show.extend(greens)
+
     def add_red(self, red):
         """ Adds red (hyper)rectangle """
         self.rectangles_unsat.append(red)
         self.rectangles_unsat_to_show.append(red)
+
+    def extend_red(self, reds):
+        """ Adds red (hyper)rectangles """
+        self.rectangles_unsat.extend(reds)
+        self.rectangles_unsat_to_show.extend(reds)
 
     def add_white(self, white):
         """ Adds white (hyper)rectangle """
