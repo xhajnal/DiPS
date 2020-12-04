@@ -63,6 +63,16 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(sample_space.sample_sat_degree([0.3]), 0)
         self.assertEqual(round(sample_space.sample_sat_degree([0.9]), 2), -0.1)
 
+        constraints = ["0.3 <= p = 0.8"]
+        constraints = list(map(normalise_constraint, constraints))
+        constraints = split_constraints(constraints)
+        sample_space.glob_constraints = constraints
+
+        self.assertEqual(sample_space.sample_sat_degree([0]), - 0.3)
+        self.assertEqual(sample_space.sample_sat_degree([0.5]), 0.2)
+        self.assertEqual(sample_space.sample_sat_degree([0.3]), 0)
+        self.assertEqual(round(sample_space.sample_sat_degree([0.9]), 2), -0.1)
+
         sample_space.glob_compress = False
         self.assertEqual(sample_space.sample_sat_degree([0]), [- 0.3])
         self.assertEqual(sample_space.sample_sat_degree([0.5]), [0.2])
