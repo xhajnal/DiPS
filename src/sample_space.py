@@ -179,13 +179,22 @@ def sample_space(space, constraints, sample_size, compress=False, silent=True, s
 
         ## TODO this can be optimised by putting two lists separately
         for index, item in enumerate(parameter_values):
-            if sat_list[index]:
-                space.add_sat_samples([list(item)])
-            elif not sat_list[index]:
-                space.add_unsat_samples([list(item)])
+            if glob_compress:
+                if sat_list[index]:
+                    space.add_sat_samples([list(item)])
+                elif not sat_list[index]:
+                    space.add_unsat_samples([list(item)])
+                else:
+                    ## skipped point
+                    pass
             else:
-                ## skipped point
-                pass
+                if False in sat_list[index]:
+                    space.add_unsat_samples([list(item)])
+                elif True in sat_list[index]:
+                    space.add_sat_samples([list(item)])
+                else:
+                    ## skipped point
+                    pass
 
     elif parallel and quantitative:
         with multiprocessing.Pool(pool_size) as p:
@@ -213,4 +222,10 @@ def sample_space(space, constraints, sample_size, compress=False, silent=True, s
     space.sampling_took(time() - start_time)
     space.title = f"using grid_size:{sample_size}"
     print(colored(f"Sampling took {round(time()-start_time, 4)} seconds", "yellow"))
+
+    if parallel:
+        if quantitative:
+            return dist_list
+        else:
+            return sat_list
 

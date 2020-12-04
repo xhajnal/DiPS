@@ -357,8 +357,8 @@ def split_constraints(constraints):
     """ Splits normalised constraint in parts divided by (in)equality sign
 
         Example constraint:
-            ["0.7 < p+q < 0.8"]  --> [(0.7, "p+q", 0.8)]
-            ["0.7 < p+q"]        --> [(0.7, "p+q", None)]
+            ["0.7 < p+q < 0.8"]  --> [("0.7", "p+q", "0.8")]
+            ["0.7 < p+q"]        --> [("0.7", "p+q", None)]
     """
     return list(map(split_constraint, constraints))
 
@@ -367,12 +367,12 @@ def split_constraint(constraint):
     """ Splits normalised constraint in parts divided by (in)equality sign
 
     Example constraint:
-        "0.7 < p+q < 0.8"  --> (0.7, "p+q", 0.8)
-        "0.7 < p+q"        --> (0.7, "p+q", None)
+        "0.7 < p+q < 0.8"  --> ("0.7", "p+q", "0.8")
+        "0.7 < p+q"        --> ("0.7", "p+q", None)
     """
-    constraint = constraint.replace("<=", "<")
-    constraint = constraint.replace(">=", "<")
-    constraint = constraint.replace("=", "<")
+    ## uniformize (in)equality signs and skip white spaces
+    constraint = re.sub(r"\s*(<=|>=|=>|=<)\s*", "<", constraint)
+    constraint = re.sub(r"\s*[<>=]\s*", "<", constraint)
     match = re.findall("<", constraint)
     if len(match) == 2:
         ## Double interval bound
@@ -386,6 +386,7 @@ def split_constraint(constraint):
         constraint = [constraint[0], constraint[1], None]
     else:
         raise Exception("Given constrain more than two (in)equality signs")
+
     return constraint
 
 

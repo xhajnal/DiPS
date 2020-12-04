@@ -405,6 +405,9 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         timeout (int): timeout in seconds (set 0 for no timeout)
     """
 
+    if iterative:
+        raise NotImplementedError("This feature is decrecated and was removed.")
+
     # INITIALISATION
     initialisation_start_time = time()
 

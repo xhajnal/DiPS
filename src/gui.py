@@ -960,220 +960,118 @@ class Gui(Tk):
 
     def load_config(self):
         """ Loads variables from the config file """
-        ## TODO try catch of paths
+        ## TODO try catch paths
         ## TODO ADD EVERYWHERE print(f"current config entry {entry name} could be loaded, used the GUI default value")
+        from common.config import load_config
 
-        os.chdir(workspace)
-        config.read(os.path.join(workspace, "../config.ini"))
+        config = load_config()
 
-        self.cwd = config.get("mandatory_paths", "cwd")
-        if self.cwd == "":
-            self.cwd = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
-        if not os.path.isabs(self.cwd):
-            self.cwd = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
+        self.cwd = config["cwd"]
         # print("self.cwd", self.cwd)
 
-        self.model_dir = config.get("paths", "models")
-        if self.model_dir == "":
-            self.model_dir = "models"
-        if not os.path.isabs(self.model_dir):
-            self.model_dir = os.path.join(self.cwd, self.model_dir)
-        if not os.path.exists(self.model_dir):
-            os.makedirs(self.model_dir)
+        self.model_dir = config["models"]
         # print("self.model_dir", self.model_dir)
 
-        self.property_dir = config.get("paths", "properties")
-        if self.property_dir == "":
-            self.property_dir = "properties"
-        if not os.path.isabs(self.property_dir):
-            self.property_dir = os.path.join(self.cwd, self.property_dir)
-        if not os.path.exists(self.property_dir):
-            os.makedirs(self.property_dir)
+        self.property_dir = config["properties"]
         # print("self.property_dir", self.property_dir)
 
-        self.data_dir = config.get("paths", "data")
-        if self.data_dir == "":
-            self.data_dir = "data"
-        if not os.path.isabs(self.data_dir):
-            self.data_dir = os.path.join(self.cwd, self.data_dir)
-        if not os.path.exists(self.data_dir):
-            os.makedirs(self.data_dir)
+        self.data_dir = config["data"]
         # print("self.data_dir", self.data_dir)
 
-        self.data_weights_dir = config.get("paths", "data_weights")
-        if self.data_weights_dir == "":
-            self.data_weights_dir = "data"
-        if not os.path.isabs(self.data_weights_dir):
-            self.data_weights_dir = os.path.join(self.cwd, self.data_weights_dir)
-        if not os.path.exists(self.data_weights_dir):
-            os.makedirs(self.data_weights_dir)
+        self.data_weights_dir = config["data_weights"]
         # print("self.data_weights_dir", self.data_weights_dir)
 
         ## Results
-        self.results_dir = config.get("paths", "results")
-        if self.results_dir == "":
-            self.results_dir = "results"
-        if not os.path.isabs(self.results_dir):
-            self.results_dir = os.path.join(self.cwd, self.results_dir)
-        if not os.path.exists(self.results_dir):
-            os.makedirs(self.results_dir)
+        self.results_dir = config["results"]
         # print("self.results_dir", self.results_dir)
 
         self.data_intervals_dir = os.path.join(self.results_dir, "data_intervals")
-        if not os.path.exists(self.data_intervals_dir):
-            os.makedirs(self.data_intervals_dir)
         # print("self.data_intervals_dir", self.data_intervals_dir)
 
         self.prism_results = os.path.join(self.results_dir, "prism_results")
-        if not os.path.exists(self.prism_results):
-            os.makedirs(self.prism_results)
         # print("self.prism_results", self.prism_results)
 
         self.storm_results = os.path.join(self.results_dir, "storm_results")
-        if not os.path.exists(self.storm_results):
-            os.makedirs(self.storm_results)
         # print("self.storm_results", self.storm_results)
 
         self.refinement_results = os.path.join(self.results_dir, "refinement_results")
-        if not os.path.exists(self.refinement_results):
-            os.makedirs(self.refinement_results)
         # print("self.refinement_results", self.refinement_results)
 
         self.constraints_dir = os.path.join(self.results_dir, "constraints")
-        if not os.path.exists(self.constraints_dir):
-            os.makedirs(self.constraints_dir)
         # print("self.constraints_dir", self.constraints_dir)
 
         self.figures_dir = os.path.join(self.results_dir, "figures")
-        if not os.path.exists(self.figures_dir):
-            os.makedirs(self.figures_dir)
         # print("self.figures_dir", self.figures_dir)
 
         self.optimisation_results_dir = os.path.join(self.results_dir, "optimisation_results")
-        if not os.path.exists(self.optimisation_results_dir):
-            os.makedirs(self.optimisation_results_dir)
         # print("self.optimisation_results_dir", self.optimisation_results_dir)
 
         self.mh_results_dir = os.path.join(self.results_dir, "mh_results")
-        if not os.path.exists(self.mh_results_dir):
-            os.makedirs(self.mh_results_dir)
         # print("self.mh_results_dir", self.mh_results_dir)
 
-        self.tmp_dir = config.get("paths", "tmp")
-        if not os.path.isabs(self.tmp_dir):
-            self.tmp_dir = os.path.join(self.cwd, self.tmp_dir)
-        if not os.path.exists(self.tmp_dir):
-            os.makedirs(self.tmp_dir)
+        self.tmp_dir = config["tmp"]
         # print("self.tmp_dir", self.tmp_dir)
 
         ## Interval settings
-        try:
-            n_samples = config.get("settings", "number_of_samples")
-            self.n_samples_entry.delete(0, 'end')
-            self.n_samples_entry.insert(END, n_samples)
-        except configparser.NoOptionError:
-            pass
-        try:
-            confidence_level = config.get("settings", "confidence_level")
-            self.confidence_entry.delete(0, 'end')
-            self.confidence_entry.insert(END, confidence_level)
-        except configparser.NoOptionError:
-            pass
+        n_samples = config.get("settings", "number_of_samples")
+        self.n_samples_entry.delete(0, 'end')
+        self.n_samples_entry.insert(END, n_samples)
+
+        confidence_level = config.get("settings", "confidence_level")
+        self.confidence_entry.delete(0, 'end')
+        self.confidence_entry.insert(END, confidence_level)
 
         # Space sampling setting
-        try:
-            grid_size = config.get("settings", "grid_size")
-            self.sample_size_entry.delete(0, 'end')
-            self.sample_size_entry.insert(END, grid_size)
-        except configparser.NoOptionError:
-            pass
+        grid_size = config.get("settings", "grid_size")
+        self.sample_size_entry.delete(0, 'end')
+        self.sample_size_entry.insert(END, grid_size)
 
         # Space refinement setting
-        try:
-            self.max_depth = config.get("settings", "max_depth")
-            self.max_dept_entry.delete(0, 'end')
-            self.max_dept_entry.insert(END, self.max_depth)
-        except configparser.NoOptionError:
-            pass
-        try:
-            self.coverage = config.get("settings", "coverage")
-            self.coverage_entry.delete(0, 'end')
-            self.coverage_entry.insert(END, self.coverage)
-        except configparser.NoOptionError:
-            pass
-        try:
-            alg = config.get("settings", "algorithm")
-            self.alg_entry.set(alg)
-        except configparser.NoOptionError:
-            pass
-        try:
-            solver = str(config.get("settings", "solver"))
-            self.solver_entry.delete(0, 'end')
-            self.solver_entry.insert(END, solver)
-        except configparser.NoOptionError:
-            pass
-        try:
-            self.delta = config.get("settings", "delta")
-            self.delta_entry.delete(0, 'end')
-            self.delta_entry.insert(END, self.delta)
-        except configparser.NoOptionError:
-            pass
-        try:
-            self.refinement_timeout = config.get("settings", "refine_timeout")
-            self.refinement_timeout_entry.delete(0, 'end')
-            self.refinement_timeout_entry.insert(END, self.refinement_timeout)
-        except configparser.NoOptionError:
-            pass
+        self.max_depth = config["max_depth"]
+        self.max_dept_entry.delete(0, 'end')
+        self.max_dept_entry.insert(END, self.max_depth)
+
+        self.coverage = config["coverage"]
+        self.coverage_entry.delete(0, 'end')
+        self.coverage_entry.insert(END, self.coverage)
+
+        alg = config.get("settings", "algorithm")
+        self.alg_entry.set(alg)
+
+        solver = str(config.get("settings", "solver"))
+        self.solver_entry.delete(0, 'end')
+        self.solver_entry.insert(END, solver)
+
+        self.delta = config["delta"]
+        self.delta_entry.delete(0, 'end')
+        self.delta_entry.insert(END, self.delta)
+
+        self.refinement_timeout = config["refinement_timeout"]
+        self.refinement_timeout_entry.delete(0, 'end')
+        self.refinement_timeout_entry.insert(END, self.refinement_timeout)
 
         # Metropolis-Hastings setting
-        try:
-            mh_iterations = config.get("settings", "iterations")
-            self.MH_sampling_iterations_entry.delete(0, 'end')
-            self.MH_sampling_iterations_entry.insert(END, mh_iterations)
-        except configparser.NoOptionError:
-            pass
+        mh_iterations = config.get("settings", "iterations")
+        self.MH_sampling_iterations_entry.delete(0, 'end')
+        self.MH_sampling_iterations_entry.insert(END, mh_iterations)
 
-        try:
-            mh_grid_size = config.get("settings", "mh_grid_size")
-            self.bins_entry.delete(0, 'end')
-            self.bins_entry.insert(END, mh_grid_size)
-        except configparser.NoOptionError:
-            pass
+        mh_grid_size = config.get("settings", "mh_grid_size")
+        self.bins_entry.delete(0, 'end')
+        self.bins_entry.insert(END, mh_grid_size)
 
-        try:
-            burn_in = config.get("settings", "burn_in")
-            self.burn_in_entry.delete(0, 'end')
-            self.burn_in_entry.insert(END, burn_in)
-        except configparser.NoOptionError:
-            pass
+        burn_in = config.get("settings", "burn_in")
+        self.burn_in_entry.delete(0, 'end')
+        self.burn_in_entry.insert(END, burn_in)
 
-        try:
-            self.mh_timeout = config.get("settings", "mh_timeout")
-            self.mh_timeout_entry.delete(0, 'end')
-            self.mh_timeout_entry.insert(END, self.mh_timeout)
-        except configparser.NoOptionError:
-            pass
+        self.mh_timeout = config["mh_timeout"]
+        self.mh_timeout_entry.delete(0, 'end')
+        self.mh_timeout_entry.insert(END, self.mh_timeout)
 
         # Meta setting
-        try:
-            self.save.set(config.get("settings", "autosave_figures").lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh'])
-        except configparser.NoOptionError:
-            pass
-
-        try:
-            self.silent.set(config.get("settings", "minimal_output").lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh'])
-        except configparser.NoOptionError:
-            pass
-
-        try:
-            self.debug.set(config.get("settings", "extensive_output").lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh'])
-        except configparser.NoOptionError:
-            pass
-
-        try:
-            self.show_mh_metadata.set(config.get("settings", "show_mh_metadata").lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh'])
-        except configparser.NoOptionError:
-            pass
+        self.save.set(config["save"])
+        self.silent.set(config["silent"])
+        self.debug.set(config["debug"])
+        self.show_mh_metadata.set(config["show_mh_metadata"])
 
         pyplt.rcParams["savefig.directory"] = self.figures_dir
 
@@ -4139,7 +4037,7 @@ class Gui(Tk):
         else:
             assert isinstance(self.mh_results, HastingsResults)
             self.mh_results.show_iterations(where=self.draw_plot_window)
-            self.mh_results.show_iterations2()
+            self.mh_results.show_iterations_bokeh()
             # self.mh_results.show_iterations(where=self.draw_plot_window)
 
     def show_mh_acc_points(self):
@@ -4149,11 +4047,11 @@ class Gui(Tk):
         else:
             assert isinstance(self.mh_results, HastingsResults)
             self.mh_results.show_accepted(where=self.draw_plot_window)
-            self.mh_results.show_accepted2()
+            self.mh_results.show_accepted_bokeh()
             # try:
             #     self.mh_results.show_accepted(where=self.draw_plot_window)
             # except:
-            #     self.mh_results.show_accepted2()
+            #     self.mh_results.show_accepted_bokeh()
 
     def export_acc_points(self, file=False):
         """ Exports accepted points of metropolis Hastings

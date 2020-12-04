@@ -125,6 +125,43 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(normalise_constraint("0.2 = p+q/8"), "p+q/8 = 0.2")
         ## TODO add more tests
 
+    def test_split_constraints(self):
+        print(colored("Checking splitting constraints", 'blue'))
+
+        self.assertEqual(split_constraints(["0.7 <= p+q < 0.8"]), [["0.7", "p+q", "0.8"]])
+
+        self.assertEqual(split_constraints(["0.7 < p+q < 0.8"]), [["0.7", "p+q", "0.8"]])
+        self.assertEqual(split_constraints(["0.7 < p+q"]), [["0.7", "p+q", None]])
+
+        self.assertEqual(split_constraints(["0.7 > p+q < 0.8"]), [["0.7", "p+q", "0.8"]])
+        self.assertEqual(split_constraints(["0.7 > p+q"]), [["0.7", "p+q", None]])
+
+        self.assertEqual(split_constraints(["0.7 <= p+q < 0.8"]), [["0.7", "p+q", "0.8"]])
+        self.assertEqual(split_constraints(["0.7 <= p+q"]), [["0.7", "p+q", None]])
+
+        self.assertEqual(split_constraints(["0.7 >= p+q < 0.8"]), [["0.7", "p+q", "0.8"]])
+        self.assertEqual(split_constraints(["0.7 >= p+q"]), [["0.7", "p+q", None]])
+
+        self.assertEqual(split_constraints(["0.7 = p+q < 0.8"]), [["0.7", "p+q", "0.8"]])
+        self.assertEqual(split_constraints(["0.7 = p+q"]), [["0.7", "p+q", None]])
+
+    def test_split_constraint(self):
+        print(colored("Checking splitting single constraint", 'blue'))
+        self.assertEqual(split_constraint("0.7 < p+q < 0.8"), ["0.7", "p+q", "0.8"])
+        self.assertEqual(split_constraint("0.7 < p+q"), ["0.7", "p+q", None])
+
+        self.assertEqual(split_constraint("0.7 > p+q < 0.8"), ["0.7", "p+q", "0.8"])
+        self.assertEqual(split_constraint("0.7 > p+q"), ["0.7", "p+q", None])
+
+        self.assertEqual(split_constraint("0.7 <= p+q < 0.8"), ["0.7", "p+q", "0.8"])
+        self.assertEqual(split_constraint("0.7 <= p+q"), ["0.7", "p+q", None])
+
+        self.assertEqual(split_constraint("0.7 >= p+q < 0.8"), ["0.7", "p+q", "0.8"])
+        self.assertEqual(split_constraint("0.7 >= p+q"), ["0.7", "p+q", None])
+
+        self.assertEqual(split_constraint("0.7 = p+q < 0.8"), ["0.7", "p+q", "0.8"])
+        self.assertEqual(split_constraint("0.7 = p+q"), ["0.7", "p+q", None])
+
     def test_to_interval(self):
         print(colored("Checking transformation of a set of points into a set of intervals here", 'blue'))
         self.assertEqual(to_interval([[0, 5]]), [[0, 0], [5, 5]])

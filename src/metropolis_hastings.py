@@ -432,7 +432,7 @@ class HastingsResults:
         else:
             where(fig)
 
-    def show_iterations2(self, where=False):
+    def show_iterations_bokeh(self, where=False):
         """ Create Scatter plot showing accepted and rejected points in its given order using bokeh
 
         Args:
@@ -546,7 +546,7 @@ class HastingsResults:
         else:
             where(fig)
 
-    def show_accepted2(self, where=False):
+    def show_accepted_bokeh(self, where=False):
         """ Trace and histogram of accepted points using bokeh
 
         Args:

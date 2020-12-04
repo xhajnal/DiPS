@@ -522,43 +522,6 @@ class MyTestCase(unittest.TestCase):
         check_deeper([(0, 2)], ineq_to_constraints(["x**2", "x+3"], [Interval(0, 1), Interval(0, 1)]),    6,    0.01 ** 2,   0.9,    False,    4,                                           show_space=show_space)
         # print("  It took", socket.gethostname(), time() - start_time, "seconds to run")
 
-    def test_space_sample(self):
-        print(colored("Sampling space test here", 'blue'))
-        ## Initialisation
-        space = RefinedSpace((0, 1), ["x"], ["Real"], [Interval(0, 1)])
-        # print(space.nice_print())
-
-        debug = False
-
-        constraints1 = ["x<3"]
-        constraints2 = ["x>3"]
-
-        constraints3 = ["x>3", "x<3"]
-        constraints4 = ["x<=1", "x>=0"]
-        constraints5 = ["x>3", "x>=0"]
-
-        ## def sample(space, constraints, size_q, compress)
-        ## Example:  sample(space, constraints1, 1, debug=debug)
-        self.assertEqual(sample(space, constraints1, 1, debug=debug)[0][1][0], True)
-        self.assertEqual(sample(space, constraints2, 1, debug=debug)[0][1][0], False)
-
-        self.assertEqual(sample(space, constraints2, 1, debug=debug)[0][1][0], False)
-
-        self.assertEqual(sample(space, constraints3, 1, compress=True, debug=debug)[0][1], False)
-        self.assertEqual(sample(space, constraints4, 1, compress=True, debug=debug)[0][1], True)
-        self.assertEqual(sample(space, constraints5, 1, compress=True, debug=debug)[0][1], False)
-
-        space2 = RefinedSpace([(0, 1), (0, 1)], ["x", "y"])
-
-        constraints3 = ["x+y>3", "x+y<3"]
-        constraints4 = ["x+y<=1", "x+y>=0"]
-        constraints5 = ["x+y>3", "x+y>=0"]
-
-        self.assertEqual(sample(space2, constraints3, 1, compress=True, debug=debug)[0][0][1], False)
-        self.assertEqual(sample(space2, constraints4, 1, compress=True, debug=debug)[0][0][1], True)
-        self.assertEqual(sample(space2, constraints5, 1, compress=True, debug=debug)[0][0][1], False)
-
-        # TODO maybe test all the sampled points not only the first
 
     def test_presampled(self):
         print(colored("Presampled refinement here", 'blue'))
