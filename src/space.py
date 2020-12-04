@@ -204,7 +204,7 @@ class RefinedSpace:
             else:
                 raise Exception(f"The dimension of the given true point ({len(true_point)}) does not match")
         else:
-            self.true_point = None
+            self.true_point = False
 
         ## SET TITLE SUFFIX
         if title:
@@ -240,7 +240,9 @@ class RefinedSpace:
             save (bool): if True, the output is saved
             where (tuple/list): output matplotlib sources to output created figure
             show_all (bool): if True, not only newly added rectangles are shown
-            prefer_unsafe: if True unsafe space is shown in multidimensional space instead of safe
+            prefer_unsafe (bool): if True unsafe space is shown in multidimensional space instead of safe
+            hide_legend (bool): if True no legend will be shown
+            hide_title (bool): if True no title will be shown (useful in the case of large picture, when tight layout fails)
         """
         if prefer_unsafe is None:
             try:  ## Backward compatibility
@@ -255,7 +257,7 @@ class RefinedSpace:
 
         legend_objects, legend_labels = [], []
 
-        if true_point:
+        if true_point and self.true_point:
             self.show_true_point(where=where, is_inside_of_show=True)
             legend_objects.append(plt.scatter([], [], facecolor='white', edgecolor='blue', label="true_point"))
             legend_labels.append("true point")
@@ -329,15 +331,15 @@ class RefinedSpace:
                         axes.scatter(np.array(list(self.unsat_samples))[:, 0], np.array(list(self.unsat_samples))[:, 1], c="red", alpha=0.5, label="unsat")
                         legend_objects.append(plt.scatter([], [], c="red", alpha=0.5))
                         legend_labels.append("unsat")
-                if green:
+                if (green or where) and self.rectangles_sat:
                     axes.add_collection(self.show_green(show_all=show_all))
                     legend_objects.append(patches.Patch(color='green', alpha=0.5))
                     legend_labels.append("safe")
-                if red:
+                if (red or where) and self.rectangles_unsat:
                     axes.add_collection(self.show_red(show_all=show_all))
                     legend_objects.append(patches.Patch(color='red', alpha=0.5))
                     legend_labels.append("unsafe")
-                if red or green:
+                if (red or green or where) and self.rectangles_unknown:
                     legend_objects.append(patches.Patch(facecolor='white', edgecolor='black'))
                     legend_labels.append("unknown")
                 # axes.legend(legend_objects, legend_labels, bbox_to_anchor=(0, 1), loc='lower left', fontsize='small', frameon=False)
@@ -346,7 +348,7 @@ class RefinedSpace:
 
             else:
                 ## Show quantitative space sampling
-                ## Get min, max sat degreeunsaunsa
+                ## Get min, max sat degree
                 min_value = round(min(self.dist_samples.values()), 16)
                 max_value = round(max(self.dist_samples.values()), 16)
                 ## Setup colour normalisation
@@ -609,8 +611,10 @@ class RefinedSpace:
         Args:
             where (tuple/list): output matplotlib sources to output created figure
             is_inside_of_show (bool): if True not painting the plot
+            hide_legend (bool): if True no legend will be shown
             """
         if self.true_point:
+            assert isinstance(self.true_point, list)
             if where:
                 fig = where[0]
                 ax = where[1]
@@ -631,6 +635,8 @@ class RefinedSpace:
                 legend_labels.append("safe")
                 legend_objects.append(patches.Patch(color='red', alpha=0.5))
                 legend_labels.append("unsafe")
+                legend_objects.append(patches.Patch(facecolor='white', edgecolor='black'))
+                legend_labels.append("unknown")
 
             max_region_size = self.region[0][1] - self.region[0][0]
             if len(self.params) == 1:
@@ -982,7 +988,7 @@ class RefinedSpace:
         self.gridsampled = True
         sample_space(self, constraints, sample_size, compress=True, silent=silent, save=save, debug=debug, progress=progress, quantitative=quantitative, sort=sort)
 
-    ## TODO DEPRICATED NOT USED NOW, plot.scatter used instead
+    ## TODO DEPRECATED NOT USED NOW, plot.scatter used instead
     def show_samples(self, which):
         """ Visualises samples in 2D"""
         if not (self.sat_samples or self.unsat_samples):
