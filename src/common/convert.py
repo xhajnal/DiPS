@@ -314,7 +314,7 @@ def add_white_spaces(expression):
 
 
 def normalise_constraint(constraint: str, silent: bool = True, debug: bool = False):
-    """ Transforms the set constraint into normalised form
+    """ Transforms the constraint into normalised form
 
     Args:
         constraint  (string): constraint to be normalised
@@ -354,7 +354,7 @@ def normalise_constraint(constraint: str, silent: bool = True, debug: bool = Fal
 
 
 def split_constraints(constraints):
-    """ Splits constraint in parts divided by (in)equality sign
+    """ Splits normalised constraint in parts divided by (in)equality sign
 
         Example constraint:
             ["0.7 < p+q < 0.8"]  --> [(0.7, "p+q", 0.8)]
@@ -364,14 +364,15 @@ def split_constraints(constraints):
 
 
 def split_constraint(constraint):
-    """ Splits constraint in parts divided by (in)equality sign
+    """ Splits normalised constraint in parts divided by (in)equality sign
 
     Example constraint:
         "0.7 < p+q < 0.8"  --> (0.7, "p+q", 0.8)
         "0.7 < p+q"        --> (0.7, "p+q", None)
     """
-    constraint.replace("<=", "<")
-    constraint.replace(">=", "<")
+    constraint = constraint.replace("<=", "<")
+    constraint = constraint.replace(">=", "<")
+    constraint = constraint.replace("=", "<")
     match = re.findall("<", constraint)
     if len(match) == 2:
         ## Double interval bound
