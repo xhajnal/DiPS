@@ -24,3 +24,12 @@ class Queue:
     ## Printing the elements of the queue
     def print_queue(self):
         return self.queue
+
+    def empty(self):
+        return self.size() == 0
+
+    def get(self):
+        return self.dequeue()
+
+    def put(self, data):
+        self.enqueue(data)

@@ -3994,7 +3994,7 @@ class Gui(Tk):
         show_red_in_multidim_refinement_chekbutton.grid(row=1, column=0)
         hide_legend_chekbutton = Checkbutton(self.new_window, text="Hide plot legend.", variable=self.hide_legend_refinement)
         hide_legend_chekbutton.grid(row=2, column=0)
-        hide_title_chekbutton = Checkbutton(self.new_window, text="Hide plot legend.", variable=self.hide_title_refinement)
+        hide_title_chekbutton = Checkbutton(self.new_window, text="Hide plot title.", variable=self.hide_title_refinement)
         hide_title_chekbutton.grid(row=3, column=0)
 
         ## To be used to wait until the button is pressed
