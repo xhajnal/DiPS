@@ -15,6 +15,49 @@ tmp_dir = model_dir = os.path.join(cwd, "tmp")
 
 
 class MyTestCase(unittest.TestCase):
+    def test_MH_class(self):
+        ##  TODO
+        pass
+
+    def test_sample_functions(self):
+        ## Now deprecated
+        pass
+
+    def test_get_truncated_normal(self):
+        ##  TODO
+        # get_truncated_normal(mean=0.0, sd=1.0, low=0.0, upp=10.0)
+        pass
+
+    def test_transition_model_a(self):
+        for i in range(10):
+            for b in range(1, 100):
+                b = b/10
+                spam = transition_model_a([i], [[i-b, i+b]])
+                self.assertTrue(spam[0] > i - b)
+                self.assertTrue(spam[0] < i + b)
+
+    def test_prior(self):
+        ## Now deprecated
+        pass
+
+    def test_acceptance(self):
+        self.assertTrue(acceptance(8, 9))
+
+    def test_manual_log_like_normal(self):
+        space = RefinedSpace((0, 1), ["x"])
+        self.assertEqual(round(manual_log_like_normal(space, [0], ["x+0.9"], [0.9], 10, 0, parallel=True, debug=True), 2), -3.25)
+        self.assertEqual(round(manual_log_like_normal(space, [0], ["x+0.8"], [0.8], 10, 0, parallel=True, debug=True), 2), - 5)
+
+    def test_metropolis_hastings(self):
+        warnings.warn("This test does not contain any assert as it is nondeterministic, please check the results manually", RuntimeWarning)
+        # metropolis_hastings(likelihood_computer, prior_rule, transition_model, param_init, iterations, space, data, sample_size, acceptance_rule, parameter_intervals, functions, eps, progress=False, timeout=-1, debug=False, sort=False)
+        space = RefinedSpace((0, 1), ["x"])
+        parameter_intervals = space.get_region()
+        spam = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, [0.5], 50, space, [0.2], 10, acceptance, parameter_intervals, ["x"], 0, progress=False, timeout=0, debug=False)
+        print()
+        print("accepted", spam[0])
+        print("rejected", spam[1])
+
     def test_without_data_nor_observation(self):
         print(colored('Metropolis-Hastings without data - it is sampled', 'blue'))
         src.metropolis_hastings.tmp_dir = tmp_dir

@@ -1001,16 +1001,16 @@ class Gui(Tk):
         # print("self.tmp_dir", self.tmp_dir)
 
         ## Interval settings
-        n_samples = config.get("settings", "number_of_samples")
+        n_samples = config["n_samples"]
         self.n_samples_entry.delete(0, 'end')
         self.n_samples_entry.insert(END, n_samples)
 
-        confidence_level = config.get("settings", "confidence_level")
+        confidence_level = config["confidence_level"]
         self.confidence_entry.delete(0, 'end')
         self.confidence_entry.insert(END, confidence_level)
 
         # Space sampling setting
-        grid_size = config.get("settings", "grid_size")
+        grid_size = config["grid_size"]
         self.sample_size_entry.delete(0, 'end')
         self.sample_size_entry.insert(END, grid_size)
 
@@ -1023,10 +1023,10 @@ class Gui(Tk):
         self.coverage_entry.delete(0, 'end')
         self.coverage_entry.insert(END, self.coverage)
 
-        alg = config.get("settings", "algorithm")
+        alg = config["alg"]
         self.alg_entry.set(alg)
 
-        solver = str(config.get("settings", "solver"))
+        solver = config["solver"]
         self.solver_entry.delete(0, 'end')
         self.solver_entry.insert(END, solver)
 
@@ -1039,15 +1039,15 @@ class Gui(Tk):
         self.refinement_timeout_entry.insert(END, self.refinement_timeout)
 
         # Metropolis-Hastings setting
-        mh_iterations = config.get("settings", "iterations")
+        mh_iterations = config["mh_iterations"]
         self.MH_sampling_iterations_entry.delete(0, 'end')
         self.MH_sampling_iterations_entry.insert(END, mh_iterations)
 
-        mh_grid_size = config.get("settings", "mh_grid_size")
+        mh_grid_size = config["mh_grid_size"]
         self.bins_entry.delete(0, 'end')
         self.bins_entry.insert(END, mh_grid_size)
 
-        burn_in = config.get("settings", "burn_in")
+        burn_in = config["burn_in"]
         self.burn_in_entry.delete(0, 'end')
         self.burn_in_entry.insert(END, burn_in)
 
