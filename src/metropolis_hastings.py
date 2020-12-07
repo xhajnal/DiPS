@@ -1,3 +1,4 @@
+import multiprocessing
 import os
 from platform import system
 from time import time
@@ -18,6 +19,7 @@ from common.document_wrapper import DocumentWrapper, niceprint
 from termcolor import colored
 
 from common.files import pickle_dump
+from common.mathematics import nCr
 from space import RefinedSpace
 from common.config import load_config
 from common.document_wrapper import DocumentWrapper
@@ -302,7 +304,13 @@ class HastingsResults:
             ## Thanks to Den for optimisation
             egg = self.accepted[keep_index:].T
             egg = egg[:-1]
-            ax.plot(egg, '.-', markersize=15)  ## TODO Check 10 bees default -> ZeroDivisionError: integer division or modulo by zero
+            try:
+                ax.plot(egg, '.-', markersize=15)  ## TODO Check 10 bees default -> ZeroDivisionError: integer division or modulo by zero
+            except ZeroDivisionError as err:
+                print("accepted points", self.accepted)
+                print("accepted points transposed", self.accepted.T)
+                print("accepted points transposed", self.egg)
+                raise err
 
             # for sample in self.accepted[not_burn_in:]:
             #    ax.scatter(x_axis, sample)
@@ -648,7 +656,16 @@ def sample_functions(functions, data_means):
     return i - 1
 
 
-def get_truncated_normal(mean=0, sd=1, low=0, upp=10):
+def get_truncated_normal(mean=0.0, sd=1.0, low=0.0, upp=10.0):
+    """ Returns truncated normal distribution
+
+    Args:
+        mean (float): mean
+        sd (float): standard deviation
+        low (float): lower bound
+        upp (float): upper bound
+
+    """
     return truncnorm((low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd).rvs()
 
 
@@ -668,9 +685,9 @@ def transition_model_a(theta, parameter_intervals, sort=False):
     @edit: xhajnal, denis
     """
     if sort:
-        sd = 0.3  ## Standard deviation of the normal distribution
+        sd = 0.15  ## Standard deviation of the normal distribution
     else:
-        sd = 0.15
+        sd = 0.3
     theta_new = np.zeros(len(theta))  ## New point initialisation
 
     ## TODO CHECK NEXT LINE
@@ -698,7 +715,7 @@ def transition_model_a(theta, parameter_intervals, sort=False):
         #     while (temp <= parameter_intervals[index][0]) or (temp >= parameter_intervals[index][1]):
         #         temp = np.random.normal(theta[index], sd)
         # max_param = theta_new[max(0, index - 1)]
-        while (temp <= parameter_intervals[index][0]) or (temp >= parameter_intervals[index][1]) or (sort and temp < max_param):
+        while (temp < parameter_intervals[index][0]) or (temp > parameter_intervals[index][1]) or (sort and temp < max_param):
             ## Generate new parameter value from normal distribution
             if sort and max_param > theta[index]:
                 temp = get_truncated_normal(mean=max_param, sd=sd, low=max_param, upp=parameter_intervals[index][1])
@@ -706,6 +723,8 @@ def transition_model_a(theta, parameter_intervals, sort=False):
                     temp = temp + abs(max_param-temp)
             else:
                 temp = np.random.normal(theta[index], sd)
+                # For some reason slower
+                # temp = get_truncated_normal(mean=theta[index], sd=sd, low=parameter_intervals[index][0], upp=parameter_intervals[index][1])
         ## Store only if the param value inside the domains
         max_param = temp
         theta_new[index] = temp
@@ -754,15 +773,15 @@ def acceptance(x_likelihood, x_new_likelihood):
         ## Chance to accept even if the likelihood of the new point is lower (than likelihood of current point)
         accept = np.random.uniform(0, 1)
 
-        ## TODO REMOVE THIS after test
-        warnings.filterwarnings("error")
-        try:
-            a = accept < (np.exp(x_new_likelihood - x_likelihood))
-        except RuntimeWarning as warn:
-            print(warn)
-            print(x_new_likelihood)
-            print(x_likelihood)
-        warnings.filterwarnings("default")
+        # ## TODO REMOVE THIS after test
+        # warnings.filterwarnings("error")
+        # try:
+        #     a = accept < (np.exp(x_new_likelihood - x_likelihood))
+        # except RuntimeWarning as warn:
+        #     print(warn)
+        #     print(x_new_likelihood)
+        #     print(x_likelihood)
+        # warnings.filterwarnings("default")
 
         return accept < (np.exp(x_new_likelihood - x_likelihood))
 
@@ -785,7 +804,18 @@ def acceptance_default(x_likelihood, x_new_likelihood):
         return True
 
 
-def manual_log_like_normal(space, theta, functions, data, sample_size, eps, debug=False):
+global glob_param_names
+global glob_theta
+
+
+def eval_function(function):
+    """ Evaluates function in with global glob_param_names and glob_theta"""
+    for index, param in enumerate(glob_theta):
+        locals()[glob_param_names[index]] = glob_theta[index]
+    return eval(function)
+
+
+def manual_log_like_normal(space, theta, functions, data, sample_size, eps, parallel=False, debug=False):
     """ Log likelihood of functions in parameter point theta drawing the data, P(functions(theta)| data)
 
     Args:
@@ -795,6 +825,7 @@ def manual_log_like_normal(space, theta, functions, data, sample_size, eps, debu
         data (list): list of function indices which are being observed
         sample_size (int): number of samples
         eps (number): very small value used as probability of non-feasible values in prior
+        parallel (Bool): flag to run this in parallel mode
         debug (bool): if True extensive print will be used
 
     Returns:
@@ -804,8 +835,6 @@ def manual_log_like_normal(space, theta, functions, data, sample_size, eps, debu
     @edit: xhajnal
     """
     warnings.filterwarnings("error")
-
-    res = 0
     # print("data", data)
     # print("functions", functions)
 
@@ -813,18 +842,38 @@ def manual_log_like_normal(space, theta, functions, data, sample_size, eps, debu
     for index, param in enumerate(theta):
         locals()[space.get_params()[index]] = theta[index]
 
-    ## Dictionary optimising performance - not evaluating the same functions again
-    evaled_functions = {}
+    ## OLD CODE
+    # ## Dictionary optimising performance - not evaluating the same functions again
+    # evaled_functions = {}
 
     ## TODO represent observations as data
     res = 0
 
+    if parallel:
+        if isinstance(parallel, int):
+            pool_size = parallel
+        else:
+            pool_size = multiprocessing.cpu_count() - 1
+
+        # global glob_param_names
+        # global glob_theta
+        globals()["glob_theta"] = theta
+        globals()["glob_param_names"] = space.get_params()
+        with multiprocessing.Pool(pool_size) as p:
+            evaled_functions = list(p.map(eval_function, functions))
+        if debug:
+            print("evaled_functions", evaled_functions)
+
     ## Via wiki https://en.wikipedia.org/wiki/Maximum_likelihood_estimation Discrete distribution, continuous parameter space
     for index, data_point in enumerate(data):
-        point = eval(functions[index])
+        if parallel:
+            point = evaled_functions[index]
+        else:
+            point = eval(functions[index])
+
         # lik = C(n,k) * p**k * (1-p)**(n-k)  ## formula
-        # lik = nCr(sample_size, data_point*sample_size) * point**(data_point*sample_size) * (1-point)**(sample_size-data_point*sample_size)  ## Our representation
-        ## log_lik = np.log(nCr(data_point * sample_size, sample_size)) + (data_point * sample_size * np.log(point) + (1 - data_point) * sample_size * np.log(1 - point))  ## Original log likelihood, but the C(n,k) does not change that the one loglik is greater and it strikes out in subtraction part
+        # lik = nCr(sample_size, data_point* sample_size) * point**(data_point*sample_size) * (1-point)**(sample_size-data_point*sample_size)  ## Our representation
+        ## log_lik = np.log(nCr(sample_size, data_point * sample_size)) + (data_point * sample_size * np.log(point) + (1 - data_point) * sample_size * np.log(1 - point))  ## Original log likelihood, but the C(n,k) does not change that the one loglik is greater and it strikes out in subtraction part
         try:
             pseudo_log_lik = (data_point * sample_size * np.log(point) + (1 - data_point) * sample_size * np.log(1 - point))
         except RuntimeWarning as warn:
@@ -850,12 +899,19 @@ def manual_log_like_normal(space, theta, functions, data, sample_size, eps, debu
             print(f"param point {theta}")
             print(f"data_point {data_point}")
             print(f"function {eval(functions[index])}")
-            print(colored(f"log-likelihood {pseudo_log_lik}", "blue"))
+            likelihood = nCr(sample_size, data_point*sample_size) * point**(data_point*sample_size) * (1-point)**(sample_size-data_point*sample_size)
+            print(colored(f"likelihood {likelihood}", "blue"))
+            ## Default form
+            # print(colored(f"pseudo log-likelihood {np.log(point ** (data_point * sample_size) * (1 - point) ** (sample_size - data_point * sample_size))}", "blue"))
+            print(colored(f"pseudo log-likelihood {pseudo_log_lik}", "blue"))
+            ## Default form
+            print(colored(f"log likelihood {np.log(likelihood)}", "blue"))
+            print(colored(f"log-likelihood {np.log(nCr(sample_size, data_point * sample_size)) + np.log(point)*(data_point*sample_size) + np.log(1-point)*(sample_size-data_point*sample_size)}", "blue"))
+
             print()
         if str(res) == "-inf":
             warnings.filterwarnings("default")  ## normal state
             return res
-
 
     # for index, data_point in enumerate(data):
     #     sigma = np.sqrt((data_point - eval(functions[index])) ** 2 / sample_size)
@@ -913,6 +969,11 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param
     @author: tpetrov
     @edit: xhajnal
     """
+    try:
+        start_time = globals()["start_time"]
+    except KeyError:
+        start_time = time()
+
     theta = param_init
     accepted = []
     ## Setting the initial point as rejected so it will be shown in plots
@@ -962,12 +1023,19 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param
             progress(iteration/iterations, False, int(time() - globals()["start_time"]), timeout)
 
         ## Finish iterations after timeout
-        if (time() - globals()["start_time"]) > timeout > 0:
-            globals()["mh_results"].last_iter = iteration
-            globals()["mh_results"].time_it_took = time() - globals()["start_time"]
+        if (time() - start_time) > timeout > 0:
+            try:
+                globals()["mh_results"].last_iter = iteration
+                globals()["mh_results"].time_it_took = time() - globals()["start_time"]
+            except KeyError:
+                pass
             break
 
-    globals()["mh_results"].time_it_took = time() - globals()["start_time"]
+    try:
+        globals()["mh_results"].time_it_took = time() - globals()["start_time"]
+    except KeyError:
+        pass
+
     return np.array(accepted), np.array(rejected)
 
 
@@ -1070,9 +1138,12 @@ def initialise_sampling(space: RefinedSpace, data, functions, sample_size: int, 
     print("data", data)
     print("Initial parameter point: ", theta_init)
 
+    print(colored(f"Initialisation of Metropolis-Hastings took {round(time() - start_time, 4)} seconds", "yellow"))
     ## MAIN LOOP
     ##                                      (likelihood_computer,    prior, transition_model,   param_init,       iterations,       space, data, sample_size, acceptance_rule, parameter_intervals, functions, eps, progress,          timeout,         debug):
     accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, mh_sampling_iterations, space, data, sample_size, acceptance, parameter_intervals, functions, eps, progress=progress, timeout=timeout, debug=debug, sort=sort)
+
+    print(colored(f"Metropolis-Hastings took {round(time()-start_time, 4)} seconds", "yellow"))
 
     globals()["mh_results"].set_accepted(accepted)
     globals()["mh_results"].set_rejected(rejected)
