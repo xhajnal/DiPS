@@ -4,7 +4,8 @@ from common.config import *
 
 class MyTestCase(unittest.TestCase):
     def test_parse_numbers(self):
-        load_config()
+        a = load_config()
+        print(a)
         ## TODO
         pass
 
