@@ -667,7 +667,10 @@ def transition_model_a(theta, parameter_intervals, sort=False):
     @author: tpetrov
     @edit: xhajnal, denis
     """
-    sd = 0.3  ## Standard deviation of the normal distribution
+    if sort:
+        sd = 0.3  ## Standard deviation of the normal distribution
+    else:
+        sd = 0.15
     theta_new = np.zeros(len(theta))  ## New point initialisation
 
     ## TODO CHECK NEXT LINE
@@ -685,7 +688,7 @@ def transition_model_a(theta, parameter_intervals, sort=False):
 
     ## For each parameter
     ## TODO why we change all params and not just one in random?
-    max_param = theta[0]
+    max_param = parameter_intervals[0][0]
     for index, param in enumerate(theta):
         temp = parameter_intervals[index][0] - 1  ## Lower bound of first parameter - 1, forcing to find a new value
         #### THIS WAS NOT WORKING
@@ -698,7 +701,7 @@ def transition_model_a(theta, parameter_intervals, sort=False):
         while (temp <= parameter_intervals[index][0]) or (temp >= parameter_intervals[index][1]) or (sort and temp < max_param):
             ## Generate new parameter value from normal distribution
             if sort and max_param > theta[index]:
-                temp = np.random.normal(max_param, sd)
+                temp = get_truncated_normal(mean=max_param, sd=sd, low=max_param, upp=parameter_intervals[index][1])
                 if temp < max_param:
                     temp = temp + abs(max_param-temp)
             else:
