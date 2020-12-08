@@ -8,7 +8,7 @@ from matplotlib import gridspec
 from matplotlib.ticker import MaxNLocator
 from matplotlib.figure import Figure
 
-# from termcolor import colored
+from common.document_wrapper import DocumentWrapper, niceprint
 
 ## Importing my code
 from termcolor import colored
@@ -17,7 +17,6 @@ from common.files import pickle_dump
 from space import RefinedSpace
 from common.config import load_config
 from common.document_wrapper import DocumentWrapper
-from common.convert import niceprint
 
 import warnings
 

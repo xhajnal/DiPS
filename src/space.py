@@ -967,7 +967,7 @@ class RefinedSpace:
             progress (Tkinter element): progress bar
             quantitative (bool): if True return how far is the point from satisfying / not satisfying the constraints
         """
-        from sample_space import sample
+        from sample_space import sample_space
         self.gridsampled = True
         sample(self, constraints, sample_size, compress=True, silent=silent, save=save, debug=debug, progress=progress, quantitative=quantitative)
 

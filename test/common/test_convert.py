@@ -6,6 +6,22 @@ from src.common.convert import *
 
 
 class MyTestCase(unittest.TestCase):
+    def test_parse_numbers(self):
+        print(colored("Checking parsers of numbers from string", 'blue'))
+        self.assertEqual(parse_numbers("h3110 23 cat 444.4 rabbit 11 2 dog"), [3110, 23, 444.4, 11, 2])
+        self.assertEqual(parse_numbers('hello 42 I\'m a 32 string 30'), [42, 32, 30])
+        self.assertEqual(parse_numbers('hello 8e-7 holario'), [8e-7])
+        self.assertEqual(parse_numbers('hello8e-7holario'), [8e-7])
+
+    def test_to_sympy_intervals(self):
+        print(colored("Checking conversion from a list of pairs/lists to list of Intervals", 'blue'))
+        self.assertEqual(to_sympy_intervals([[2, 3]]), [Interval(2, 3)])
+        self.assertEqual(to_sympy_intervals([[2, 3]]), [Interval(2, 3)])
+        self.assertEqual(to_sympy_intervals([(2, 3)]), [Interval(2, 3)])
+        self.assertEqual(to_sympy_intervals([[2, 3], (4, 5)]), [Interval(2, 3), Interval(4, 5)])
+        self.assertEqual(to_sympy_intervals([(2, 3), [4, 5]]), [Interval(2, 3), Interval(4, 5)])
+        self.assertEqual(to_sympy_intervals([(2, 3), (4, 5)]), [Interval(2, 3), Interval(4, 5)])
+
     def test_ineq_to_constraints(self):
         print(colored("Checking conversion from a list of inequalities to list of properties", 'blue'))
         self.assertEqual(ineq_to_constraints(["x+3"], [[0, 1]], decoupled=True), ["x+3 >= 0", "x+3 <= 1"])
@@ -66,6 +82,18 @@ class MyTestCase(unittest.TestCase):
             constraints_to_ineq(["x+3>=0", "x+4<=1"])
             self.assertTrue("does not have proper number of boundaries" in context.exception)
 
+    def test_decouple_constraint(self):
+        print(colored("Checking decoupling of constraints", 'blue'))
+        with self.assertRaises(Exception) as context:
+            decouple_constraint("0.706726790611575 - (r_0 - r_1)**3 + 0.893273209388426")
+        self.assertTrue('No' in str(context.exception))
+
+        self.assertEqual(decouple_constraint("0.706726790611575 <= -(r_0 - r_1)**3"), ["0.706726790611575 <= -(r_0 - r_1)**3"])
+        self.assertEqual(decouple_constraint("0.706726790611575 <= -(r_0 - r_1)**3 <= 0.893273209388426"), ['0.706726790611575 <= -(r_0 - r_1)**3', '-(r_0 - r_1)**3 <= 0.893273209388426'])
+        with self.assertRaises(Exception) as context:
+            decouple_constraint("0.706726790611575 <= -(r_0 - r_1)**3 <= 0.893273 = 209388426")
+        self.assertTrue('More than two' in str(context.exception))
+
     def test_decouple_constraints(self):
         print(colored("Checking decoupling of constraints", 'blue'))
         with self.assertRaises(Exception) as context:
@@ -78,11 +106,32 @@ class MyTestCase(unittest.TestCase):
             decouple_constraints(["0.706726790611575 <= -(r_0 - r_1)**3 <= 0.893273 = 209388426"])
         self.assertTrue('More than two' in str(context.exception))
 
+    def test_add_white_spaces(self):
+        print(colored("Checking adding space in between <, = and <=", 'blue'))
+        self.assertEqual(add_white_spaces("0.270794145078059 >= p*q >=  0.129205854921941"), "0.270794145078059 >= p*q >= 0.129205854921941")
+        self.assertEqual(add_white_spaces("0.270794145078059>=p*q>=0.129205854921941"), "0.270794145078059 >= p*q >= 0.129205854921941")
+        self.assertEqual(add_white_spaces("p*q>=0.129205854921941"), "p*q >= 0.129205854921941")
+        self.assertEqual(add_white_spaces("0.270794145078059>=p*q"), "0.270794145078059 >= p*q")
+        ## TODO add more tests
+
+    def test_normalise_constraint(self):
+        print(colored("Checking normalising constraints", 'blue'))
+        self.assertEqual(normalise_constraint("0.2 >= p+q/8  >= 0.1"),  "0.1 <= p+q/8 <= 0.2")
+        self.assertEqual(normalise_constraint("0.2 >= p+q/8"), "p+q/8 <= 0.2")
+        self.assertEqual(normalise_constraint("0.2 >= p+q/8  > 0.1"), "0.1 < p+q/8 <= 0.2")
+        self.assertEqual(normalise_constraint("0.2 > p+q/8 >= 0.1"), "0.1 <= p+q/8 < 0.2")
+        self.assertEqual(normalise_constraint("0.2 > p+q/8 > 0.1"), "0.1 < p+q/8 < 0.2")
+        self.assertEqual(normalise_constraint("0.2 >= p+q/8"), "p+q/8 <= 0.2")
+        self.assertEqual(normalise_constraint("0.2 = p+q/8"), "p+q/8 = 0.2")
+        ## TODO add more tests
+
     def test_to_interval(self):
         print(colored("Checking transformation of a set of points into a set of intervals here", 'blue'))
         self.assertEqual(to_interval([[0, 5]]), [[0, 0], [5, 5]])
         self.assertEqual(to_interval([(0, 2), (1, 3)]), [[0, 1], [2, 3]])
         self.assertEqual(to_interval([(0, 0, 0), (1, 0, 0), (1, 2, 0), (0, 2, 0), (0, 2, 3), (0, 0, 3), (1, 0, 3), (1, 2, 3)]), [[0, 1], [0, 2], [0, 3]])
+        self.assertEqual(to_interval([(0, 2), (1, 3), (4, 5)]), [[0, 4], [2, 5]])
+        self.assertEqual(to_interval([(0, 2, 9), (1, 5, 0), (4, 3, 6)]), [[0, 4], [2, 5], [0, 9]])
 
 
 if __name__ == '__main__':

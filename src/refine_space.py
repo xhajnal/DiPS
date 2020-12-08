@@ -14,7 +14,7 @@ from matplotlib.patches import Rectangle
 ## Importing my code
 from common.my_z3 import parse_model_values
 from load import find_param
-from sample_space import sample
+from sample_space import sample_space as sample
 from space import RefinedSpace
 from space import get_rectangle_volume
 from common.mathematics import is_in
@@ -502,8 +502,8 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                       "green"))
         return space
 
-    print(colored(f"Initialisation took {socket.gethostname()} {round(time() - initialisation_start_time, 2)} seconds",
-                  "blue"))
+    print(colored(f"Refinement initialisation took {socket.gethostname()} {round(time() - initialisation_start_time, 4)} seconds",
+                  "yellow"))
     start_time = time()
     globals()["start_time"] = start_time
 
@@ -933,7 +933,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         else:
             space_shown = [False]
     print(colored(f"Result coverage is: {space_coverage}", "blue"))
-    print(colored(f"Refinement took: {space.time_last_refinement} seconds", "yellow"))
+    print(colored(f"Refinement took {round(space.time_last_refinement, 4)} seconds", "yellow"))
     if where:
         if space_shown[0] is None:
             return space, space_shown[1]
