@@ -60,7 +60,7 @@ def is_this_exponential_function(function: str):
     Args:
         function (string): expression to be checked
     """
-    if re.findall("\*\* *[a-z|A-Z]", function):
+    if re.findall("[*][*] *[a-z|A-Z]", function):
         return True
     else:
         return False
@@ -72,7 +72,7 @@ def is_this_general_function(function: str):
     Args:
         function (string): expression to be checked
     """
-    return not(is_this_python_function(function) or is_this_z3_function(function))
+    return not (is_this_python_function(function) or is_this_z3_function(function))
 
 
 ## TODO check whether I got all

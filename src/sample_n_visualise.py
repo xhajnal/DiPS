@@ -312,79 +312,79 @@ def sample_list_funs(functions, sample_size, parameters=False, intervals=False, 
             arr.append(a)
     return arr
 
-
-def visualise(dic_fun, indices, sample_size, cumulative=False, debug: bool = False, show_all_in_one=False, where=False):
-    """ Creates bar plot of probabilities of i successes for sampled parametrisation
-
-    Args:
-        dic_fun (dictionary index -> list of rational functions)
-        sample_size (int): sample size in each parameter
-        indices (list of ints): list of indices to show
-        cumulative (bool): if True cdf instead of pdf is visualised
-        debug (bool): if debug extensive output is provided
-        show_all_in_one (bool): if True all plots are put into one window
-        where (tuple/list): output matplotlib sources to output created figure
-    """
-
-    for index in indices:
-        parameters = set()
-        for index, expression in enumerate(dic_fun[index]):
-            if is_this_z3_function(expression):
-                dic_fun[index][index] = translate_z3_function(expression)
-
-            if debug:
-                print("Polynomial: ", expression)
-            parameters.update(find_param(expression, debug))
-
-            ## THIS THING IS WORKING ONLY FOR THE CASE STUDY
-            # if len(parameters) < index:
-            #    parameters.update(find_param(expression, debug))
-        if debug:
-            print("Parameters: ", parameters)
-        parameters = sorted(list(parameters))
-        if debug:
-            print("Sorted parameters: ", parameters)
-
-        parameter_values = get_param_values(parameters, sample_size, debug)
-
-        for parameter_value in parameter_values:
-            if debug:
-                print("Parameter_value: ", parameter_value)
-            add = 0
-            a = [index, dic_fun[index].index(expression)]
-            if index == 0:
-                title = f"Rational functions sampling \n parameters:"
-            else:
-                title = f"Rational functions sampling \n index={index}, parameters:"
-            for param in range(len(parameters)):
-                a.append(parameter_value[param])
-                if debug:
-                    print("Parameter[param]: ", parameters[param])
-                    print("Parameter_value[param]: ", parameter_value[param])
-                globals()[parameters[param]] = parameter_value[param]
-                title = "{} {}={},".format(title, parameters[param], parameter_value[param])
-            title = title[:-1]
-            if debug:
-                print("Eval ", expression, eval(expression))
-            for expression in dic_fun[index]:
-                value = eval(expression)
-                if cumulative:
-                    ## Add sum of all values
-                    add = add + value
-                    a.append(add)
-                    del value
-                else:
-                    a.append(value)
-
-            # print(a)
-            fig, ax = plt.subplots()
-            width = 0.2
-            ax.set_ylabel('Value')
-            ax.set_xlabel('Rational function indices')
-            ax.set_title(wraper.fill(title))
-            # print(title)
-            rects1 = ax.bar(range(len(dic_fun[index])), a[len(parameters) + 2:], width, color='b')
-            plt.show()
+# DEPRECATED
+# def visualise(dic_fun, indices, sample_size, cumulative=False, debug: bool = False, show_all_in_one=False, where=False):
+#     """ Creates bar plot of probabilities of i successes for sampled parametrisation
+#
+#     Args:
+#         dic_fun (dictionary index -> list of rational functions)
+#         sample_size (int): sample size in each parameter
+#         indices (list of ints): list of indices to show
+#         cumulative (bool): if True cdf instead of pdf is visualised
+#         debug (bool): if debug extensive output is provided
+#         show_all_in_one (bool): if True all plots are put into one window
+#         where (tuple/list): output matplotlib sources to output created figure
+#     """
+#
+#     for index in indices:
+#         parameters = set()
+#         for index, expression in enumerate(dic_fun[index]):
+#             if is_this_z3_function(expression):
+#                 dic_fun[index][index] = translate_z3_function(expression)
+#
+#             if debug:
+#                 print("Polynomial: ", expression)
+#             parameters.update(find_param(expression, debug))
+#
+#             ## THIS THING IS WORKING ONLY FOR THE CASE STUDY
+#             # if len(parameters) < index:
+#             #    parameters.update(find_param(expression, debug))
+#         if debug:
+#             print("Parameters: ", parameters)
+#         parameters = sorted(list(parameters))
+#         if debug:
+#             print("Sorted parameters: ", parameters)
+#
+#         parameter_values = get_param_values(parameters, sample_size, debug)
+#
+#         for parameter_value in parameter_values:
+#             if debug:
+#                 print("Parameter_value: ", parameter_value)
+#             add = 0
+#             a = [index, dic_fun[index].index(expression)]
+#             if index == 0:
+#                 title = f"Rational functions sampling \n parameters:"
+#             else:
+#                 title = f"Rational functions sampling \n index={index}, parameters:"
+#             for param in range(len(parameters)):
+#                 a.append(parameter_value[param])
+#                 if debug:
+#                     print("Parameter[param]: ", parameters[param])
+#                     print("Parameter_value[param]: ", parameter_value[param])
+#                 globals()[parameters[param]] = parameter_value[param]
+#                 title = "{} {}={},".format(title, parameters[param], parameter_value[param])
+#             title = title[:-1]
+#             if debug:
+#                 print("Eval ", expression, eval(expression))
+#             for expression in dic_fun[index]:
+#                 value = eval(expression)
+#                 if cumulative:
+#                     ## Add sum of all values
+#                     add = add + value
+#                     a.append(add)
+#                     del value
+#                 else:
+#                     a.append(value)
+#
+#             # print(a)
+#             fig, ax = plt.subplots()
+#             width = 0.2
+#             ax.set_ylabel('Value')
+#             ax.set_xlabel('Rational function indices')
+#             ax.set_title(wraper.fill(title))
+#             # print(title)
+#             rects1 = ax.bar(range(len(dic_fun[index])), a[len(parameters) + 2:], width, color='b')
+#             plt.show()
 
 
 ## SOURCE: https://stackoverflow.com/questions/21352580/matplotlib-plotting-numerous-disconnected-line-segments-with-different-colors

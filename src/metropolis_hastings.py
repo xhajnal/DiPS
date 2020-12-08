@@ -1,5 +1,6 @@
 import multiprocessing
 import os
+from collections import Callable
 from platform import system
 from time import time
 from socket import gethostname
@@ -16,7 +17,6 @@ from termcolor import colored
 
 from common.files import pickle_dump
 from common.mathematics import nCr
-from space import RefinedSpace
 from common.config import load_config
 from common.document_wrapper import DocumentWrapper
 
@@ -44,7 +44,8 @@ def maximize_plot():
 class HastingsResults:
     """ Class to represent Metropolis Hastings results"""
     def __init__(self, params, theta_init, accepted, rejected, observations_count: int, observations_samples_count: int,
-                 mh_sampling_iterations: int, eps, burn_in=0.25, pretitle="", title="", bins=20, last_iter=0, timeout=0, time_it_took=0):
+                 mh_sampling_iterations: int, eps=0, sd=0.15, burn_in=0.25, pretitle="", title="", bins=20, last_iter=0,
+                 timeout=0, time_it_took=0):
         """
         Args:
             params (list of strings): parameter names
@@ -52,8 +53,9 @@ class HastingsResults:
             rejected (np.array): rejected points with iteration index
             observations_count (int): total number of observations
             observations_samples_count (int): sample size from the observations
-            mh_sampling_iterations (int): number of iterations/steps in searching in space
+            mh_sampling_iterations (int): number of iterations/steps of walker in param space
             eps (number): very small value used as probability of non-feasible values in prior
+            sd (float): variation of walker in parameter space
             burn_in (number): fraction or count of how many samples will be trimmed from beginning
             pretitle (string): title to be put in front of title
             title (string): title of the plot
@@ -72,6 +74,7 @@ class HastingsResults:
         self.observations_samples_count = observations_samples_count
         self.mh_sampling_iterations = mh_sampling_iterations
         self.eps = eps
+        self.sd = sd
 
         self.burn_in = burn_in
         # try:  ## backward compatibility
@@ -314,7 +317,7 @@ class HastingsResults:
 
             ax.set_xlabel("param indices")
             ax.set_ylabel("parameter value")
-            ax.set_title("\n".join(wrapper.wrap(self.title)))
+            ax.set_title(wrapper.wrap(self.title))
             ax.autoscale()
             ax.margins(0.1)
             # print(colored(f"  It took {socket.gethostname()}, {time() - start_time} seconds to run", "blue"))
@@ -329,7 +332,7 @@ class HastingsResults:
                 plt.hist2d(self.accepted[keep_index:, 0], self.accepted[keep_index:, 1], bins=self.bins)
                 plt.xlabel(self.params[0])
                 plt.ylabel(self.params[1])
-                plt.title("\n".join(wrapper.wrap(self.title)))
+                plt.title(wrapper.wrap(self.title))
                 where[1] = plt.colorbar()
                 where[1].set_label('# of accepted points per bin', rotation=270, labelpad=20)
                 return where[0], where[1]
@@ -349,7 +352,7 @@ class HastingsResults:
                 plt.hist2d(self.accepted[keep_index:, 0], spam, bins=self.bins)
                 plt.xlabel(self.params[0])
                 plt.ylabel("")
-                plt.title("\n".join(wrapper.wrap(self.title)))
+                plt.title(wrapper.wrap(self.title))
                 where[1] = plt.colorbar()
                 where[1].set_label('# of accepted points per bin', rotation=270, labelpad=20)
                 return where[0], where[1]
@@ -664,13 +667,14 @@ def get_truncated_normal(mean=0.0, sd=1.0, low=0.0, upp=10.0):
     return truncnorm((low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd).rvs()
 
 
-def transition_model_a(theta, parameter_intervals, sort=False):
+def transition_model_a(theta, parameter_intervals, sd=0.15):
     """" Defines how to walk around the parameter space, set a new point,
         using normal distribution around the old point
 
     Args:
         theta (list): old parameter point
-        parameter_intervals (list of tuples) domains of parameters
+        parameter_intervals (list of tuples): domains of parameters
+        sd (float): standard deviation of normal dist. of walker
 
     Returns:
         theta_new (list): new parameter point within the domains
@@ -678,10 +682,10 @@ def transition_model_a(theta, parameter_intervals, sort=False):
     @author: tpetrov
     @edit: xhajnal, denis
     """
-    if sort:
-        sd = 0.15  ## Standard deviation of the normal distribution
-    else:
-        sd = 0.3
+    # if sort:
+    #     sd = 0.15  ## Standard deviation of the normal distribution
+    # else:
+    #     sd = 0.15  ## TODO FIND OPTIMAL VALUE
     theta_new = np.zeros(len(theta))  ## New point initialisation
 
     ## For each parameter
@@ -783,16 +787,16 @@ def eval_function(function):
     return eval(function)
 
 
-def manual_log_like_normal(space, theta, functions, data, sample_size, eps, parallel=False, debug=False):
+def manual_log_like_normal(params, theta, functions, data, sample_size, eps=0, parallel=False, debug=False):
     """ Log likelihood of functions in parameter point theta drawing the data, P(functions(theta)| data)
 
     Args:
-        space (Refined space): supporting structure, defining parameters, their domains and types
-        theta (list): parameter point
+        params (list of string): parameter names
+        theta (list): parameter point to evaluate functions in
         functions (list of strings): functions to be evaluated in theta
-        data (list): list of function indices which are being observed
-        sample_size (int): number of samples
-        eps (number): very small value used as probability of non-feasible values in prior
+        data (list): data that we wish to model, measurement values
+        sample_size (int): number of samples in data
+        eps (number): very small value used as probability of non-feasible values in prior - deprecated now
         parallel (Bool): flag to run this in parallel mode
         debug (bool): if True extensive print will be used
 
@@ -808,7 +812,7 @@ def manual_log_like_normal(space, theta, functions, data, sample_size, eps, para
 
     ## Assignment of parameter values
     for index, param in enumerate(theta):
-        locals()[space.get_params()[index]] = theta[index]
+        locals()[params[index]] = theta[index]
 
     ## OLD CODE
     # ## Dictionary optimising performance - not evaluating the same functions again
@@ -826,7 +830,7 @@ def manual_log_like_normal(space, theta, functions, data, sample_size, eps, para
         # global glob_param_names
         # global glob_theta
         globals()["glob_theta"] = theta
-        globals()["glob_param_names"] = space.get_params()
+        globals()["glob_param_names"] = params
         with multiprocessing.Pool(pool_size) as p:
             evaled_functions = list(p.map(eval_function, functions))
         if debug:
@@ -912,22 +916,27 @@ def manual_log_like_normal(space, theta, functions, data, sample_size, eps, para
     return res
 
 
-def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param_init, iterations, space, data, sample_size,
-                        acceptance_rule, parameter_intervals, functions, eps, progress=False, timeout=-1, debug=False):
+                        debug=False):
+def metropolis_hastings(likelihood_computer, prior_rule, transition_model, acceptance_rule, params, parameter_intervals,
+                        param_init, functions, data, sample_size, iterations, eps, sd, progress=False, timeout=0,
+                        debug=False):
     """ The core method of the Metropolis Hasting
 
         likelihood_computer (function(space, theta, functions, observation/data, eps)): function returning the likelihood that functions in theta point generated the data
         prior_rule (function(theta, eps)): prior function
         transition_model (function(theta)): a function that draws a sample from a symmetric distribution and returns it
-        param_init  (pair of numbers): starting parameter point
-        iterations (int): number of accepted to generated
-        space (Refined space): supporting structure, defining parameters, their domains and types
-        data (list of numbers): data that we wish to model
-        sample_size (int): sample size / number of observations
         acceptance_rule (function(theta, theta_new)): decides whether to accept or reject the new sample
+        params (list of strings): parameter names
         parameter_intervals (list of pairs): parameter domains
-        progress (Tkinter_element or False): progress bar
-        timeout (int): timeout in seconds
+        param_init  (pair of numbers): starting parameter point
+        functions (list of strings): expressions to be evaluated and compared with data
+        data (list of numbers): data that we wish to model, measurement values
+        sample_size (int): number of observations in data
+        iterations (int): number of steps of walker
+        eps (number): very small value used as probability of non-feasible values in prior - not used now
+        sd (float): variation of walker in parameter space
+        progress (Tkinter element or False): function processing progress
+        timeout (int): timeout in seconds (0 for no timeout)
         debug (bool): if True extensive print will be used
 
     Returns:
@@ -951,16 +960,21 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param
     theta_lik = 0
     for iteration in range(1, iterations + 1):
         ## Walk in parameter space - Get new parameter point from the current one
-        theta_new = transition_model(theta, parameter_intervals)
+        theta_new = transition_model(theta, parameter_intervals, sd=sd, sort=sort)
+        # print("theta_new", theta_new)
+        # if sort:
+        #     if sorted(list(theta_new)) != list(theta_new):
+        #         print(colored(f"{theta_new} is decreasing", "red"))
+
         ## Estimate likelihood of current point
         ## (space, theta, functions, data, eps)
 
         ## Not recalculating the likelihood if we did not move
         if has_moved:
-            theta_lik = likelihood_computer(space, theta, functions, data, sample_size, eps, debug=debug)
+            theta_lik = likelihood_computer(params, theta, functions, data, sample_size, eps, debug=debug)
         # print("theta_lik", theta_lik)
         ## Estimate likelihood of new point
-        theta_new_lik = likelihood_computer(space, theta_new, functions, data, sample_size, eps, debug=debug)
+        theta_new_lik = likelihood_computer(params, theta_new, functions, data, sample_size, eps, debug=debug)
         # print("theta_new_lik", theta_new_lik)
         if debug:
             print("iteration:", iteration)
@@ -983,6 +997,7 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param
             if debug:
                 print(f"new point: {theta_new} rejected")
         if progress:
+            assert isinstance(progress, Callable)
             progress(iteration/iterations, False, int(time() - globals()["start_time"]), timeout)
 
         ## Finish iterations after timeout
@@ -1002,24 +1017,26 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, param
     return np.array(accepted), np.array(rejected)
 
 
-def initialise_sampling(space: RefinedSpace, data, functions, sample_size: int,  mh_sampling_iterations: int, eps,
-                        theta_init=False, where=False, progress=False, burn_in=False, bins=20, timeout=False,
+def initialise_sampling(params, parameter_intervals, functions, data, sample_size: int,  mh_sampling_iterations: int, eps=0,
+                        sd=0.15, theta_init=False, where=False, progress=False, burn_in=False, bins=20, timeout=False,
                         debug=False, metadata=True, draw_plot=False):
     """ Initialisation method for Metropolis Hastings
 
     Args:
-        space (RefinedSpace): supporting structure, defining parameters, their domains and types
-        data (list of numbers): data that we wish to model
-        functions (list of strings):
-        sample_size (int): total number of observations
+        params (list of strings): parameter names
+        parameter_intervals (list of tuples): domains of parameters
+        theta_init (list of floats): initial parameter point
+        functions (list of strings): expressions to be evaluated and compared with data
+        data (list of floats): measurement values
+        sample_size (int): total number of observations in data
         mh_sampling_iterations (int): number of iterations/steps in searching in space
-        eps (number): very small value used as probability of non-feasible values in prior
-        theta_init (list of numbers): initial parameter point
-        where (tuple/list): output matplotlib sources to output created figure
-        progress (Tkinter element or False): progress bar
+        eps (number): very small value used as probability of non-feasible values in prior - not used now
+        sd (float): variation of walker in parameter space
+        where (tuple/list or False): output matplotlib sources to output created figure, if False a new will be created
+        progress (Tkinter element or False): function processing progress
         burn_in (number): fraction or count of how many samples will be trimmed from beginning
-        bins (int): number of segments in the plot
-        timeout (int): timeout in seconds
+        bins (int): number of segments per dimension in the output plot
+        timeout (int): timeout in seconds (0 for no timeout)
         debug (bool): if True extensive print will be used
         metadata (bool): if True metadata will be plotted
         draw_plot (Callable): function showing intermediate plots
@@ -1027,36 +1044,12 @@ def initialise_sampling(space: RefinedSpace, data, functions, sample_size: int, 
     @author: tpetrov
     @edit: xhajnal
     """
-
     ## Internal settings
     start_time = time()
     globals()["start_time"] = start_time
 
-    ##                     HastingsResults ( params, theta_init, accepted, rej observations_count, observations_samples_count, MH_sampling_iterations, eps, burn_in,      pretitle, title, bins, last_iter,  timeout, time_it_took, rescale):
-    globals()["mh_results"] = HastingsResults(space.params, theta_init, [], [], sample_size, sample_size, mh_sampling_iterations, eps, burn_in=burn_in, title="", bins=bins, last_iter=0, timeout=timeout)
-
-    ## TODO check this
-    # ## Convert z3 functions
-    # for index, function in enumerate(functions):
-    #     if is_this_z3_function(function):
-    #         functions[index] = translate_z3_function(function)
-
-    # for index, param in enumerate(space.get_params()):
-    #     globals()[param] = space.true_point[index]
-    #     print(f"{param} = {space.true_point[index]}")
-    # globals()[space.get_params()[0]] = space.true_point[0]
-    # globals()[space.get_params()[1]] = space.true_point[1]
-    # print(f"{space.get_params()[0]} = {globals()[space.get_params()[0]]}")
-    # print(f"{space.get_params()[1]} = {globals()[space.get_params()[1]]}")
-
-    parameter_intervals = space.get_region()
-
-    # theta_true = np.zeros(len(space.get_params()))
-    # for index, param in enumerate(space.true_point):
-    #     theta_true[index] = param
-    # theta_true = np.zeros(2)
-    # theta_true[0] = space.true_point[0]
-    # theta_true[1] = space.true_point[1]
+    ##                        HastingsResults(params, theta_init, accepted, rej observations_count, observations_samples_count, MH_sampling_iterations, eps, burn_in, pretitle, title, bins, last_iter,  timeout, time_it_took, rescale):
+    globals()["mh_results"] = HastingsResults(params, theta_init, [], [], sample_size, sample_size, mh_sampling_iterations, eps, burn_in=burn_in, title="", bins=bins, last_iter=0, timeout=timeout)
 
     # print("Parameter point", theta_true)
 
@@ -1068,7 +1061,8 @@ def initialise_sampling(space: RefinedSpace, data, functions, sample_size: int, 
             theta_init.append((parameter_intervals[index][0] + parameter_intervals[index][1])/2)
         # theta_init = [(parameter_intervals[0][0] + parameter_intervals[0][1])/2, (parameter_intervals[1][0] + parameter_intervals[1][1])/2]  ## Middle of the intervals # np.ones(10)*0.1
 
-    for index, param in enumerate(space.get_params()):
+    ## TODO do we need this?
+    for index, param in enumerate(params):
         globals()[param] = theta_init[index]
         print(f"{param} = {theta_init[index]}")
 
@@ -1102,8 +1096,8 @@ def initialise_sampling(space: RefinedSpace, data, functions, sample_size: int, 
 
     print(colored(f"Initialisation of Metropolis-Hastings took {round(time() - start_time, 4)} seconds", "yellow"))
     ## MAIN LOOP
-    ##                                      (likelihood_computer,    prior, transition_model,   param_init,       iterations,       space, data, sample_size, acceptance_rule, parameter_intervals, functions, eps, progress,          timeout,         debug):
-    accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, theta_init, mh_sampling_iterations, space, data, sample_size, acceptance, parameter_intervals, functions, eps, progress=progress, timeout=timeout, debug=debug)
+    #                    metropolis_hastings(likelihood_computer, prior_rule, transition_model, acceptance_rule, params, parameter_intervals, param_init, functions, data, sample_size, iterations,        eps,     sd,      progress=False,      timeout=0,  debug=False, sort=False):
+    accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, acceptance, params, parameter_intervals, theta_init, functions, data, sample_size, mh_sampling_iterations, eps=eps, sd=sd, progress=progress, timeout=timeout, debug=debug, sort=sort)
 
     print(colored(f"Metropolis-Hastings took {round(time()-start_time, 4)} seconds", "yellow"))
 

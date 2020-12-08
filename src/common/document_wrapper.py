@@ -12,7 +12,7 @@ class DocumentWrapper(textwrap.TextWrapper):
         """ Returns the text with lines split if longer than given size """
         split_text = text.split('\n')
         lines = [line for para in split_text for line in textwrap.TextWrapper.wrap(self, para)]
-        return lines
+        return "\n".join(lines)
 
 
 ## Callback function (but can be used also inside the GUI class)

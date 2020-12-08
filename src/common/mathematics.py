@@ -55,6 +55,7 @@ def create_intervals(confidence, n_samples, data):
     """
     intervals = []
     if not isinstance(data, Iterable):
+        assert isinstance(data, float)
         return [create_interval(confidence, n_samples, data)]
     for data_point in data:
         intervals.append(create_interval(confidence, n_samples, data_point))

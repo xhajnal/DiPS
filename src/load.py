@@ -441,8 +441,7 @@ def load_all_data(path):
                     try:
                         data[population][value] = float(data[population][value])
                     except:
-                        print("error while parsing population =", population, " i =", value, " of value =",
-                              data[population][value])
+                        print("error while parsing population =", population, " i =", value, " of value =", data[population][value])
                         data[population][value] = 0
                     # print(type(D[population][value]))
                 # D[population].append(1-sum(D[population]))
@@ -602,7 +601,7 @@ def find_param_old(expression, debug: bool = False):
     ## Replace z3 expression
     parameters = re.sub(r"(Not|Or|And|Implies|If|,|<|>|=)", " ", parameters)
 
-    parameters = re.split(r'\+|\*|\-|/| ', parameters)
+    parameters = re.split(r'[+*\-/ ]', parameters)
     parameters = [i for i in parameters if not i.replace('.', '', 1).isdigit()]
     parameters = set(parameters)
     parameters.discard("")
@@ -621,7 +620,7 @@ def find_param_older(expression, debug: bool = False):
          set of strings - parameters
     """
     parameters = expression.replace('(', '').replace(')', '').replace('**', '*').replace(' ', '')
-    parameters = re.split(r'\+|\*|\-|/', parameters)
+    parameters = re.split(r'[+*\-/]', parameters)
     parameters = [i for i in parameters if not i.replace('.', '', 1).isdigit()]
     parameters = set(parameters)
     parameters.discard("")

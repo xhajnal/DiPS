@@ -49,14 +49,14 @@ def set_java_heap_win(size):
             output = output + str(line)
             if line.startswith('java'):
                 # print("line", line)
-                previous_size = re.findall(r'-Xmx.+[g|G|m|M] -X', line)
+                previous_size = re.findall(r'-Xmx.+[gGmM] -X', line)
                 # print("previous_size: ", previous_size)
                 previous_size = previous_size[0][4:-3]
                 # print("previous_size: ", previous_size)
 
     a = str(f'-Xmx{str(size)} -X')
     # print(a)
-    output = re.sub(r'-Xmx.+[g|G|m|M] -X', a, output)
+    output = re.sub(r'-Xmx.+[gGmM] -X', a, output)
     # print("output: ", output)
 
     with open(os.path.join(str(prism_path), "prism.bat"), 'w') as input_file:
