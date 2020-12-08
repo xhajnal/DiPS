@@ -1,11 +1,13 @@
 import os
 import unittest
 
+from sympy import Interval
 from termcolor import colored
 
 import src.sample_space as sample_space
 from common.convert import normalise_constraint, split_constraints
 from space import RefinedSpace
+from src.refine_space import *
 
 curr_dir = os.path.dirname(__file__)
 
@@ -102,9 +104,72 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(list(map(lambda x: round(x, 2), sample_space.sample_sat_degree([0.5, 0.5]))), [-0.2, 0])
         self.assertEqual(list(map(lambda x: round(x, 2), sample_space.sample_sat_degree([0.3, 0.3]))), [0.2, 0])
 
-    def test_sample(self):
-        pass
-        # TODO
+    def test_space_sample(self):
+        print(colored("Sampling space test here", 'blue'))
+        ## Initialisation
+        space = RefinedSpace((0, 1), ["x"], ["Real"], [Interval(0, 1)])
+        # print(space.nice_print())
+
+        debug = False
+
+        constraints1 = ["x<3"]
+        constraints2 = ["x>3"]
+
+        constraints3 = ["x>3", "x<3"]
+        constraints4 = ["x<=1", "x>=0"]
+        constraints5 = ["x>3", "x>=0"]
+
+        ## def sample(space, constraints, size_q, compress)
+        ## Example:  sample(space, constraints1, 1, debug=debug)
+        # a = sample(space, constraints1, 1, debug=debug)
+
+        self.assertEqual(sample(space, constraints1, 1, debug=debug)[0][0], True)
+        self.assertEqual(len(space.get_sat_samples()), 1)
+        self.assertEqual(len(space.get_unsat_samples()), 0)
+        self.assertEqual(sample(space, constraints2, 1, debug=debug)[0][0], False)
+        self.assertEqual(len(space.get_sat_samples()), 1)
+        self.assertEqual(len(space.get_unsat_samples()), 1)
+        self.assertEqual(sample(space, constraints3, 1, compress=True, debug=debug)[0], False)
+        self.assertEqual(len(space.get_sat_samples()), 1)
+        self.assertEqual(len(space.get_unsat_samples()), 2)
+        self.assertEqual(sample(space, constraints4, 1, compress=True, debug=debug)[0], True)
+        self.assertEqual(len(space.get_sat_samples()), 2)
+        self.assertEqual(len(space.get_unsat_samples()), 2)
+        self.assertEqual(sample(space, constraints5, 1, compress=True, debug=debug)[0], False)
+        self.assertEqual(len(space.get_sat_samples()), 2)
+        self.assertEqual(len(space.get_unsat_samples()), 3)
+
+        space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"])
+
+        constraints3 = ["x+y>3", "x+y<3"]
+        constraints4 = ["x+y<=1", "x+y>=0"]
+        constraints5 = ["x+y>3", "x+y>=0"]
+
+        self.assertEqual(sample(space, constraints3, 1, compress=True, debug=debug)[0], False)
+        self.assertEqual(len(space.get_sat_samples()), 0)
+        self.assertEqual(len(space.get_unsat_samples()), 1)
+        self.assertEqual(sample(space, constraints4, 1, compress=True, debug=debug)[0], True)
+        self.assertEqual(len(space.get_sat_samples()), 1)
+        self.assertEqual(len(space.get_unsat_samples()), 1)
+        self.assertEqual(sample(space, constraints5, 1, compress=True, debug=debug)[0], False)
+        self.assertEqual(len(space.get_sat_samples()), 1)
+        self.assertEqual(len(space.get_unsat_samples()), 2)
+
+        space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"])
+
+        constraints3 = ["x+y>3", "x+y<3"]
+        constraints4 = ["x+y<=1", "x+y>=0"]
+        constraints5 = ["x+y>3", "x+y>=0"]
+
+        self.assertEqual(sample(space, constraints3, 1, debug=debug)[0], [False, True])
+        self.assertEqual(len(space.get_sat_samples()), 0)
+        self.assertEqual(len(space.get_unsat_samples()), 1)
+        self.assertEqual(sample(space, constraints4, 1, debug=debug)[0], [True, True])
+        self.assertEqual(len(space.get_sat_samples()), 1)
+        self.assertEqual(len(space.get_unsat_samples()), 1)
+        self.assertEqual(sample(space, constraints5, 1, debug=debug)[0], [False, True])
+        self.assertEqual(len(space.get_sat_samples()), 1)
+        self.assertEqual(len(space.get_unsat_samples()), 2)
 
 
 if __name__ == "__main__":

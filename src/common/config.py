@@ -78,6 +78,10 @@ def load_config():
     if not os.path.exists(data_intervals_dir):
         os.makedirs(data_intervals_dir)
 
+    data_weights_dir = os.path.join(results_dir, "data_weights")
+    if not os.path.exists(data_weights_dir):
+        os.makedirs(data_weights_dir)
+
     constraints_dir = os.path.join(results_dir, "constraints")
     if not os.path.exists(constraints_dir):
         os.makedirs(constraints_dir)
@@ -109,11 +113,115 @@ def load_config():
 
     refine_timeout = config.get("settings", "refine_timeout")
 
+    my_config = {"prism_path": prism_path, "models": model_dir, "properties": property_dir, "data": data_dir,
+                 "results": results_dir, "prism_results": prism_results, "storm_results": storm_results,
+                 "data_intervals": data_intervals_dir, "data_weights": data_weights_dir,
+                 "constraints_dir": constraints_dir, "refinement_results": refinement_results, "figures": figures_dir,
+                 "optimisation_results": optimisation_results_dir, "figures_dir": figures_dir,
+                 "mh_results": mh_results_dir, "tmp": tmp_dir, "z3_path": z3_path, "refine_timeout": refine_timeout,
+                 "cwd": cwd}
+
+    ## Interval settings
+    try:
+        n_samples = config.get("settings", "number_of_samples")
+        my_config["n_samples"] = n_samples
+    except configparser.NoOptionError:
+        my_config["n_samples"] = 100
+    try:
+        confidence_level = config.get("settings", "confidence_level")
+        my_config["confidence_level"] = confidence_level
+    except configparser.NoOptionError:
+        my_config["confidence_level"] = 0.95
+
+    # Space sampling setting
+    try:
+        grid_size = config.get("settings", "grid_size")
+        my_config["grid_size"] = grid_size
+    except configparser.NoOptionError:
+        my_config["grid_size"] = 10
+
+    # Space refinement setting
+    try:
+        max_depth = config.get("settings", "max_depth")
+        my_config["max_depth"] = max_depth
+    except configparser.NoOptionError:
+        my_config["max_depth"] = 0.5
+    try:
+        coverage = config.get("settings", "coverage")
+        my_config["coverage"] = coverage
+    except configparser.NoOptionError:
+        my_config["coverage"] = 0.9
+    try:
+        alg = config.get("settings", "algorithm")
+        my_config["alg"] = alg
+    except configparser.NoOptionError:
+        my_config["alg"] = 4
+    try:
+        solver = str(config.get("settings", "solver"))
+        my_config["solver"] = solver
+    except configparser.NoOptionError:
+        my_config["solver"] = "z3"
+    try:
+        delta = config.get("settings", "delta")
+        my_config["delta"] = delta
+    except configparser.NoOptionError:
+        my_config["delta"] = 0.01
+    try:
+        refinement_timeout = config.get("settings", "refine_timeout")
+        my_config["refinement_timeout"] = refinement_timeout
+    except configparser.NoOptionError:
+        my_config["refinement_timeout"] = 7200
+
+    # Metropolis-Hastings setting
+    try:
+        mh_iterations = config.get("settings", "iterations")
+        my_config["mh_iterations"] = mh_iterations
+    except configparser.NoOptionError:
+        my_config["mh_iterations"] = 50000
+
+    try:
+        mh_grid_size = config.get("settings", "mh_grid_size")
+        my_config["mh_grid_size"] = mh_grid_size
+    except configparser.NoOptionError:
+        my_config["mh_grid_size"] = 20
+
+    try:
+        burn_in = config.get("settings", "burn_in")
+        my_config["burn_in"] = burn_in
+    except configparser.NoOptionError:
+        my_config["burn_in"] = 0.25
+
+    try:
+        mh_timeout = config.get("settings", "mh_timeout")
+        my_config["mh_timeout"] = mh_timeout
+    except configparser.NoOptionError:
+        my_config["mh_timeout"] = 3600
+
+    # Meta setting
+    try:
+        save = config.get("settings", "autosave_figures").lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh']
+        my_config["save"] = save
+    except configparser.NoOptionError:
+        my_config["save"] = True
+
+    try:
+        silent = config.get("settings", "minimal_output").lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh']
+        my_config["silent"] = silent
+    except configparser.NoOptionError:
+        my_config["silent"] = False
+
+    try:
+        debug = config.get("settings", "extensive_output").lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh']
+        my_config["debug"] = debug
+    except configparser.NoOptionError:
+        my_config["debug"] = False
+
+    try:
+        show_mh_metadata = config.get("settings", "show_mh_metadata").lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh']
+        my_config["show_mh_metadata"] = show_mh_metadata
+    except configparser.NoOptionError:
+        my_config["show_mh_metadata"] = True
+
     os.chdir(current_directory)
 
-    return {"prism_path": prism_path, "models": model_dir, "properties": property_dir, "data": data_dir,
-            "results": results_dir, "prism_results": prism_results, "storm_results": storm_results,
-            "data_intervals": data_intervals_dir, "constraints_dir": constraints_dir,
-            "refinement_results": refinement_results, "figures": figures_dir,
-            "optimisation_results": optimisation_results_dir, "figures_dir": figures_dir,
-            "mh_results": mh_results_dir, "tmp": tmp_dir, "z3_path": z3_path, "refine_timeout": refine_timeout}
+    return my_config
