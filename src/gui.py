@@ -103,8 +103,7 @@ class ToolTip(object):
     def showtip(self, text):
         """ Display text in tooltip window """
 
-        self.text = text
-        if self.tipwindow or not self.text:
+        if self.tipwindow or not text:
             return
         x, y, cx, cy = self.widget.bbox("insert")
         x = x + self.widget.winfo_rootx() + 57
@@ -112,7 +111,7 @@ class ToolTip(object):
         self.tipwindow = tw = Toplevel(self.widget)
         tw.wm_overrideredirect(1)
         tw.wm_geometry("+%d+%d" % (x, y))
-        label = Label(tw, text=self.text, justify=LEFT,
+        label = Label(tw, text=text, justify=LEFT,
                       background="#ffffe0", relief=SOLID, borderwidth=1,
                       font=("tahoma", "8", "normal"))
         label.pack(ipadx=1)
@@ -612,8 +611,6 @@ class Gui(Tk):
         self.data_weights_text.bind("<Key>", lambda x: self.data_weights_text_modified.set(True) if x.char != "" else None)
         self.data_weights_text.pack(side=RIGHT, fill=BOTH, expand=True)
 
-
-
         ## SET THE INTERVAL COMPUTATION SETTINGS
         button41 = Button(frame_left, text='Optimize parameters', command=self.optimize)
         button41.grid(row=4, column=0, sticky=W, padx=4, pady=4)
@@ -753,25 +750,32 @@ class Gui(Tk):
         # self.eps_entry.grid(row=2, column=8)
         # self.eps_entry.insert(END, '0.0001')
 
-        label73 = Label(frame_left, text="Grid size: ", anchor=W, justify=LEFT)
-        label73.grid(row=2, column=7)
-        createToolTip(label73, text='Number of segments in the plot')
+        label72 = Label(frame_left, text="Grid size: ", anchor=W, justify=LEFT)
+        label72.grid(row=2, column=7)
+        createToolTip(label72, text='Number of segments in the plot')
         self.bins_entry = Entry(frame_left)
         self.bins_entry.grid(row=2, column=8)
         self.bins_entry.insert(END, '20')
 
-        label73 = Label(frame_left, text="Burn-in: ", anchor=W, justify=LEFT)
+        label73 = Label(frame_left, text="Jump size: ", anchor=W, justify=LEFT)
         label73.grid(row=3, column=7)
-        createToolTip(label73, text='Trim the fraction of accepted points from beginning')
+        createToolTip(label73, text='Standard variation of walker, the larger value the bigger steps are made')
+        self.sd_entry = Entry(frame_left)
+        self.sd_entry.grid(row=3, column=8)
+        self.sd_entry.insert(END, '0.15')
+
+        label74 = Label(frame_left, text="Burn-in: ", anchor=W, justify=LEFT)
+        label74.grid(row=4, column=7)
+        createToolTip(label74, text='Trim the fraction of accepted points from beginning')
         self.burn_in_entry = Entry(frame_left)
-        self.burn_in_entry.grid(row=3, column=8)
+        self.burn_in_entry.grid(row=4, column=8)
         self.burn_in_entry.insert(END, '0.25')
 
-        label73 = Label(frame_left, text="Timeout: ", anchor=W, justify=LEFT)
-        label73.grid(row=4, column=7)
-        createToolTip(label73, text='Timeout in seconds')
+        label75 = Label(frame_left, text="Timeout: ", anchor=W, justify=LEFT)
+        label75.grid(row=5, column=7)
+        createToolTip(label75, text='Timeout in seconds')
         self.mh_timeout_entry = Entry(frame_left)
-        self.mh_timeout_entry.grid(row=4, column=8)
+        self.mh_timeout_entry.grid(row=5, column=8)
         self.mh_timeout_entry.insert(END, '3600')
 
         constrained_optimize_button = Checkbutton(frame_left, text="Apply non-decreasing params", variable=self.non_decreasing_params)
@@ -1305,9 +1309,7 @@ class Gui(Tk):
     def unfold_functions(self):
         """" Unfolds the function dictionary into a single list """
 
-        from functools import partial
-
-
+        # from functools import partial
         if isinstance(self.functions, dict):
             ## TODO Maybe rewrite this as key and pass the argument to unfold_functions2
             ## NO because dunno how to send it to the function as a argument
@@ -2746,6 +2748,7 @@ class Gui(Tk):
         self.validate_parameters(where=self.functions, intervals=False)
 
         self.status_set("Choosing parameters value:")
+        assert isinstance(self.parameters, list)
         self.create_window_to_load_param_point(parameters=self.parameters)
 
         self.reinitialise_plot()
@@ -2759,7 +2762,6 @@ class Gui(Tk):
         #     self.page3_a = self.page3_figure.add_subplot(111)
         # print("self.parameter_values", self.parameter_values)
         assert isinstance(self.functions, list)
-        assert isinstance(self.parameters, list)
         assert isinstance(self.data, list)
         assert isinstance(self.data_intervals, list)
         spam, egg = eval_and_show(self.functions, self.parameter_point, parameters=self.parameters,
@@ -2835,7 +2837,8 @@ class Gui(Tk):
         self.reinitialise_plot(set_onclick=True)
 
         assert isinstance(self.parameters, list)
-        for parameter_point in get_param_values(self.parameters, int(self.fun_sample_size_entry.get()), intervals=self.parameter_domains, debug=self.debug):
+
+        for parameter_point in get_param_values(self.parameters, int(self.fun_sample_size_entry.get()), intervals=self.parameter_domains, debug=self.debug.get()):
             if self.page3_figure_in_use.get() != "2":
                 return
 
@@ -3099,11 +3102,12 @@ class Gui(Tk):
                   "constraints": (self.constraints_text_modified, self.constraints_file, "constraints", self.save_constraints, self.load_constraints),
                   }
         option = switch[what]
-        modified_flag = option[0].get()
-        file_path = option[1]
-        text = option[2]
-        save_function = option[3]
-        load_function = option[4]
+        ## LEGEND
+        # modified_flag = option[0].get()
+        # file_path = option[1]
+        # text = option[2]
+        # save_function = option[3]
+        # load_function = option[4]
 
         ## Old check:  len(self.model_text.get('1.0', END)) > 1 and
         ## If modified
@@ -3414,38 +3418,41 @@ class Gui(Tk):
         if self.data_weights:
             raise NotImplementedError("Weighted constraints are not Implemented yet")
 
-        print("Space Metropolis-Hastings ...")
-        self.status_set("Space Metropolis-Hastings - checking inputs")
+        print("Metropolis-Hastings ...")
+        self.status_set("Metropolis-Hastings - checking inputs")
 
         # if self.constraints:
         #     messagebox.showwarning("Metropolis Hastings", "Data and functions are being used to run Metropolis Hasting, make sure they are in accordance with computed constrains.")
 
         ## TODO transformation back to data and functions from constraints #Hard_task
         if self.functions == "":
-            messagebox.showwarning("Space Metropolis-Hastings", "Load functions before Metropolis-Hastings.")
+            messagebox.showwarning("Metropolis-Hastings", "Load functions before Metropolis-Hastings.")
             return
 
         if self.data == []:
-            messagebox.showwarning("Space Metropolis-Hastings", "Load data before Metropolis-Hastings.")
+            messagebox.showwarning("Metropolis-Hastings", "Load data before Metropolis-Hastings.")
             return
 
         if self.constraints_changed:
-            messagebox.showwarning("Space Metropolis-Hastings", "Constraints changed and may not correspond to the function which are about to be used.")
+            messagebox.showwarning("Metropolis-Hastings", "Constraints changed and may not correspond to the functions which are about to be used.")
 
         ## Check functions / Get function parameters
         self.validate_parameters(where=self.functions)
 
-        self.status_set("Space sampling using Metropolis Hastings is running ...")
+        self.status_set("Metropolis-Hastings is running ...")
         if not self.silent.get():
             print("functions", self.functions)
             print("function params", self.parameters)
             print("data", self.data)
 
-        if not self.validate_space("Space Metropolis-Hastings"):
-            return
+        # if not self.validate_space("Metropolis-Hastings"):
+        #     return
 
         assert isinstance(self.space, space.RefinedSpace)
-        self.create_window_to_load_param_point(parameters=self.space.params)
+        if self.parameters != self.space.params:
+            messagebox.showwarning("Metropolis-Hastings", "Space you have obtained does not correspond to functions which are about to be used.")
+        assert isinstance(self.parameters, list)
+        self.create_window_to_load_param_point(parameters=self.parameters)
 
         ## Create a warning
         # if int(self.n_samples_entry.get()) < int(self.observations_samples_size_entry.get()):
@@ -3473,13 +3480,13 @@ class Gui(Tk):
             self.update()
 
             ## This progress is passed as whole to update the thing inside the called function
-            assert isinstance(self.space, space.RefinedSpace)
             assert isinstance(self.data, list)
             assert isinstance(self.functions, list)
-            self.mh_results = initialise_sampling(self.space, self.data, self.functions, int(self.n_samples_entry.get()),
+            self.mh_results = initialise_sampling(self.parameters, self.parameter_domains, self.functions, self.data,
+                                                  int(self.n_samples_entry.get()),
                                                   int(self.MH_sampling_iterations_entry.get()),
-                                                  0,  #float(self.eps_entry.get()), ## setting eps=0
-                                                  theta_init=self.parameter_point,
+                                                  0,  # float(self.eps_entry.get()), ## setting eps=0,
+                                                  sd=float(self.sd_entry.get()), theta_init=self.parameter_point,
                                                   where=[self.page6_figure2, self.page6_b],
                                                   progress=self.update_progress_bar, debug=self.debug.get(),
                                                   bins=int(self.bins_entry.get()), burn_in=float(self.burn_in_entry.get()),
@@ -3728,6 +3735,7 @@ class Gui(Tk):
         """
         if keep_space:
             # Apply space values
+            assert isinstance(self.space, space.RefinedSpace)
             self.parameters = self.space.params
             self.parameter_domains = self.space.region
             force = True  # Force the values to be changed
@@ -4254,7 +4262,7 @@ class Gui(Tk):
 
         i = 1
         ## For each param create an entry
-        self.parameter_point = []
+        self.parameter_point_entries = []
         for index, param in enumerate(parameters):
             Label(self.new_window, text=param, anchor=W, justify=LEFT).grid(row=i, column=0)
             spam = Entry(self.new_window)
@@ -4267,7 +4275,7 @@ class Gui(Tk):
                     spam.insert(END, str((self.parameter_domains[index][0] + self.parameter_domains[index][1])/2))
             except IndexError:
                 pass
-            self.parameter_point.append(spam)
+            self.parameter_point_entries.append(spam)
             i = i + 1
 
         ## To be used to wait until the button is pressed
@@ -4304,9 +4312,12 @@ class Gui(Tk):
 
     def load_param_point_from_window(self):
         """ Inner function to parse the param values from created window """
-        assert isinstance(self.parameter_point, list)
-        for index, param in enumerate(self.parameter_point):
-            self.parameter_point[index] = float(self.parameter_point[index].get())
+        self.parameter_point = []
+        assert isinstance(self.parameter_point_entries, list)
+        assert all(list(map(lambda x: isinstance(x, Entry), self.parameter_point_entries)))
+
+        for item in self.parameter_point_entries:
+            self.parameter_point.append(float(item.get()))
         self.new_window.destroy()
         del self.new_window
         self.button_pressed.set(True)

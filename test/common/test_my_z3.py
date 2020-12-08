@@ -5,7 +5,7 @@ from src.common.my_z3 import *
 class MyTestCase(unittest.TestCase):
     def test_z3_eval(self):
         self.assertEqual(z3_eval("8+3"), 11)
-        ## TODO
+        ## TODO ad more tests
 
     def test_is_this_z3_function(self):
         self.assertEqual(is_this_z3_function("(1/10)**n"), False)
@@ -46,7 +46,6 @@ class MyTestCase(unittest.TestCase):
         r_0 = 0
         delta = 0
         print(eval(translate_z3_function(function)))
-        pass
 
     def test_translate_to_z3_function(self):
         ## TODO

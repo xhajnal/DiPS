@@ -377,7 +377,7 @@ class RefinedSpace:
                         cbar = plt.colorbar()
                 cbar.set_label('Sum of L1 distances to dissatisfy constraints.')
 
-            whole_title = "\n".join(self.wrapper.wrap(f"{pretitle} \n{self.title} \n {title}"))
+            whole_title = self.wrapper.wrap(f"{pretitle} \n{self.title} \n {title}")
             if not hide_title:
                 axes.set_title(whole_title)
 
@@ -422,7 +422,7 @@ class RefinedSpace:
                         ax.plot(x_axis, sample)
                     ax.set_xlabel("param indices")
                     ax.set_ylabel("parameter value")
-                    whole_title = "\n".join(self.wrapper.wrap(f"Sat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}. Last sampling took {socket.gethostname()} {round(self.time_last_sampling, 2)} of {round(self.time_sampling, 2)} sec. whole time. \n{self.title} \n {title}"))
+                    whole_title = self.wrapper.wrap(f"Sat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}. Last sampling took {socket.gethostname()} {round(self.time_last_sampling, 2)} of {round(self.time_sampling, 2)} sec. whole time. \n{self.title} \n {title}")
                     if not hide_title:
                         ax.set_title(whole_title)
                     ax.autoscale()
@@ -469,7 +469,7 @@ class RefinedSpace:
                         ax.plot(x_axis, sample)
                     ax.set_xlabel("param indices")
                     ax.set_ylabel("parameter value")
-                    whole_title = "\n".join(self.wrapper.wrap(f"Unsat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}. Last sampling took {socket.gethostname()} {round(self.time_last_sampling, 2)} of {round(self.time_sampling, 2)} sec. whole time. \n{self.title} \n{title}"))
+                    whole_title = self.wrapper.wrap(f"Unsat sample points of the given hyperspace: \nparam names: {self.params},\nparam types: {self.types}, \nboundaries: {self.region}. Last sampling took {socket.gethostname()} {round(self.time_last_sampling, 2)} of {round(self.time_sampling, 2)} sec. whole time. \n{self.title} \n{title}")
                     if not hide_title:
                         ax.set_title(whole_title)
                     ax.autoscale()
@@ -536,7 +536,7 @@ class RefinedSpace:
                     cbar.set_label('Sum of L1 distances to dissatisfy constraints.')
                     ax.set_xlabel("param indices")
                     ax.set_ylabel("parameter value")
-                    whole_title = "\n".join(self.wrapper.wrap(f"Quantitative samples, \n Sum of L1 distances to dissatisfy constraints. \n The greener the point is the further it is from the threshold \n where it stops to satisfy constraints. \n  Note that green point can be unsat and vice versa. \n{self.title} \n {title}"))
+                    whole_title = self.wrapper.wrap(f"Quantitative samples, \n Sum of L1 distances to dissatisfy constraints. \n The greener the point is the further it is from the threshold \n where it stops to satisfy constraints. \n  Note that green point can be unsat and vice versa. \n{self.title} \n {title}")
                     if not hide_title:
                         ax.set_title(whole_title)
                     ax.autoscale()

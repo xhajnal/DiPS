@@ -2,7 +2,7 @@ from math import sqrt
 
 import scipy
 import numpy as np
-from scipy.optimize import least_squares, NonlinearConstraint, LinearConstraint, Bounds
+from scipy.optimize import least_squares, LinearConstraint, Bounds
 
 ## Importing my code
 from termcolor import colored
