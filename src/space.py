@@ -985,7 +985,7 @@ class RefinedSpace:
         """
         from sample_space import sample_space
         self.gridsampled = True
-        sample(self, constraints, sample_size, compress=True, silent=silent, save=save, debug=debug, progress=progress, quantitative=quantitative)
+        sample_space(self, constraints, sample_size, compress=True, silent=silent, save=save, debug=debug, progress=progress, quantitative=quantitative)
 
     ## TODO DEPRECATED NOT USED NOW, plot.scatter used instead
     def show_samples(self, which):
