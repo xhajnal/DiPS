@@ -904,7 +904,7 @@ def manual_log_like_normal(params, theta, functions, data, sample_size, eps=0, p
 
 
 def metropolis_hastings(likelihood_computer, prior_rule, transition_model, acceptance_rule, params, parameter_intervals,
-                        param_init, functions, data, sample_size, iterations, eps, sd, progress=False, timeout=0,
+                        param_init, functions, data, sample_size, iterations, eps, sd=0.15, progress=False, timeout=0,
                         debug=False):
     """ The core method of the Metropolis Hasting
 

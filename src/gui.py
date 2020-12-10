@@ -2238,7 +2238,6 @@ class Gui(Tk):
             self.status_set("There are no functions to be saved.")
             return
 
-        ## TODO choose to save rewards or normal functions
         if file:
             save_functions_file = file
         else:
@@ -3435,9 +3434,10 @@ class Gui(Tk):
         # if not self.validate_space("Metropolis-Hastings"):
         #     return
 
-        assert isinstance(self.space, space.RefinedSpace)
-        if self.parameters != self.space.params:
-            messagebox.showwarning("Metropolis-Hastings", "Space you have obtained does not correspond to functions which are about to be used.")
+        if self.space:
+            assert isinstance(self.space, space.RefinedSpace)
+            if self.parameters != self.space.params:
+                messagebox.showwarning("Metropolis-Hastings", "Space you have obtained does not correspond to functions which are about to be used.")
         assert isinstance(self.parameters, list)
         self.create_window_to_load_param_point(parameters=self.parameters)
 

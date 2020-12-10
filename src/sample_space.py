@@ -18,8 +18,6 @@ refine_timeout = spam["refine_timeout"]
 z3_path = spam["z3_path"]
 del spam
 
-
-
 global glob_space
 global glob_debug
 global glob_compress
@@ -42,7 +40,16 @@ def check_sample(parameter_value):
             print(f"constraints[{constraint_index}]", constraint)
             print(f"eval(constraints[{constraint_index}])", eval(constraint))
 
-        is_sat = eval(constraint)
+        try:
+            is_sat = eval(constraint)
+        except Exception as err:
+            print(colored(f"An error occurred while evaluating parameter point {parameter_value} and constraint number {constraint_index +1}", "red"))
+            print(colored(f"   {err}", "red"))
+            print(colored("   skipping this point", "red"))
+            if glob_compress:
+                return None
+            else:
+                is_sat = None
         if glob_compress and not is_sat:
             ## Skip evaluating other point as one of the constraint is not sat
             # print(f"{parameter_value} unsat")
@@ -220,4 +227,7 @@ def sample_space(space, constraints, sample_size, compress=False, silent=True, s
             return dist_list
         else:
             return sat_list
+    else:
+        if quantitative:
+            return
 

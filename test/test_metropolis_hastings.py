@@ -1,6 +1,5 @@
 import unittest
 from termcolor import colored
-import src.metropolis_hastings
 from src.metropolis_hastings import *
 import os
 
@@ -44,25 +43,33 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(acceptance(8, 9))
 
     def test_manual_log_like_normal(self):
-        space = RefinedSpace((0, 1), ["x"])
-        self.assertEqual(round(manual_log_like_normal(space, [0], ["x+0.9"], [0.9], 10, 0, parallel=True, debug=True), 2), -3.25)
-        self.assertEqual(round(manual_log_like_normal(space, [0], ["x+0.8"], [0.8], 10, 0, parallel=True, debug=True), 2), - 5)
+        params = ["x"]
+        parameter_intervals = [(0, 1)]
+        functions = ["x+0.9"]
+        sample_size = 10
+        #                      manual_log_like_normal(params, theta, functions, data, sample_size, eps=0, parallel=False, debug=False)
+        self.assertEqual(round(manual_log_like_normal(params, [0], functions, [0.9], sample_size, eps=0, parallel=True, debug=True), 2), -3.25)
+        self.assertEqual(round(manual_log_like_normal(params, [0], functions, [0.8], sample_size, eps=0, parallel=True, debug=True), 2), - 5)
 
     def test_metropolis_hastings(self):
         warnings.warn("This test does not contain any assert as it is nondeterministic, please check the results manually", RuntimeWarning)
         # metropolis_hastings(likelihood_computer, prior_rule, transition_model, param_init, iterations, space, data, sample_size, acceptance_rule, parameter_intervals, functions, eps, progress=False, timeout=-1, debug=False, sort=False)
-        space = RefinedSpace((0, 1), ["x"])
-        parameter_intervals = space.get_region()
-        spam = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, [0.5], 50, space, [0.2], 10, acceptance, parameter_intervals, ["x"], 0, progress=False, timeout=0, debug=False)
+        params = ["x"]
+        parameter_intervals = [(0, 1)]
+        functions = ["x"]
+        data = [0.2]
+        #      metropolis_hastings(likelihood_computer, prior_rule, transition_model, acceptance_rule, params, parameter_intervals, param_init, functions, data, sample_size, iterations, eps, sd, progress=False, timeout=0, debug=False)
+        spam = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, acceptance, params, parameter_intervals, [0.5], functions, data, 10, 50, eps=0, progress=False, timeout=0, debug=False)
         print()
         print("accepted", spam[0])
         print("rejected", spam[1])
 
     def test_without_data_nor_observation(self):
         print(colored('Metropolis-Hastings without data - it is sampled', 'blue'))
-        src.metropolis_hastings.tmp_dir = tmp_dir
-        #                     (region, params, types=None, rectangles_sat=False, rectangles_unsat=False, rectangles_unknown=None, sat_samples=None, unsat_samples=None, dist_samples=False, true_point=False, title=False, prefer_unsafe=False):
-        space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"], types=["Real", "Real"], rectangles_sat=[[[0, 0.5], [0, 0.5]]], rectangles_unsat=[], true_point=[0.82, 0.92])
+        metropolis_hastings.tmp_dir = tmp_dir
+        params = ["x", "y"]
+        parameter_intervals = [(0, 1), (0, 1)]
+
         g = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         g[0] = '(x - 1)**10'
         g[1] = '10*x*(x - 1)**9*(y - 1)**9'
@@ -76,21 +83,16 @@ class MyTestCase(unittest.TestCase):
         g[9] = '10*x*(x - 1)*(y - 1)*(3*x**2*y**2 - 3*x**2*y + x**2 - 6*x*y**2 + 3*x*y + 3*y**2)*(3*x**6*y**6 - 9*x**6*y**5 + 18*x**6*y**4 - 21*x**6*y**3 + 15*x**6*y**2 - 6*x**6*y + x**6 - 18*x**5*y**6 + 45*x**5*y**5 - 72*x**5*y**4 + 63*x**5*y**3 - 30*x**5*y**2 + 6*x**5*y + 45*x**4*y**6 - 90*x**4*y**5 + 108*x**4*y**4 - 63*x**4*y**3 + 15*x**4*y**2 - 60*x**3*y**6 + 90*x**3*y**5 - 72*x**3*y**4 + 21*x**3*y**3 + 45*x**2*y**6 - 45*x**2*y**5 + 18*x**2*y**4 - 18*x*y**6 + 9*x*y**5 + 3*y**6)'
         g[10] = '-x*(2*x*y - x - 2*y)*(x**4*y**4 - 2*x**4*y**3 + 4*x**4*y**2 - 3*x**4*y + x**4 - 4*x**3*y**4 + 6*x**3*y**3 - 8*x**3*y**2 + 3*x**3*y + 6*x**2*y**4 - 6*x**2*y**3 + 4*x**2*y**2 - 4*x*y**4 + 2*x*y**3 + y**4)*(5*x**4*y**4 - 10*x**4*y**3 + 10*x**4*y**2 - 5*x**4*y + x**4 - 20*x**3*y**4 + 30*x**3*y**3 - 20*x**3*y**2 + 5*x**3*y + 30*x**2*y**4 - 30*x**2*y**3 + 10*x**2*y**2 - 20*x*y**4 + 10*x*y**3 + 5*y**4)'
 
-        # N = 5000  # total data
-        # N_obs = 100  # samples
-        # MH_samples = 50000
-        # eps = 0  # very small value used as probability of non-feasible values in prior
-
-        # initialise_sampling(space, [], g, 5000, 100, 50000, 0)
-        #                  (space, observations,      functions, observations_count, observations_samples_size,        mh_sampling_iterations: int, eps, theta_init=False, where=False, progress=False, burn_in=False, bins=20, timeout=False, debug=False, metadata=True, draw_plot=False)
-        initialise_sampling(space, data=[], functions=g, sample_size=100, mh_sampling_iterations=100, eps=0, debug=True)
+        #                  (params, parameter_intervals, functions,    data,  sample_size,      mh_sampling_iterations, eps=0, sd=0.15, theta_init=False, where=False, progress=False, burn_in=False, bins=20, timeout=False, debug=False, metadata=True, draw_plot=False)
+        initialise_sampling(params, parameter_intervals, functions=g, data=[], sample_size=100, mh_sampling_iterations=100, eps=0, debug=True)
 
     def test_without_data_nor_observation2(self):
         print(colored('Metropolis-Hastings without data - it is sampled', 'blue'))
-        src.metropolis_hastings.tmp_dir = tmp_dir
-        space = RefinedSpace([(0, 1), (0, 1)], ["p", "q"], ["Real", "Real"], [[[0, 0.5], [0, 0.5]]], [], true_point=[0.82, 0.92])
+        metropolis_hastings.tmp_dir = tmp_dir
+        params = ["x", "y"]
+        parameter_intervals = [(0, 1), (0, 1)]
         f = ["p**2-2*p+1", "2*q*p**2-2*p**2-2*q*p+2*p", "(-2)*q*p**2+p**2+2*q*p"]
-        initialise_sampling(space, data=[], functions=f, sample_size=100, mh_sampling_iterations=100, eps=0, debug=True)
+        initialise_sampling(params, parameter_intervals, data=[], functions=f, sample_size=100, mh_sampling_iterations=100, eps=0, debug=True)
 
     def test_given_observation(self):
         pass  ## current implementation allows only data
@@ -101,10 +103,12 @@ class MyTestCase(unittest.TestCase):
 
     def test_given_data(self):
         print(colored('Metropolis-Hastings with data', 'blue'))
-        src.metropolis_hastings.tmp_dir = tmp_dir
-        space = RefinedSpace([(0, 1), (0, 1)], ["p", "q"], ["Real", "Real"], [[[0, 0.5], [0, 0.5]]], [], true_point=[0.82, 0.92])
-        f = ["p**2-2*p+1", "2*q*p**2-2*p**2-2*q*p+2*p", "(-2)*q*p**2+p**2+2*q*p"]
-        initialise_sampling(space, data=[0.2, 0.5, 0.3], functions=f, sample_size=100, mh_sampling_iterations=100, eps=0, debug=True)
+        metropolis_hastings.tmp_dir = tmp_dir
+        params = ["p", "q"]
+        parameter_intervals = [(0, 1), (0, 1)]
+        functions = ["p**2-2*p+1", "2*q*p**2-2*p**2-2*q*p+2*p", "(-2)*q*p**2+p**2+2*q*p"]
+        data = [0.2, 0.5, 0.3]
+        initialise_sampling(params, parameter_intervals, data=data, functions=functions, sample_size=100, mh_sampling_iterations=100, eps=0, debug=True)
 
 
 if __name__ == '__main__':
