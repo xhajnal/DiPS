@@ -44,20 +44,10 @@ class MyTestCase(unittest.TestCase):
         print(colored('Test storm call with single file', 'blue'))
         agents_quantities = [2, 3]
         for population in agents_quantities:
-            call_storm("asynchronous_{}.pm prop_{}.pctl".format(population, population), model_path=model_dir, output_folder=storm_results, properties_path=properties_dir)
+            call_storm(os.path.join(model_dir, f"asynchronous_{population}.pm"), [],  os.path.join(properties_dir, f"prop_{population}.pctl"), os.path.join(storm_results, f"storm_no_time_{population}.txt"))
         print(colored('Test storm call with single file with timer', 'blue'))
         for population in agents_quantities:
-            call_storm("asynchronous_{}.pm prop_{}.pctl".format(population, population), model_path=model_dir, output_folder=storm_results, properties_path=properties_dir, time=True)
-
-    def test_storm_multiple_files(self):
-        print(colored('Test storm call multiple files', 'blue'))
-        agents_quantities = [2, 3]
-        call_storm_files("asyn*_", agents_quantities, model_path=os.path.join(cwd, "models"), properties_path=properties_dir, output_path=storm_results)
-
-    def test_storm_multiple_files_specified_props(self):
-        print(colored('Test storm call multiple files with specified files', 'blue'))
-        agents_quantities = [2, 3]
-        call_storm_files("asyn*_", agents_quantities, property_file="moments.pctl", model_path=os.path.join(cwd, "models"), properties_path=properties_dir, output_path=storm_results)
+            call_storm(os.path.join(model_dir, f"asynchronous_{population}.pm"), [],  os.path.join(properties_dir, f"prop_{population}.pctl"), os.path.join(storm_results, f"storm_with_time_{population}.txt"), time=True)
 
     def test_simulation(self):
         print(colored('Test prism call with single file', 'blue'))
