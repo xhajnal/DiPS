@@ -203,7 +203,7 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
             title = f"{title}\n Data intervals visualised as error bars."
         else:
             ax.bar(list(map(lambda x: x + width, range(1, len(data) + 1))), data, width, color='r', label="data")
-    ax.set_title(wraper.fill(title))
+    ax.set_title(wraper.wrap(title))
     # fig.legend()
     if debug:
         print("Len(fun_list): ", len(functions))
@@ -381,7 +381,7 @@ def sample_list_funs(functions, sample_size, parameters=False, intervals=False, 
 #             width = 0.2
 #             ax.set_ylabel('Value')
 #             ax.set_xlabel('Rational function indices')
-#             ax.set_title(wraper.fill(title))
+#             ax.set_title(wraper.wrap(title))
 #             # print(title)
 #             rects1 = ax.bar(range(len(dic_fun[index])), a[len(parameters) + 2:], width, color='b')
 #             plt.show()
@@ -426,9 +426,9 @@ def visualise_by_param(hyper_rectangles, colour='g', title="", where=False):
         ax.set_ylabel('Parameter values')
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         if title:
-            ax.set_title(wraper.fill(title))
+            ax.set_title(wraper.wrap(title))
         else:
-            ax.set_title(wraper.fill("Domain in which respective parameter belongs to in the given space"))
+            ax.set_title(wraper.wrap("Domain in which respective parameter belongs to in the given space"))
 
         ax.add_collection(lc)
         ax.autoscale()
@@ -520,13 +520,13 @@ def heatmap(function, region, sampling_sizes, posttitle="", where=False, paramet
         f, ax = plt.subplots()
         ax = sns.heatmap(heatmap_data, vmin=vmin, vmax=vmax, annot=verbose, square=sqaure)
         title = f"Heatmap \n{posttitle}"
-        ax.set_title(wraper.fill(title))
+        ax.set_title(wraper.wrap(title))
         ax.invert_yaxis()
         return f
     else:
         ax = sns.heatmap(heatmap_data, vmin=vmin, vmax=vmax, annot=verbose, square=sqaure)
         title = f"Heatmap of the parameter space \n function: {function}"
-        ax.set_title(wraper.fill(title))
+        ax.set_title(wraper.wrap(title))
         ax.invert_yaxis()
         plt.show()
 
