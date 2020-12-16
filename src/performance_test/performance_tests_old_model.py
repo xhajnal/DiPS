@@ -13,7 +13,7 @@ from common.mathematics import create_intervals
 
 
 cwd = os.getcwd()
-test = os.path.join(cwd, "../performance_test")
+test = os.path.join(cwd, "../../performance_test")
 
 ## LOAD DATA
 start_time = time.time()

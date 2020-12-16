@@ -1,7 +1,6 @@
 import unittest
 import warnings
-
-from src.generate_data import *
+from performance_test.generate_data import *
 import numpy
 
 
