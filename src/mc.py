@@ -446,160 +446,83 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
 
 
 ## TODO rewrite this without the paths, just files
-def call_storm(args, silent: bool = False, model_path=model_path, properties_path=properties_path,
-               output_folder=storm_results, storm_file_name="tmp.cmd", time=False):
+def call_storm(model_file, param_intervals, property_file, storm_output_file=False, time=False, silent=False):
     """  Prints calls for storm model checking.
 
     Args:
-        args (string): args for executing storm
-        silent (bool): if silent command line output is set to minimum
-        model_path (string): path to load  models from
-        properties_path (string): path to load properties from
-        output_folder (string): folder to save results
-        storm_file_name (string): file name to save the output
-        time (bool): if True time measurement is added
-    """
-
-    print(colored(f"arguments {args}", "blue"))
-
-    command_file_path = os.path.join(output_folder, storm_file_name)  ## Path to .cmd file
-    if ".cmd" in storm_file_name:
-        storm_file_path = os.path.join(output_folder, storm_file_name.replace(".cmd", ".txt"))  ## Path to .txt file
-    else:
-        storm_file_path = os.path.join(output_folder, f"{storm_file_name}.txt")  ## Path to .txt file
-
-    print(f"{command_file_path} {colored('found', 'blue')}")
-
-    storm_args = []
-    args = args.split(" ")
-
-    with open(command_file_path, "a+") as command_file_path:
-        # print(args)
-        for arg in args:
-            # print(arg)
-            # print(re.compile('\.[a-z]').search(arg))
-            if re.compile(r'\.pm').search(arg) is not None:
-                model_file_path = os.path.join(model_path, arg)
-                # print(model_file)
-                if not os.path.isfile(model_file_path):
-                    command_file_path.write(f"file {model_file_path} not found -- skipped \n")
-                    print(f"{colored('file', 'red')} {model_file_path} {colored('not found -- skipped', 'red')}")
-                    return 404
-                print(f"{model_file_path} {colored('found', 'blue')}")
-                storm_args.append(f"/DiPS/{os.path.relpath(model_file_path, os.path.join(model_path,'..'))}")
-            elif re.compile(r'\.pctl').search(arg) is not None:
-                property_file_path = os.path.join(properties_path, arg)
-                # print(property_file)
-                if not os.path.isfile(property_file_path):
-                    command_file_path.write(f"file {property_file_path} not found -- skipped \n")
-                    print(f"{colored('file', 'red')} {property_file_path} {colored('not found -- skipped', 'red')}")
-                    return 404
-                # storm_args.append(property_file_path)
-                storm_args.append("my_super_cool_string")
-            elif re.compile(r'\.txt').search(arg) is not None:
-                storm_file_path = os.path.join(properties_path, arg)
-                if not os.path.isabs(storm_file_path):
-                    storm_file_path = os.path.join(Path(storm_results), Path(storm_file_path))
-                command_file_path.write(f"storm_output_path {storm_file_path} \n")
-                print("storm_output_path", storm_file_path)
-            else:
-                storm_args.append(arg)
-
-        args = ["./storm-pars --prism "]
-        args.extend(storm_args)
-        if time:
-            args.append(")")
-        if storm_file_path != "":
-            args.append(">>")
-            print(colored(storm_file_path, "blue"))
-            args.append(f"/DiPS/{os.path.relpath(storm_file_path, os.path.join(model_path, '..'))}")
-            args.append("2>&1 \n")
-
-        if time:
-            spam = "(time "
-        else:
-            spam = ""
-        for arg in args:
-            spam = spam + " " + arg
-        if time:
-            spam = spam + " "
-
-        with open(property_file_path, "r") as file:
-            content = file.readlines()
-            for line in content:
-                # print(colored(line, "blue"))
-                line = line.replace('"', '\\"')
-
-                output = spam.replace("my_super_cool_string", f"--prop \"{line[:-1]}\"")
-                command_file_path.write(output)
-                print(output)
-
-    return True
-    # output = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8")
-    # write_to_file(std_output_path, output_file_path, output, silent, append=False)
-
-
-## TODO rewrite this without the paths, just files
-def call_storm_files(model_prefix, agents_quantities, param_intervals=False, model_path=model_path, properties_path=properties_path, property_file=False, command_output_file=False, output_path=storm_results, time=False):
-    """  Calls storm for each file matching the prefix
-
-    Args:
-        model_prefix: file prefix to be matched
-        agents_quantities (list of ints or False): pop_sizes to be used
-        model_path (string): path to load  models from
+        model_file (string or Path): model file path
         param_intervals (list of pairs): list of intervals to be used for respective parameter (default all intervals are from 0 to 1)
-        properties_path (string): path to load properties from
-        property_file (string): file name of single property files to be used for all models
-        command_output_file (string): file to write the command
-        output_path (string): path for the output
-        time (bool): if True time measurement is added
+        property_file (string or Path): property file path
+        storm_output_file (string or Path): output file path
+        time (bool): if True time measurement is added to file / print
+        silent (bool): if silent command line output is set to minimum
     """
-    ## print(colored(f"model prefixx {model_prefix}", "blue"))
-    ## print(colored(f"model pathhhhh {model_path}", "blue"))
+    ## Complete not absolute paths
+    if not os.path.isabs(Path(model_file)):
+        model_file = os.path.join(model_path, model_file)
+    if not os.path.isabs(Path(property_file)):
+        property_file = os.path.join(properties_path, property_file)
+    if storm_output_file is False:
+        storm_output_file = str(strftime('%d-%b-%Y-%H-%M-%S', localtime())+'.txt')
+    if not os.path.isabs(Path(storm_output_file)):
+        storm_output_file = os.path.join(storm_results, storm_output_file)
 
-    root = output_path
+    ## Check whether files exist
+    with open(storm_output_file, "a+") as storm_output_filee:
+        if not os.path.isfile(model_file):
+            storm_output_filee.write(f"model file {model_file} not found -- skipped \n")
+            print(f"{colored('model file', 'red')} {model_file} {colored('not found -- skipped', 'red')}")
+            return 404
+        if not os.path.isfile(property_file):
+            storm_output_filee.write(f"property file {property_file} not found -- skipped \n")
+            print(f"{colored('property file', 'red')} {property_file} {colored('not found -- skipped', 'red')}")
+            return 404
 
-    if not agents_quantities:
-        agents_quantities = [""]
+        storm_args = ["storm-pars", "--prism", f"{model_file}", "--prop", ""]
+        storm_args_extra_long = ["(time", "storm-pars", "--prism", f"{model_file}",  "--prop", "", ">>", f"{storm_output_file}", "2>&1"]
+        storm_args_long = ["time", "storm-pars", "--prism", f"{model_file}", "--prop", ""]
 
-    if command_output_file:
-        print(f"command file here: {command_output_file}")
-    else:
-        command_output_file = f"{os.path.join(output_path, str(strftime('%d-%b-%Y-%H-%M-%S', localtime())+'.cmd'))}"
-        print(f"command file here: {command_output_file}")
+        print(colored(property_file, "blue"))
+        with open(property_file) as property_file:
+            properties = [line.rstrip() for line in property_file]
 
-    with open(command_output_file, "w") as output_filee:
-        output_filee.write(f"cd {os.path.join(model_path, '..')} \n")
-        print(f"cd {os.path.join(model_path, '..')}")
+            try:
+                subprocess.run(["storm-pars", "--version"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8")
+            except Exception as err:
+                print("call: " + colored("storm-pars --version", "blue"))
+                print("resulted in an error: " + colored(err, "red"))
+                storm_args_long[1] = "./storm-pars"
+                print("You can try running following lines in Docker:")
+                print(f"cd {os.path.join(model_path, '..')}")
+                storm_output_filee.write(f"cd {os.path.join(model_path, '..')} \n")
+                print(f'sudo docker run --mount type=bind,source="$(pwd)",target=/DiPS -w /opt/storm/build/bin --rm -it --name storm movesrwth/storm:travis')
+                storm_output_filee.write(f'sudo docker run --mount type=bind,source="$(pwd)",target=/DiPS -w /opt/storm/build/bin --rm -it --name storm movesrwth/storm:travis \n')
+                for property in properties:
+                    if property == "":
+                        continue
+                    if time:
+                        storm_args_extra_long[5] = f'"{property}" )'
+                        storm_args = storm_args_extra_long
+                    else:
+                        storm_args[4] = f'"{property}"'
+                    storm_output_filee.write(" ".join(storm_args) + "\n")
+                    print(" ".join(storm_args))
+                print()
+                return False
 
-        # output_filee.write("sudo docker pull movesrwth/storm:travis \n")
-        # print("sudo docker pull movesrwth/storm:travis")
-        output_filee.write(f'sudo docker run --mount type=bind,source="$(pwd)",target=/DiPS -w /opt/storm/build/bin --rm -it --name storm movesrwth/storm:travis \n')
-        print(f'sudo docker run --mount type=bind,source="$(pwd)",target=/DiPS -w /opt/storm/build/bin --rm -it --name storm movesrwth/storm:travis')
+            for property in properties:
+                if property == "":
+                    continue
+                if time:
+                    storm_args_long[5] = f'{property}'
+                    storm_args = storm_args_long
+                else:
+                    storm_args[4] = f'{property}'
+                try:
 
-    # print("model_path", model_path)
-    # print("model_prefix", model_prefix)
-    for N in sorted(agents_quantities):
-        if "." in model_prefix:
-            files = glob.glob(os.path.join(model_path, model_prefix))
-        else:
-            files = glob.glob(os.path.join(model_path, model_prefix + str(N) + ".pm"))
-        # print("files", files)
-        if not files:
-            with open(command_output_file, "w") as output_filee:
-                output_filee.write("No model files for N="+str(N)+" found")
-                print(colored("No model files for N="+str(N)+" found", "red"))
-            continue
-        for file in files:
-            file = Path(file)
-            # print("{} {}".format(file, property_file))
-            # call_storm("{} {}".format(file, property_file), model_path=model_path, properties_path=properties_path, std_output_path=output_path, std_output_file="{}_{}.txt".format(str(file.stem).split(".")[0], property_file.split(".")[0]), time=time)
-
-            if property_file:
-                # print("property_file", property_file)
-                # print("file", file)
-                # print("file stem", file.resolve().stem)
-                # print("{}_{}.txt".format(str(file.stem).split(".")[0], property_file.split(".")[0]))
-                call_storm("{} {}".format(file, property_file), model_path=model_path, properties_path=properties_path, output_folder=output_path, storm_file_name=command_output_file)
-            else:
-                call_storm("{} prop_{}.pctl".format(file, N), model_path=model_path, properties_path=properties_path, output_folder=output_path, storm_file_name=command_output_file)
+                    output = subprocess.run(storm_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8")
+                    storm_output_filee.write(output + "\n")
+                    print(colored(output, "yellow"))
+                except Exception as err:
+                    raise err
+    return True

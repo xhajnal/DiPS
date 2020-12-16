@@ -83,7 +83,7 @@ try:
     from common.mathematics import create_intervals
     import space
     from refine_space import check_deeper
-    from mc import call_prism_files, call_storm_files
+    from mc import call_prism_files, call_storm
     from sample_n_visualise import sample_list_funs, eval_and_show, get_param_values, heatmap, bar_err_plot
     from optimize import optimize
     from optimize_case_study import optimize_case_study
@@ -2648,11 +2648,16 @@ class Gui(Tk):
                     self.functions_file.set(str(os.path.join(Path(self.storm_results),
                                                              str(Path(self.model_file.get()).stem) + "_" + str(
                                                                  Path(self.property_file.get()).stem) + ".cmd")))
-                    call_storm_files(os.path.relpath(self.model_file.get(), self.model_dir), [],
-                                     param_intervals=self.parameter_domains, model_path=self.model_dir,
-                                     properties_path=self.property_dir, property_file=self.property_file.get(),
-                                     command_output_file=self.functions_file.get(), output_path=self.storm_results,
-                                     time=False)
+                    # (model_prefix, model_path=model_path, param_intervals=False, properties_path=properties_path,
+                    #                      property_file=False, command_output_file=False, output_path=storm_results, time=False, silent=False)
+                    # call_storm_files(os.path.relpath(self.model_file.get(), self.model_dir),
+                    #            param_intervals=self.parameter_domains, model_file=self.model_dir,
+                    #            property_file=self.property_file.get(), command_output_file=self.functions_file.get(),
+                    #            output_path=self.storm_results, time=False, silent=self.silent.get())
+
+                    call_storm(model_file=self.model_file.get(), param_intervals=self.parameter_domains,
+                               property_file=self.property_file.get(), storm_output_file=self.functions_file.get(),
+                               time=True, silent=self.silent.get())
 
                     self.status_set("Command to run the parameter synthesis saved here: {}", self.functions_file.get())
                     self.load_mc_output_file(self.functions_file.get(), reset_param_and_intervals=False)
