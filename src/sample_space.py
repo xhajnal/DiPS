@@ -114,7 +114,6 @@ def sample_space(space, constraints, sample_size, compress=False, silent=True, s
 
     """
     start_time = time()
-    global glob_sort
     global glob_space
     global glob_debug
     global glob_compress
@@ -172,6 +171,7 @@ def sample_space(space, constraints, sample_size, compress=False, silent=True, s
 
     ## ACTUAL SAMPLING
     if parallel and not quantitative:
+        ## Parallel sampling
         with multiprocessing.Pool(pool_size) as p:
             sat_list = list(p.map(check_sample, parameter_values))
             ## TODO check how to alter progress when using Pool
@@ -196,6 +196,7 @@ def sample_space(space, constraints, sample_size, compress=False, silent=True, s
                     pass
 
     elif parallel and quantitative:
+        ## Parallel quantitative sampling
         with multiprocessing.Pool(pool_size) as p:
             dist_list = list(p.map(sample_sat_degree, parameter_values))
 
@@ -203,12 +204,14 @@ def sample_space(space, constraints, sample_size, compress=False, silent=True, s
             space.add_degree_samples({tuple(item): dist_list[index]})
 
     elif not quantitative:
+        ## Sequential sampling
         for index, item in enumerate(parameter_values):
             check_sample(item)
             if progress:
                 progress(index / len(parameter_values))
         space = glob_space
     else:
+        ## Sequential quantitative sampling
         for index, item in enumerate(parameter_values):
             space.add_degree_samples({tuple(item): sample_sat_degree(item)})
 
@@ -229,5 +232,7 @@ def sample_space(space, constraints, sample_size, compress=False, silent=True, s
             return sat_list
     else:
         if quantitative:
-            return
+            return True
+        else:
+            return True
 

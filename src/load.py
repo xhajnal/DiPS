@@ -460,7 +460,7 @@ def load_all_data(path):
 
 
 def parse_params_from_model(file, silent: bool = False):
-    """ Parses the parameters from a given prism file
+    """ Parses the constants and parameters from a given prism file
 
     Args:
         file: ((path/string)) a prism model file to be parsed
@@ -472,21 +472,21 @@ def parse_params_from_model(file, silent: bool = False):
     with open(file, 'r') as input_file:
         for line in input_file:
             if line.startswith("const"):
-                print(line[-1])
+                # print(line[-1])
                 line = line.split(";")[0]
-                print(line)
+                # print(line)
                 if "=" in line:
-                    print()
+                    # print()
                     continue
                 if "bool" in line or "int" in line:  ## parsing constants
                     line = line.split(" ")[-1]
-                    print(f"const {line}")
+                    # print(f"const {line}")
                     consts.append(line)
                 else:
                     line = line.split(" ")[-1]
-                    print(f"param {line}")
+                    # print(f"param {line}")
                     params.append(line)
-                print()
+                # print()
     if not silent:
         print("params", params)
         print("consts", consts)

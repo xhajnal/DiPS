@@ -6,7 +6,7 @@ from time import time
 from socket import gethostname
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import gridspec
+from matplotlib import gridspec, rcParams
 from matplotlib.ticker import MaxNLocator
 from matplotlib.figure import Figure
 from bokeh.plotting import gridplot, output_file, show

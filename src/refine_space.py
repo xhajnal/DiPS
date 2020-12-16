@@ -12,7 +12,7 @@ from mpmath import mpi
 from matplotlib.patches import Rectangle
 
 ## Importing my code
-from common.my_z3 import parse_model_values
+from common.solver_parser import pass_models_to_sons
 from load import find_param
 from sample_space import sample_space as sample
 from space import RefinedSpace
@@ -549,37 +549,19 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         # funcs, intervals = constraints_to_ineq(constraints)
 
         ## If there are some samples already
-        samples = space.get_sat_samples() + space.get_unsat_samples()
+        sat_points = space.get_sat_samples()
+        unsat_points = space.get_unsat_samples()
+        samples = sat_points + unsat_points
+        current_sample_size = 0
         if samples:
+            current_sample_size = int(len(samples) ** (1 / len(region)))
+
+        if current_sample_size < sample_size:
+            ## Else run sampling
+            sample(space, constraints, sample_size, compress=True, silent=not debug, save=save)
             sat_points = space.get_sat_samples()
             unsat_points = space.get_unsat_samples()
-            sample_size = int(len(samples) ** (1 / len(region)))
-        else:
-            to_be_searched = sample(space, constraints, sample_size, compress=True, silent=not debug, save=save)
 
-            if debug:
-                print("Sampled space type (should be array): ", type(to_be_searched))
-                print("Sampled space as array: ", to_be_searched)
-
-            ## CONVERT SAMPLED SPACE TO LIST
-            print(to_be_searched)
-            while not isinstance(to_be_searched[0][1], type(True)):
-                to_be_searched = list(itertools.chain.from_iterable(to_be_searched))
-
-            if debug:
-                print("Sampled space type (should be list): ", type(to_be_searched))
-                print("Unfolded sampled space: ", to_be_searched)
-                print("An element from sampled space:", to_be_searched[0])
-
-            ## PARSE SAT and UNSAT POINTS
-            sat_points = []
-            unsat_points = []
-            for point in to_be_searched:
-                ## If the point is True
-                if point[1] is True:
-                    sat_points.append(point[0])
-                else:
-                    unsat_points.append(point[0])
         if debug:
             print("Satisfying points: ", sat_points)
             print("Unsatisfying points: ", unsat_points)
@@ -1027,7 +1009,7 @@ def private_check_deeper(region, constraints, recursion_depth, epsilon, coverage
         space.remove_white(region)
         return result
 
-    ## Find max interval and split
+    ## Find index of maximum dimension to be split
     index, maximum = 0, 0
     for i in range(len(region)):
         value = region[i][1] - region[i][0]
@@ -1036,14 +1018,18 @@ def private_check_deeper(region, constraints, recursion_depth, epsilon, coverage
             maximum = value
     low = region[index][0]
     high = region[index][1]
+
+    ## Compute the half of region
+    threshold = low + (high - low) / 2
+
+    ##  Update space
     foo = copy.deepcopy(region)
-    foo[index] = (low, low + (high - low) / 2)
+    foo[index] = (low, threshold)
     foo2 = copy.deepcopy(region)
-    foo2[index] = (low + (high - low) / 2, high)
+    foo2[index] = (threshold, high)
     space.remove_white(region)
-    space.add_white(foo)  ## Add this region as white
-    space.add_white(foo2)  ## Add this region as white
-    # print("white area",globals()["hyper_rectangles_white"])
+    space.add_white(foo)
+    space.add_white(foo2)
 
     ## Halt if max recursion reached
     if recursion_depth == 0:
@@ -1170,7 +1156,7 @@ def private_check_deeper_queue(region, constraints, recursion_depth, epsilon, co
     if result == "safe" or result == "unsafe":
         return
 
-    ## Find maximum interval and split
+    ## Find index of maximum dimension to be split
     index, maximum = 0, 0
     for i in range(len(region)):
         value = region[i][1] - region[i][0]
@@ -1179,10 +1165,15 @@ def private_check_deeper_queue(region, constraints, recursion_depth, epsilon, co
             maximum = value
     low = region[index][0]
     high = region[index][1]
+
+    ## Compute the half of region
+    threshold = low + (high - low) / 2
+
+    ##  Update space
     foo = copy.deepcopy(region)
-    foo[index] = (low, low + (high - low) / 2)
+    foo[index] = (low, threshold)
     foo2 = copy.deepcopy(region)
-    foo2[index] = (low + (high - low) / 2, high)
+    foo2[index] = (threshold, high)
     space.remove_white(region)
     space.add_white(foo)
     space.add_white(foo2)
@@ -1302,13 +1293,7 @@ def private_check_deeper_queue_checking(region, constraints, recursion_depth, ep
             print("depth, hyper-rectangle, current_coverage, result")
             print(recursion_depth, region, colored(f"{space.get_coverage()}, {example}, is unknown", "grey"))
 
-    ## Parse example
-    example_points = parse_model_values(str(example), solver)
-
-    # example_points = re.findall(r'[0-9./]+', str(example))
-    # print(example_points)
-
-    ## Find maximum dimension and split
+    ## Find index of maximum dimension to be split
     index, maximum = 0, 0
     for i in range(len(region)):
         value = region[i][1] - region[i][0]
@@ -1317,10 +1302,15 @@ def private_check_deeper_queue_checking(region, constraints, recursion_depth, ep
             maximum = value
     low = region[index][0]
     high = region[index][1]
+
+    ## Compute the half of region
+    threshold = low + (high - low) / 2
+
+    ##  Update space
     foo = copy.deepcopy(region)
-    foo[index] = (low, low + (high - low) / 2)
+    foo[index] = (low, threshold)
     foo2 = copy.deepcopy(region)
-    foo2[index] = (low + (high - low) / 2, high)
+    foo2[index] = (threshold, high)
     space.remove_white(region)
     space.add_white(foo)
     space.add_white(foo2)
@@ -1329,25 +1319,12 @@ def private_check_deeper_queue_checking(region, constraints, recursion_depth, ep
     if recursion_depth == 0:
         return
 
-    ## Initialisation of example and counterexample
-    model_low = [9, 9]
-    model_high = [9, 9]
-
-    ## Assign example and counterexample to children
-    if example is False:
-        model_low[0] = None
-        model_high[0] = None
-    else:
-        if example_points[index] > low + (high - low) / 2:  ## skipped converting example point to float
-            model_low[0] = None
-            model_high[0] = example
-        else:
-            model_low[0] = example
-            model_high[0] = None
-        ## Overwrite if equal
-        if example_points[index] == low + (high - low) / 2:  ## skipped converting example point to float
-            model_low[0] = None
-            model_high[0] = None
+    ## Compute passing example and counterexample to sons
+    model_low, model_high = pass_models_to_sons(example, False, index, threshold, solver)
+    assert isinstance(model_low, list)
+    assert len(model_low) == 2
+    assert isinstance(model_high, list)
+    assert len(model_high) == 2
 
     ## Check if the queue created (if alg1 used before it wont)
     try:
@@ -1475,13 +1452,7 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
             print(recursion_depth, region,
                   colored(f"{space.get_coverage()} {(example, counterexample)} is unknown", "grey"))
 
-    ## Parse example
-    example_points = parse_model_values(str(example), solver)
-
-    ## Parse counterexample
-    counterexample_points = parse_model_values(str(counterexample), solver)
-
-    ## Find maximum dimension and split
+    ## Find index of maximum dimension to be split
     index, maximum = 0, 0
     for i in range(len(region)):
         value = region[i][1] - region[i][0]
@@ -1490,10 +1461,15 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
             maximum = value
     low = region[index][0]
     high = region[index][1]
+
+    ## Compute the half of region
+    threshold = low + (high - low) / 2
+
+    ##  Update space
     foo = copy.deepcopy(region)
-    foo[index] = (low, low + (high - low) / 2)
+    foo[index] = (low, threshold)
     foo2 = copy.deepcopy(region)
-    foo2[index] = (low + (high - low) / 2, high)
+    foo2[index] = (threshold, high)
     space.remove_white(region)
     space.add_white(foo)
     space.add_white(foo2)
@@ -1508,41 +1484,12 @@ def private_check_deeper_queue_checking_both(region, constraints, recursion_dept
             print(f"timeout reached here with coverage: {space.get_coverage()}")
         return f"timeout reached here with coverage: {space.get_coverage()}"
 
-        ## Initialisation of example and counterexample
-    model_low = [9, 9]
-    model_high = [9, 9]
-
-    ## Assign example and counterexample to children
-    if example is False:
-        model_low[0] = None
-        model_high[0] = None
-    else:
-        if example_points[index] > low + (high - low) / 2:  ## skipped converting example point to float
-            model_low[0] = None
-            model_high[0] = example
-        else:
-            model_low[0] = example
-            model_high[0] = None
-        ## Overwrite if equal
-        if example_points[index] == low + (high - low) / 2:  ## skipped converting example point to float
-            model_low[0] = None
-            model_high[0] = None
-
-    if counterexample is False:
-        model_low[1] = None
-        model_high[1] = None
-    else:
-        if counterexample_points[index] > low + (high - low) / 2:  ## skipped converting example point to float
-            model_low[1] = None
-            model_high[1] = counterexample
-        else:
-            model_low[1] = counterexample
-            model_high[1] = None
-
-        ## Overwrite if equal
-        if counterexample_points[index] == low + (high - low) / 2:  ## skipped converting example point to float
-            model_low[1] = None
-            model_high[1] = None
+    ## Compute passing example and counterexample to sons
+    model_low, model_high = pass_models_to_sons(example, counterexample, index, threshold, solver)
+    assert isinstance(model_low, list)
+    assert len(model_low) == 2
+    assert isinstance(model_high, list)
+    assert len(model_high) == 2
 
     ## Check if the que created (if alg1 used before it is not)
     try:
@@ -1917,7 +1864,7 @@ def private_check_deeper_interval(region, constraints, intervals, recursion_dept
     if result == "safe" or result == "unsafe":
         return
 
-    ## Find maximum interval and split
+    ## Find index of maximum dimension to be split
     index, maximum = 0, 0
     for i in range(len(region)):
         value = region[i][1] - region[i][0]
@@ -1926,10 +1873,15 @@ def private_check_deeper_interval(region, constraints, intervals, recursion_dept
             maximum = value
     low = region[index][0]
     high = region[index][1]
+
+    ## Compute the half of region
+    threshold = low + (high - low) / 2
+
+    ##  Update space
     foo = copy.deepcopy(region)
-    foo[index] = (low, low + (high - low) / 2)
+    foo[index] = (low, threshold)
     foo2 = copy.deepcopy(region)
-    foo2[index] = (low + (high - low) / 2, high)
+    foo2[index] = (threshold, high)
     space.remove_white(region)
     space.add_white(foo)
     space.add_white(foo2)

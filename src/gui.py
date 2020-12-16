@@ -4429,13 +4429,13 @@ if __name__ == '__main__':
         sys.exit(f"Python {info[0]} is not supported.")
 
     if info[1] == 8:
-        sys.exit(f"Python 3.8 may cause a visualisation problems, we are sorry. Please use 3.7.*")
+        sys.exit(f"Python 3.8 may cause a visualisation problems, we are sorry. Please use Python 3.7.*")
 
     if info[1] == 9:
-        sys.exit(f"Python 3.9 was not tested and may cause errors. Please use 3.7.*")
+        sys.exit(f"Python 3.9 was not tested and may cause errors. Please use Python 3.7.*")
 
     if info[1] != 7:
-        sys.exit(f"Please python use 3.7.*")
+        sys.exit(f"Please python use Python 3.7.*")
 
     gui = Gui()
     ## System dependent fullscreen setting
