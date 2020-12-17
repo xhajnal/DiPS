@@ -7,7 +7,7 @@ from pathlib import Path
 from time import time
 
 from termcolor import colored
-from sympy import factor
+from sympy import factor, Interval
 
 ## Importing my code
 from common.config import load_config
@@ -245,7 +245,7 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
                 if line.startswith('Parametric model checking: R'):
                     here = "r"
                 if i >= 0 and line.startswith('Result'):
-                    ## PARSE THE EXPRESSION
+                    ## PARSE THE EXPRESSIONload_pickled_data
                     # print("line:", line)
                     if tool.lower().startswith("p"):
                         line = line.split(":")[2]
@@ -669,7 +669,7 @@ def parse_weights(file, silent=True, debug=False):
     """ Loads weights from text file, returns as list of strings "weights"
 
     Args:
-        file (string/Path): file path to parse functions
+        file (string/Path): file path to parse weights
         silent (bool): if silent printed output is set to minimum
         debug (bool): if debug extensive print will be used
 
@@ -677,6 +677,42 @@ def parse_weights(file, silent=True, debug=False):
     (list of string) weights
     """
     return list(map(lambda x: float(x), parse_constraints(file, silent, debug)))
+
+
+def parse_data_intervals(file, silent=True, debug=False):
+    """ Loads data intervals from text file, returns as list of Intervals
+
+    Args:
+        file (string/Path): file path to parse intervals
+        silent (bool): if silent printed output is set to minimum
+        debug (bool): if debug extensive print will be used
+
+    Returns:
+    (list of Interval) intervals
+    """
+    ## TODO THIS IS MAYBE MORE GENERAL LOAD FUNCTION
+    with open(file) as f:
+        lines = f.readlines()
+
+    ## get rid of the last ","
+    lines = list(map(lambda x: re.sub(r', *\n', '', x), lines))
+
+    ## single line csv or [item, item, item]
+    if len(lines) == 1:
+        ## Get the first line
+        lines = lines[0]
+        ## IF saved as a list
+        if lines[0] == "[":
+            ## Get rid of the []
+            lines = lines[1:-1]
+        if "(" in lines:
+            lines = re.sub(r'\)\s*,\s*(I\()', r');\1', lines)
+            lines = lines.split(";")
+        else:
+            lines = lines.split(",")
+
+    lines = list(map(lambda x: eval(x), lines))
+    return lines
 
 
 

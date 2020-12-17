@@ -961,7 +961,7 @@ def create_multiparam_semisynchronous_model(file, population_size):
                     file.write(f" & a{j} = 0")
 
                 file.write(f" -> ")
-                file.write(f"q" + str(o) + ": (a0' = 1)")
+                file.write(f"q{o:0{decimals}d}: (a0' = 1)")
                 for j in range(1, o + 1):
                     file.write(f" & (a{j}' = 1)")
                 for j in range(o + 1, o + t):
@@ -970,7 +970,7 @@ def create_multiparam_semisynchronous_model(file, population_size):
                     file.write(f" & (a{j}' = 0)")
 
                 file.write(f" + ")
-                file.write(f"1-q" + str(o) + ": (a0' = 1)")
+                file.write(f"1-q{o:0{decimals}d}: (a0' = 1)")
                 for j in range(1, o):
                     file.write(f" & (a{j}' = 1)")
                 for j in range(o, o + t - 1):

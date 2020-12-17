@@ -35,7 +35,7 @@ def pickle_load(file):
         with open(file, "rb") as f:
             return pickle.load(f)
     elif file_extension == "":
-        with open(os.path.join(file, ".p"), "rb") as f:
+        with open(str(file) + ".p", "rb") as f:
             return pickle.load(f)
     else:
         raise Exception("File extension does not match", f"{file} does not seem to be pickle file!")

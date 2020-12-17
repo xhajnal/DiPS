@@ -79,7 +79,7 @@ except Exception as error:
 
 try:
     from mc_informed import general_create_data_informed_properties
-    from load import load_functions, find_param, load_data, find_param_old, parse_constraints, parse_functions, parse_params_from_model, parse_weights
+    from load import load_functions, find_param, load_data, find_param_old, parse_constraints, parse_functions, parse_params_from_model, parse_weights, parse_data_intervals
     from common.mathematics import create_intervals
     import space
     from refine_space import check_deeper
@@ -254,7 +254,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.18"  ## Version of the gui
+        self.version = "1.19.1"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -1396,9 +1396,13 @@ class Gui(Tk):
                 messagebox.showwarning("Load functions", "Select a program for which you want to load data.")
                 return
 
+            if self.save_as_plain_text.get():
+                filetypes = (("text files", "*.txt"), ("pickle files", "*.p"), ("all files", "*.*"))
+            else:
+                filetypes = (("pickle files", "*.p"), ("text files", "*.txt"), ("all files", "*.*"))
             spam = filedialog.askopenfilename(initialdir=initial_dir,
                                               title="Functions saving - Select file",
-                                              filetypes=(("pickle files / text files", "*.p *.txt"), ("all files", "*.*")))
+                                              filetypes=filetypes)
 
         ## If no file selected
         if spam == "":
@@ -1507,8 +1511,12 @@ class Gui(Tk):
 
             self.status_set("Please select the data to be loaded.")
 
+            if self.save_as_plain_text.get():
+                filetypes = (("text files", "*.txt"), ("pickled files/comma separated values", "*.p *.csv"), ("all files", "*.*"))
+            else:
+                filetypes = (("pickled files/comma separated values", "*.p *.csv"), ("text files", "*.txt"), ("all files", "*.*"))
             spam = filedialog.askopenfilename(initialdir=self.data_dir, title="Data loading - Select file",
-                                              filetypes=(("pickled files/comma separated values", "*.p *.csv"), ("all files", "*.*")))
+                                              filetypes=filetypes)
         ## If no file selected
         if spam == "":
             self.status_set("No file selected.")
@@ -1521,6 +1529,8 @@ class Gui(Tk):
             if ".p" in self.data_file.get():
                 self.data = pickle_load(self.data_file.get())
                 self.unfold_data()
+            elif ".txt" in self.data_file.get():
+                self.data = parse_weights(self.data_file.get())
             else:
                 self.data = load_data(self.data_file.get(), silent=self.silent.get(), debug=not self.silent.get())
                 if not self.data:
@@ -1623,8 +1633,12 @@ class Gui(Tk):
                     return
 
             self.status_set("Please select the data weights to be loaded.")
+            if self.save_as_plain_text.get():
+                filetypes = (("text files", "*.txt"), ("pickle files", "*.p"), ("all files", "*.*"))
+            else:
+                filetypes = (("pickle files", "*.p"), ("text files", "*.txt"), ("all files", "*.*"))
             spam = filedialog.askopenfilename(initialdir=self.data_weights_dir, title="Data weights loading - Select file",
-                                              filetypes=(("pickled or text files", "*.p .txt"), ("all files", "*.*")))
+                                              filetypes=filetypes)
 
         ## If no file selected
         if spam == "":
@@ -1679,8 +1693,12 @@ class Gui(Tk):
                     return
 
             self.status_set("Please select the data intervals to be loaded.")
+            if self.save_as_plain_text.get():
+                filetypes = (("text files", "*.txt"), ("pickle files", "*.p"), ("all files", "*.*"))
+            else:
+                filetypes = (("pickle files", "*.p"), ("text files", "*.txt"), ("all files", "*.*"))
             spam = filedialog.askopenfilename(initialdir=self.data_intervals_dir, title="Data intervals loading - Select file",
-                                              filetypes=(("pickled files", "*.p"), ("all files", "*.*")))
+                                              filetypes=filetypes)
 
         ## If no file selected
         if spam == "":
@@ -1690,7 +1708,10 @@ class Gui(Tk):
             self.data_intervals_changed = True
             self.data_intervals_file.set(spam)
 
-            self.data_intervals = pickle_load(self.data_intervals_file.get())
+            if ".txt" in self.data_intervals_file.get():
+                self.data_intervals = parse_data_intervals(self.data_intervals_file.get())
+            else:
+                self.data_intervals = pickle_load(self.data_intervals_file.get())
 
             intervals = ""
             if not self.silent.get():
@@ -1756,8 +1777,12 @@ class Gui(Tk):
                 if not askyesno("Loading constraints", "Previously obtained constraints will be lost. Do you want to proceed?"):
                     return
             self.status_set("Please select the constraints to be loaded.")
+            if self.save_as_plain_text.get():
+                filetypes = (("text files", "*.txt"), ("pickle files", "*.p"), ("all files", "*.*"))
+            else:
+                filetypes = (("pickle files", "*.p"), ("text files", "*.txt"), ("all files", "*.*"))
             spam = filedialog.askopenfilename(initialdir=self.constraints_dir, title="constraints loading - Select file",
-                                              filetypes=(("pickled/text files", "*.p *.txt"), ("all files", "*.*")))
+                                              filetypes=filetypes)
 
         if self.debug.get():
             print("old constraints", self.constraints)
@@ -2080,7 +2105,7 @@ class Gui(Tk):
     def save_file(self, content, file_name):
         if "." not in basename(file_name):
             if self.save_as_plain_text.get():
-                file_name = file_name + ".p"
+                file_name = file_name + ".txt"
                 with open(file_name, "w") as file:
                     file.write(str(content))
             else:
@@ -2311,16 +2336,23 @@ class Gui(Tk):
                 messagebox.showwarning("Save parsed functions",
                                        "Select a program for which you want to save functions.")
                 return
+            if self.save_as_plain_text.get():
+                filetypes = (("text files", "*.txt"), ("pickle files", "*.p"), ("all files", "*.*"))
+            else:
+                filetypes = (("pickle files", "*.p"), ("text files", "*.txt"), ("all files", "*.*"))
 
             save_functions_file = filedialog.asksaveasfilename(initialdir=initial_dir,
                                                                title="Functions saving - Select file",
-                                                               filetypes=(("pickle files", "*.p"), ("text files", "*.txt"), ("all files", "*.*")))
+                                                               filetypes=filetypes)
             if save_functions_file == "":
                 self.status_set("No file selected to store the parsed functions.")
                 return
 
         if "." not in basename(save_functions_file):
-            save_functions_file = save_functions_file + ".p"
+            if self.save_as_plain_text.get():
+                save_functions_file = save_functions_file + ".txt"
+            else:
+                save_functions_file = save_functions_file + ".p"
 
         if not self.silent.get() and not file:
             print("Saving parsed functions as a file:", save_functions_file)
@@ -2350,14 +2382,22 @@ class Gui(Tk):
                 return
 
             self.status_set("Please select folder to store the data in.")
+
+            if self.save_as_plain_text.get():
+                filetypes = (("text files", "*.txt"), ("pickle files", "*.p"), ("all files", "*.*"))
+            else:
+                filetypes = (("pickle files", "*.p"), ("text files", "*.txt"), ("all files", "*.*"))
             save_data_file = filedialog.asksaveasfilename(initialdir=self.data_dir, title="Data saving - Select file",
-                                                          filetypes=(("pickle files", "*.p"), ("text files", "*.txt"), ("all files", "*.*")))
+                                                          filetypes=filetypes)
             if save_data_file == "":
                 self.status_set("No file selected to store the data.")
                 return
 
         if "." not in basename(save_data_file):
-            save_data_file = save_data_file + ".p"
+            if self.save_as_plain_text.get():
+                save_data_file = save_data_file + ".txt"
+            else:
+                save_data_file = save_data_file + ".p"
 
         if not self.silent.get():
             print("Saving data as a file:", save_data_file)
@@ -2403,17 +2443,22 @@ class Gui(Tk):
                 return
 
             self.status_set("Please select folder to store the data weights in.")
+            if self.save_as_plain_text.get():
+                filetypes = (("text files", "*.txt"), ("pickle files", "*.p"), ("all files", "*.*"))
+            else:
+                filetypes = (("pickle files", "*.p"), ("text files", "*.txt"), ("all files", "*.*"))
             save_data_weights_file = filedialog.asksaveasfilename(initialdir=self.data_weights_dir,
                                                                   title="Data weights saving - Select file",
-                                                                  filetypes=(("pickle files", "*.p"),
-                                                                             ("text files", "*.txt"),
-                                                                             ("all files", "*.*")))
+                                                                  filetypes=filetypes)
             if save_data_weights_file == "":
                 self.status_set("No file selected to store the data weights.")
                 return
 
         if "." not in basename(save_data_weights_file):
-            save_data_weights_file = save_data_weights_file + ".p"
+            if self.save_as_plain_text.get():
+                save_data_weights_file = save_data_weights_file + ".txt"
+            else:
+                save_data_weights_file = save_data_weights_file + ".p"
 
         if not self.silent.get():
             print("Saving data weights as a file:", save_data_weights_file)
@@ -2455,14 +2500,21 @@ class Gui(Tk):
                 return
 
             self.status_set("Please select folder to store the data intervals in.")
+            if self.save_as_plain_text.get():
+                filetypes = (("text files", "*.txt"), ("pickle files", "*.p"), ("all files", "*.*"))
+            else:
+                filetypes = (("pickle files", "*.p"), ("text files", "*.txt"), ("all files", "*.*"))
             save_data_intervals_file = filedialog.asksaveasfilename(initialdir=self.data_intervals_dir, title="Data intervals saving - Select file",
-                                                                    filetypes=(("pickle files", "*.p"), ("text files", "*.txt"), ("all files", "*.*")))
+                                                                    filetypes=filetypes)
             if save_data_intervals_file == "":
                 self.status_set("No file selected to store the data intervals.")
                 return
 
         if "." not in basename(save_data_intervals_file):
-            save_data_intervals_file = save_data_intervals_file + ".p"
+            if self.save_as_plain_text.get():
+                save_data_intervals_file = save_data_intervals_file + ".txt"
+            else:
+                save_data_intervals_file = save_data_intervals_file + ".p"
 
         if not self.silent.get():
             print("Saving data intervals as a file:", save_data_intervals_file)
@@ -2490,14 +2542,24 @@ class Gui(Tk):
                 return
 
             self.status_set("Please select folder to store the constraints in.")
+            if self.save_as_plain_text.get():
+                filetypes = (("text files", "*.txt"), ("pickle files", "*.p"), ("all files", "*.*"))
+            else:
+                filetypes = (("pickle files", "*.p"), ("text files", "*.txt"), ("all files", "*.*"))
             save_constraints_file = filedialog.asksaveasfilename(initialdir=self.constraints_dir, title="constraints saving - Select file",
-                                                                 filetypes=(("pickle files", "*.p"), ("text files", "*.txt"), ("all files", "*.*")))
+                                                                 filetypes=filetypes)
             if save_constraints_file == "":
                 self.status_set("No file selected to store the constraints.")
                 return
 
-            if not self.silent.get():
-                print("Saving constraints as a file:", save_constraints_file)
+        if "." not in basename(save_constraints_file):
+            if self.save_as_plain_text.get():
+                save_constraints_file = save_constraints_file + ".txt"
+            else:
+                save_constraints_file = save_constraints_file + ".p"
+
+        if not self.silent.get():
+            print("Saving constraints as a file:", save_constraints_file)
 
         self.save_file(constraints, save_constraints_file)
 
@@ -2521,7 +2583,7 @@ class Gui(Tk):
                 return
             self.status_set("Please select folder to store the space in.")
             save_space_file = filedialog.asksaveasfilename(initialdir=self.refinement_results, title="Space saving - Select file",
-                                                           filetypes=(("pickle files", "*.p"), ("text files", "*.txt"), ("all files", "*.*")))
+                                                           filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
             if save_space_file == "":
                 self.status_set("No file selected to store the space in.")
                 return
@@ -2554,7 +2616,7 @@ class Gui(Tk):
                 return
             self.status_set("Please select folder to store Metropolis Hastings results in.")
             save_mh_results_file = filedialog.asksaveasfilename(initialdir=self.mh_results_dir, title="Metropolis Hastings results saving - Select file",
-                                                                filetypes=(("pickle files", "*.p"), ("text files", "*.txt"), ("all files", "*.*")))
+                                                                filetypes=(("pickle files", "*.p"), ("all files", "*.*")))
             if save_mh_results_file == "":
                 self.status_set("No file selected to store Metropolis Hastings results in.")
                 return
