@@ -52,7 +52,7 @@ def load_config():
     if data_weights_dir == "":
         data_weights_dir = "data_weights"
     if not os.path.isabs(data_weights_dir):
-        data_dir = os.path.join(cwd, data_weights_dir)
+        data_weights_dir = os.path.join(cwd, data_weights_dir)
     if not os.path.exists(data_weights_dir):
         os.makedirs(data_weights_dir)
 

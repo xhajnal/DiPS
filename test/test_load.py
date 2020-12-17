@@ -89,6 +89,8 @@ class MyTestCase(unittest.TestCase):
         print(colored('Parsing single data file', 'blue'))
         self.assertEqual(load_data(os.path.join(data_dir, "data.csv")), [0.04, 0.02, 0.94])  ## GOES WITH WARING: Warning while parsing line number 1. Expected number, got <class 'str'>. Skipping this line: "n=2, p_v=0.81, q_v=0.92"
         self.assertEqual(pickle_load(os.path.join(data_dir, "data.p")), [0.8166666667, 0.1166666667, 0.06666666667])
+        self.assertEqual(pickle_load(os.path.join(data_dir, "data")), [0.8166666667, 0.1166666667, 0.06666666667])
+
 
     def test_load_all_data(self):
         print(colored('Parsing multiple data files', 'blue'))
