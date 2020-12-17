@@ -176,3 +176,10 @@ if __name__ == '__main__':
                             iter_time = (time() - start_time) * (iterations / mh_results.last_iter)
                             print("time it would take to finish", iter_time)
                         print()
+
+                ## LIFTING WITH STORM HERE
+                for i in range(len(n_samples)):
+                    general_create_data_informed_properties(property_file, intervals[i], silent=False)
+                    call_storm(model_file=model_file, params=parameters, param_intervals=parameter_domains,
+                               property_file=property_file, storm_output_file=f"tmp_storm_pop_size_{population_size}_data_{data_index}_nsamples_{n_samples[i]}.txt",
+                               time=True, silent=False)
