@@ -80,7 +80,7 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
         sim_length (int): length of the simulation
         modular_param_space (numpy array): parameter space to be used
         input_folder (str or path): folder where to search for models
-        output_folder (str or path): folder to save output -  PRISM path file
+        output_folder (str or path): folder to dump PRISM output
         silent (bool): if silent printed output is set to minimum
         debug (bool): if True extensive print will be used
     """
@@ -96,21 +96,25 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
     for model_type in model_types:
         if not silent:
             print("model_type: ", model_type)
-        if "synchronous" in model_type and not sim_length:
-            sim_length = 2
         data[model_type] = {}
         experiments[model_type] = {}
         for population_size in populations:
             if not silent:
                 print("population size: ", population_size)
-            if "semisynchronous" in model_type and not sim_length:
+            if "semisyn" in model_type and not sim_length:
+                sim_length = 3 * population_size
+            elif "syn" in model_type and not sim_length:
                 sim_length = 2 * population_size
-            if "asynchronous" in model_type and not sim_length:
-                sim_length = 2 * population_size
+            elif "asyn" in model_type and not sim_length:
+                sim_length = 4 * population_size
             if input_folder is False:
-                model = os.path.join(model_path, (model_type + str(population_size) + ".pm"))
+                model = os.path.join(model_path, (model_type + "_" + str(population_size) + ".pm"))
+                if not os.path.isfile(model):
+                    model = os.path.join(model_path, (str(population_size) + "_" + model_type + ".pm"))
             else:
                 model = os.path.join(input_folder, (model_type + str(population_size) + ".pm"))
+                if not os.path.isfile(model):
+                    model = os.path.join(input_folder, (str(population_size) + "_" + model_type + ".pm"))
             # A bad way how to deal with model without N
             if isinstance(population_size, str):
                 population_size = 0
@@ -172,7 +176,7 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
                     if not silent:
                         print(f"calling: \n {model} -const {prism_parameter_values} -simpath {str(sim_length)} {path_file}")
                     call_prism(f"{model} -const {prism_parameter_values} -simpath {str(sim_length)} {path_file}",
-                               silent=True, prism_output_path=os.path.join(os.getcwd(), "results/prism_results"))
+                               silent=silent, prism_output_path=os.path.join(os.getcwd(), "results/prism_results"))
                    
                     ## Parse the dump file
                     # print("curr dir:", os.getcwd())
@@ -239,3 +243,42 @@ def generate_data(model_types, n_samples, populations, dimension_sample_size,
     """
     return generate_experiments_and_data(model_types, n_samples, populations, dimension_sample_size,
                                          sim_length=sim_length, modular_param_space=modular_param_space, silent=silent, debug=debug)[1]
+
+
+if __name__ == '__main__':
+    import numpy as np
+    model_types = ["semisynchronous"]
+    for multiparam in ["2-param", "multiparam"]:
+        n_samples = [3500]
+        populations = [15]
+        dimension_sample_size = 1
+
+        if multiparam == "multiparam":
+            default_2dim_param_space = np.array([[0.19], [0], [0], [0], [0], [0], [0], [0.76], [0.76], [0.76], [0.76], [0.76], [0.76], [0.76], [0.76], [0.76]])
+            print(default_2dim_param_space)
+            for model_type in model_types:
+                Experiments_two_param, Data_two_param = generate_experiments_and_data([f"{multiparam}_{model_type}"], n_samples, populations, dimension_sample_size, input_folder=os.path.join(model_path, model_type, multiparam), modular_param_space=default_2dim_param_space, silent=True)
+                print(Experiments_two_param)
+                print(Data_two_param)
+
+            default_2dim_param_space = np.array([[0.19], [0], [0], [0], [0], [0], [0], [0.86], [0.86], [0.86], [0.86], [0.86], [0.86], [0.86], [0.86], [0.86]])
+            print(default_2dim_param_space)
+            for model_type in model_types:
+                Experiments_two_param, Data_two_param = generate_experiments_and_data([f"{multiparam}_{model_type}"], n_samples, populations, dimension_sample_size, input_folder=os.path.join(model_path, model_type, multiparam), modular_param_space=default_2dim_param_space, silent=True)
+                print(Experiments_two_param)
+                print(Data_two_param)
+        else:
+            pass
+            default_2dim_param_space = np.array([[0.81], [0.92]])
+            print(default_2dim_param_space)
+            for model_type in model_types:
+                Experiments_two_param, Data_two_param = generate_experiments_and_data(model_types, n_samples, populations, dimension_sample_size, input_folder=os.path.join(model_path, model_type, multiparam), modular_param_space=default_2dim_param_space, silent=True)
+                print(Experiments_two_param)
+                print(Data_two_param)
+
+            default_2dim_param_space = np.array([[0.53], [0.13]])
+            print(default_2dim_param_space)
+            for model_type in model_types:
+                Experiments_two_param, Data_two_param = generate_experiments_and_data(model_types, n_samples, populations, dimension_sample_size, input_folder=os.path.join(model_path, model_type, multiparam), modular_param_space=default_2dim_param_space, silent=True)
+                print(Experiments_two_param)
+                print(Data_two_param)
