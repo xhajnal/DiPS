@@ -257,7 +257,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.19.1"  ## Version of the gui
+        self.version = "1.20"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -801,7 +801,7 @@ class Gui(Tk):
 
         label65 = Label(frame_left, text="Algorithm: ", anchor=W, justify=LEFT)
         label65.grid(row=3, column=3, padx=0)
-        createToolTip(label65, text='Choose from algorithms:\n 1-4 - using SMT solvers \n 1 - DFS search \n 2 - BFS search \n 3 - BFS search with example propagation \n 4 - BFS with example and counterexample propagation \n 5 - interval algorithmic')
+        createToolTip(label65, text='Choose from algorithms:\n 1-4 - using SMT solvers \n 1 - DFS search \n 2 - BFS search \n 3 - BFS search with example propagation \n 4 - BFS with example and counterexample propagation \n 5 - interval algorithmic \n 6 - parameter lifting')
 
         label66 = Label(frame_left, text="SMT solver: ", anchor=W, justify=LEFT)
         label66.grid(row=4, column=3, padx=0)
@@ -824,7 +824,7 @@ class Gui(Tk):
         self.max_dept_entry = Entry(frame_left)
         self.coverage_entry = Entry(frame_left)
         # self.epsilon_entry = Entry(frame_left)
-        self.alg_entry = ttk.Combobox(frame_left, values=('1', '2', '3', '4', '5'))
+        self.alg_entry = ttk.Combobox(frame_left, values=('1', '2', '3', '4', '5', '6'))
         self.solver_entry = ttk.Combobox(frame_left, values=('z3', 'dreal'))
         self.delta_entry = Entry(frame_left)
         self.refinement_timeout_entry = Entry(frame_left)
@@ -2710,16 +2710,13 @@ class Gui(Tk):
                     self.functions_file.set(str(os.path.join(Path(self.storm_results),
                                                              str(Path(self.model_file.get()).stem) + "_" + str(
                                                                  Path(self.property_file.get()).stem) + ".cmd")))
-                    # (model_prefix, model_path=model_path, param_intervals=False, properties_path=properties_path,
-                    #                      property_file=False, command_output_file=False, output_path=storm_results, time=False, silent=False)
-                    # call_storm_files(os.path.relpath(self.model_file.get(), self.model_dir),
-                    #            param_intervals=self.parameter_domains, model_file=self.model_dir,
-                    #            property_file=self.property_file.get(), command_output_file=self.functions_file.get(),
-                    #            output_path=self.storm_results, time=False, silent=self.silent.get())
-
-                    call_storm(model_file=self.model_file.get(), param_intervals=self.parameter_domains,
+                    call_storm(model_file=self.model_file.get(), params=[],  param_intervals=[],
                                property_file=self.property_file.get(), storm_output_file=self.functions_file.get(),
                                time=True, silent=self.silent.get())
+                    # call_storm(model_file=self.model_file.get(), params=self.parameters,
+                    #            param_intervals=self.parameter_domains,
+                    #            property_file=self.property_file.get(), storm_output_file=self.functions_file.get(),
+                    #            time=True, silent=self.silent.get())
 
                     self.status_set("Command to run the parameter synthesis saved here: {}", self.functions_file.get())
                     self.load_mc_output_file(self.functions_file.get(), reset_param_and_intervals=False)
@@ -3659,121 +3656,141 @@ class Gui(Tk):
         #         messagebox.showwarning("Refine space", "Load or compute data intervals before refinement.")
         #         return
         # else:
-        if self.constraints == "":
-            messagebox.showwarning("Refine space", "Load or calculate constraints before refinement.")
-            return
 
-        if self.space_coverage >= self.coverage:
-            messagebox.showinfo("Refine space", "You already achieved higher coverage than the goal.")
-            return
+        ## PARAMETER LIFTING
+        if int(self.alg_entry.get()) == 6:
+            self.check_changes("model")
+            self.check_changes("properties")
+            file = filedialog.asksaveasfilename(initialdir=self.results_dir, title="Parameter lifting - Select file",
+                                                filetypes=(("text files", "*.txt"), ("all files", "*.*")))
 
-        if not self.validate_space("Refine Space"):
-            return
+            self.status_set("Space refinement is running ...")
+            params = parse_params_from_model(self.model_file.get())
+            print(colored(params, "blue"))
 
-        if int(self.alg_entry.get()) <= 4 and not self.z3_constraints:
-            for constraint in self.constraints:
-                if is_this_exponential_function(constraint):
-                    if not askyesno("Refinement", "Some constraints contain exponential function, we recommend using interval algorithmic (algorithm 5). Do you want to proceed anyway?"):
-                        return
-                    break
+            ## TODO add loading informed properties
 
-        if self.presampled_refinement.get() and not(self.space.get_sat_samples() + self.space.get_unsat_samples()):
-            messagebox.showwarning("Refine space", "No sampling to be used, please run it before Presampled refinement.")
-            return
+            call_storm(model_file=self.model_file.get(), params=params, param_intervals=self.parameter_domains,
+                       property_file=self.property_file.get(), storm_output_file=file, coverage=self.coverage,
+                       time=True, silent=self.silent.get())
+        else:
 
-        if int(self.max_depth) > 14:
-            if not askyesno("Space refinement", "Recursion this deep may cause segmentation fault. Do you want to continue?"):
+            if self.constraints == "":
+                messagebox.showwarning("Refine space", "Load or calculate constraints before refinement.")
                 return
 
-        self.status_set("Space refinement is running ...")
-        # print(colored(f"self.space, {self.space.nice_print()}]", "blue"))
-        try:
-            self.cursor_toggle_busy(True)
+            if self.space_coverage >= self.coverage:
+                messagebox.showinfo("Refine space", "You already achieved higher coverage than the goal.")
+                return
 
-            ## Progress Bar
-            self.new_window = Toplevel(self)
-            Label(self.new_window, text="Refinement progress:", anchor=W, justify=LEFT).pack()
-            Label(self.new_window, textvar=self.progress, anchor=W, justify=LEFT).pack()
-            self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
-            self.progress_bar.pack(expand=True, fill=BOTH, side=TOP)
-            self.update_progress_bar(change_to=0, change_by=False)
-            self.update()
+            if not self.validate_space("Refine Space"):
+                return
 
-            ## Refresh of plot before refinement
-            if self.show_quantitative:
-                self.show_space(False, False, False, clear=True, warnings=not(no_max_depth and self.space.get_coverage() < self.coverage))
-                self.show_quantitative = False
-                show_all = True
+            if int(self.alg_entry.get()) <= 4 and not self.z3_constraints:
+                for constraint in self.constraints:
+                    if is_this_exponential_function(constraint):
+                        if not askyesno("Refinement", "Some constraints contain exponential function, we recommend using interval algorithmic (algorithm 5). Do you want to proceed anyway?"):
+                            return
+                        break
 
-            ## RETURNS TUPLE -- (SPACE,(NONE, ERROR TEXT)) or (SPACE, )
-            ## feeding z3 solver with z3 expressions, python expressions otherwise
-            # if int(self.alg.get()) == 5:
-            #     spam = check_deeper(self.space, [self.functions, self.data_intervals], self.max_depth, self.epsilon,
-            #                         self.coverage, silent=self.silent.get(), version=int(self.alg.get()), sample_size=False,
-            #                         debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
-            #                         solver=str(self.solver.get()), delta=self.delta, gui=self.update_progress_bar)
-            if str(self.solver_entry.get()) == "z3" and self.z3_constraints:
-                assert isinstance(self.z3_constraints, list)
-                spam = check_deeper(self.space, self.z3_constraints, self.max_depth, self.epsilon, self.coverage,
-                                    silent=self.silent.get(), version=int(self.alg_entry.get()),
-                                    sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
-                                    where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
-                                    delta=self.delta, gui=self.update_progress_bar, show_space=False,
-                                    iterative=self.iterative_refinement.get(), timeout=int(self.refinement_timeout_entry.get()))
-            else:
-                assert isinstance(self.constraints, list)
-                spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
-                                    silent=self.silent.get(), version=int(self.alg_entry.get()),
-                                    sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
-                                    where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
-                                    delta=self.delta, gui=self.update_progress_bar, show_space=False,
-                                    iterative=self.iterative_refinement.get(), timeout=int(self.refinement_timeout_entry.get()))
-        finally:
+            if self.presampled_refinement.get() and not(self.space.get_sat_samples() + self.space.get_unsat_samples()):
+                messagebox.showwarning("Refine space", "No sampling to be used, please run it before Presampled refinement.")
+                return
+
+            if int(self.max_depth) > 14:
+                if not askyesno("Space refinement", "Recursion this deep may cause segmentation fault. Do you want to continue?"):
+                    return
+
+            self.status_set("Space refinement is running ...")
+            # print(colored(f"self.space, {self.space.nice_print()}]", "blue"))
+
             try:
-                self.cursor_toggle_busy(False)
-                self.new_window.destroy()
-                self.progress.set("0%")
-            except TclError:
-                return
+                self.cursor_toggle_busy(True)
 
-        ## If the visualisation of the space did not succeed
-        if isinstance(spam, tuple):
-            self.space = spam[0]
-            if no_max_depth and self.space.get_coverage() < self.coverage:
-                pass
+                ## Progress Bar
+                self.new_window = Toplevel(self)
+                Label(self.new_window, text="Refinement progress:", anchor=W, justify=LEFT).pack()
+                Label(self.new_window, textvar=self.progress, anchor=W, justify=LEFT).pack()
+                self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
+                self.progress_bar.pack(expand=True, fill=BOTH, side=TOP)
+                self.update_progress_bar(change_to=0, change_by=False)
+                self.update()
+
+                ## Refresh of plot before refinement
+                if self.show_quantitative:
+                    self.show_space(False, False, False, clear=True, warnings=not(no_max_depth and self.space.get_coverage() < self.coverage))
+                    self.show_quantitative = False
+                    show_all = True
+
+                ## RETURNS TUPLE -- (SPACE,(NONE, ERROR TEXT)) or (SPACE, )
+                ## feeding z3 solver with z3 expressions, python expressions otherwise
+                # if int(self.alg.get()) == 5:
+                #     spam = check_deeper(self.space, [self.functions, self.data_intervals], self.max_depth, self.epsilon,
+                #                         self.coverage, silent=self.silent.get(), version=int(self.alg.get()), sample_size=False,
+                #                         debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
+                #                         solver=str(self.solver.get()), delta=self.delta, gui=self.update_progress_bar)
+                if str(self.solver_entry.get()) == "z3" and self.z3_constraints:
+                    assert isinstance(self.z3_constraints, list)
+                    spam = check_deeper(self.space, self.z3_constraints, self.max_depth, self.epsilon, self.coverage,
+                                        silent=self.silent.get(), version=int(self.alg_entry.get()),
+                                        sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
+                                        where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
+                                        delta=self.delta, gui=self.update_progress_bar, show_space=False,
+                                        iterative=self.iterative_refinement.get(), timeout=int(self.refinement_timeout_entry.get()))
+                else:
+                    assert isinstance(self.constraints, list)
+                    spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
+                                        silent=self.silent.get(), version=int(self.alg_entry.get()),
+                                        sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
+                                        where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
+                                        delta=self.delta, gui=self.update_progress_bar, show_space=False,
+                                        iterative=self.iterative_refinement.get(), timeout=int(self.refinement_timeout_entry.get()))
+            finally:
+                try:
+                    self.cursor_toggle_busy(False)
+                    self.new_window.destroy()
+                    self.progress.set("0%")
+                except TclError:
+                    return
+
+            ## If the visualisation of the space did not succeed
+            if isinstance(spam, tuple):
+                self.space = spam[0]
+                if no_max_depth and self.space.get_coverage() < self.coverage:
+                    pass
+                else:
+                    messagebox.showinfo("Space refinement", spam[1])
             else:
-                messagebox.showinfo("Space refinement", spam[1])
-        else:
-            self.space = spam
-            self.show_space(show_refinement=True, show_samples=self.show_samples, show_true_point=self.show_true_point,
-                            prefer_unsafe=self.show_red_in_multidim_refinement.get(), show_all=show_all,
-                            warnings=not(no_max_depth and self.space.get_coverage() < self.coverage))
-            self.page6_figure.tight_layout()  ## By huypn
-            self.page6_figure.canvas.draw()
-            self.page6_figure.canvas.flush_events()
+                self.space = spam
+                self.show_space(show_refinement=True, show_samples=self.show_samples, show_true_point=self.show_true_point,
+                                prefer_unsafe=self.show_red_in_multidim_refinement.get(), show_all=show_all,
+                                warnings=not(no_max_depth and self.space.get_coverage() < self.coverage))
+                self.page6_figure.tight_layout()  ## By huypn
+                self.page6_figure.canvas.draw()
+                self.page6_figure.canvas.flush_events()
 
-            ## Autosave figure
-            if self.save.get():
-                time_stamp = str(strftime("%d-%b-%Y-%H-%M-%S", localtime())) + ".png"
-                self.page6_figure.savefig(os.path.join(self.refinement_results, f"Space_refinement_{time_stamp}"),
-                                          bbox_inches='tight')
-                print("Figure stored here: ", os.path.join(self.refinement_results, f"Space_refinement_{time_stamp}"))
-                with open(os.path.join(self.refinement_results, "figure_to_title.txt"), "a+") as f:
-                    f.write(f"Space_refinement_{time_stamp} :\n")
-                    f.write(f"      constraints: {self.constraints_file.get()}\n")
+                ## Autosave figure
+                if self.save.get():
+                    time_stamp = str(strftime("%d-%b-%Y-%H-%M-%S", localtime())) + ".png"
+                    self.page6_figure.savefig(os.path.join(self.refinement_results, f"Space_refinement_{time_stamp}"),
+                                              bbox_inches='tight')
+                    print("Figure stored here: ", os.path.join(self.refinement_results, f"Space_refinement_{time_stamp}"))
+                    with open(os.path.join(self.refinement_results, "figure_to_title.txt"), "a+") as f:
+                        f.write(f"Space_refinement_{time_stamp} :\n")
+                        f.write(f"      constraints: {self.constraints_file.get()}\n")
 
-        self.print_space()
+            self.print_space()
 
-        self.constraints_changed = False
-        self.space_changed = False
+            self.constraints_changed = False
+            self.space_changed = False
 
-        ## Autosave
-        self.save_space(os.path.join(self.tmp_dir, "space.p"))
+            ## Autosave
+            self.save_space(os.path.join(self.tmp_dir, "space.p"))
 
-        if no_max_depth and self.space.get_coverage() < self.coverage:
-            self.refine_space()
-        else:
-            self.status_set("Space refinement finished.")
+            if no_max_depth and self.space.get_coverage() < self.coverage:
+                self.refine_space()
+            else:
+                self.status_set("Space refinement finished.")
 
     def edit_space(self):
         """ Edits space values """
@@ -4518,14 +4535,14 @@ if __name__ == '__main__':
     if info[0] < 3:
         sys.exit(f"Python {info[0]} is not supported.")
 
-    if info[1] == 8:
-        sys.exit(f"Python 3.8 may cause a visualisation problems, we are sorry. Please use Python 3.7.*")
-
-    if info[1] == 9:
-        sys.exit(f"Python 3.9 was not tested and may cause errors. Please use Python 3.7.*")
-
-    if info[1] != 7:
-        sys.exit(f"Please python use Python 3.7.*")
+    # if info[1] == 8:
+    #     sys.exit(f"Python 3.8 may cause a visualisation problems, we are sorry. Please use Python 3.7.*")
+    #
+    # if info[1] == 9:
+    #     sys.exit(f"Python 3.9 was not tested and may cause errors. Please use Python 3.7.*")
+    #
+    # if info[1] != 7:
+    #     sys.exit(f"Please python use Python 3.7.*")
 
     matplotlib.rcParams['agg.path.chunksize'] = 100000
     gui = Gui()

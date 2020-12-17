@@ -78,11 +78,11 @@ def call_prism(args, seq=False, silent: bool = False, model_path=model_path, pro
         args (string): args for executing prism
         seq (bool): if true it will take properties one by one and append the results (helps to deal with memory)
         silent (bool): if silent command line output is set to minimum
-        model_path (string): path to load  models from
-        properties_path (string): path to load properties from
+        model_path (string or Path): path to load  models from
+        properties_path (string or Path): path to load properties from
         prism_output_path (string): path to save the files inside the command
-        std_output_path (string): path to save the results of the command
-        std_output_file (string): file name to save the output
+        std_output_path (string or Path): path to save the results of the command
+        std_output_file (string or Path): file name to save the output
     """
     # print("prism_results", prism_results)
     # print("std_output_path", std_output_path)
@@ -132,7 +132,8 @@ def call_prism(args, seq=False, silent: bool = False, model_path=model_path, pro
                     return 404, f"property file {property_file_path} not found -- skipped"
                 prism_args.append(property_file_path)
             elif re.compile(r'\.txt').search(arg) is not None:
-                print("prism_output_path", prism_output_path)
+                if not silent:
+                    print("prism_output_path", prism_output_path)
                 if not os.path.isabs(prism_output_path):
                     prism_output_path = os.path.join(Path(prism_results), Path(prism_output_path))
 
@@ -141,7 +142,8 @@ def call_prism(args, seq=False, silent: bool = False, model_path=model_path, pro
                         print(f"{colored('The path', 'red')} {prism_output_path} {colored('not found, this may cause trouble', 'red')}")
 
                 prism_output_file_path = os.path.join(prism_output_path, arg)
-                print("prism_output_file_path", prism_output_file_path)
+                if not silent:
+                    print("prism_output_file_path", prism_output_file_path)
                 prism_args.append(prism_output_file_path)
             else:
                 prism_args.append(arg)
@@ -446,7 +448,7 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
 
 
 ## TODO rewrite this without the paths, just files
-def call_storm(model_file, param_intervals, property_file, storm_output_file=False, time=False, silent=False):
+def call_storm(model_file, params, param_intervals, property_file, storm_output_file=False, time=False, coverage=0.95, silent=False):
     """  Prints calls for storm model checking.
 
     Args:
@@ -482,6 +484,24 @@ def call_storm(model_file, param_intervals, property_file, storm_output_file=Fal
         storm_args_extra_long = ["(time", "storm-pars", "--prism", f"{model_file}",  "--prop", "", ">>", f"{storm_output_file}", "2>&1"]
         storm_args_long = ["time", "storm-pars", "--prism", f"{model_file}", "--prop", ""]
 
+        region = []
+        if params:
+            coverage = round(1 - coverage, 5)
+            region.append("--region")
+            intervals = ""
+            for index, param in enumerate(params):
+                intervals = intervals + f"{param_intervals[index][0]}<={param}<={param_intervals[index][1]},"
+            intervals = f'{intervals[:-1]}'
+            region.append(intervals)
+            print(region)
+            region.append("--refine")
+            region.append(str(coverage))
+            print(region)
+
+            storm_args.extend(region)
+            storm_args_extra_long.extend(region)
+            storm_args_long.extend(region)
+
         print(colored(property_file, "blue"))
         with open(property_file) as property_file:
             properties = [line.rstrip() for line in property_file]
@@ -500,6 +520,8 @@ def call_storm(model_file, param_intervals, property_file, storm_output_file=Fal
                 for property in properties:
                     if property == "":
                         continue
+                    if property.endswith(","):
+                        property = property[:-1]
                     if time:
                         storm_args_extra_long[5] = f'"{property}" )'
                         storm_args = storm_args_extra_long
@@ -513,6 +535,8 @@ def call_storm(model_file, param_intervals, property_file, storm_output_file=Fal
             for property in properties:
                 if property == "":
                     continue
+                if property.endswith(","):
+                    property = property[:-1]
                 if time:
                     storm_args_long[5] = f'{property}'
                     storm_args = storm_args_long
