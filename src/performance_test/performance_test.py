@@ -8,9 +8,11 @@ from common.convert import ineq_to_constraints
 from common.files import pickle_load
 from common.mathematics import create_intervals
 from load import load_data, get_f, parse_params_from_model
+from mc import call_storm
+from mc_informed import general_create_data_informed_properties
 from metropolis_hastings import initialise_sampling, HastingsResults
 from space import RefinedSpace
-from src.optimize import *
+from optimize import *
 import sys
 import os
 
@@ -20,6 +22,7 @@ from common.config import load_config
 spam = load_config()
 data_dir = spam["data"]
 model_path = spam["models"]
+property_path = spam["properties"]
 results_dir = spam["results"]
 prism_results = spam["prism_results"]
 tmp = spam["tmp"]
@@ -29,7 +32,7 @@ sys.setrecursionlimit(4000000)
 timeout = 3600
 
 global debug
-globals()['debug'] = True
+globals()['debug'] = False
 
 
 def refine(population_size, n_samples, multiparam, parameters, parameter_domains, constraints, timeout):
@@ -53,8 +56,8 @@ def refine(population_size, n_samples, multiparam, parameters, parameter_domains
 
 
 if __name__ == '__main__':
-    for multiparam in [True]:                                                ## [False, True]
-        for population_size in [4]:                                          ## [2, 3, 4, 5, 10]
+    for multiparam in [False, True]:                                                ## [False, True]
+        for population_size in [2, 3, 4, 5, 10, 15]:                                          ## [2, 3, 4, 5, 10, 15]
             for data_index, data_dir_subfolder in enumerate(["data", "data_1"]):    ## ["data", "data_1"]
                 if multiparam:
                     params = "multiparam"
@@ -65,10 +68,13 @@ if __name__ == '__main__':
 
                 ## SETUP PARAMETER AND THEIR DOMAINS
                 try:
-                    parameters = parse_params_from_model(os.path.join(model_path, f"semisynchronous/{params}/{population_size}_{prefix}semisynchronous.pm"), silent=True)[1]
+                    model_file = os.path.join(model_path, f"semisynchronous/{params}/{population_size}_{prefix}semisynchronous.pm")
+                    parameters = parse_params_from_model(model_file, silent=True)[1]
                 except FileNotFoundError as err:
                     print(colored(f"model {population_size}_{prefix}semisynchronous.pm not found, skipping this test", "red"))
                     break
+                property_file = os.path.join(property_path, f"prop_{population_size}.pctl")
+
                 if debug:
                     print("parameters", parameters)
                 parameter_domains = []
@@ -82,8 +88,11 @@ if __name__ == '__main__':
                     functions = pickle_load(os.path.join(prism_results, f"{params}/semisynchronous/{prefix}semisynchronous_{population_size}.p"))
                 except FileNotFoundError:
                     functions = get_f(os.path.join(prism_results, f"{params}/semisynchronous/{prefix}semisynchronous_{population_size}.txt"), "prism", factorize=True)
+                print(colored(f"Loaded function file: {params}/semisynchronous/{prefix}semisynchronous_{population_size}", "blue"))
                 if debug:
                     print("functions", functions)
+                else:
+                    print("functions[0]", functions[0])
 
                 ## LOAD DATA
                 data_set = load_data(os.path.join(data_dir, f"{data_dir_subfolder}/{params}/data_n={population_size}.csv"), debug=debug)
@@ -105,12 +114,12 @@ if __name__ == '__main__':
                     if debug:
                         print(f"Intervals, confidence level {C}, n_samples {n_samples[i]}: {intervals[i]}")
 
-                # ## OPTIMIZE PARAMS
-                # start_time = time()
-                # result_1 = optimize(functions, parameters, parameter_domains, data_set)
-                # print(colored(f"Optimisation, pop size {population_size}, dataset {data_index+1}, multiparam {bool(multiparam)}, took {round(time() - start_time, 4)} seconds", "yellow"))
-                # if debug:
-                #     print(result_1)
+                ## OPTIMIZE PARAMS
+                start_time = time()
+                result_1 = optimize(functions, parameters, parameter_domains, data_set)
+                print(colored(f"Optimisation, pop size {population_size}, dataset {data_index+1}, multiparam {bool(multiparam)}, took {round(time() - start_time, 4)} seconds", "yellow"))
+                if debug:
+                    print(result_1)
 
                 constraints = []
                 for i in range(len(n_samples)):
@@ -118,52 +127,52 @@ if __name__ == '__main__':
                     if debug:
                         print(f"constraints with {n_samples[i]} samples :{constraints[i]}")
 
-                # ## SAMPLE SPACE
-                # grid_size = 25
-                # for i in range(len(n_samples)):
-                #     space = RefinedSpace(parameter_domains, parameters)
-                #     start_time = time()
-                #     sampling = space.grid_sample(constraints[i], grid_size, silent=True, debug=debug)
-                #     print(colored(f"Sampling, pop size {population_size}, dataset {data_index+1}, multiparam {bool(multiparam)}, # of samples {n_samples[i]} took {round(time() - start_time, 4)} seconds", "yellow"))
-                #     if debug:
-                #         print(sampling)
+                ## SAMPLE SPACE
+                grid_size = 25
+                for i in range(len(n_samples)):
+                    space = RefinedSpace(parameter_domains, parameters)
+                    start_time = time()
+                    sampling = space.grid_sample(constraints[i], grid_size, silent=True, debug=debug)
+                    print(colored(f"Sampling, pop size {population_size}, dataset {data_index+1}, multiparam {bool(multiparam)}, # of samples {n_samples[i]} took {round(time() - start_time, 4)} seconds", "yellow"))
+                    if debug:
+                        print(sampling)
 
                 ## REFINE SPACE
                 for i in range(len(n_samples)):
                     refine(population_size, n_samples[i], multiparam, parameters, parameter_domains, constraints, timeout)
 
-                # jobs = []
-                # for i in range(len(n_samples)):
-                #     timeout = 5
-                #     refine(population_size, n_samples, multiparam, parameters, parameter_domains, constraints, timeout)
-                #     p = multiprocessing.Process(target=refine, args=(population_size, n_samples, multiparam, parameters, parameter_domains, constraints, timeout))
-                #     jobs.append(p)
-                #     p.start()
-                #
-                # #for p in jobs:
-                #     p.join(3600)
-                #
-                # #for p in jobs:
-                #     if p.is_alive():
-                #         print("running... let's kill it...")
-                #
-                #         # Terminate
-                #         p.terminate()
-                #         p.join()
+                jobs = []
+                for i in range(len(n_samples)):
+                    timeout = 5
+                    refine(population_size, n_samples, multiparam, parameters, parameter_domains, constraints, timeout)
+                    p = multiprocessing.Process(target=refine, args=(population_size, n_samples, multiparam, parameters, parameter_domains, constraints, timeout))
+                    jobs.append(p)
+                    p.start()
 
-                # ## METROPOLIS-HASTINGS
-                # space = RefinedSpace(parameter_domains, parameters)
-                # iterations = 500000
-                # ## TODO more indices of n_samples
-                # for i in range(len(n_samples)):
-                #     start_time = time()
-                #     mh_results = initialise_sampling(space, data_set, functions, n_samples[i], iterations, 0, where=True, metadata=False, timeout=timeout)
-                #     assert isinstance(mh_results, HastingsResults)
-                #     print(colored(f"this was MH, pop size {population_size}, dataset {data_index+1}, multiparam {bool(multiparam)}, # of samples, {n_samples[i]} took {round(time() - start_time, 4)} seconds", "yellow"))
-                #     if debug:
-                #         print("# of accepted points", len(mh_results.accepted))
-                #         if mh_results.last_iter > 0:
-                #             print("current iteration", mh_results.last_iter)
-                #             iter_time = (time() - start_time) * (iterations / mh_results.last_iter)
-                #             print("time it would take to finish", iter_time)
-                #         print()
+                # for p in jobs:
+                    p.join(3600)
+
+                # for p in jobs:
+                    if p.is_alive():
+                        print("running... let's kill it...")
+
+                        # Terminate
+                        p.terminate()
+                        p.join()
+
+                ## METROPOLIS-HASTINGS
+                space = RefinedSpace(parameter_domains, parameters)
+                iterations = 500000
+                ## TODO more indices of n_samples
+                for i in range(len(n_samples)):
+                    start_time = time()
+                    mh_results = initialise_sampling(parameters, parameter_domains, data_set, functions, n_samples[i], iterations, 0, where=True, metadata=False, timeout=timeout)
+                    assert isinstance(mh_results, HastingsResults)
+                    print(colored(f"this was MH, pop size {population_size}, dataset {data_index+1}, multiparam {bool(multiparam)}, # of samples, {n_samples[i]} took {round(time() - start_time, 4)} seconds", "yellow"))
+                    if debug:
+                        print("# of accepted points", len(mh_results.accepted))
+                        if mh_results.last_iter > 0:
+                            print("current iteration", mh_results.last_iter)
+                            iter_time = (time() - start_time) * (iterations / mh_results.last_iter)
+                            print("time it would take to finish", iter_time)
+                        print()
