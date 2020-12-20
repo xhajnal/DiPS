@@ -1,10 +1,12 @@
 dtmc 
  
 const double p;
-const double q;
+const double q1;
 
-module two_param_agents_2
-       // ai - state of agent i:  -1:init 0:total_failure 1:success 2:failure_after_first_attempt
+module multi_param_agents_2
+       // ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
+       // where success denotes decision to sting, failure the opposite
+       // b = 1: 'final'/leaf/BSCC state flag
        a0 : [-1..2] init -1; 
        a1 : [-1..2] init -1; 
        b : [0..1] init 0; 
@@ -18,7 +20,7 @@ module two_param_agents_2
        []   a0 = 1 & a1 = 1 -> (a0'= 1) & (a1'= 1) & (b'=1);
 
        // some ones, some twos transitions
-       []   a0 = 1 & a1 = 2 -> q:(a0'= 1) & (a1'= 1) + 1-q:(a0'= 1) & (a1'= 0);
+       []   a0 = 1 & a1 = 2 -> q1:(a0'= 1) & (a1'= 1) + 1-q1:(a0'= 1) & (a1'= 0);
 
        // some ones, some twos, some zeros transitions
 
@@ -35,4 +37,9 @@ rewards "mean_squared"
        a0 = 0 & a1 = 0:0;
        a0 = 1 & a1 = 0:1;
        a0 = 1 & a1 = 1:4;
+endrewards 
+rewards "mean_cubed" 
+       a0 = 0 & a1 = 0:0;
+       a0 = 1 & a1 = 0:1;
+       a0 = 1 & a1 = 1:8;
 endrewards 

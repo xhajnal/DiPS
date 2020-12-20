@@ -123,20 +123,20 @@ ipython/*
 ./config.ini
 
 models/*
-!models/example/
+!models/examples/
 
 properties/*
-!properties/example/
+!properties/examples/
 
 data/*
-!data/example/
+!data/examples/
 
 performance_test/backup*
 
 results/data_intervals/*
 results/constraints/*
 results/prism_results/*
-!results/prism_results/example/
+!results/prism_results/examples/
 results/storm_results/*
 results/performance_results/*
 results/optimisation_results/*
