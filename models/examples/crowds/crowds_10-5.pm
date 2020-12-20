@@ -1,21 +1,30 @@
 // CROWDS [Reiter,Rubin]
 // Vitaly Shmatikov, 2002
+// Modified by Ernst Moritz Hahn (emh@cs.uni-sb.de)
 
-// Note:
+// note:
 // Change everything marked CWDSIZ when changing the size of the crowd
 // Change everything marked CWDMAX when increasing max size of the crowd
 
 dtmc
 
+// Model parameters
+const double PF;  // forwarding probability
+const double badC;  // probability that member is untrustworthy
+
 // Probability of forwarding
-const double PF;
+// const double    PF = 0.8;
+// const double notPF = 0.2;  // must be 1-PF
 
 // Probability that a crowd member is bad
-const double  badC = 0.091;
+// const double  badC = 0.1;
+// const double  badC = 0.091;
 // const double  badC = 0.167;
+// const double goodC = 0.909;  // must be 1-badC
+// const double goodC = 0.833;  // must be 1-badC
 
-const int TotalRuns=3; // Total number of protocol runs to analyze, please set this value
-const int CrowdSize=5; // CWDSIZ: actual number of good crowd members, please set this value
+const int CrowdSize = 10; // CWDSIZ: actual number of good crowd members
+const int TotalRuns = 5; // Total number of protocol runs to analyze
 const int MaxGood=20; // CWDMAX: maximum number of good crowd members
 
 // Process definitions
@@ -23,11 +32,11 @@ module crowds
 
 	// Auxiliary variables
 	launch:   bool init true;       // Start modeling?
-	new:      bool init false;      // Initialize a new protocol instance?
+	newInstance:      bool init false;      // Initialize a new protocol instance?
 	runCount: [0..TotalRuns] init TotalRuns;   // Counts protocol instances
 	start:    bool init false;      // Start the protocol?
 	run:      bool init false;      // Run the protocol?
-	lastSeen: [0..MaxGood] init MaxGood;   // Last crowd member to touch msg
+	lastSeen: [0..MaxGood] init 0;   // Last crowd member to touch msg
 	good:     bool init false;      // Crowd member is good?
 	bad:      bool init false;      //              ... bad?
 	recordLast: bool init false;    // Record last seen crowd member?
@@ -37,30 +46,30 @@ module crowds
 
 	// Counters for attackers' observations
 	// CWDMAX: 1 counter per each good crowd member
-	observe0:  [0..TotalRuns] init 0;
-	observe1:  [0..TotalRuns] init 0;
-	observe2:  [0..TotalRuns] init 0;
-	observe3:  [0..TotalRuns] init 0;
-	observe4:  [0..TotalRuns] init 0;
-	observe5:  [0..TotalRuns] init 0;
-	observe6:  [0..TotalRuns] init 0;
-	observe7:  [0..TotalRuns] init 0;
-	observe8:  [0..TotalRuns] init 0;
-	observe9:  [0..TotalRuns] init 0;
-	observe10: [0..TotalRuns] init 0;
-	observe11: [0..TotalRuns] init 0;
-	observe12: [0..TotalRuns] init 0;
-	observe13: [0..TotalRuns] init 0;
-	observe14: [0..TotalRuns] init 0;
-	observe15: [0..TotalRuns] init 0;
-	observe16: [0..TotalRuns] init 0;
-	observe17: [0..TotalRuns] init 0;
-	observe18: [0..TotalRuns] init 0;
-	observe19: [0..TotalRuns] init 0;
+	observe0:  [0..TotalRuns];
+	observe1:  [0..TotalRuns];
+	observe2:  [0..TotalRuns];
+	observe3:  [0..TotalRuns];
+	observe4:  [0..TotalRuns];
+	observe5:  [0..TotalRuns];
+	observe6:  [0..TotalRuns];
+	observe7:  [0..TotalRuns];
+	observe8:  [0..TotalRuns];
+	observe9:  [0..TotalRuns];
+	observe10: [0..TotalRuns];
+	observe11: [0..TotalRuns];
+	observe12: [0..TotalRuns];
+	observe13: [0..TotalRuns];
+	observe14: [0..TotalRuns];
+	observe15: [0..TotalRuns];
+	observe16: [0..TotalRuns];
+	observe17: [0..TotalRuns];
+	observe18: [0..TotalRuns];
+	observe19: [0..TotalRuns];
 	
-	[] launch -> (new'=true) & (runCount'=TotalRuns) & (launch'=false);
-	// Set up a new protocol instance
-	[] new & runCount>0 -> (runCount'=runCount-1) & (new'=false) & (start'=true);
+	[] launch -> (newInstance'=true) & (runCount'=TotalRuns) & (launch'=false);
+	// Set up a newInstance protocol instance
+	[] newInstance & runCount>0 -> (runCount'=runCount-1) & (newInstance'=false) & (start'=true);
 	
 	// SENDER
 	// Start the protocol
@@ -69,7 +78,7 @@ module crowds
 	// CROWD MEMBERS
 	// Good or bad crowd member?
 	[] !good & !bad & !deliver & run ->
-	             1-badC : (good'=true) & (recordLast'=true) & (run'=false) +
+	              1-badC : (good'=true) & (recordLast'=true) & (run'=false) +
 	               badC : (bad'=true)  & (badObserve'=true) & (run'=false);
 
 	// GOOD MEMBERS
@@ -84,6 +93,10 @@ module crowds
 	[] recordLast & CrowdSize=2 ->
 	        1/2 : (lastSeen'=0) & (recordLast'=false) & (run'=true) +
 	        1/2 : (lastSeen'=1) & (recordLast'=false) & (run'=true);
+	[] recordLast & CrowdSize=3 ->
+	        1/3 : (lastSeen'=0) & (recordLast'=false) & (run'=true) +
+	        1/3 : (lastSeen'=1) & (recordLast'=false) & (run'=true) +
+	        1/3 : (lastSeen'=2) & (recordLast'=false) & (run'=true);
 	[] recordLast & CrowdSize=4 ->
 	        1/4 : (lastSeen'=0) & (recordLast'=false) & (run'=true) +
 	        1/4 : (lastSeen'=1) & (recordLast'=false) & (run'=true) +
@@ -171,12 +184,12 @@ module crowds
 	// RECIPIENT
 	// Delivery to destination
 	[] deliver & run -> (done'=true) & (deliver'=false) & (run'=false) & (good'=false) & (bad'=false);
-	// Start a new instance
-	[] done -> (new'=true) & (done'=false) & (run'=false) & (lastSeen'=MaxGood);
+	// Start a newInstance instance
+	[] done -> (newInstance'=true) & (done'=false) & (run'=false) & (lastSeen'=MaxGood);
 	
 endmodule
 
-
-
-
+label "observe0Greater1" = observe0 > 1;
+label "observeIGreater1" = observe1 > 1 | observe2 > 1 | observe3 > 1 | observe4 > 1 | observe5 > 1 | observe6 > 1 | observe7 > 1 | observe8 > 1 | observe9 > 1;
+label "observeOnlyTrueSender" = observe0 > 1 & observe1 <= 1 & observe2 <= 1 & observe3 <= 1 & observe4 <= 1 & observe5 <= 1 & observe6 <= 1 & observe7 <= 1 & observe8 <= 1 & observe9 <= 1;
 
