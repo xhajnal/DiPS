@@ -2,7 +2,6 @@ import re
 from z3 import *
 
 
-
 def z3_eval(function: str):
     """ Returns value of z3 expression
 

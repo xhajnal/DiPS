@@ -22,7 +22,7 @@ def general_create_data_informed_properties(prop_file, intervals, output_file=Fa
     Args:
         prop_file (File/String):  regular prop file which contains lines in the form P=? (...)
         intervals (list of pairs of numbers): list of intervals to assign for the properties
-        output_file (File/String): output prop file, if False or not given data_informed_properties as a list of strings is returned
+        output_file (File/String): output prop file, if False data_informed_properties is returned as a list of strings
         silent (bool): if silent command line output is set to minimum
     """
     if isinstance(prop_file, str):
@@ -62,7 +62,7 @@ def general_create_data_informed_properties(prop_file, intervals, output_file=Fa
 
     if not output_file:
         ## Getting rid of EOL
-        data_informed_properties = list(map(lambda x: x[:-1], data_informed_properties))
+        data_informed_properties = list(map(lambda x: x.rstrip('\n'), data_informed_properties))
         return data_informed_properties
     else:
         if isinstance(prop_file, str):

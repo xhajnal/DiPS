@@ -481,8 +481,8 @@ def call_storm(model_file, params, param_intervals, property_file, storm_output_
             return 404
 
         storm_args = ["storm-pars", "--prism", f"{model_file}", "--prop", ""]
-        storm_args_extra_long = ["(time", "storm-pars", "--prism", f"{model_file}",  "--prop", "", ">>", f"{storm_output_file}", "2>&1"]
-        storm_args_long = ["time", "storm-pars", "--prism", f"{model_file}", "--prop", ""]
+        storm_args_extra_long = ["(time", "storm-pars", "--prism", f"{model_file}",  "--prop", "", "--resources:timemem", ">>", f"{storm_output_file}", "2>&1"]
+        storm_args_long = ["time", "storm-pars", "--prism", f"{model_file}", "--prop", "", "--resources:timemem"]
 
         region = []
         if params:
@@ -523,10 +523,10 @@ def call_storm(model_file, params, param_intervals, property_file, storm_output_
                     if property.endswith(","):
                         property = property[:-1]
                     if time:
-                        storm_args_extra_long[5] = f'"{property}" )'
+                        storm_args_extra_long[5] = f"'{property}' )"
                         storm_args = storm_args_extra_long
                     else:
-                        storm_args[4] = f'"{property}"'
+                        storm_args[4] = f"'{property}'"
                     storm_output_filee.write(" ".join(storm_args) + "\n")
                     print(" ".join(storm_args))
                 print()
