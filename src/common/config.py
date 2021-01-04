@@ -111,7 +111,10 @@ def load_config():
 
     z3_path = config.get("paths", "z3_path")
 
-    refine_timeout = config.get("settings", "refine_timeout")
+    try:
+        refine_timeout = int(config.get("settings", "refine_timeout"))
+    except configparser.NoOptionError:
+        refine_timeout = 3600
 
     my_config = {"prism_path": prism_path, "models": model_dir, "properties": property_dir, "data": data_dir,
                  "results": results_dir, "prism_results": prism_results, "storm_results": storm_results,
@@ -124,36 +127,36 @@ def load_config():
     ## Interval settings
     try:
         n_samples = config.get("settings", "number_of_samples")
-        my_config["n_samples"] = n_samples
+        my_config["n_samples"] = int(n_samples)
     except configparser.NoOptionError:
         my_config["n_samples"] = 100
     try:
         confidence_level = config.get("settings", "confidence_level")
-        my_config["confidence_level"] = confidence_level
+        my_config["confidence_level"] = float(confidence_level)
     except configparser.NoOptionError:
         my_config["confidence_level"] = 0.95
 
     # Space sampling setting
     try:
         grid_size = config.get("settings", "grid_size")
-        my_config["grid_size"] = grid_size
+        my_config["grid_size"] = int(grid_size)
     except configparser.NoOptionError:
         my_config["grid_size"] = 10
 
     # Space refinement setting
     try:
         max_depth = config.get("settings", "max_depth")
-        my_config["max_depth"] = max_depth
+        my_config["max_depth"] = int(max_depth)
     except configparser.NoOptionError:
-        my_config["max_depth"] = 0.5
+        my_config["max_depth"] = 15
     try:
         coverage = config.get("settings", "coverage")
-        my_config["coverage"] = coverage
+        my_config["coverage"] = float(coverage)
     except configparser.NoOptionError:
         my_config["coverage"] = 0.9
     try:
         alg = config.get("settings", "algorithm")
-        my_config["alg"] = alg
+        my_config["alg"] = int(alg)
     except configparser.NoOptionError:
         my_config["alg"] = 4
     try:
@@ -163,37 +166,37 @@ def load_config():
         my_config["solver"] = "z3"
     try:
         delta = config.get("settings", "delta")
-        my_config["delta"] = delta
+        my_config["delta"] = float(delta)
     except configparser.NoOptionError:
         my_config["delta"] = 0.01
     try:
         refinement_timeout = config.get("settings", "refine_timeout")
-        my_config["refinement_timeout"] = refinement_timeout
+        my_config["refinement_timeout"] = float(refinement_timeout)
     except configparser.NoOptionError:
         my_config["refinement_timeout"] = 7200
 
     # Metropolis-Hastings setting
     try:
         mh_iterations = config.get("settings", "iterations")
-        my_config["mh_iterations"] = mh_iterations
+        my_config["mh_iterations"] = int(mh_iterations)
     except configparser.NoOptionError:
         my_config["mh_iterations"] = 50000
 
     try:
         mh_grid_size = config.get("settings", "mh_grid_size")
-        my_config["mh_grid_size"] = mh_grid_size
+        my_config["mh_grid_size"] = int(mh_grid_size)
     except configparser.NoOptionError:
         my_config["mh_grid_size"] = 20
 
     try:
         burn_in = config.get("settings", "burn_in")
-        my_config["burn_in"] = burn_in
+        my_config["burn_in"] = float(burn_in)
     except configparser.NoOptionError:
         my_config["burn_in"] = 0.25
 
     try:
         mh_timeout = config.get("settings", "mh_timeout")
-        my_config["mh_timeout"] = mh_timeout
+        my_config["mh_timeout"] = int(mh_timeout)
     except configparser.NoOptionError:
         my_config["mh_timeout"] = 3600
 
