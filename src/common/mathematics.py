@@ -53,11 +53,16 @@ def create_intervals(confidence, n_samples, data):
         n_samples (int): number of samples to compute margin
         data (list of floats): values to be margined
     """
+    print(data)
     intervals = []
     if not isinstance(data, Iterable):
         assert isinstance(data, float)
         return [create_interval(confidence, n_samples, data)]
     for data_point in data:
+        try:
+            assert isinstance(data_point, float)
+        except AssertionError:
+            data_point = float(data_point)
         intervals.append(create_interval(confidence, n_samples, data_point))
     return intervals
 
@@ -150,7 +155,7 @@ def create_interval(confidence, n_samples, data_point):
 
 
 ## TODO shortly describe this type of margin
-def margin(confidence, n_samples, data_point):
+def margin(confidence: float, n_samples: int, data_point: float):
     """ Estimates expected interval with respect to parameters
 
     Args:
@@ -158,6 +163,12 @@ def margin(confidence, n_samples, data_point):
         n_samples (int): number of samples to compute margin
         data_point (float): the value to be margined
     """
+    assert isinstance(confidence, float)
+    assert isinstance(n_samples, int)
+    try:
+        assert isinstance(data_point, float)
+    except AssertionError:
+        data_point = float(data_point)
     try:
         return st.norm.ppf(1 - (1 - confidence) / 2) * math.sqrt(data_point * (1 - data_point) / n_samples) + 0.5 / n_samples
     except ValueError as error:

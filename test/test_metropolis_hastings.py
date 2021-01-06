@@ -47,9 +47,10 @@ class MyTestCase(unittest.TestCase):
         parameter_intervals = [(0, 1)]
         functions = ["x+0.9"]
         sample_size = 10
+        precision = 4
         #                      manual_log_like_normal(params, theta, functions, data, sample_size, eps=0, parallel=False, debug=False)
-        self.assertEqual(round(manual_log_like_normal(params, [0], functions, [0.9], sample_size, eps=0, parallel=True, debug=True), 2), -3.25)
-        self.assertEqual(round(manual_log_like_normal(params, [0], functions, [0.8], sample_size, eps=0, parallel=True, debug=True), 2), - 5)
+        self.assertEqual(round(manual_log_like_normal(params, [0], functions, [0.9], sample_size, eps=0, parallel=True, debug=True), precision), round(-3.250829733914482, precision))
+        self.assertEqual(round(manual_log_like_normal(params, [0], functions, [0.8], sample_size, eps=0, parallel=True, debug=True), precision), round(-5.448054311250701, precision))
 
     def test_metropolis_hastings(self):
         warnings.warn("This test does not contain any assert as it is nondeterministic, please check the results manually", RuntimeWarning)

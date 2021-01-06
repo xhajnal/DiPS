@@ -7,8 +7,8 @@ from socket import gethostname
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
-from matplotlib.figure import Figure
 from matplotlib.ticker import MaxNLocator
+from matplotlib.figure import Figure
 from bokeh.plotting import gridplot, output_file, show
 import bokeh.plotting.figure as bokeh_figure
 from bokeh.models import Span
