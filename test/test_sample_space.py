@@ -15,6 +15,7 @@ curr_dir = os.path.dirname(__file__)
 class MyTestCase(unittest.TestCase):
     def test_check_sample(self):
         print(colored("Testing check sample", 'blue'))
+        ## Single constraint
         sample_space.glob_sort = False
         sample_space.glob_space = RefinedSpace(((0, 1), (0, 1)), ["p", "q"])
         sample_space.glob_debug = False
@@ -33,6 +34,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(sample_space.check_sample([0.5, 0.5]), [False])
         self.assertEqual(sample_space.check_sample([0.3, 0.3]), [True])
 
+        ## Two constraints
         sample_space.glob_constraints = ["0.3 < p+q < 0.8", "p>q"]
         sample_space.glob_compress = True
         self.assertEqual(sample_space.check_sample([0, 0]), False)
@@ -47,6 +49,13 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(sample_space.check_sample([0.5, 0]), [True, True])
         self.assertEqual(sample_space.check_sample([0.5, 0.5]), [False, False])
         self.assertEqual(sample_space.check_sample([0.3, 0.3]), [True, False])
+
+        ## Error - Division by zero
+        sample_space.glob_constraints = ["0.3 < p/q < 0.8", "p>q"]
+        sample_space.glob_compress = True
+        self.assertEqual(sample_space.check_sample([0, 0]), None)
+        sample_space.glob_compress = False
+        self.assertEqual(sample_space.check_sample([0, 0]), [None, False])
 
     def test_sample_sat_degree(self):
         print(colored("Testing satisfaction degree of a sample", 'blue'))
