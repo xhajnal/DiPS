@@ -671,7 +671,7 @@ def get_truncated_normal(mean=0.0, sd=1.0, low=0.0, upp=10.0):
     return truncnorm((low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd).rvs()
 
 
-def transition_model_a(theta, parameter_intervals, sd=0.15):
+def transition_model(theta, parameter_intervals, sd=0.15):
     """" Defines how to walk around the parameter space, set a new point,
         using normal distribution around the old point
 
@@ -724,12 +724,13 @@ def prior(theta, parameter_intervals):
     return 1
 
 
-def acceptance(x_likelihood, x_new_likelihood):
+def acceptance_rule(x_likelihood, x_new_likelihood, debug=False):
     """ Decides whether to accept new point, x_new, or not, based on its likelihood
 
     Args:
         x_likelihood: likelihood of the old parameter point
         x_new_likelihood: likelihood of the new parameter point
+        debug (bool): if True extensive print will be used
 
     Returns:
          True if the new points is accepted
@@ -741,17 +742,22 @@ def acceptance(x_likelihood, x_new_likelihood):
         return True
     else:
         ## Chance to accept even if the likelihood of the new point is lower (than likelihood of current point)
+
         accept = np.random.uniform(0, 1)
+        if debug:
+            print("acceptance_rule threshold", accept)
+            print("difference of loglikelihoods", (np.exp(x_new_likelihood - x_likelihood)))
         return accept < (np.exp(x_new_likelihood - x_likelihood))
 
 
 ## Now unused
-def acceptance_default(x_likelihood, x_new_likelihood):
+def acceptance_rule_naive(x_likelihood, x_new_likelihood, debug=False):
     """ Decides whether to accept new point, x_new, or not, based on its likelihood
 
     Args:
         x_likelihood: likelihood of the old parameter point
         x_new_likelihood: likelihood of the new parameter point
+        debug (bool): if True extensive print will be used
 
     Returns:
          True if the new points is accepted
@@ -799,13 +805,13 @@ def manual_log_like_normal(params, theta, functions, data, sample_size, eps=0, p
 
     ## Assignment of parameter values
     for index, param in enumerate(theta):
-        locals()[params[index]] = theta[index]
+        ## TODO why this does not work with locals()[params[index]] ??
+        globals()[params[index]] = theta[index]
 
     ## OLD CODE
     # ## Dictionary optimising performance - not evaluating the same functions again
     # evaled_functions = {}
 
-    ## TODO represent observations as data
     res = 0
 
     if parallel:
@@ -834,7 +840,9 @@ def manual_log_like_normal(params, theta, functions, data, sample_size, eps=0, p
         # lik = nCr(sample_size, data_point* sample_size) * point**(data_point*sample_size) * (1-point)**(sample_size-data_point*sample_size)  ## Our representation
         ## log_lik = np.log(nCr(sample_size, data_point * sample_size)) + (data_point * sample_size * np.log(point) + (1 - data_point) * sample_size * np.log(1 - point))  ## Original log likelihood, but the C(n,k) does not change that the one loglik is greater and it strikes out in subtraction part
         try:
-            pseudo_log_lik = (data_point * sample_size * np.log(point) + (1 - data_point) * sample_size * np.log(1 - point))
+            # pseudo_log_lik = (data_point * sample_size * np.log(point) + (1 - data_point) * sample_size * np.log(1 - point))
+            ## put sample_size to front
+            pseudo_log_lik = sample_size * (data_point * np.log(point) + (1 - data_point) * np.log(1 - point))
         except RuntimeWarning as warn:
             if debug:
                 print(warn)
@@ -903,15 +911,10 @@ def manual_log_like_normal(params, theta, functions, data, sample_size, eps=0, p
     return res
 
 
-def metropolis_hastings(likelihood_computer, prior_rule, transition_model, acceptance_rule, params, parameter_intervals,
-                        param_init, functions, data, sample_size, iterations, eps, sd=0.15, progress=False, timeout=0,
-                        debug=False):
+def metropolis_hastings(params, parameter_intervals, param_init, functions, data, sample_size, iterations, eps, sd=0.15,
+                        progress=False, timeout=0, debug=False):
     """ The core method of the Metropolis Hasting
 
-        likelihood_computer (function(params, theta, functions, observation/data, eps)): function returning the likelihood that functions in theta point generated the data
-        prior_rule (function(theta, eps)): prior function
-        transition_model (function(theta)): a function that draws a sample from a symmetric distribution and returns it
-        acceptance_rule (function(theta, theta_new)): decides whether to accept or reject the new sample
         params (list of strings): parameter names
         parameter_intervals (list of pairs): parameter domains
         param_init  (pair of numbers): starting parameter point
@@ -947,27 +950,26 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, accep
     for iteration in range(1, iterations + 1):
         ## Walk in parameter space - Get new parameter point from the current one
         theta_new = transition_model(theta, parameter_intervals, sd=sd)
-        # print("theta_new", theta_new)
-
-        ## Estimate likelihood of current point
-        ## (params, theta, functions, data, eps)
 
         ## Not recalculating the likelihood if we did not move
         if has_moved:
-            theta_lik = likelihood_computer(params, theta, functions, data, sample_size, eps, debug=debug)
-        # print("theta_lik", theta_lik)
+            ## Estimate likelihood of current point
+            theta_lik = manual_log_like_normal(params, theta, functions, data, sample_size, eps, debug=debug)
         ## Estimate likelihood of new point
-        theta_new_lik = likelihood_computer(params, theta_new, functions, data, sample_size, eps, debug=debug)
-        # print("theta_new_lik", theta_new_lik)
+        theta_new_lik = manual_log_like_normal(params, theta_new, functions, data, sample_size, eps, debug=debug)
+
         if debug:
             print("iteration:", iteration)
+            print(f"old point", theta, "with likelihood", theta_lik)
+            print(f"new point", theta_new, "with likelihood", theta_new_lik)
+
         # print("theta_lik + np.log(prior(theta, parameter_intervals))", theta_lik + np.log(prior(theta, parameter_intervals)))
         # print("theta_new_lik + np.log(prior(theta, parameter_intervals))", theta_new_lik + np.log(prior(theta_new, parameter_intervals)))
 
         ## If new point accepted
-        ## old acceptance rule checking using uniform distribution ## this is done by the walker
+        ## old acceptance_rule rule checking using uniform distribution ## this is done by the walker
         # if acceptance_rule(theta_lik + np.log(prior_rule(theta, parameter_intervals)), theta_new_lik + np.log(prior_rule(theta_new, parameter_intervals))):
-        if acceptance_rule(theta_lik, theta_new_lik):
+        if acceptance_rule(theta_lik, theta_new_lik, debug=debug):
             ## Go to the new point
             has_moved = True
             theta = theta_new
@@ -1044,10 +1046,10 @@ def initialise_sampling(params, parameter_intervals, functions, data, sample_siz
             theta_init.append((parameter_intervals[index][0] + parameter_intervals[index][1])/2)
         # theta_init = [(parameter_intervals[0][0] + parameter_intervals[0][1])/2, (parameter_intervals[1][0] + parameter_intervals[1][1])/2]  ## Middle of the intervals # np.ones(10)*0.1
 
-    ## TODO do we need this?
-    for index, param in enumerate(params):
-        globals()[param] = theta_init[index]
-        print(f"{param} = {theta_init[index]}")
+    # ## TODO do we need this?
+    # for index, param in enumerate(params):
+    #     globals()[param] = theta_init[index]
+    #     print(f"{param} = {theta_init[index]}")
 
     # ## Maintaining observations
     # # If given observations or data
@@ -1079,8 +1081,8 @@ def initialise_sampling(params, parameter_intervals, functions, data, sample_siz
 
     print(colored(f"Initialisation of Metropolis-Hastings took {round(time() - start_time, 4)} seconds", "yellow"))
     ## MAIN LOOP
-    #                    metropolis_hastings(likelihood_computer, prior_rule, transition_model, acceptance_rule, params, parameter_intervals, param_init, functions, data, sample_size, iterations,        eps,     sd,      progress=False,      timeout=0,  debug=False):
-    accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, acceptance, params, parameter_intervals, theta_init, functions, data, sample_size, mh_sampling_iterations, eps=eps, sd=sd, progress=progress, timeout=timeout, debug=debug)
+    #                    metropolis_hastings(params, parameter_intervals, param_init, functions, data, sample_size, iterations,        eps,     sd,      progress=False,      timeout=0,  debug=False):
+    accepted, rejected = metropolis_hastings(params, parameter_intervals, theta_init, functions, data, sample_size, mh_sampling_iterations, eps=eps, sd=sd, progress=progress, timeout=timeout, debug=debug)
 
     print(colored(f"Metropolis-Hastings took {round(time()-start_time, 4)} seconds", "yellow"))
 
