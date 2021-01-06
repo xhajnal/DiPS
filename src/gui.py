@@ -257,7 +257,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.20"  ## Version of the gui
+        self.version = "1.20.1"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -1408,12 +1408,8 @@ class Gui(Tk):
                 messagebox.showwarning("Load functions", "Select a program for which you want to load data.")
                 return
 
-            if self.save_as_plain_text.get():
-                filetypes = (("text files", "*.txt"), ("pickle files", "*.p"), ("all files", "*.*"))
-            else:
-                filetypes = (("pickle files", "*.p"), ("text files", "*.txt"), ("all files", "*.*"))
-            spam = filedialog.askopenfilename(initialdir=initial_dir,
-                                              title="Functions saving - Select file",
+            filetypes = (("pickle/text files", "*.p *.txt"), ("all files", "*.*"))
+            spam = filedialog.askopenfilename(initialdir=initial_dir, title="Functions saving - Select file",
                                               filetypes=filetypes)
 
         ## If no file selected
@@ -1523,10 +1519,7 @@ class Gui(Tk):
 
             self.status_set("Please select the data to be loaded.")
 
-            if self.save_as_plain_text.get():
-                filetypes = (("text files", "*.txt"), ("pickled files/comma separated values", "*.p *.csv"), ("all files", "*.*"))
-            else:
-                filetypes = (("pickled files/comma separated values", "*.p *.csv"), ("text files", "*.txt"), ("all files", "*.*"))
+            filetypes = (("pickled / text files / comma separated values", "*.p *.txt *.csv"), ("all files", "*.*"))
             spam = filedialog.askopenfilename(initialdir=self.data_dir, title="Data loading - Select file",
                                               filetypes=filetypes)
         ## If no file selected
@@ -1645,10 +1638,7 @@ class Gui(Tk):
                     return
 
             self.status_set("Please select the data weights to be loaded.")
-            if self.save_as_plain_text.get():
-                filetypes = (("text files", "*.txt"), ("pickle files", "*.p"), ("all files", "*.*"))
-            else:
-                filetypes = (("pickle files", "*.p"), ("text files", "*.txt"), ("all files", "*.*"))
+            filetypes = (("pickle/text files", "*.p *.txt"), ("all files", "*.*"))
             spam = filedialog.askopenfilename(initialdir=self.data_weights_dir, title="Data weights loading - Select file",
                                               filetypes=filetypes)
 
@@ -1705,10 +1695,7 @@ class Gui(Tk):
                     return
 
             self.status_set("Please select the data intervals to be loaded.")
-            if self.save_as_plain_text.get():
-                filetypes = (("text files", "*.txt"), ("pickle files", "*.p"), ("all files", "*.*"))
-            else:
-                filetypes = (("pickle files", "*.p"), ("text files", "*.txt"), ("all files", "*.*"))
+            filetypes = (("pickle/text files", "*.p *.txt"), ("all files", "*.*"))
             spam = filedialog.askopenfilename(initialdir=self.data_intervals_dir, title="Data intervals loading - Select file",
                                               filetypes=filetypes)
 
@@ -1789,10 +1776,7 @@ class Gui(Tk):
                 if not askyesno("Loading constraints", "Previously obtained constraints will be lost. Do you want to proceed?"):
                     return
             self.status_set("Please select the constraints to be loaded.")
-            if self.save_as_plain_text.get():
-                filetypes = (("text files", "*.txt"), ("pickle files", "*.p"), ("all files", "*.*"))
-            else:
-                filetypes = (("pickle files", "*.p"), ("text files", "*.txt"), ("all files", "*.*"))
+            filetypes = (("pickle/text files", "*.p *.txt"), ("all files", "*.*"))
             spam = filedialog.askopenfilename(initialdir=self.constraints_dir, title="constraints loading - Select file",
                                               filetypes=filetypes)
 
@@ -3553,8 +3537,8 @@ class Gui(Tk):
                                                   sd=float(self.sd_entry.get()), theta_init=self.parameter_point,
                                                   where=[self.page6_figure2, self.page6_b],
                                                   progress=self.update_progress_bar, debug=self.debug.get(),
-                                                  bins=int(self.bins_entry.get()), burn_in=float(self.burn_in_entry.get()),
-                                                  timeout=int(self.mh_timeout_entry.get()), draw_plot=self.draw_plot_window,
+                                                  bins=int(float(self.bins_entry.get())), burn_in=float(self.burn_in_entry.get()),
+                                                  timeout=int(float(self.mh_timeout_entry.get())), draw_plot=self.draw_plot_window,
                                                   metadata=self.show_mh_metadata.get(), sort=self.non_decreasing_params.get())
             spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b])
 
@@ -3736,7 +3720,7 @@ class Gui(Tk):
                                         sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
                                         where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
                                         delta=self.delta, gui=self.update_progress_bar, show_space=False,
-                                        iterative=self.iterative_refinement.get(), timeout=int(self.refinement_timeout_entry.get()))
+                                        iterative=self.iterative_refinement.get(), timeout=int(float(self.refinement_timeout_entry.get())))
                 else:
                     assert isinstance(self.constraints, list)
                     spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
@@ -3744,7 +3728,7 @@ class Gui(Tk):
                                         sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
                                         where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
                                         delta=self.delta, gui=self.update_progress_bar, show_space=False,
-                                        iterative=self.iterative_refinement.get(), timeout=int(self.refinement_timeout_entry.get()))
+                                        iterative=self.iterative_refinement.get(), timeout=int(float(self.refinement_timeout_entry.get())))
             finally:
                 try:
                     self.cursor_toggle_busy(False)
