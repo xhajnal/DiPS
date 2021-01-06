@@ -31,7 +31,7 @@ class MyTestCase(unittest.TestCase):
         for i in range(10):
             for b in range(1, 100):
                 b = b/10
-                spam = transition_model_a([i], [[i-b, i+b]])
+                spam = transition_model([i], [[i - b, i + b]])
                 self.assertTrue(spam[0] > i - b)
                 self.assertTrue(spam[0] < i + b)
 
@@ -40,7 +40,7 @@ class MyTestCase(unittest.TestCase):
         pass
 
     def test_acceptance(self):
-        self.assertTrue(acceptance(8, 9))
+        self.assertTrue(acceptance_rule(8, 9))
 
     def test_manual_log_like_normal(self):
         params = ["x"]
@@ -54,13 +54,12 @@ class MyTestCase(unittest.TestCase):
 
     def test_metropolis_hastings(self):
         warnings.warn("This test does not contain any assert as it is nondeterministic, please check the results manually", RuntimeWarning)
-        # metropolis_hastings(likelihood_computer, prior_rule, transition_model, param_init, iterations, space, data, sample_size, acceptance_rule, parameter_intervals, functions, eps, progress=False, timeout=-1, debug=False, sort=False)
         params = ["x"]
         parameter_intervals = [(0, 1)]
         functions = ["x"]
         data = [0.2]
-        #      metropolis_hastings(likelihood_computer, prior_rule, transition_model, acceptance_rule, params, parameter_intervals, param_init, functions, data, sample_size, iterations, eps, sd, progress=False, timeout=0, debug=False)
-        spam = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, acceptance, params, parameter_intervals, [0.5], functions, data, 10, 50, eps=0, progress=False, timeout=0, debug=False)
+        #      metropolis_hastings(params, parameter_intervals, param_init, functions, data, sample_size, iterations, eps, sd, progress=False, timeout=0, debug=False)
+        spam = metropolis_hastings(params, parameter_intervals, [0.5], functions, data, 10, 50, eps=0, progress=False, timeout=0, debug=False)
         print()
         print("accepted", spam[0])
         print("rejected", spam[1])
