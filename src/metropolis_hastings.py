@@ -688,10 +688,6 @@ def transition_model_a(theta, parameter_intervals, sd=0.15, sort=False):
     @author: tpetrov
     @edit: xhajnal, denis
     """
-    # if sort:
-    #     sd = 0.15  ## Standard deviation of the normal distribution
-    # else:
-    #     sd = 0.15  ## TODO FIND OPTIMAL VALUE
     theta_new = np.zeros(len(theta))  ## New point initialisation
 
     ## TODO CHECK NEXT LINE
@@ -712,23 +708,11 @@ def transition_model_a(theta, parameter_intervals, sd=0.15, sort=False):
     max_param = parameter_intervals[0][0]
     for index, param in enumerate(theta):
         temp = parameter_intervals[index][0] - 1  ## Lower bound of first parameter - 1, forcing to find a new value
-        #### THIS WAS NOT WORKING
-        # if sort:
-        #     temp = get_truncated_normal(theta[index], sd, low=max(temp <= parameter_intervals[index][0], theta_new[max(0, index - 1)]), upp=parameter_intervals[index][1])
-        # else:
-        #     while (temp <= parameter_intervals[index][0]) or (temp >= parameter_intervals[index][1]):
-        #         temp = np.random.normal(theta[index], sd)
-        # max_param = theta_new[max(0, index - 1)]
-        while (temp < parameter_intervals[index][0]) or (temp > parameter_intervals[index][1]) or (sort and temp < max_param):
+        while (temp < parameter_intervals[index][0]) or (temp > parameter_intervals[index][1]):
             ## Generate new parameter value from normal distribution
-            if sort and max_param > theta[index]:
-                temp = get_truncated_normal(mean=max_param, sd=sd, low=max_param, upp=parameter_intervals[index][1])
-                if temp < max_param:
-                    temp = temp + abs(max_param-temp)
-            else:
-                temp = np.random.normal(theta[index], sd)
-                # For some reason slower
-                # temp = get_truncated_normal(mean=theta[index], sd=sd, low=parameter_intervals[index][0], upp=parameter_intervals[index][1])
+            temp = np.random.normal(theta[index], sd)
+            # For some reason slower
+            # temp = get_truncated_normal(mean=theta[index], sd=sd, low=parameter_intervals[index][0], upp=parameter_intervals[index][1])
         ## Store only if the param value inside the domains
         max_param = temp
         theta_new[index] = temp
@@ -750,7 +734,6 @@ def prior(theta, parameter_intervals):
 
     @author: xhajnal
     """
-
     for index, value in enumerate(theta):
         ## If inside of param domains
         if (theta[index] < parameter_intervals[index][0]) or (theta[index] > parameter_intervals[index][1]):
@@ -953,7 +936,7 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, accep
                         debug=False, sort=False):
     """ The core method of the Metropolis Hasting
 
-        likelihood_computer (function(space, theta, functions, observation/data, eps)): function returning the likelihood that functions in theta point generated the data
+        likelihood_computer (function(params, theta, functions, observation/data, eps)): function returning the likelihood that functions in theta point generated the data
         prior_rule (function(theta, eps)): prior function
         transition_model (function(theta)): a function that draws a sample from a symmetric distribution and returns it
         acceptance_rule (function(theta, theta_new)): decides whether to accept or reject the new sample
@@ -992,14 +975,12 @@ def metropolis_hastings(likelihood_computer, prior_rule, transition_model, accep
     theta_lik = 0
     for iteration in range(1, iterations + 1):
         ## Walk in parameter space - Get new parameter point from the current one
-        theta_new = transition_model(theta, parameter_intervals, sd=sd, sort=sort)
+        theta_new = transition_model(theta, parameter_intervals, sd=sd)
         # print("theta_new", theta_new)
-        # if sort:
-        #     if sorted(list(theta_new)) != list(theta_new):
-        #         print(colored(f"{theta_new} is decreasing", "red"))
 
         ## Estimate likelihood of current point
-        ## (space, theta, functions, data, eps)
+        ## (params, theta, functions, data, eps)
+
         ## Not recalculating the likelihood if we did not move
         if has_moved:
             theta_lik = likelihood_computer(params, theta, functions, data, sample_size, eps, debug=debug)
@@ -1128,8 +1109,8 @@ def initialise_sampling(params, parameter_intervals, functions, data, sample_siz
 
     print(colored(f"Initialisation of Metropolis-Hastings took {round(time() - start_time, 4)} seconds", "yellow"))
     ## MAIN LOOP
-    #                    metropolis_hastings(likelihood_computer, prior_rule, transition_model, acceptance_rule, params, parameter_intervals, param_init, functions, data, sample_size, iterations,        eps,     sd,      progress=False,      timeout=0,  debug=False, sort=False):
-    accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, acceptance, params, parameter_intervals, theta_init, functions, data, sample_size, mh_sampling_iterations, eps=eps, sd=sd, progress=progress, timeout=timeout, debug=debug, sort=sort)
+    #                    metropolis_hastings(likelihood_computer, prior_rule, transition_model, acceptance_rule, params, parameter_intervals, param_init, functions, data, sample_size, iterations,        eps,     sd,      progress=False,      timeout=0,  debug=False):
+    accepted, rejected = metropolis_hastings(manual_log_like_normal, prior, transition_model_a, acceptance, params, parameter_intervals, theta_init, functions, data, sample_size, mh_sampling_iterations, eps=eps, sd=sd, progress=progress, timeout=timeout, debug=debug)
 
     print(colored(f"Metropolis-Hastings took {round(time()-start_time, 4)} seconds", "yellow"))
 

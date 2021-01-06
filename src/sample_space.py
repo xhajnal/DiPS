@@ -163,7 +163,6 @@ def sample_space(space, constraints, sample_size, compress=False, silent=True, s
         print("sampling", sampling)
 
     del sampling
-    glob_sort = sort
     glob_space = space
     glob_debug = debug
     glob_compress = compress
