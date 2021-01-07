@@ -618,7 +618,7 @@ class Gui(Tk):
 
         constrained_optimize_button = Checkbutton(frame_left, text="Apply non-decreasing params", variable=self.non_decreasing_params)
         constrained_optimize_button.grid(row=4, column=1, sticky=W, padx=4, pady=4)
-        
+
         label42 = Label(frame_left, text="C, confidence level:", anchor=W, justify=LEFT)
         label42.grid(row=5, column=0, sticky=W, padx=4, pady=4)
         createToolTip(label42, text='Confidence level')
@@ -1399,7 +1399,7 @@ class Gui(Tk):
             self.status_set("Please select the parsed functions to be loaded.")
 
             if not self.silent.get():
-                print("self.program.get()", self.program.get())
+                print("Model checker: ", self.program.get())
             if self.program.get() == "prism":
                 initial_dir = self.prism_results
             elif self.program.get() == "storm":
@@ -1616,7 +1616,7 @@ class Gui(Tk):
             self.data = self.data[eval(self.key.get())]
 
         if not self.silent.get():
-            print("self.data", self.data)
+            print("Unfolded Data", self.data)
         self.new_window.destroy()
         self.unfold_data()
 
@@ -3000,8 +3000,8 @@ class Gui(Tk):
 
         self.validate_parameters(where=self.functions)
 
-        print("self.parameters", self.parameters)
-        print("self.parameter_domains", self.parameter_domains)
+        print("Parameters", self.parameters)
+        print("Parameter_domains", self.parameter_domains)
 
         if len(self.functions) != len(self.data):
             messagebox.showwarning("Optimize functions", f"Number of functions ({len(self.functions)}) is not equal to the number of data points ({len(self.data)})")
@@ -3050,43 +3050,49 @@ class Gui(Tk):
         window.minsize(400, width+20)
         window.resizable(False, False)
 
-        Label(window, text=f"Parameter point: ").grid(row=1)
-        Label(window, text=f"Function values: ").grid(row=2)
-        Label(window, text=f"Data point: ").grid(row=3)
-        i = 4
+        i = 1
+        Label(window, text=f"Parameter point: ").grid(row=i); i += 1
+        Label(window, text=f"Parameter domains: ").grid(row=i); i += 1
+        Label(window, text=f"Function values: ").grid(row=i); i += 1
+        Label(window, text=f"Data point: ").grid(row=i); i += 1
+
         if self.data_weights:
             Label(window, text=f"Weights: ").grid(row=i)
             i = i + 1
         Label(window, text=f"Distance: ").grid(row=i)
 
+        i = 1
         var = StringVar()
         var.set(str(result[0]))
+        ent = Entry(window, state='readonly', textvariable=var, width=width, relief='flat', readonlybackground='white',
+                    fg='black')
+        ent.grid(row=i, column=1); i += 1
+
+        var = StringVar()
+        var.set(self.parameter_domains)
         ent = Entry(window, state='readonly', textvariable=var, width=width, relief='flat', readonlybackground='white', fg='black')
-        ent.grid(row=1, column=1)
+        ent.grid(row=i, column=1); i += 1
 
         var = StringVar()
         var.set(str(result[1]))
         ent = Entry(window, state='readonly', textvariable=var, width=width, relief='flat', readonlybackground='white', fg='black')
-        ent.grid(row=2, column=1)
+        ent.grid(row=i, column=1); i += 1
 
         var = StringVar()
         var.set(str(self.data))
         ent = Entry(window, state='readonly', textvariable=var, width=width, relief='flat', readonlybackground='white', fg='black')
-        ent.grid(row=3, column=1)
+        ent.grid(row=i, column=1); i += 1
 
-        i = 4
         if self.data_weights:
             var = StringVar()
             var.set(str(self.data_weights))
             ent = Entry(window, state='readonly', textvariable=var, width=width, relief='flat', readonlybackground='white', fg='black')
-            ent.grid(row=i, column=1)
-            i = i + 1
+            ent.grid(row=i, column=1); i += 1
 
         var = StringVar()
         var.set(str(result[2]))
         ent = Entry(window, state='readonly', textvariable=var, width=width, relief='flat', readonlybackground='white', fg='black')
-        ent.grid(row=i, column=1)
-        i = i + 1
+        ent.grid(row=i, column=1); i += 1
 
         save_optimisation_button = Button(window, text="Save Result", command=self.save_optimisation_result)
         save_optimisation_button.grid(row=i, column=1)
@@ -3095,6 +3101,7 @@ class Gui(Tk):
         self.save_optimisation_result(os.path.join(self.tmp_dir, "optimisation_results.txt"))
 
         print("Parameter point: ", self.optimised_param_point)
+        print("Parameter domains: ", self.parameter_domains)
         print("Function values: ", self.optimised_function_value)
         print("Data points: ", self.data)
         if self.data_weights:
@@ -3123,6 +3130,8 @@ class Gui(Tk):
             save_opt_result_file = save_opt_result_file + ".txt"
 
         with open(save_opt_result_file, "w") as f:
+            f.write(f"Parameters: {self.parameters} \n")
+            f.write(f"Parameter domains: {self.parameter_domains} \n")
             f.write(f"Parameter point: {self.optimised_param_point} \n")
             f.write(f"Function values: {self.optimised_function_value} \n")
             f.write(f"Data values: {self.data} \n")
@@ -3925,7 +3934,7 @@ class Gui(Tk):
             self.constraints_text.insert('end', constraints)
             # self.constraints_text.configure(state='disabled')
             if not self.silent.get():
-                print("constraints: ", self.constraints)
+                print("self.constraints: ", self.constraints)
         return True
 
     def refresh_space(self):
