@@ -26,7 +26,7 @@ global glob_compress
 global glob_constraints
 
 
-def check_sample(parameter_value):
+def check_sample(parameter_value, save_memory=False):
     """ Checks whether constraints are satisfied in the given point """
     ## If sort constraint is not sat we simply skipp the point and not put it in the space.samples
     if glob_sort:
@@ -60,7 +60,8 @@ def check_sample(parameter_value):
             # print(f"{parameter_value} unsat")
             # print(f"new space {glob_space}")
             ## TODO, the following line works only for the sequential version
-            glob_space.add_unsat_samples([list(parameter_value)])
+            if not save_memory:
+                glob_space.add_unsat_samples([list(parameter_value)])
             return False
         sat_list.append(is_sat)
     if glob_compress:
@@ -104,7 +105,7 @@ def sample_sat_degree(parameter_value):
 
 
 def sample_space(space, constraints, sample_size, compress=False, silent=True, save=False, debug: bool = False,
-                 progress=False, quantitative=False, sort=False, parallel=10):
+                 progress=False, quantitative=False, sort=False, parallel=10, save_memory=False):
     """ Samples the space in **sample_size** samples in each dimension and saves if the point is in respective interval
 
     Args:
@@ -193,13 +194,15 @@ def sample_space(space, constraints, sample_size, compress=False, silent=True, s
                 if sat_list[index]:
                     space.add_sat_samples([list(item)])
                 elif not sat_list[index]:
-                    space.add_unsat_samples([list(item)])
+                    if not save_memory:
+                        space.add_unsat_samples([list(item)])
                 else:
                     ## skipped point
                     pass
             else:
                 if False in sat_list[index]:
-                    space.add_unsat_samples([list(item)])
+                    if not save_memory:
+                        space.add_unsat_samples([list(item)])
                 elif True in sat_list[index]:
                     space.add_sat_samples([list(item)])
                 else:
@@ -217,7 +220,7 @@ def sample_space(space, constraints, sample_size, compress=False, silent=True, s
     elif not quantitative:
         ## Sequential sampling
         for index, item in enumerate(parameter_values):
-            check_sample(item)
+            check_sample(item, save_memory)
             if progress:
                 progress(index / len(parameter_values))
         space = glob_space
