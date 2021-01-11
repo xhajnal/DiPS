@@ -8,6 +8,8 @@ from collections.abc import Iterable
 from copy import deepcopy
 from tkinter import *
 from tkinter import scrolledtext, messagebox
+
+from psutil import virtual_memory
 from sympy import factor, Interval
 from pathlib import Path
 from os.path import basename
@@ -266,6 +268,7 @@ class Gui(Tk):
         self.factorise = BooleanVar()  ## Flag for factorising functions
         ## Sampling
         self.sample_size = ""  ## Number of samples
+        self.store_unsat_samples = True  ## Flag whether to store unsat samples, memory efficient to skipp it
         ## Refinement
         self.max_depth = ""  ## Max recursion depth
         self.coverage = ""  ## Coverage threshold
@@ -1017,6 +1020,8 @@ class Gui(Tk):
         grid_size = config["grid_size"]
         self.sample_size_entry.delete(0, 'end')
         self.sample_size_entry.insert(END, grid_size)
+
+        self.store_unsat_samples = config["store_unsat_samples"]
 
         # Space refinement setting
         self.max_depth = config["max_depth"]
@@ -3316,6 +3321,21 @@ class Gui(Tk):
         if not self.validate_space("Sample Space"):
             return
 
+        ## CHECK MEMORY OVERFLOW
+        ## 10000000 = 87.4% * 31.3
+        ## 1 144 164 is 100% of 31.3GB
+        ## 36554 is 100% per 1GB
+        mem = virtual_memory()
+        if len(self.parameters)**self.sample_size > 36554 * mem.total/1024/1024/1024:
+            if messagebox.askyesno("Sampling functions", "Estimated amount memory needed to sample space is more than this machine possess. Do you want to continue anyway?"):
+                return
+
+        self.store_unsat_samples = True
+        ## SUGGEST TO NOT TO STORE UNSAT SAMPLES
+        if len(self.parameters)**self.sample_size > 36554:
+            if messagebox.askyesno("Sampling functions", f"Estimated amount memory needed to sample space is {round(len(self.parameters)**self.sample_size/36554, 1)}GB. Do you want to omit storing unsat points?"):
+                self.store_unsat_samples = False
+
         self.status_set("Space sampling is running ...")
         assert isinstance(self.space, space.RefinedSpace)
         if self.debug.get():
@@ -3336,7 +3356,9 @@ class Gui(Tk):
 
             ## This progress is passed as whole to update the thing inside the called function
             assert isinstance(self.constraints, list)
-            self.space.grid_sample(self.constraints, self.sample_size, silent=self.silent.get(), save=False, progress=self.update_progress_bar)
+            self.space.grid_sample(self.constraints, self.sample_size, silent=self.silent.get(), save=False,
+                                   progress=self.update_progress_bar, sort=self.non_decreasing_params.get(),
+                                   save_memory=not self.store_unsat_samples)
         finally:
             try:
                 self.new_window.destroy()
@@ -3417,7 +3439,8 @@ class Gui(Tk):
             ## This progress is passed as whole to update the thing inside the called function
             assert isinstance(self.constraints, list)
             self.show_space(False, False, False, clear=True)
-            self.space.grid_sample(self.constraints, self.sample_size, silent=self.silent.get(), save=False, progress=self.update_progress_bar, quantitative=True)
+            self.space.grid_sample(self.constraints, self.sample_size, silent=self.silent.get(), save=False,
+                                   progress=self.update_progress_bar, quantitative=True, save_memory=True)
         finally:
             try:
                 self.new_window.destroy()

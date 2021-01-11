@@ -143,6 +143,11 @@ def load_config():
     except configparser.NoOptionError:
         my_config["grid_size"] = 10
 
+    try:
+        my_config["store_unsat_samples"] = config.get("settings", "store_unsat_samples").lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh']
+    except configparser.NoOptionError:
+        my_config["store_unsat_samples"] = True
+
     # Space refinement setting
     try:
         max_depth = config.get("settings", "max_depth")
