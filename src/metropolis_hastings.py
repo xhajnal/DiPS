@@ -672,7 +672,7 @@ def get_truncated_normal(mean=0.0, sd=1.0, low=0.0, upp=10.0):
     return truncnorm((low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd).rvs()
 
 
-def transition_model_a(theta, parameter_intervals, sd=0.15, sort=False):
+def transition_model(theta, parameter_intervals, sd=0.15, sort=False):
     """" Defines how to walk around the parameter space, set a new point,
         using normal distribution around the old point
 

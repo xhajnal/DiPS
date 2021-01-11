@@ -127,6 +127,7 @@ def sample_space(space, constraints, sample_size, compress=False, silent=True, s
     global glob_debug
     global glob_compress
     global glob_constraints
+    global glob_sort
 
     assert isinstance(space, RefinedSpace)
     if debug:
@@ -175,6 +176,7 @@ def sample_space(space, constraints, sample_size, compress=False, silent=True, s
     glob_debug = debug
     glob_compress = compress
     glob_constraints = constraints
+    glob_sort = sort
 
     print(colored(f"Sampling initialisation took {round(time() - start_time, 4)} seconds", "yellow"))
 
