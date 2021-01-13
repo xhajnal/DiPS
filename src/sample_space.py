@@ -97,7 +97,7 @@ def sample_sat_degree(parameter_value):
 
 
 def sample_space(space, constraints, sample_size, compress=False, silent=True, save=False, debug: bool = False,
-                 progress=False, quantitative=False, parallel=10):
+                 progress=False, quantitative=False, parallel=10, save_memory=False):
     """ Samples the space in **sample_size** samples in each dimension and saves if the point is in respective interval
 
     Args:
@@ -112,6 +112,7 @@ def sample_space(space, constraints, sample_size, compress=False, silent=True, s
         progress (Tkinter element): progress bar
         quantitative (bool): if True return how far is the point from satisfying / not satisfying the constraints
         parallel (Bool): flag to run this in parallel mode
+        save_memory (Bool): if True saves only sat samples
 
     """
     start_time = time()

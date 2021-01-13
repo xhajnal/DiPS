@@ -150,6 +150,8 @@ def create_interval(confidence, n_samples, data_point):
         n_samples (int): number of samples to compute margin
         data_point (float): the value to be margined from interval [0,1]
     """
+    if n_samples == 0:
+        return Interval(0, 1)
     delta = margin(confidence, n_samples, data_point)
     return Interval(float(max(data_point - delta, 0)), float(min(data_point + delta, 1)))
 

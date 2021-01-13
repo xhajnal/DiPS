@@ -312,7 +312,7 @@ class HastingsResults:
             except ZeroDivisionError as err:
                 print("accepted points", self.accepted)
                 print("accepted points transposed", self.accepted.T)
-                print("accepted points transposed", self.egg)
+                print("accepted points transposed", egg)
                 raise err
 
             # for sample in self.accepted[not_burn_in:]:
@@ -855,7 +855,15 @@ def manual_log_like_normal(params, theta, functions, data, sample_size, eps=0, p
             if point <= 0 or point >= 1:
                 ## When the point is exactly 1 or 0 and data is respective value as well
                 if (data_point == 0 or data_point == 1) and (point == 0 or point == 1):
-                    raise warn
+                    print("point", point)
+                    print("data point", data_point)
+                    pseudo_lik = point**(data_point*sample_size) * (1-point)**(sample_size-data_point*sample_size)
+                    if pseudo_lik == 1:
+                        pseudo_log_lik = 0  ## np.log(1) == 0
+                    elif pseudo_lik == 0:
+                        pseudo_log_lik = float("-inf")
+                    else:
+                        raise warn
                 else:
                     pseudo_log_lik = float("-inf")
             else:
