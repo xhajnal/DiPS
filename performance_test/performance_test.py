@@ -85,16 +85,19 @@ def load_functions(path, factorise=False, debug=False):
     """
     try:
         functions = pickle_load(os.path.join(storm_results, path))
+        print(colored(f"Loaded function file: {path}.p using Storm file", "blue"))
     except FileNotFoundError:
         try:
             functions = get_f(os.path.join(storm_results, path + ".txt"), "storm", factorize=False)
+            print(colored(f"Loaded function file: {path}.txt using Storm file", "blue"))
         except FileNotFoundError:
             try:
                 functions = pickle_load(os.path.join(prism_results, path))
+                print(colored(f"Loaded function file: {path}.p using PRISM file", "blue"))
             except FileNotFoundError:
                 functions = get_f(os.path.join(prism_results, path + ".txt"), "prism", factorize=True)
+                print(colored(f"Loaded function file: {path}.txt using PRISM file", "blue"))
 
-    print(colored(f"Loaded function file: {path}", "blue"))
     if factorise:
         print(colored(f"Factorising function file: {path}", "blue"))
         functions = list(map(factor, functions))
@@ -217,12 +220,13 @@ if __name__ == '__main__':
                 print("parameter_domains", parameter_domains)
 
             ## LOAD FUNCTIONS
-            try:
-                functions = load_functions(model_name, factorise=False, debug=debug)
-            except FileNotFoundError as err:
-                ## compute functions
-                compute_functions(model_file, property_file, output_path=False, debug=debug)
-                # functions = load_functions(model_name, debug)
+            if run_optimise or run_sampling or run_refine or run_mh:
+                try:
+                    functions = load_functions(model_name, factorise=False, debug=debug)
+                except FileNotFoundError as err:
+                    ## compute functions
+                    compute_functions(model_file, property_file, output_path=False, debug=debug)
+                    functions = load_functions(model_name, debug)
 
             if shallow:
                 data_sets = [0.5]
@@ -257,11 +261,12 @@ if __name__ == '__main__':
                     if debug:
                         print(result_1)
 
-                constraints = []
-                for i in range(len(n_samples)):
-                    constraints.append(ineq_to_constraints(functions, intervals[i], decoupled=True))
-                    if debug:
-                        print(f"Constraints with {n_samples[i]} samples :{constraints[i]}")
+                if run_sampling or run_refine:
+                    constraints = []
+                    for i in range(len(n_samples)):
+                        constraints.append(ineq_to_constraints(functions, intervals[i], decoupled=True))
+                        if debug:
+                            print(f"Constraints with {n_samples[i]} samples :{constraints[i]}")
 
                 ## SAMPLE SPACE
                 for i in range(len(n_samples)):
@@ -271,14 +276,14 @@ if __name__ == '__main__':
                     start_time = time()
                     sampling = space.grid_sample(constraints[i], grid_size, silent=True, debug=debug)
                     print(colored(
-                        f"Sampling, dataset {data_set}, # of samples {n_samples[i]} took {round(time() - start_time, 4)} seconds", "yellow"))
+                        f"Sampling, dataset {data_set}, grid size {grid_size}, # of samples {n_samples[i]} took {round(time() - start_time, 4)} seconds", "yellow"))
                     if debug:
                         print(sampling)
 
                 ## REFINE SPACE
-                if not run_refine:
-                    break
                 for i in range(len(n_samples)):
+                    if not run_refine:
+                        break
                     ## TODO this fails
                     # refine(f"dataset {data_set}, # of samples {n_samples[i]}", parameters, parameter_domains, constraints, timeout, silent, debug, alg=5)
                     refine(f"dataset {data_set}, # of samples {n_samples[i]}", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=4)
@@ -332,8 +337,8 @@ if __name__ == '__main__':
                                time=True, silent=False)
 
     ## Semisynchronous models
-    for multiparam in [False, True]:                                                ## [False, True]
-        for population_size in [2]:                                                 ## [2, 3, 4, 5, 10, 15]
+    for multiparam in [False]:                                                ## [False, True]
+        for population_size in [2, 3, 4, 5, 10, 15]:                                                 ## [2, 3, 4, 5, 10, 15]
             for data_index, data_dir_subfolder in enumerate(["data", "data_1"]):    ## ["data", "data_1"]
                 ## SKIP Semisynchronous models
                 if not run_semisyn:
@@ -347,6 +352,12 @@ if __name__ == '__main__':
                 else:
                     params = "2-param"
                     prefix = ""
+
+                if population_size == 2 and multiparam is True:
+                    continue
+
+                if population_size == 4 and multiparam is False:
+                    continue
 
                 ## LOAD MODELS AND PROPERTIES
                 try:
@@ -375,12 +386,13 @@ if __name__ == '__main__':
                     print("parameter_domains", parameter_domains)
 
                 ## LOAD FUNCTIONS
-                try:
-                    functions = load_functions(model_name, debug=debug)
-                except FileNotFoundError as err:
-                    ## Compute functions
-                    compute_functions(model_file, property_file, output_path=False, debug=debug)
-                    functions = load_functions(model_name, debug=debug)
+                if run_optimise or run_sampling or run_refine or run_mh:
+                    try:
+                        functions = load_functions(model_name, debug=debug)
+                    except FileNotFoundError as err:
+                        ## Compute functions
+                        compute_functions(model_file, property_file, output_path=False, debug=debug)
+                        functions = load_functions(model_name, debug=debug)
 
                 ## LOAD DATA
                 data_set = load_data(os.path.join(data_dir, f"{data_dir_subfolder}/{params}/data_n={population_size}.csv"), debug=debug)
@@ -412,11 +424,12 @@ if __name__ == '__main__':
                     if debug:
                         print(result_1)
 
-                constraints = []
-                for i in range(len(n_samples)):
-                    constraints.append(ineq_to_constraints(functions, intervals[i], decoupled=True))
-                    if debug:
-                        print(f"constraints with {n_samples[i]} samples :{constraints[i]}")
+                if run_sampling or run_refine:
+                    constraints = []
+                    for i in range(len(n_samples)):
+                        constraints.append(ineq_to_constraints(functions, intervals[i], decoupled=True))
+                        if debug:
+                            print(f"constraints with {n_samples[i]} samples :{constraints[i]}")
 
                 ## SAMPLE SPACE
                 for i in range(len(n_samples)):
@@ -425,7 +438,7 @@ if __name__ == '__main__':
                     space = RefinedSpace(parameter_domains, parameters)
                     start_time = time()
                     sampling = space.grid_sample(constraints[i], grid_size, silent=True, debug=debug)
-                    print(colored(f"Sampling, pop size {population_size}, dataset {data_index+1}, multiparam {bool(multiparam)}, # of samples {n_samples[i]} took {round(time() - start_time, 4)} seconds", "yellow"))
+                    print(colored(f"Sampling, pop size {population_size}, grid size {grid_size}, dataset {data_index+1}, multiparam {bool(multiparam)}, # of samples {n_samples[i]} took {round(time() - start_time, 4)} seconds", "yellow"))
                     if debug:
                         print(sampling)
 
@@ -434,7 +447,9 @@ if __name__ == '__main__':
                     if not run_refine:
                         break
                     text = f"pop size {population_size}, dataset {data_index + 1}, multiparam {bool(multiparam)}, # of samples {n_samples[i]}"
-                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug)
+                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, alg=3)
+                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, alg=4)
+                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, alg=5)
 
                 ## METROPOLIS-HASTINGS
                 # space = RefinedSpace(parameter_domains, parameters)
@@ -454,11 +469,3 @@ if __name__ == '__main__':
                             print("time it would take to finish", iter_time)
                         print()
 
-                ## LIFTING WITH STORM HERE
-                for i in range(len(n_samples)):
-                    if not run_lifting:
-                        break
-                    general_create_data_informed_properties(property_file, intervals[i], silent=False)
-                    call_storm(model_file=model_file, params=parameters, param_intervals=parameter_domains,
-                               property_file=property_file, storm_output_file=f"tmp_storm_pop_size_{population_size}_data_{data_index}_nsamples_{n_samples[i]}.txt",
-                               time=True, silent=False)

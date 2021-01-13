@@ -259,7 +259,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.20.1"  ## Version of the gui
+        self.version = "1.20.2"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -3340,7 +3340,7 @@ class Gui(Tk):
         ## 36554 is 100% per 1GB
         mem = virtual_memory()
         if len(self.parameters)**self.sample_size > 36554 * mem.total/1024/1024/1024:
-            if messagebox.askyesno("Sampling functions", "Estimated amount memory needed to sample space is more than this machine possess. Do you want to continue anyway?"):
+            if not messagebox.askyesno("Sampling functions", "Estimated amount memory needed to sample space is more than this machine possess. Do you want to continue anyway?"):
                 return
 
         self.store_unsat_samples = True

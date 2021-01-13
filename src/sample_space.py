@@ -121,6 +121,7 @@ def sample_space(space, constraints, sample_size, compress=False, silent=True, s
         quantitative (bool): if True return how far is the point from satisfying / not satisfying the constraints
         sort (Bool): tag whether the params are non-decreasing (CASE STUDY SPECIFIC SETTING)
         parallel (Bool): flag to run this in parallel mode
+        save_memory (Bool): if True saves only sat samples
 
     """
     start_time = time()
