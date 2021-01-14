@@ -1073,6 +1073,10 @@ class Gui(Tk):
         pyplt.rcParams["savefig.directory"] = self.figures_dir
 
         os.chdir(workspace)
+        try:
+            os.mkdir(os.path.join(self.refinement_results, "tmp"))
+        except FileExistsError as err:
+            pass
 
     ## LOGIC
     ## FILE - LOAD, PARSE, SHOW, AND SAVE
@@ -2834,12 +2838,13 @@ class Gui(Tk):
             plot_type (str): plot type
         """
         time_stamp = str(strftime("%d-%b-%Y-%H-%M-%S", localtime())) + ".png"
+
         try:
-            self.page3_figure.savefig(os.path.join(self.figures_dir, f"{plot_type}_{time_stamp}"), bbox_inches='tight')
-            print("Figure stored here: ", os.path.join(self.figures_dir, f"{plot_type}_{time_stamp}"))
+            self.page3_figure.savefig(os.path.join(self.figures_dir, "tmp", f"{plot_type}_{time_stamp}"), bbox_inches='tight')
+            print("Figure stored here: ", os.path.join(self.figures_dir, "tmp", f"{plot_type}_{time_stamp}"))
         except:
             print("This figure could not be saved.")
-        with open(os.path.join(self.figures_dir, "figure_to_title.txt"), "a+") as f:
+        with open(os.path.join(self.figures_dir, "tmp", "figure_to_title.txt"), "a+") as f:
             f.write(f"{plot_type}_{time_stamp} :\n")
             f.write(f"      functions: {self.functions_file.get()}\n")
             if self.data:
@@ -3326,13 +3331,13 @@ class Gui(Tk):
         ## 1 144 164 is 100% of 31.3GB
         ## 36554 is 100% per 1GB
         mem = virtual_memory()
-        if len(self.parameters)**self.sample_size > 36554 * mem.total/1024/1024/1024:
+        if self.sample_size**len(self.parameters) > 36554 * mem.total/1024/1024/1024:
             if not messagebox.askyesno("Sampling functions", "Estimated amount memory needed to sample space is more than this machine possess. Do you want to continue anyway?"):
                 return
 
         self.store_unsat_samples = True
         ## SUGGEST TO NOT TO STORE UNSAT SAMPLES
-        if len(self.parameters)**self.sample_size > 36554:
+        if self.sample_size**len(self.parameters) > 36554:
             if messagebox.askyesno("Sampling functions", f"Estimated amount memory needed to sample space is {round(len(self.parameters)**self.sample_size/36554, 1)}GB. Do you want to omit storing unsat points?"):
                 self.store_unsat_samples = False
 
@@ -3380,9 +3385,9 @@ class Gui(Tk):
         ## Autosave figure
         if self.save.get():
             time_stamp = str(strftime("%d-%b-%Y-%H-%M-%S", localtime())) + ".png"
-            self.page6_figure.savefig(os.path.join(self.refinement_results, f"Space_sampling_{time_stamp}"), bbox_inches='tight')
-            print("Figure stored here: ", os.path.join(self.refinement_results, f"Space_sampling_{time_stamp}"))
-            with open(os.path.join(self.refinement_results, "figure_to_title.txt"), "a+") as f:
+            self.page6_figure.savefig(os.path.join(self.refinement_results, "tmp", f"Space_sampling_{time_stamp}"), bbox_inches='tight')
+            print("Figure stored here: ", os.path.join(self.refinement_results, "tmp", f"Space_sampling_{time_stamp}"))
+            with open(os.path.join(self.refinement_results, "tmp", "figure_to_title.txt"), "a+") as f:
                 f.write(f"Space_sampling_{time_stamp} :\n")
                 f.write(f"      grid_size: {self.sample_size}\n")
                 f.write(f"      constraints: {self.constraints_file.get()}\n")
@@ -3775,10 +3780,10 @@ class Gui(Tk):
                 ## Autosave figure
                 if self.save.get():
                     time_stamp = str(strftime("%d-%b-%Y-%H-%M-%S", localtime())) + ".png"
-                    self.page6_figure.savefig(os.path.join(self.refinement_results, f"Space_refinement_{time_stamp}"),
+                    self.page6_figure.savefig(os.path.join(self.refinement_results, "tmp", f"Space_refinement_{time_stamp}"),
                                               bbox_inches='tight')
-                    print("Figure stored here: ", os.path.join(self.refinement_results, f"Space_refinement_{time_stamp}"))
-                    with open(os.path.join(self.refinement_results, "figure_to_title.txt"), "a+") as f:
+                    print("Figure stored here: ", os.path.join(self.refinement_results, "tmp", f"Space_refinement_{time_stamp}"))
+                    with open(os.path.join(self.refinement_results, "tmp", "figure_to_title.txt"), "a+") as f:
                         f.write(f"Space_refinement_{time_stamp} :\n")
                         f.write(f"      constraints: {self.constraints_file.get()}\n")
 

@@ -561,6 +561,9 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
             sample(space, constraints, sample_size, compress=True, silent=not debug, save=save)
             sat_points = space.get_sat_samples()
             unsat_points = space.get_unsat_samples()
+            current_sample_size = sample_size
+
+        sample_size = current_sample_size
 
         if debug:
             print("Satisfying points: ", sat_points)
