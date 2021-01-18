@@ -708,11 +708,14 @@ def transition_model(theta, parameter_intervals, sd=0.15, sort=False):
     max_param = parameter_intervals[0][0]
     for index, param in enumerate(theta):
         temp = parameter_intervals[index][0] - 1  ## Lower bound of first parameter - 1, forcing to find a new value
-        while (temp < parameter_intervals[index][0]) or (temp > parameter_intervals[index][1]):
+        while (temp <= parameter_intervals[index][0]) or (temp >= parameter_intervals[index][1]) or (sort and temp < max_param):
             ## Generate new parameter value from normal distribution
-            temp = np.random.normal(theta[index], sd)
-            # For some reason slower
-            # temp = get_truncated_normal(mean=theta[index], sd=sd, low=parameter_intervals[index][0], upp=parameter_intervals[index][1])
+            if sort and max_param > theta[index]:
+                temp = np.random.normal(max_param, sd)
+                if temp < max_param:
+                    temp = temp + abs(max_param-temp)
+            else:
+                temp = np.random.normal(theta[index], sd)
         ## Store only if the param value inside the domains
         max_param = temp
         theta_new[index] = temp
@@ -975,7 +978,7 @@ def metropolis_hastings(params, parameter_intervals, param_init, functions, data
     theta_lik = 0
     for iteration in range(1, iterations + 1):
         ## Walk in parameter space - Get new parameter point from the current one
-        theta_new = transition_model(theta, parameter_intervals, sd=sd)
+        theta_new = transition_model(theta, parameter_intervals, sd=sd, sort=sort)
 
         ## Not recalculating the likelihood if we did not move
         if has_moved:
@@ -1109,7 +1112,7 @@ def initialise_sampling(params, parameter_intervals, functions, data, sample_siz
     print(colored(f"Initialisation of Metropolis-Hastings took {round(time() - start_time, 4)} seconds", "yellow"))
     ## MAIN LOOP
     #                    metropolis_hastings(params, parameter_intervals, param_init, functions, data, sample_size, iterations,        eps,     sd,      progress=False,      timeout=0,  debug=False):
-    accepted, rejected = metropolis_hastings(params, parameter_intervals, theta_init, functions, data, sample_size, mh_sampling_iterations, eps=eps, sd=sd, progress=progress, timeout=timeout, debug=debug)
+    accepted, rejected = metropolis_hastings(params, parameter_intervals, theta_init, functions, data, sample_size, mh_sampling_iterations, eps=eps, sd=sd, progress=progress, timeout=timeout, debug=debug, sort=sort)
 
     print(colored(f"Metropolis-Hastings took {round(time()-start_time, 4)} seconds", "yellow"))
 
