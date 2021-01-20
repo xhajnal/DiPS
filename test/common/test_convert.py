@@ -12,6 +12,10 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(parse_numbers('hello 42 I\'m a 32 string 30'), [42, 32, 30])
         self.assertEqual(parse_numbers('hello 8e-7 holario'), [8e-7])
         self.assertEqual(parse_numbers('hello8e-7holario'), [8e-7])
+        self.assertEqual(parse_numbers("Time for model construction: 0.262 seconds."), [0.262])
+        self.assertEqual(parse_numbers('Time for model input parsing: 0.006s.'), [0.006])
+        self.assertEqual(parse_numbers('Time for model input parsing: 0.006s .9'), [0.006, 0.9])
+        self.assertEqual(parse_numbers('Time for model input parsing: 0.006s.9'), [0.006, 9])
 
     def test_to_sympy_intervals(self):
         print(colored("Checking conversion from a list of pairs/lists to list of Intervals", 'blue'))

@@ -11,6 +11,7 @@ from sympy import factor, Interval
 
 ## Importing my code
 from common.config import load_config
+from common.convert import parse_numbers
 
 spam = load_config()
 data_path = spam["data"]
@@ -24,15 +25,16 @@ del spam
 ###############################
 
 
-def load_functions(file_path, tool="unknown", factorize=True, rewards_only=False, f_only=False):
+def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False, f_only=False, refinement=True):
     """ Loads parameter synthesis from file into two maps - f list of rational functions for each property, and rewards list of rational functions for each reward
 
     Args:
-        file_path (string):
+        file_path (string): file to load
+        tool (string): a tool of which is the output from (PRISM/STORM)
         factorize (bool): if true it will factorise polynomial results
         rewards_only (bool): if true it parse only rewards
         f_only (bool): if true it will parse only standard properties
-        tool (string): a tool of which is the output from (PRISM/STORM)
+        refinement (bool): load refinement results instead of functions
 
     Returns:
         (f,reward), where
@@ -43,6 +45,9 @@ def load_functions(file_path, tool="unknown", factorize=True, rewards_only=False
     ## Time statistics
     time_to_factorise = 0
 
+    if refinement:
+        factorize = False
+
     ## Setting the current directory
     if not Path(file_path).is_absolute():
         if tool.lower().startswith("p"):
@@ -52,8 +57,17 @@ def load_functions(file_path, tool="unknown", factorize=True, rewards_only=False
         else:
             print("Selected tool unsupported.")
             return False, False
+    ## Initialise structures
     f = []
     rewards = []
+
+    ref_line = False
+    spaces = []
+    safe = []
+    unsafe = []
+    params = []
+    param_intervals = []
+    time_elapsed = 0
 
     with open(file_path, "r") as file:
         i = -1
@@ -74,7 +88,7 @@ def load_functions(file_path, tool="unknown", factorize=True, rewards_only=False
             return False, False
 
         ## Parsing Rational functions
-        line_index = 0
+        line_index = 2
         for line in file:
             if line.startswith('Parametric model checking:') or line.startswith('Model checking property'):
                 i = i + 1
@@ -82,90 +96,139 @@ def load_functions(file_path, tool="unknown", factorize=True, rewards_only=False
                 ## STORM check if rewards
                 if "R[exp]" in line:
                     here = "r"
+            ## Parse params and intervals
+            if line.startswith('Command line: ') and params == []:
+                line = line.split("-param ")[-1]
+                line = re.findall(r"[\'\"].*=.*[\'\"]", line)[0][1:-1]
+                entries = line.split(",")
+                for entry in entries:
+                    params.append(entry.split("=")[0])
+                    interval = entry.split("=")[1]
+                    param_intervals.append(list(map(eval, interval.split(":"))))
+
+            # Parse times
+            if line.startswith("Time for"):
+                time_elapsed = time_elapsed + parse_numbers(line)[0]
+
             ## PRISM check if rewards
             if line.startswith('Parametric model checking: R'):
                 here = "r"
-            if i >= 0 and line.startswith('Result'):
-                ## PARSE THE EXPRESSION
-                # print("line:", line)
-                if tool.lower().startswith("p"):
-                    line = line.split(":")[2]
-                elif tool.lower().startswith("s"):
-                    line = line.split(":")[1]
-                if line[-1] == "\n":
-                    line = line[:-1]
-                ## CONVERT THE EXPRESSION TO PYTHON FORMAT
-                line = line.replace("{", "")
-                line = line.replace("}", "")
-                ## PUTS "* " BEFORE EVERY WORD (VARIABLE)
-                line = re.sub(r'([a-z|A-Z]+)', r'* \1', line)
-                # line = line.replace("p", "* p")
-                # line = line.replace("q", "* q")
-                line = line.replace("**", "*")
-                line = line.replace("* *", "*")
-                line = line.replace("*  *", "*")
-                line = line.replace("+ *", "+")
-                line = line.replace("^", "**")
-                line = line.replace(" ", "")
-                line = line.replace("*|", "|")
-                line = line.replace("|*", "|")
-                ## Redoing PRISM non-standard operator orders
-                if tool.lower().startswith("p"):
-                    if "|" in line:
-                        line = f"({line})"
-                        line = line.replace("|", ")/(")
-                else:
-                    line = line.replace("|", "/")
-                line = line.replace("(*", "(")
-                line = line.replace("+*", "+")
-                line = line.replace("-*", "-")
-                if line.startswith('*'):
-                    line = line[1:]
-                if here == "r" and not f_only:
-                    # print(f"formula: {i+1}", line)
-                    if factorize:
-                        start_time = time()
-                        try:
-                            rewards.append(str(factor(line)))
-                        except TypeError:
-                            print("Error while factorising rewards, used not factorised instead")
+            if (i >= 0 and line.startswith('Result')) or ref_line:
+                if line.startswith('Result'):
+                    if ": true\n" in line or ": false\n" in line:
+                        refinement = True
+                if not refinement:
+                    ## PARSE THE EXPRESSION
+                    # print("line:", line)
+                    if tool.lower().startswith("p"):
+                        line = line.split(":")[2]
+                    elif tool.lower().startswith("s"):
+                        line = line.split(":")[1]
+                    if line[-1] == "\n":
+                        line = line[:-1]
+                    ## CONVERT THE EXPRESSION TO PYTHON FORMAT
+                    line = line.replace("{", "")
+                    line = line.replace("}", "")
+                    ## PUTS "* " BEFORE EVERY WORD (VARIABLE)
+                    line = re.sub(r'([a-z|A-Z]+)', r'* \1', line)
+                    # line = line.replace("p", "* p")
+                    # line = line.replace("q", "* q")
+                    line = line.replace("**", "*")
+                    line = line.replace("* *", "*")
+                    line = line.replace("*  *", "*")
+                    line = line.replace("+ *", "+")
+                    line = line.replace("^", "**")
+                    line = line.replace(" ", "")
+                    line = line.replace("*|", "|")
+                    line = line.replace("|*", "|")
+                    ## Redoing PRISM non-standard operator orders
+                    if tool.lower().startswith("p"):
+                        if "|" in line:
+                            line = f"({line})"
+                            line = line.replace("|", ")/(")
+                    else:
+                        line = line.replace("|", "/")
+                    line = line.replace("(*", "(")
+                    line = line.replace("+*", "+")
+                    line = line.replace("-*", "-")
+                    if line.startswith('*'):
+                        line = line[1:]
+                    if here == "r" and not f_only:
+                        # print(f"formula: {i+1}", line)
+                        if factorize:
+                            start_time = time()
+                            try:
+                                rewards.append(str(factor(line)))
+                            except TypeError:
+                                print("Error while factorising rewards, used not factorised instead")
+                                rewards.append(line)
+                                # os.chdir(cwd)
+                            finally:
+                                time_to_factorise = time_to_factorise + (time() - start_time)
+                        else:
                             rewards.append(line)
-                            # os.chdir(cwd)
-                        finally:
-                            time_to_factorise = time_to_factorise + (time() - start_time)
-                    else:
-                        rewards.append(line)
-                elif not here == "r" and not rewards_only:
-                    # print(f"formula: {i+1}", line[:-1])
-                    if factorize:
-                        start_time = time()
-                        try:
-                            f.append(str(factor(line)))
-                        except TypeError:
-                            print(f"Error while factorising polynomial f[{i + 1}], used not factorised instead")
+                    elif not here == "r" and not rewards_only:
+                        # print(f"formula: {i+1}", line[:-1])
+                        if factorize:
+                            start_time = time()
+                            try:
+                                f.append(str(factor(line)))
+                            except TypeError:
+                                print(f"Error while factorising polynomial f[{i + 1}], used not factorised instead")
+                                f.append(line)
+                            finally:
+                                time_to_factorise = time_to_factorise + (time() - start_time)
+                        else:
                             f.append(line)
-                        finally:
-                            time_to_factorise = time_to_factorise + (time() - start_time)
+                ## Load refinement results
+                else:
+                    ## Get rid of Result:
+                    if tool.lower().startswith("s"):
+                        raise NotImplementedError("Loading Storm refinement result not implemented yet")
+                    ref_line = True
+                    ## End of a single refinement result
+                    if line.startswith("--"):
+                        ref_line = False
+                        spaces.append([safe, unsafe])
+                        safe = []
+                        unsafe = []
+                        continue
+                    line = line.replace("Result: ", "")
+                    if "true" in line:
+                        safe.append(list(eval(line.split(":")[0])))
+                    elif "false" in line:
+                        unsafe.append(list(eval(line.split(":")[0])))
+                    elif line == "\n":
+                        continue
                     else:
-                        f.append(line)
+                        raise Exception(f"Error occurred when reading line {line_index} as a part of PRISM refinement")
+
             line_index = line_index + 1
 
     if factorize:
         print(colored(f"Factorisation took {time_to_factorise} seconds", "yellow"))
-    return f, rewards
+    if refinement:
+        return spaces, "refinement", params, param_intervals, time_elapsed
+    else:
+        return f, rewards
 
 
-def get_f(path, tool="unknown", factorize=False):
+def get_refinement(path, tool="unknown"):
+    """ Loads refinement results of parameter synthesis from *path* folder """
+    return load_mc_result(path, tool, factorize=False, refinement=True)[0]
+
+
+def get_f(path, tool="unknown", factorize=False, refinement=False):
     """ Loads all nonreward results of parameter synthesis from *path* folder """
-    return load_functions(path, tool, factorize, rewards_only=False, f_only=True)[0]
+    return load_mc_result(path, tool, factorize, rewards_only=False, f_only=True, refinement=refinement)[0]
 
 
-def get_rewards(path, tool="unknown", factorize=False):
+def get_rewards(path, tool="unknown", factorize=False, refinement=False):
     """ Loads all reward results of parameter synthesis from *path* folder """
-    return load_functions(path, tool, factorize, rewards_only=True, f_only=False)[1]
+    return load_mc_result(path, tool, factorize, rewards_only=True, f_only=False, refinement=refinement)[1]
 
 
-## TODO rewrite this using load_functions
+## TODO rewrite this using load_mc_result
 def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewards_only=False, f_only=False):
     """ Loads all results of parameter synthesis from *path* folder into two maps - f list of rational functions for each property, and rewards list of rational functions for each reward
     

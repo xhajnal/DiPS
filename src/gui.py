@@ -3,6 +3,7 @@ import os
 import time
 import webbrowser
 from platform import system
+import socket
 from time import time, localtime, strftime
 from collections.abc import Iterable
 from copy import deepcopy
@@ -81,7 +82,7 @@ except Exception as error:
 
 try:
     from mc_informed import general_create_data_informed_properties
-    from load import load_functions, find_param, load_data, find_param_old, parse_constraints, parse_functions, parse_params_from_model, parse_weights, parse_data_intervals
+    from load import load_mc_result, find_param, load_data, find_param_old, parse_constraints, parse_functions, parse_params_from_model, parse_weights, parse_data_intervals
     from common.mathematics import create_intervals
     import space
     from refine_space import check_deeper
@@ -190,6 +191,7 @@ class Gui(Tk):
         self.functions_changed = False
         self.data_changed = False
         self.data_intervals_changed = False
+        self.data_informed_property_changed = False
         self.data_weights_changed = False
         self.constraints_changed = False
         self.space_changed = False
@@ -334,20 +336,25 @@ class Gui(Tk):
         self.functions_label = Label(left_frame, textvariable=self.functions_file, anchor=W, justify=LEFT)
         self.functions_label.grid(row=2, column=1, sticky=W, padx=4)
 
+        Label(left_frame, text=f"Data file:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, padx=4)
+        self.data_label = Label(left_frame, textvariable=self.data_file, anchor=W, justify=LEFT)
+        self.data_label.grid(row=3, column=1, sticky=W, padx=4)
+
         center_frame = Frame(frame)
         center_frame.grid(row=0, column=1, sticky="nsew")
 
-        Label(center_frame, text=f"Data file:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, padx=4)
-        self.data_label = Label(center_frame, textvariable=self.data_file, anchor=W, justify=LEFT)
-        self.data_label.grid(row=1, column=1, sticky=W, padx=4)
-
-        Label(center_frame, text=f"Data intervals file:", anchor=W, justify=LEFT).grid(row=2, column=0, sticky=W, padx=4)
+        Label(center_frame, text=f"Data intervals file:", anchor=W, justify=LEFT).grid(row=0, column=0, sticky=W, padx=4)
         self.data_intervals_label = Label(center_frame, textvariable=self.data_intervals_file, anchor=W, justify=LEFT)
-        self.data_intervals_label.grid(row=2, column=1, columnspan=2, sticky=W, padx=4)
+        self.data_intervals_label.grid(row=0, column=1, columnspan=2, sticky=W, padx=4)
 
-        Label(center_frame, text=f"Constraints file:", anchor=W, justify=LEFT).grid(row=3, column=0, sticky=W, padx=4)
+        Label(center_frame, text=f"Constraints file:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, padx=4)
         self.constraints_label = Label(center_frame, textvariable=self.constraints_file, anchor=W, justify=LEFT)
-        self.constraints_label.grid(row=3, column=1, columnspan=2, sticky=W, padx=4)
+        self.constraints_label.grid(row=1, column=1, columnspan=2, sticky=W, padx=4)
+
+        Label(center_frame, text=f"Data-informed properties file:", anchor=W, justify=LEFT).grid(row=2, column=0, sticky=W, padx=4)
+        self.data_informed_properties_label = Label(center_frame, textvariable=self.data_informed_property_file, anchor=W, justify=LEFT)
+        self.data_informed_properties_label.grid(row=2, column=1, columnspan=2, sticky=W, padx=4)
+
 
         right_frame = Frame(frame)
         right_frame.grid(row=0, column=2, sticky="nsew")
@@ -415,9 +422,9 @@ class Gui(Tk):
         frame_right.columnconfigure(16, weight=1)
         frame_right.pack(side=RIGHT, fill=X)
 
-        Button(frame_right, text='Open property', command=self.load_property).grid(row=0, column=1, sticky=W, pady=4,
+        Button(frame_right, text='Open properties', command=self.load_property).grid(row=0, column=1, sticky=W, pady=4,
                                                                                    padx=4)  # pack(anchor=W)
-        Button(frame_right, text='Save property', command=self.save_property).grid(row=0, column=2, sticky=W, pady=4)  # pack(anchor=W)
+        Button(frame_right, text='Save properties', command=self.save_property).grid(row=0, column=2, sticky=W, pady=4)  # pack(anchor=W)
         Label(frame_right, text=f"Loaded property file:", anchor=W, justify=LEFT).grid(row=1, column=1, sticky=W,
                                                                                        pady=4)  # pack(anchor=W)
 
@@ -463,8 +470,8 @@ class Gui(Tk):
         Button(frame_left, text='Open Prism/Storm output file', command=self.load_mc_output_file).grid(row=3, column=1, sticky=W, pady=4)
 
         Label(frame_left, text=f"Loaded Prism/Storm output file:", anchor=W, justify=LEFT).grid(row=4, column=0, sticky=W, padx=4, pady=4)
-        self.functions_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_width() / 2), state=DISABLED)
-        self.functions_text.grid(row=5, column=0, columnspan=16, rowspan=2, sticky=W, padx=4, pady=4)
+        self.mc_result_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_width() / 2), state=DISABLED)
+        self.mc_result_text.grid(row=5, column=0, columnspan=16, rowspan=2, sticky=W, padx=4, pady=4)
 
         ## Right (Parsed functions) Frame
         Label(frame_right, text=f"Parsed rational functions.", anchor=W, justify=LEFT).grid(row=1, column=1, sticky=W, padx=4, pady=4)
@@ -652,10 +659,14 @@ class Gui(Tk):
         self.property_text2.grid(row=2, column=1, columnspan=16, rowspan=2, sticky=W + E + N + S, padx=5, pady=4)
         Button(frame_right, text='Generate data informed properties', command=self.generate_data_informed_properties).grid(row=4, column=1, sticky=W, padx=5, pady=4)
 
+        Button(frame_right, text='Open data informed properties', command=self.load_data_informed_properties).grid(row=4, column=2, sticky=W, padx=5, pady=4)
+
+        Button(frame_right, text='Save data informed properties', command=self.save_data_informed_properties).grid(row=4, column=3, sticky=W, padx=5, pady=4)
+
         self.data_informed_property_text = scrolledtext.ScrolledText(frame_right, width=int(self.winfo_width() / 2), height=int(self.winfo_height() * 0.8 / 80), state=DISABLED)
         self.data_informed_property_text.grid(row=5, column=1, columnspan=16, rowspan=4, sticky=W + E + N + S, padx=5, pady=10)
 
-        Button(frame_right, text='Save data informed properties', command=self.save_data_informed_properties).grid(row=9, column=1, sticky=W, padx=5, pady=4)
+        Button(frame_right, text='Run refinement', command=self.external_refine).grid(row=9, column=1, sticky=W, padx=5, pady=4)
 
         ############################################### TAB CONSTRAINTS ################################################
         page5 = ttk.Frame(nb, width=400, height=200, name="constraints")
@@ -905,7 +916,7 @@ class Gui(Tk):
         # file_menu.add_cascade(label="Load", menu=load_menu, underline=0)
         # load_menu.add_command(label="Load model", command=self.load_model)
         # load_menu.add_command(label="Load property", command=self.load_property)
-        # load_menu.add_command(label="Load functions", command=self.load_functions)
+        # load_menu.add_command(label="Load functions", command=self.load_mc_result)
         # load_menu.add_command(label="Load data", command=self.load_data)
         # load_menu.add_command(label="Load space", command=self.load_space)
         # file_menu.add_separator()
@@ -1170,7 +1181,49 @@ class Gui(Tk):
             if not file:
                 self.save_property(os.path.join(self.tmp_dir, "properties.pctl"))
 
-    def load_mc_output_file(self, file=False, ask=True, program=False, reset_param_and_intervals=True):
+    def load_data_informed_properties(self, file=False, ask=True):
+        """ Loads Data informed property from temporal properties and data. Prints it.
+        Args:
+            file (path/string): direct path to load the function file
+            ask (Bool): if False it will not ask questions
+        """
+        if file:
+            if not os.path.isfile(file):
+                return
+            spam = file
+        else:
+            print("Loading data-informed properties ...")
+            ## If some data-informed property previously loaded
+            if len(self.property_text.get('1.0', END)) > 1 and ask:
+                if not askyesno("Loading data-informed properties",
+                                "Previously obtained data-informed properties will be lost. Do you want to proceed?"):
+                    return
+            self.status_set("Please select the data-informed properties to be loaded.")
+
+            spam = filedialog.askopenfilename(initialdir=self.property_dir, title="Data-informed properties loading - Select file",
+                                              filetypes=(("property files", "*.pctl"), ("all files", "*.*")))
+        ## If no file selected
+        if spam == "":
+            self.status_set("No file selected.")
+            return
+        else:
+            ## If some property previously loaded
+            if len(self.data_informed_property_text.get('1.0', END)) > 1:
+                self.data_informed_property_changed = True
+            self.data_informed_property_file.set(spam)
+            self.data_informed_property_text.configure(state='normal')
+            self.data_informed_property_text.delete('1.0', END)
+            with open(self.data_informed_property_file.get(), 'r') as f:
+                self.data_informed_property_text.insert('end', f.read())
+            # self.data_informed_property_text.configure(state='disabled')
+
+            self.status_set("Data-informed property loaded.")
+
+            ## Autosave
+            if not file:
+                self.save_data_informed_properties(os.path.join(self.tmp_dir, "data_informed_properties.pctl"))
+
+    def load_mc_output_file(self, file=False, ask=True, program=False, reset_param_and_intervals=True, refinement=False):
         """ Loads parameter synthesis output text file
 
         Args:
@@ -1178,6 +1231,7 @@ class Gui(Tk):
             ask (Bool): if False it will not ask questions
             program (string): overrides the sel.program setting
             reset_param_and_intervals (Bool): if True the params will be reset
+            refinement (bool): load refinement results instead of functions
         """
         if program is False:
             program = self.program.get()
@@ -1226,68 +1280,110 @@ class Gui(Tk):
         # print("self.factor", self.factor.get())
         try:
             self.cursor_toggle_busy(True)
-            if self.factorise.get():
-                self.status_set("Loading selected file ...")
-                if not self.silent.get():
-                    print("Loading selected file ...")
-            else:
+            if self.factorise.get() and not refinement:
                 self.status_set("Loading selected file and factorising...")
                 if not self.silent.get():
                     print("Loading selected file and factorising...")
-            self.functions, rewards = load_functions(os.path.abspath(self.functions_file.get()), tool=program,
-                                                     factorize=self.factorise.get(), rewards_only=False, f_only=False)
-            ## Merge functions and rewards
-            # print("self.functions", self.functions)
-            # print("rewards", rewards)
-            for expression in rewards:
-                self.functions.append(expression)
+            else:
+                self.status_set("Loading selected file ...")
+                if not self.silent.get():
+                    print("Loading selected file ...")
+
+            spam = load_mc_result(os.path.abspath(self.functions_file.get()), tool=program,
+                                  factorize=self.factorise.get(), rewards_only=False, f_only=False,
+                                  refinement=refinement)
+
+            if refinement or spam[1] == "refinement":
+                refinement = True
+                skip_vis = False
+                ## Get prams and domains
+                self.parameters, self.parameter_domains, time_elapsed = spam[2], spam[3], spam[4]
+                ## Get refinements
+                spam = spam[0]
+                
+                ## Ask whether to show space
+                if self.space != "":
+                    if askyesno("Loading PRISM refinement result", "Space is not clear, do you want to override with current results?"):
+                        ## Backup old space
+                        self.save_space(os.path.join(self.tmp_dir, "space.p"))
+                        self.space = ""
+                    else:
+                        skip_vis = True
+                if not skip_vis:
+                    ## Show space
+                    if len(spam) > 1:
+                        messagebox.showwarning("Loading PRISM refinement result", "There is more refinements in the result, only the first is used.")
+
+                    ## Get first refinement
+                    spam = spam[0]
+                    self.space = space.RefinedSpace(self.parameter_domains, self.parameters)
+                    self.space.extend_green(spam[0])
+                    self.space.extend_red(spam[1])
+                    self.space.time_last_refinement = time_elapsed
+                    self.space.time_refinement = self.space.time_refinement + time_elapsed
+    
+                    self.clear_space()
+                    self.show_space(show_refinement=True, show_samples=False, show_true_point=False,
+                                    prefer_unsafe=self.show_red_in_multidim_refinement.get(),
+                                    title=f"achieved_coverage:{round(self.space.get_coverage(), 3)}, solver: {program}")
+    
+                    self.space.remove_white([[0, 1], [0, 1]])
+                    self.print_space()
+            else:
+                self.functions, rewards = spam[0], spam[1]
+                ## Merge functions and rewards
+                for expression in rewards:
+                    self.functions.append(expression)
         finally:
             try:
                 self.cursor_toggle_busy(False)
             except TclError:
                 return
 
-        self.unfold_functions()
-
-        if isinstance(self.functions, dict):
-            self.status_set(f"{len(self.functions.keys())} rational functions loaded")
-        elif isinstance(self.functions, list):
-            self.status_set(f"{len(self.functions)} rational functions loaded")
-        else:
-            raise Exception("Loading parameter synthesis results",
-                            f"Expected type of the functions is dict or list, got {type(self.functions)}")
-
-        if not self.silent.get():
-            print("Parsed list of functions: ", self.functions)
-
-        self.z3_functions = ""
-        for function in self.functions:
-            if is_this_z3_function(function):
-                self.store_z3_functions()
-                messagebox.showinfo("Loading rational functions", "Some of the functions contains z3 expressions, these are being stored and used only for z3 refinement, shown functions are translated into python expressions.")
-                break
-
-        ## Print functions into TextBox
-        self.functions_text.configure(state='normal')
-        self.functions_text.delete('1.0', END)
+        ## Print mc result into TextBox
+        self.mc_result_text.configure(state='normal')
+        self.mc_result_text.delete('1.0', END)
         with open(self.functions_file.get(), 'r') as f:
-            self.functions_text.insert('1.0', f.read())
-        # self.functions_text.configure(state='disabled')
+            self.mc_result_text.insert('1.0', f.read())
 
-        ## Resetting parsed intervals
-        if reset_param_and_intervals:
-            self.parameters = []
-            self.parameter_domains = []
-
-        ## Check whether loaded
-        if not self.functions:
-            messagebox.showwarning("Loading rational functions", "No functions loaded. Please check input file.")
+        if refinement:
+            self.status_set("Refinement loaded.")
+            messagebox.showinfo("Loading PRISM refinement result", "Loaded refinement output can be seen in Synthesise functions tab, and visualisation in Sample & Refine Tab.")
         else:
-            pass
-            ## Autosave
-            ## TODO
-            # if not file:
-            #   self.save_functions(os.path.join(self.tmp_dir, f"functions_{program}"))
+            self.unfold_functions()
+
+            if isinstance(self.functions, dict):
+                self.status_set(f"{len(self.functions.keys())} rational functions loaded")
+            elif isinstance(self.functions, list):
+                self.status_set(f"{len(self.functions)} rational functions loaded")
+            else:
+                raise Exception("Loading parameter synthesis results",
+                                f"Expected type of the functions is dict or list, got {type(self.functions)}")
+
+            if not self.silent.get():
+                print("Parsed list of functions: ", self.functions)
+
+            self.z3_functions = ""
+            for function in self.functions:
+                if is_this_z3_function(function):
+                    self.store_z3_functions()
+                    messagebox.showinfo("Loading rational functions", "Some of the functions contains z3 expressions, these are being stored and used only for z3 refinement, shown functions are translated into python expressions.")
+                    break
+
+            ## Resetting parsed intervals
+            if reset_param_and_intervals:
+                self.parameters = []
+                self.parameter_domains = []
+
+            ## Check whether loaded
+            if not self.functions:
+                messagebox.showwarning("Loading rational functions", "No functions loaded. Please check input file.")
+            else:
+                pass
+                ## Autosave
+                ## TODO
+                # if not file:
+                #   self.save_functions(os.path.join(self.tmp_dir, f"functions_{program}"))
 
     def store_z3_functions(self):
         """ Stores a copy of functions as a self.z3_functions """
@@ -1429,7 +1525,7 @@ class Gui(Tk):
             self.functions_changed = True
             self.functions_file.set(spam)
             self.z3_functions = ""
-            self.functions_text.delete('1.0', END)
+            self.mc_result_text.delete('1.0', END)
 
             if os.path.splitext(self.functions_file.get())[1] == ".txt":
                 self.functions = parse_functions(self.functions_file.get())
@@ -1890,11 +1986,11 @@ class Gui(Tk):
 
                 self.space = pickle_load(self.space_file.get())
 
+                if self.space == "":
+                    return
+
                 ## Back compatibility
                 self.space.update()
-
-                ## Show the space as niceprint()
-                self.print_space()
 
                 ## Ask if you want to visualise the space
                 # self.show_samples = messagebox.askyesno("Loaded space", "Do you want to visualise samples?")
@@ -1908,6 +2004,8 @@ class Gui(Tk):
                     self.show_true_point = False
 
                 self.show_space(self.show_refinement, self.show_samples, self.show_true_point, show_all=True, prefer_unsafe=self.show_red_in_multidim_refinement.get(), quantitative=self.show_quantitative)
+                ## Show the space as niceprint()
+                # self.print_space()
 
                 self.space_changed = True
 
@@ -2002,7 +2100,12 @@ class Gui(Tk):
         self.space_collapsed = not self.space_collapsed
         self.print_space()
 
-    def show_space(self, show_refinement, show_samples, show_true_point, clear=False, show_all=False, prefer_unsafe=False, quantitative=False, warnings=True):
+    def clear_space(self, warning=True):
+        """ Will clear the space plot"""
+        self.show_space(False, False, False, clear=True, warnings=warning)
+
+    def show_space(self, show_refinement, show_samples, show_true_point, clear=False, show_all=False,
+                   prefer_unsafe=False, quantitative=False, title="", warnings=True):
         """ Visualises the space in the plot.
 
         Args:
@@ -2013,6 +2116,7 @@ class Gui(Tk):
             show_all (bool):  if True, not only newly added rectangles are shown
             prefer_unsafe: if True unsafe space is shown in multidimensional space instead of safe
             quantitative (bool): if True show far is the point from satisfying / not satisfying the constraints
+            title (string): adding title to plot
             warnings (bool): if False will not show any warnings
         """
         try:
@@ -2021,10 +2125,11 @@ class Gui(Tk):
             if not self.space == "":
                 if not clear:
                     assert isinstance(self.space, space.RefinedSpace)
+                    self.print_space()
                     figure, axis = self.space.show(green=show_refinement, red=show_refinement, sat_samples=show_samples,
                                                    unsat_samples=show_samples, true_point=show_true_point, save=False,
                                                    where=[self.page6_figure, self.page6_a], show_all=show_all,
-                                                   prefer_unsafe=prefer_unsafe, quantitative=quantitative,
+                                                   prefer_unsafe=prefer_unsafe, quantitative=quantitative, title=title,
                                                    hide_legend=self.hide_legend_refinement.get(), hide_title=self.hide_title_refinement.get())
                     ## If no plot provided
                     if figure is None:
@@ -2202,7 +2307,8 @@ class Gui(Tk):
         self.data_informed_property_text.delete('1.0', END)
         spam = ""
         for item in self.data_informed_property:
-            spam = spam + str(item) + ",\n"
+            spam = spam + str(item) + " &\n"
+        spam = spam[:-2]
         self.data_informed_property_text.insert('end', spam)
 
         ## Autosave
@@ -2628,7 +2734,7 @@ class Gui(Tk):
             self.status_set("Metropolis Hastings results saved.")
 
     ## ANALYSIS
-    def synth_params(self):
+    def synth_params(self, refinement=False):
         """ Computes functions from model and temporal properties. Saves output as a text file. """
         print("Checking the inputs.")
         self.check_changes("model")
@@ -2669,20 +2775,23 @@ class Gui(Tk):
             print("param domains", self.parameter_domains)
             print()
 
+            if refinement:
+                property_file = self.data_informed_property_file.get()
+            else:
+                property_file = self.property_file.get()
+
             try:
                 if self.program.get().lower() == "prism":
                     self.cursor_toggle_busy(True)
                     self.status_set("Parameter synthesis is running ...")
                     call_prism_files(self.model_file.get(), [], param_intervals=self.parameter_domains, seq=False, no_prob_checks=False,
                                      memory="", model_path="", properties_path=self.property_dir,
-                                     property_file=self.property_file.get(), output_path=self.prism_results,
+                                     property_file=property_file, output_path=self.prism_results,
                                      gui=show_message, silent=self.silent.get())
                     ## Deriving output file
-                    self.functions_file.set(str(os.path.join(Path(self.prism_results),
-                                                             str(Path(self.model_file.get()).stem) + "_" + str(
-                                                                 Path(self.property_file.get()).stem) + ".txt")))
+                    self.functions_file.set(str(os.path.join(Path(self.prism_results), str(Path(self.model_file.get()).stem) + "_" + str(Path(property_file).stem) + ".txt")))
                     self.status_set("Parameter synthesised finished. Output here: {}", self.functions_file.get())
-                    self.load_mc_output_file(self.functions_file.get(), reset_param_and_intervals=False)
+                    self.load_mc_output_file(self.functions_file.get(), reset_param_and_intervals=False, refinement=refinement)
 
                 elif self.program.get().lower() == "storm":
                     self.cursor_toggle_busy(True)
@@ -2692,7 +2801,7 @@ class Gui(Tk):
                                                              str(Path(self.model_file.get()).stem) + "_" + str(
                                                                  Path(self.property_file.get()).stem) + ".cmd")))
                     call_storm(model_file=self.model_file.get(), params=[],  param_intervals=[],
-                               property_file=self.property_file.get(), storm_output_file=self.functions_file.get(),
+                               property_file=property_file, storm_output_file=self.functions_file.get(),
                                time=True, silent=self.silent.get())
                     # call_storm(model_file=self.model_file.get(), params=self.parameters,
                     #            param_intervals=self.parameter_domains,
@@ -2700,7 +2809,10 @@ class Gui(Tk):
                     #            time=True, silent=self.silent.get())
 
                     self.status_set("Command to run the parameter synthesis saved here: {}", self.functions_file.get())
-                    self.load_mc_output_file(self.functions_file.get(), reset_param_and_intervals=False)
+                    if refinement:
+                        ## TODO
+                        raise NotImplementedError("Refinement with Storm not implemented so far, please select PRISM")
+                    self.load_mc_output_file(self.functions_file.get(), reset_param_and_intervals=False, refinement=refinement)
                 else:
                     ## Show window to inform to select the program
                     self.status_set("Program for parameter synthesis not selected")
@@ -2713,13 +2825,22 @@ class Gui(Tk):
                     return
 
             self.model_changed = False
-            self.property_changed = False
+            if refinement:
+                self.data_informed_property_changed = False
+            else:
+                self.property_changed = False
             ## Resetting parsed intervals
             # self.parameters = []
             # self.parameter_domains = []
 
             # self.save_parsed_functions(os.path.join(self.tmp_dir, "parsed_functions"))
             self.cursor_toggle_busy(False)
+
+    def external_refine(self):
+        """ Calls PRISM or Storm to refine space using data-informed properties"""
+
+        self.synth_params(refinement=True)
+        # self.load_mc_output_file(self.functions_file.get(), reset_param_and_intervals=False, refinement=True)
 
     def sample_fun(self):
         """ Samples functions. Prints the result. """
@@ -3138,7 +3259,7 @@ class Gui(Tk):
 
     ## First, it asks whether it is changed, then selects (text, file, text) accordingly
     def check_changes(self, what):
-        """ Checks whether a changed occurred and it is necessary to reload
+        """ Checks whether a change occurred and it is necessary to reload
 
         Args:
         ------
@@ -3376,7 +3497,7 @@ class Gui(Tk):
         self.print_space()
 
         if self.show_quantitative:
-            self.show_space(False, False, False, clear=True)
+            self.clear_space()
 
         self.show_space(show_refinement=False, show_samples=True, show_true_point=self.show_true_point, prefer_unsafe=self.show_red_in_multidim_refinement.get())
 
@@ -3443,7 +3564,7 @@ class Gui(Tk):
 
             ## This progress is passed as whole to update the thing inside the called function
             assert isinstance(self.constraints, list)
-            self.show_space(False, False, False, clear=True)
+            self.clear_space()
             self.space.grid_sample(self.constraints, self.sample_size, silent=self.silent.get(), save=False,
                                    progress=self.update_progress_bar, quantitative=True, save_memory=True)
         finally:
@@ -3726,7 +3847,7 @@ class Gui(Tk):
 
                 ## Refresh of plot before refinement
                 if self.show_quantitative:
-                    self.show_space(False, False, False, clear=True, warnings=not(no_max_depth and self.space.get_coverage() < self.coverage))
+                    self.clear_space(warning=not(no_max_depth and self.space.get_coverage() < self.coverage))
                     self.show_quantitative = False
                     show_all = True
 
@@ -3956,7 +4077,7 @@ class Gui(Tk):
                 return
         self.space_changed = False
         self.print_space(clear=True)
-        self.show_space(False, False, False, clear=True)
+        self.clear_space()
         self.space_file.set("")
         self.space = ""
         # self.parameters = ""
@@ -4495,14 +4616,16 @@ class Gui(Tk):
             self.load_model(file=os.path.join(self.tmp_dir, "model.pm"))
             self.load_property(file=os.path.join(self.tmp_dir, "properties.pctl"))
             self.load_parsed_functions(file=os.path.join(self.tmp_dir, "functions.p"))
-            # self.load_functions(file=os.path.join(self.tmp_dir, "functions_prism.txt"))
-            # self.load_functions(file=os.path.join(self.tmp_dir, "functions_storm.txt"))
+            # self.load_mc_result(file=os.path.join(self.tmp_dir, "functions_prism.txt"))
+            # self.load_mc_result(file=os.path.join(self.tmp_dir, "functions_storm.txt"))
             self.load_data(file=os.path.join(self.tmp_dir, "data.p"))
             self.load_data_weights(file=os.path.join(self.tmp_dir, "data_weights.p"))
             self.load_data_intervals(file=os.path.join(self.tmp_dir, "data_intervals.p"))
             self.load_constraints(file=os.path.join(self.tmp_dir, "constraints.p"))
             self.load_space(file=os.path.join(self.tmp_dir, "space.p"))
             self.load_mh_results(file=os.path.join(self.tmp_dir, "mh_results.p"))
+            self.load_data_informed_properties(file=os.path.join(self.tmp_dir, "data_informed_properties.pctl"))
+
 
     def set_lower_figure(self, clear=False):
         """ Configures lower figure on tab 6 (MH results) """
