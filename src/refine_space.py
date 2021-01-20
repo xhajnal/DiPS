@@ -406,7 +406,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
     """
 
     if iterative:
-        raise NotImplementedError("This feature is decrecated and was removed.")
+        raise NotImplementedError("This feature is deprecated and was removed.")
 
     # INITIALISATION
     initialisation_start_time = time()

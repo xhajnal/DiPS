@@ -8,14 +8,35 @@ locale.setlocale(locale.LC_ALL, '')
 def parse_numbers(text: str):
     """ Converts string into a list of numbers
 
+    Note: some nasty notations will not pass, such as "-e7"
+
     Args:
         text (string): input string
     """
-    newstr = ''.join((ch if ch in '0123456789.-e' else ' ') for ch in text)
-    newstr = newstr.split(" e ")
-    newstr = ''.join(newstr)
-    # print("newstr", newstr)
-    return [float(i) for i in newstr.split()]
+    numbers = '0123456789'
+    last_char = ""
+    new_text = ""
+    for char in text:
+        if char in numbers:
+            last_char = char
+            new_text = new_text + char
+        ## Minus is ok, unless two goes in row
+        elif char == "-" and last_char != "-":
+            last_char = char
+            new_text = new_text + char
+        ## . goes only between numbers, or in begining of number
+        elif char == "." and (last_char == " " or last_char in numbers):
+            last_char = char
+            new_text = new_text + char
+        ## e goes in between number or after -
+        elif char == "e" and (last_char == "-" or last_char in numbers):
+            last_char = char
+            new_text = new_text + char
+        else:
+            last_char = char
+            new_text = new_text + " "
+        # print(new_text)
+    return [float(i) for i in new_text.split()]
 
 
 def is_float(value):

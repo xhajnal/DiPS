@@ -70,14 +70,14 @@ class MyTestCase(unittest.TestCase):
     def test_load_functions(self):
         print(colored('Parse functions from a given file', 'blue'))
 
-        self.assertEqual(load_functions(os.path.join(prism_results, "asynchronous_2.txt"), "prism", False),
+        self.assertEqual(load_mc_result(os.path.join(prism_results, "asynchronous_2.txt"), "prism", False),
                          (['p**2-2*p+1', '2*q*p**2-2*p**2-2*q*p+2*p', '(-2)*q*p**2+p**2+2*q*p'], []))
-        self.assertEqual(load_functions(os.path.join(prism_results, "asynchronous_2.txt"), "prism", True),
+        self.assertEqual(load_mc_result(os.path.join(prism_results, "asynchronous_2.txt"), "prism", True),
                          (['(p - 1)**2', '2*p*(p - 1)*(q - 1)', '-p*(2*p*q - p - 2*q)'], []))
 
-        self.assertEqual(load_functions(os.path.join(storm_results, "asynchronous_3_moments.txt"), "storm", False),
+        self.assertEqual(load_mc_result(os.path.join(storm_results, "asynchronous_3_moments.txt"), "storm", False),
                          ([], ['(3*((p)*(p**2*q+2*q+(-3)*p*q+1)))/(1)', '(3*((p)*(2*p**2*q**2+6*q+(-4)*p*q**2+p**2*q+2*q**2+(-7)*p*q+2*p+1)))/(1)']))
-        self.assertEqual(load_functions(os.path.join(storm_results, "asynchronous_3_moments.txt"), "storm", True),
+        self.assertEqual(load_mc_result(os.path.join(storm_results, "asynchronous_3_moments.txt"), "storm", True),
                          ([], ['3*p*(p**2*q - 3*p*q + 2*q + 1)', '3*p*(2*p**2*q**2 + p**2*q - 4*p*q**2 - 7*p*q + 2*p + 2*q**2 + 6*q + 1)']))
 
     def test_load_all_functions(self):

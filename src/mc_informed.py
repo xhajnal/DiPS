@@ -17,11 +17,12 @@ storm_results = spam["storm_results"]
 del spam
 
 
-def general_create_data_informed_properties(prop_file, intervals, output_file=False, silent: bool = False):
+def general_create_data_informed_properties(prop_file, intervals, conj=False, output_file=False, silent: bool = False):
     """ Creates data informed property file from regular "profile" and intervals
     Args:
         prop_file (File/String):  regular prop file which contains lines in the form P=? (...)
         intervals (list of pairs of numbers): list of intervals to assign for the properties
+        conj (bool): if True a conjunction of properties is returned
         output_file (File/String): output prop file, if False data_informed_properties is returned as a list of strings
         silent (bool): if silent command line output is set to minimum
     """
@@ -59,6 +60,9 @@ def general_create_data_informed_properties(prop_file, intervals, output_file=Fa
     ## Checking sizes of properties and intervals
     if len(intervals) is not i:
         raise Exception(f"Number of properties {i} is not corresponding to number of intervals {len(intervals)}")
+
+    if conj:
+        data_informed_properties = [" & ".join(data_informed_properties)]
 
     if not output_file:
         ## Getting rid of EOL
