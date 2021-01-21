@@ -44,10 +44,10 @@ class MyTestCase(unittest.TestCase):
         print(colored('Test storm call with single file', 'blue'))
         agents_quantities = [2, 3]
         for population in agents_quantities:
-            call_storm(os.path.join(model_dir, f"asynchronous_{population}.pm"), [],  os.path.join(properties_dir, f"prop_{population}.pctl"), os.path.join(storm_results, f"storm_no_time_{population}.txt"))
+            call_storm(os.path.join(model_dir, f"asynchronous_{population}.pm"), [],  [[0, 1], [0, 1]], os.path.join(properties_dir, f"prop_{population}.pctl"), os.path.join(storm_results, f"storm_no_time_{population}.txt"))
         print(colored('Test storm call with single file with timer', 'blue'))
         for population in agents_quantities:
-            call_storm(os.path.join(model_dir, f"asynchronous_{population}.pm"), [],  os.path.join(properties_dir, f"prop_{population}.pctl"), os.path.join(storm_results, f"storm_with_time_{population}.txt"), time=True)
+            call_storm(os.path.join(model_dir, f"asynchronous_{population}.pm"), [],  [[0, 1], [0, 1]], os.path.join(properties_dir, f"prop_{population}.pctl"), os.path.join(storm_results, f"storm_with_time_{population}.txt"), time=True)
 
     def test_simulation(self):
         print(colored('Test prism call with single file', 'blue'))

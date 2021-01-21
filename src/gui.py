@@ -261,7 +261,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.20.2"  ## Version of the gui
+        self.version = "1.21"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -671,8 +671,7 @@ class Gui(Tk):
 
         self.data_informed_property_text = scrolledtext.ScrolledText(frame_right, width=int(self.winfo_width() / 2), height=int(self.winfo_height() * 0.8 / 80), state=DISABLED)
         self.data_informed_property_text.grid(row=5, column=1, columnspan=16, rowspan=4, sticky=W + E + N + S, padx=5, pady=10)
-
-        Button(frame_right, text='Run refinement', command=self.external_refine).grid(row=9, column=1, sticky=W, padx=5, pady=4)
+        # Button(frame_right, text='Run parameter-lifting', command=self.external_refine).grid(row=9, column=2, sticky=W, padx=5, pady=4)
 
         ############################################### TAB CONSTRAINTS ################################################
         page5 = ttk.Frame(nb, width=400, height=200, name="constraints")
@@ -859,7 +858,9 @@ class Gui(Tk):
         self.delta_entry.insert(END, '0.01')
         self.refinement_timeout_entry.insert(END, '3600')
 
-        Button(frame_left, text='Refine space', command=self.refine_space).grid(row=8, column=3, columnspan=2, pady=4, padx=0)
+        Button(frame_left, text='Exact Refine space', command=self.refine_space).grid(row=8, column=3, columnspan=2, pady=4, padx=0)
+        Button(frame_left, text='PRISM refine', command=self.external_refine_PRISM).grid(row=9, column=3, columnspan=1, pady=4, padx=0)
+        Button(frame_left, text='Storm refine', command=self.external_refine_Storm).grid(row=9, column=4, columnspan=1, pady=4, padx=0)
 
         ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=10, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
 
@@ -1360,7 +1361,7 @@ class Gui(Tk):
 
         if refinement:
             self.status_set("Refinement loaded.")
-            messagebox.showinfo("Loading PRISM refinement result", "Loaded refinement output can be seen in Synthesise functions tab, and visualisation in Sample & Refine Tab.")
+            messagebox.showinfo("Loading PRISM refinement result", "Loaded refinement output can be seen in Synthesise functions tab.")
         else:
             self.unfold_functions()
 
@@ -2792,43 +2793,60 @@ class Gui(Tk):
             else:
                 property_file = self.property_file.get()
 
+            output_file = filedialog.asksaveasfilename(initialdir=self.prism_results if self.program.get().lower() == "prism" else self.storm_results,
+                                                       title="Model checking - Select file to save output",
+                                                       filetypes=(("text files", "*.txt"), ("all files", "*.*")))
+
             try:
+                self.cursor_toggle_busy(True)
+                if refinement:
+                    if self.program.get().lower() == "prism":
+                        self.status_set("Space refinement using PRISM is running ...")
+                    elif self.program.get().lower() == "storm":
+                        self.status_set("Parameter-lifting using Storm is running ...")
+                    coverage = round(float(self.coverage_entry.get()), 13)
+                else:
+                    self.status_set(f"Parametric model checking using {self.program.get()} is running ...")
+                    coverage = False
                 if self.program.get().lower() == "prism":
-                    self.cursor_toggle_busy(True)
-                    self.status_set("Parameter synthesis is running ...")
+                    if output_file == ():
+                        output_file = str(os.path.join(Path(self.prism_results), str(Path(self.model_file.get()).stem) + "_" + str(Path(property_file).stem) + ".txt"))
+
                     call_prism_files(self.model_file.get(), [], param_intervals=self.parameter_domains, seq=False, no_prob_checks=False,
                                      memory="", model_path="", properties_path=self.property_dir,
-                                     property_file=property_file, output_path=self.prism_results,
-                                     gui=show_message, silent=self.silent.get())
+                                     property_file=property_file, output_path=output_file,
+                                     gui=show_message, silent=self.silent.get(), coverage=coverage)
                     ## Deriving output file
-                    self.functions_file.set(str(os.path.join(Path(self.prism_results), str(Path(self.model_file.get()).stem) + "_" + str(Path(property_file).stem) + ".txt")))
-                    self.status_set("Parameter synthesised finished. Output here: {}", self.functions_file.get())
-                    self.load_mc_output_file(self.functions_file.get(), reset_param_and_intervals=False, refinement=refinement)
 
-                elif self.program.get().lower() == "storm":
-                    self.cursor_toggle_busy(True)
-                    self.status_set("Parameter synthesis running ...")
-                    ## Deriving output file
-                    self.functions_file.set(str(os.path.join(Path(self.storm_results),
-                                                             str(Path(self.model_file.get()).stem) + "_" + str(
-                                                                 Path(self.property_file.get()).stem) + ".cmd")))
-                    call_storm(model_file=self.model_file.get(), params=[],  param_intervals=[],
-                               property_file=property_file, storm_output_file=self.functions_file.get(),
-                               time=True, silent=self.silent.get())
-                    # call_storm(model_file=self.model_file.get(), params=self.parameters,
-                    #            param_intervals=self.parameter_domains,
-                    #            property_file=self.property_file.get(), storm_output_file=self.functions_file.get(),
-                    #            time=True, silent=self.silent.get())
-
-                    self.status_set("Command to run the parameter synthesis saved here: {}", self.functions_file.get())
                     if refinement:
                         ## TODO
-                        raise NotImplementedError("Refinement with Storm not implemented so far, please select PRISM")
-                    self.load_mc_output_file(self.functions_file.get(), reset_param_and_intervals=False, refinement=refinement)
+                        pass
+                    else:
+                        self.functions_file.set(output_file)
+                    self.status_set(f"Parametric model checking using PRISM finished. Output here: {output_file}")
+                    self.load_mc_output_file(output_file, reset_param_and_intervals=False, refinement=refinement)
+
+                elif self.program.get().lower() == "storm":
+                    if output_file == ():
+                        output_file = str(os.path.join(Path(self.storm_results), str(Path(self.model_file.get()).stem) + "_" + str(Path(property_file).stem)))
+
+                    call_storm(model_file=self.model_file.get(), params=[], param_intervals=[],
+                               property_file=property_file, storm_output_file=output_file,
+                               time=True, silent=self.silent.get())
+
+                    if refinement:
+                        ## TODO
+                        # raise NotImplementedError("Refinement with Storm not implemented so far, please select PRISM")
+                        pass
+                    else:
+                        self.functions_file.set(output_file)
+
+                    self.status_set("Command to run the parameter synthesis saved here: {}", self.functions_file.get())
+                    self.load_mc_output_file(output_file, reset_param_and_intervals=False, refinement=refinement)
                 else:
                     ## Show window to inform to select the program
-                    self.status_set("Program for parameter synthesis not selected")
-                    messagebox.showwarning("Synthesise", "Select a program for parameter synthesis first.")
+                    self.status_set("Program for model checking not selected")
+                    messagebox.showwarning("Synthesise", "Select a program for model checking first.")
                     return
             finally:
                 try:
@@ -2848,11 +2866,19 @@ class Gui(Tk):
             # self.save_parsed_functions(os.path.join(self.tmp_dir, "parsed_functions"))
             self.cursor_toggle_busy(False)
 
-    def external_refine(self):
-        """ Calls PRISM or Storm to refine space using data-informed properties"""
-
+    def external_refine_PRISM(self):
+        """ Calls PRISM to refine space using data-informed properties"""
+        spam = self.program.get()
+        self.program.set("prism")
         self.synth_params(refinement=True)
-        # self.load_mc_output_file(self.functions_file.get(), reset_param_and_intervals=False, refinement=True)
+        self.program.set(spam)
+
+    def external_refine_Storm(self):
+        """ Calls Storm to refine space using data-informed properties"""
+        spam = self.program.get()
+        self.program.set("storm")
+        self.synth_params(refinement=True)
+        self.program.set(spam)
 
     def sample_fun(self):
         """ Samples functions. Prints the result. """
