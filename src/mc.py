@@ -71,7 +71,7 @@ def set_java_heap_win(size):
 
 ## TODO rewrite this without the paths, just files
 def call_prism(args, seq=False, silent: bool = False, model_path=model_path, properties_path=properties_path,
-               prism_output_path=prism_results, std_output_path=prism_results, std_output_file=False):
+               prism_output_path=prism_results, std_output_path=prism_results, std_output_file=False, coverage=False):
     """  Solves problem of calling prism from another directory.
 
     Args:
@@ -83,6 +83,7 @@ def call_prism(args, seq=False, silent: bool = False, model_path=model_path, pro
         prism_output_path (string): path to save the files inside the command
         std_output_path (string or Path): path to save the results of the command
         std_output_file (string or Path): file name to save the output
+        coverage (float): if refinement, coverage is used to set up treshold, use 0.95 as default
     """
     # print("prism_results", prism_results)
     # print("std_output_path", std_output_path)
@@ -91,7 +92,7 @@ def call_prism(args, seq=False, silent: bool = False, model_path=model_path, pro
     if std_output_path is not None:
         output_file_path = Path(args.split()[0]).stem
         # print("output_file_path", output_file_path)
-        if not std_output_file:
+        if std_output_file is False:
             # print("if")
             output_file_path = os.path.join(std_output_path, Path(output_file_path + ".txt"))
         else:
@@ -219,6 +220,12 @@ def call_prism(args, seq=False, silent: bool = False, model_path=model_path, pro
                             return "error", spam
 
         else:
+            if coverage:
+                if coverage is True:
+                    coverage = 0.95
+                args.append("-paramprecision")
+                args.append(str(round(1 - coverage, 13)))
+
             if not silent:
                 print("calling \"", " ".join(args))
             output = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8")
@@ -243,7 +250,8 @@ def call_prism(args, seq=False, silent: bool = False, model_path=model_path, pro
 
 ## TODO rewrite this without the paths, just files
 def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq=False, no_prob_checks=False, memory="",
-                     model_path=model_path, properties_path=properties_path, property_file=False, output_path=prism_results, gui=False, silent=False):
+                     model_path=model_path, properties_path=properties_path, property_file=False,
+                     output_path=prism_results, gui=False, silent=False, coverage=0.95):
     """  Calls prism for each file matching the prefix
 
     Args:
@@ -259,10 +267,8 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
         memory (string or int): sets maximum memory in GB, see https://www.prismmodelchecker.org/manual/ConfiguringPRISM/OtherOptions
         gui (function or False): callback function to be used
         silent (bool): if True the output is put to minimum
+        coverage (float): if refinement, coverage is used to set up treshold
     """
-    # print("model_path ", model_path)
-    # print("model_prefix ", model_prefix)
-    # os.chdir(config.get("mandatory_paths","cwd"))
     if no_prob_checks:
         no_prob_checks = '-noprobchecks '
     else:
@@ -276,6 +282,13 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
     if not agents_quantities:
         # print("I was here")
         agents_quantities = [""]
+
+    if len(agents_quantities) == 1 and os.path.isdir(os.path.dirname(output_path)):
+        spam = output_path
+        output_path = os.path.dirname(spam)
+        output_file = os.path.basename(spam)
+    else:
+        output_file = False
 
     for N in sorted(agents_quantities):
         # print("glob.glob(os.path.join(model_path, model_prefix + str(N) + .pm))", glob.glob(os.path.join(model_path, model_prefix + str(N) + ".pm")))
@@ -294,7 +307,6 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
         for file in files:
             file = Path(file)
             start_time = time()
-            # print("{} seq={}{} >> {}".format(file, seq, noprobchecks, str(prism_results)))
 
             ## Parsing the parameters from the files
             model_consts, model_parameters = parse_params_from_model(file, silent)
@@ -310,33 +322,20 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
             if params:
                 params = params[:-1]
 
-            ## OLD parameters
-            # if multiparam:
-            #     params = ""
-            #     for i in range(1, N):
-            #         params = "{},q{}=0:1".format(q, i)
-            #         # q=q+",q"+str(i)"=0:1"
-            # else:
-            #     params = ",q=0:1"
-            # error = call_prism("{} prop_{}.pctl {}{}-param p=0:1{}".format(file, N, memory, noprobchecks, params),
-            #                   seq=seq,
-            #                   model_path=model_path, properties_path=properties_path, std_output_path=output_path)
-
-            # print("{} prop_{}.pctl {}-param p=0:1{}".format(file,N,noprobchecks,q))
-
             ## Calling the PRISM using our function
-
             if not property_file:
                 error = call_prism("{} prop_{}.pctl {}{}-param {}".format(file, N, memory, no_prob_checks, params),
                                    seq=seq, model_path=model_path, properties_path=properties_path,
-                                   std_output_path=output_path)
+                                   std_output_path=output_path, std_output_file=output_file, silent=silent, coverage=coverage)
+            elif len(agents_quantities) == 1:
+                error = call_prism("{} {} {}{}-param {}".format(file, property_file, memory, no_prob_checks, params),
+                                   seq=seq, model_path=model_path, properties_path=properties_path,
+                                   std_output_path=output_path, std_output_file=output_file, silent=silent, coverage=coverage)
             else:
-                # print("output_path", output_path)
-                # print("file", file.stem)
                 error = call_prism("{} {} {}{}-param {}".format(file, property_file, memory, no_prob_checks, params),
                                    seq=seq, model_path=model_path, properties_path=properties_path, std_output_path=output_path,
                                    std_output_file="{}_{}.txt".format(str(file.stem).split(".")[0], str(Path(property_file).stem).split(".")[0]),
-                                   silent=silent)
+                                   silent=silent, coverage=coverage)
 
             # print(f"  Return code is: {error}")
             if not silent:
