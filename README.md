@@ -126,9 +126,9 @@ For fully functional GUI (all the features fully visible) please set the scale o
 ## HOW TO USE
 
 *****
-For a brief summary, you can see our poster (CMSB 19), `cmsb_poster.pdf`.
+For a brief summary, you can see our poster (CMSB 19), [cmsb_poster.pdf](https://github.com/xhajnal/DiPS/blob/master/cmsb_poster.pdf).
 
-To follow the main workflow of the tool using the graphical user interface, please see `tutorial.pdf`.
+To follow the main workflow of the tool using the graphical user interface, please see [tutorial.pdf](https://github.com/xhajnal/DiPS/blob/master/tutorial.pdf).
 
 For more information about the methods, please follow the tool paper (submitted) or previous HSB paper [[1]](#one) (if not reachable, please write us an email.)
 
