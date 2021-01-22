@@ -755,12 +755,14 @@ class RefinedSpace:
         """ Returns proportion of nonwhite subspace (coverage) """
         # print("self.get_nonwhite_volume()", self.get_nonwhite_volume())
         # print("self.get_volume()", self.get_volume())
-        if self.get_nonwhite_volume() == 0:
-            return 0
-        elif self.get_white_volume() == 0:
-            return 1
-        else:
-            return self.get_nonwhite_volume() / self.get_volume()
+        return self.get_nonwhite_volume() / self.get_volume()
+        ## TODO use this after editing space make it sound
+        # if self.get_nonwhite_volume() == 0:
+        #     return 0
+        # elif self.get_white_volume() == 0:
+        #     return 1
+        # else:
+        #     return self.get_nonwhite_volume() / self.get_volume()
 
     def get_sat_samples(self):
         """ Returns green (sat) samples """
@@ -1053,6 +1055,21 @@ class RefinedSpace:
             print(str(err))
             pass
         text = text + str(f"true_point: {self.true_point}\n")
+
+        if self.time_sampling == 0:
+            text = text + str(f"pace not sampled")
+        elif self.time_last_sampling == self.time_sampling:
+            text = text + str(f"sampling took {self.time_sampling}s")
+        else:
+            text = text + str(f"last sampling took {self.time_last_sampling}s out of whole {self.time_sampling}s sampling time")
+
+        if self.time_refinement == 0:
+            text = text + str(f"pace not sampled")
+        elif self.time_last_refinement == self.time_refinement:
+            text = text + str(f"sampling took {self.time_refinement}s")
+        else:
+            text = text + str(f"last sampling took {self.time_last_refinement}s out of whole {self.time_refinement}s sampling time")
+
         return text
 
     def sampling_took(self, time):

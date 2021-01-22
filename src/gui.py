@@ -258,7 +258,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.21"  ## Version of the gui
+        self.version = "1.21.1"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -1304,32 +1304,38 @@ class Gui(Tk):
                 
                 ## Ask whether to show space
                 if self.space != "":
-                    if askyesno("Loading PRISM refinement result", "Space is not clear, do you want to override with current results?"):
-                        ## Backup old space
-                        self.save_space(os.path.join(self.tmp_dir, "space.p"))
-                        self.space = ""
-                    else:
-                        skip_vis = True
+                    ## Backup old space
+                    self.save_space(os.path.join(self.tmp_dir, "space.p"))
+                    self.space = ""
+                    # if askyesno("Loading PRISM refinement result", "Space is not clear, do you want to override with current results?"):
+                    #     ## Backup old space
+                    #     self.save_space(os.path.join(self.tmp_dir, "space.p"))
+                    #     self.space = ""
+                    # else:
+                    #     skip_vis = True
                 if not skip_vis:
                     ## Show space
                     if len(spam) > 1:
                         messagebox.showwarning("Loading PRISM refinement result", "There is more refinements in the result, only the first is used.")
 
                     ## Get first refinement
-                    spam = spam[0]
-                    self.space = space.RefinedSpace(self.parameter_domains, self.parameters)
-                    self.space.extend_green(spam[0])
-                    self.space.extend_red(spam[1])
-                    self.space.time_last_refinement = time_elapsed
-                    self.space.time_refinement = self.space.time_refinement + time_elapsed
-    
-                    self.clear_space()
-                    self.show_space(show_refinement=True, show_samples=False, show_true_point=False,
-                                    prefer_unsafe=self.show_red_in_multidim_refinement.get(),
-                                    title=f"achieved_coverage:{round(self.space.get_coverage(), 3)}, solver: {program}")
-    
-                    self.space.remove_white([[0, 1], [0, 1]])
-                    self.print_space()
+                    try:
+                        spam = spam[0]
+                        self.space = space.RefinedSpace(self.parameter_domains, self.parameters)
+                        self.space.extend_green(spam[0])
+                        self.space.extend_red(spam[1])
+                        self.space.time_last_refinement = time_elapsed
+                        self.space.time_refinement = self.space.time_refinement + time_elapsed
+
+                        self.clear_space()
+                        self.show_space(show_refinement=True, show_samples=False, show_true_point=False,
+                                        prefer_unsafe=self.show_red_in_multidim_refinement.get(),
+                                        title=f"achieved_coverage:{round(self.space.get_coverage(), 3)}, solver: {program}")
+
+                        self.space.remove_white(self.parameter_domains)
+                        self.print_space()
+                    except IndexError:
+                        pass
             else:
                 self.functions, rewards = spam[0], spam[1]
                 ## Merge functions and rewards
@@ -3509,8 +3515,7 @@ class Gui(Tk):
             ## This progress is passed as whole to update the thing inside the called function
             assert isinstance(self.constraints, list)
             self.space.grid_sample(self.constraints, self.sample_size, silent=self.silent.get(), save=False,
-                                   progress=self.update_progress_bar, sort=self.non_decreasing_params.get(),
-                                   save_memory=not self.store_unsat_samples)
+                                   progress=self.update_progress_bar, save_memory=not self.store_unsat_samples)
         finally:
             try:
                 self.new_window.destroy()
