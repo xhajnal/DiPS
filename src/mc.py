@@ -71,7 +71,8 @@ def set_java_heap_win(size):
 
 ## TODO rewrite this without the paths, just files
 def call_prism(args, seq=False, silent: bool = False, model_path=model_path, properties_path=properties_path,
-               prism_output_path=prism_results, std_output_path=prism_results, std_output_file=False, coverage=False):
+               prism_output_path=prism_results, std_output_path=prism_results, std_output_file=False, coverage=False,
+               debug=False):
     """  Solves problem of calling prism from another directory.
 
     Args:
@@ -159,9 +160,6 @@ def call_prism(args, seq=False, silent: bool = False, model_path=model_path, pro
             args = ["prism"]
         args.extend(prism_args)
 
-        ## forwarding error output to the file
-        # args.append("2>&1")
-
         if seq:
             if os.path.isfile(os.path.join(std_output_path, output_file_path)):
                 os.remove(os.path.join(std_output_path, output_file_path))
@@ -226,8 +224,11 @@ def call_prism(args, seq=False, silent: bool = False, model_path=model_path, pro
                 args.append("-paramprecision")
                 args.append(str(round(1 - coverage, 13)))
 
+            ## forwarding error output to the file
+            # args.append("2>&1")
+
             if not silent:
-                print("calling \"", " ".join(args))
+                print(f"calling '{' '.join(args)}'")
             output = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8")
             write_to_file(output_file_path, output, silent, append=False)
 
@@ -241,7 +242,8 @@ def call_prism(args, seq=False, silent: bool = False, model_path=model_path, pro
                     return "noprobchecks", item.strip()
                 if ("error" in item.lower()) or ("Cannot allocate memory" in item) or ('exception' in item.lower()):
                     spam = item.strip()
-                    print(colored(spam, "red"))
+                    if debug:
+                        print(colored(spam, "red"))
                     return "error", spam
         return 0, ""
     finally:
@@ -267,7 +269,7 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
         memory (string or int): sets maximum memory in GB, see https://www.prismmodelchecker.org/manual/ConfiguringPRISM/OtherOptions
         gui (function or False): callback function to be used
         silent (bool): if True the output is put to minimum
-        coverage (float): if refinement, coverage is used to set up treshold
+        coverage (float): if refinement, coverage is used to set up threshold
     """
     if no_prob_checks:
         no_prob_checks = '-noprobchecks '
@@ -340,6 +342,9 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
             # print(f"  Return code is: {error}")
             if not silent:
                 print(colored(f"  It took {socket.gethostname()}, {time() - start_time} seconds to run", "yellow"))
+
+            if error[0] != 0:
+                print(colored(f"While calling PRISM an error occurred", "yellow"))
 
             ## Check for missing files
             if error[0] == 404:

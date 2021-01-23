@@ -230,7 +230,7 @@ def get_rectangle_volume(rectangle):
     intervals = []
     ## If there is empty rectangle
     if not rectangle:
-        raise Exception("empty rectangle has no volume")
+        raise Exception("Empty rectangle has no volume")
     for interval in rectangle:
         intervals.append(interval[1] - interval[0])
 

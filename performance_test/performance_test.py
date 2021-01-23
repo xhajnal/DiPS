@@ -167,8 +167,7 @@ def refine(text, parameters, parameter_domains, constraints, timeout, silent, de
         debug (bool): if True extensive print will be used
         alg (Int): version of the algorithm to be used
     """
-    print(colored(
-        f"Refining, {text}", "yellow"))
+    print(colored(f"Refining, {text}", "yellow"))
     print("Now computing, current time is: ", datetime.now())
     print("max_depth", max_depth, "coverage", coverage)
     space = RefinedSpace(parameter_domains, parameters)
@@ -183,7 +182,7 @@ def refine(text, parameters, parameter_domains, constraints, timeout, silent, de
 
 if __name__ == '__main__':
     ## PRISM BENCHMARKS
-    test_cases = ["crowds", "brp", "nand"]  ## ["crowds", "brp", "nand"]
+    test_cases = ["crowds", "brp", "nand", "Knuth"]  ## ["crowds", "brp", "nand", "Knuth"]
     for test_case in test_cases:
         ## Skip PRISM BENCHMARKS?
         if not run_prism_benchmark:
@@ -203,12 +202,19 @@ if __name__ == '__main__':
                 settings = [[10, 1]]
             else:
                 settings = [[10, 1], [10, 2], [10, 3], [10, 4], [10, 5], [20, 1], [20, 2], [20, 3], [20, 4], [20, 5]]
+        if test_case == "Knuth":
+            settings = [""]
 
         for constants in settings:
-            model_name = f"{test_case}_{constants[0]}-{constants[1]}"
+            if test_case == "Knuth":
+                model_name = f"parametric_die"
+                property_file = os.path.join(property_path, test_case, f"parametric_die_prop2.pctl")
+            else:
+                model_name = f"{test_case}_{constants[0]}-{constants[1]}"
+                property_file = os.path.join(property_path, test_case, f"{test_case}.pctl")
             model_file = os.path.join(model_path, test_case, f"{model_name}.pm")
             consts, parameters = parse_params_from_model(model_file, silent=True)
-            property_file = os.path.join(property_path, test_case, f"{test_case}.pctl")
+
             if debug:
                 print("parameters", parameters)
 
@@ -229,11 +235,12 @@ if __name__ == '__main__':
                     functions = load_functions(model_name, debug)
 
             if shallow:
-                data_sets = [0.5]
+                data_sets = [[0.5]]
             else:
-                data_sets = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+                data_sets = [[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]]
+            if test_case == "Knuth":
+                data_sets = [[1/6]*6]
             for data_set in data_sets:
-                data_set = [data_set]
                 if debug:
                     print("data_set", data_set)
                     print(type(data_set[0]))
@@ -285,9 +292,9 @@ if __name__ == '__main__':
                     if not run_refine:
                         break
                     ## TODO this fails
-                    # refine(f"dataset {data_set}, # of samples {n_samples[i]}", parameters, parameter_domains, constraints, timeout, silent, debug, alg=5)
-                    refine(f"dataset {data_set}, # of samples {n_samples[i]}", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=4)
                     refine(f"dataset {data_set}, # of samples {n_samples[i]}", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=3)
+                    refine(f"dataset {data_set}, # of samples {n_samples[i]}", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=4)
+                    refine(f"dataset {data_set}, # of samples {n_samples[i]}", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=5)
 
                 ## METROPOLIS-HASTINGS
                 # space = RefinedSpace(parameter_domains, parameters)
@@ -296,7 +303,7 @@ if __name__ == '__main__':
                     if not run_mh:
                         break
                     start_time = time()
-                    mh_results = initialise_sampling(parameters, parameter_domains, data_set, functions, n_samples[i], iterations, 0, where=True, metadata=False, timeout=mh_timeout)
+                    mh_results = initialise_sampling(parameters, parameter_domains, functions, data_set, n_samples[i], iterations, 0, where=True, metadata=False, timeout=mh_timeout)
                     assert isinstance(mh_results, HastingsResults)
                     print(colored(
                         f"this was MH, {iterations} iterations, dataset {data_set}, # of samples, {n_samples[i]} took {round(time() - start_time, 4)} seconds", "yellow"))
@@ -316,7 +323,7 @@ if __name__ == '__main__':
                         break
                     spam = general_create_data_informed_properties(property_file, intervals[i], silent=False)
                     conf = str(C).replace(".", ",")
-                    data_sett = str(*data_set).replace(".", ",")
+                    data_sett = ",".join(list(map(lambda x: str(x).replace(".", ","), data_set)))
                     save_informed_property_file = os.path.join(results_dir, "data-informed_properties", str(basename(property_file).split(".")[0]) + f"{n_samples[i]}_samples_{conf}_confidence" + ".pctl")
                     try:
                         os.mkdir(os.path.join(results_dir, "data-informed_properties"))

@@ -1322,8 +1322,14 @@ class Gui(Tk):
                     try:
                         spam = spam[0]
                         self.space = space.RefinedSpace(self.parameter_domains, self.parameters)
-                        self.space.extend_green(spam[0])
-                        self.space.extend_red(spam[1])
+                        if len(self.parameters) == 1:
+                            for item in spam[0]:
+                                self.space.add_green([item])
+                            for item in spam[1]:
+                                self.space.add_red([item])
+                        else:
+                            self.space.extend_green(spam[0])
+                            self.space.extend_red(spam[1])
                         self.space.time_last_refinement = time_elapsed
                         self.space.time_refinement = self.space.time_refinement + time_elapsed
 
