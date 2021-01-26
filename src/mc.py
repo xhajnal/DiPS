@@ -71,7 +71,7 @@ def set_java_heap_win(size):
 
 ## TODO rewrite this without the paths, just files
 def call_prism(args, seq=False, silent: bool = False, model_path=model_path, properties_path=properties_path,
-               prism_output_path=prism_results, std_output_path=prism_results, std_output_file=False, coverage=False,
+               prism_output_path=prism_results, std_output_file=False, coverage=False,
                debug=False):
     """  Solves problem of calling prism from another directory.
 
@@ -82,27 +82,12 @@ def call_prism(args, seq=False, silent: bool = False, model_path=model_path, pro
         model_path (string or Path): path to load  models from
         properties_path (string or Path): path to load properties from
         prism_output_path (string): path to save the files inside the command
-        std_output_path (string or Path): path to save the results of the command
         std_output_file (string or Path): file name to save the output
-        coverage (float): if refinement, coverage is used to set up treshold, use 0.95 as default
+        coverage (float): if refinement, coverage is used to set up threshold, use 0.95 as default
     """
     # print("prism_results", prism_results)
     # print("std_output_path", std_output_path)
     # print("std_output_file", std_output_file)
-
-    if std_output_path is not None:
-        output_file_path = Path(args.split()[0]).stem
-        # print("output_file_path", output_file_path)
-        if std_output_file is False:
-            # print("if")
-            output_file_path = os.path.join(std_output_path, Path(output_file_path + ".txt"))
-        else:
-            # print("else")
-            output_file_path = os.path.join(prism_results, Path(str(std_output_file)))
-            # print("new output_file_path", output_file_path)
-    else:
-        output_file_path = ""
-
     # print("output_file_path", output_file_path)
 
     # os.chdir(config.get("mandatory_paths","cwd"))
@@ -161,8 +146,8 @@ def call_prism(args, seq=False, silent: bool = False, model_path=model_path, pro
         args.extend(prism_args)
 
         if seq:
-            if os.path.isfile(os.path.join(std_output_path, output_file_path)):
-                os.remove(os.path.join(std_output_path, output_file_path))
+            if os.path.isfile(std_output_file):
+                os.remove(std_output_file)
             with open(property_file_path, 'r') as property_file:
                 args.append("-property")
                 args.append("")
@@ -189,20 +174,22 @@ def call_prism(args, seq=False, silent: bool = False, model_path=model_path, pro
                             output = subprocess.run(args, stdout=subprocess.PIPE,
                                                     stderr=subprocess.STDOUT).stdout.decode("utf-8")
                             if 'OutOfMemoryError' in output:
-                                write_to_file(output_file_path, output, silent, append=True)
+                                if std_output_file:
+                                    write_to_file(std_output_file, output, silent, append=True)
                                 print(colored(f"A memory error occurred while seq even after increasing the memory, close some programs and try again", "red"))
                                 if "wind" in system().lower():
                                     set_java_heap_win(previous_memory)
                                 return "memory_fail", "A memory error occurred while seq even after increasing the memory, close some programs and try again"
                         else:
-                            write_to_file(output_file_path, output, silent, append=True)
+                            if std_output_file:
+                                write_to_file(std_output_file, output, silent, append=True)
                             print(colored(f"A memory error occurred while seq with given amount of memory", "red"))
                             ## Changing the memory setting back
                             if "wind" in system().lower():
                                 set_java_heap_win(previous_memory)
                             return "memory", "A memory error occurred while seq with given amount of memory"
-
-                    write_to_file(output_file_path, output, silent, append=True)
+                    if std_output_file:
+                        write_to_file(std_output_file, output, silent, append=True)
 
                     ## Check for errors
                     ## 'OutOfMemoryError', "Cannot allocate memory", 'Type error', 'Syntax error', 'NullPointerException', 'use -noprobchecks'
@@ -230,7 +217,8 @@ def call_prism(args, seq=False, silent: bool = False, model_path=model_path, pro
             if not silent:
                 print(f"calling '{' '.join(args)}'")
             output = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8")
-            write_to_file(output_file_path, output, silent, append=False)
+            if std_output_file:
+                write_to_file(std_output_file, output, silent, append=False)
 
             ## Check for errors
             ## 'OutOfMemoryError', "Cannot allocate memory", 'Type error', 'Syntax error', 'NullPointerException', 'use -noprobchecks'
@@ -328,15 +316,15 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
             if not property_file:
                 error = call_prism("{} prop_{}.pctl {}{}-param {}".format(file, N, memory, no_prob_checks, params),
                                    seq=seq, model_path=model_path, properties_path=properties_path,
-                                   std_output_path=output_path, std_output_file=output_file, silent=silent, coverage=coverage)
+                                   std_output_file=os.path.join(output_path, output_file), silent=silent, coverage=coverage)
             elif len(agents_quantities) == 1:
                 error = call_prism("{} {} {}{}-param {}".format(file, property_file, memory, no_prob_checks, params),
                                    seq=seq, model_path=model_path, properties_path=properties_path,
-                                   std_output_path=output_path, std_output_file=output_file, silent=silent, coverage=coverage)
+                                   std_output_file=os.path.join(output_path, output_file), silent=silent, coverage=coverage)
             else:
                 error = call_prism("{} {} {}{}-param {}".format(file, property_file, memory, no_prob_checks, params),
-                                   seq=seq, model_path=model_path, properties_path=properties_path, std_output_path=output_path,
-                                   std_output_file="{}_{}.txt".format(str(file.stem).split(".")[0], str(Path(property_file).stem).split(".")[0]),
+                                   seq=seq, model_path=model_path, properties_path=properties_path,
+                                   std_output_file=os.path.join(output_path, "{}_{}.txt".format(str(file.stem).split(".")[0], str(Path(property_file).stem).split(".")[0])),
                                    silent=silent, coverage=coverage)
 
             # print(f"  Return code is: {error}")
