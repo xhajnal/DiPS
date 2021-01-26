@@ -775,10 +775,16 @@ def parse_data_intervals(file, silent=True, debug=False):
             ## Get rid of the []
             lines = lines[1:-1]
         if "(" in lines:
-            lines = re.sub(r'\)\s*,\s*(Interval|)\(', r');Interval(', lines)
-            lines = lines.split(";")
+            if "Interval" in lines:
+                lines = re.sub(r'\)\s*,\s*(Interval|)\(', r');Interval(', lines)
+                lines = lines.split(";")
+                lines = list(map(lambda x: eval(x), lines))
+            else:
+                lines = re.sub(r'\)\s*,\s*(Interval|)\(', r');Interval(', lines)
+                lines = lines.split(";")
+                lines = list(map(lambda x: Interval(*eval(x)), lines))
         else:
             lines = lines.split(",")
+            lines = list(map(lambda x: eval(x), lines))
 
-    lines = list(map(lambda x: eval(x), lines))
     return lines

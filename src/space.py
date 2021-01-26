@@ -1057,18 +1057,18 @@ class RefinedSpace:
         text = text + str(f"true_point: {self.true_point}\n")
 
         if self.time_sampling == 0:
-            text = text + str(f"pace not sampled")
+            text = text + str(f"space not sampled  \n")
         elif self.time_last_sampling == self.time_sampling:
-            text = text + str(f"sampling took {self.time_sampling}s")
+            text = text + str(f"sampling took {self.time_sampling}s  \n")
         else:
-            text = text + str(f"last sampling took {self.time_last_sampling}s out of whole {self.time_sampling}s sampling time")
+            text = text + str(f"last sampling took {self.time_last_sampling}s out of whole {self.time_sampling}s sampling time \n")
 
         if self.time_refinement == 0:
-            text = text + str(f"pace not sampled")
+            text = text + str(f"space not refined \n")
         elif self.time_last_refinement == self.time_refinement:
-            text = text + str(f"sampling took {self.time_refinement}s")
+            text = text + str(f"refinement took {self.time_refinement}s \n")
         else:
-            text = text + str(f"last sampling took {self.time_last_refinement}s out of whole {self.time_refinement}s sampling time")
+            text = text + str(f"last refinement took {self.time_last_refinement}s out of whole {self.time_refinement}s refinement time \n")
 
         return text
 
