@@ -1010,9 +1010,9 @@ def metropolis_hastings(params, parameter_intervals, param_init, functions, data
     return np.array(accepted), np.array(rejected)
 
 
-def initialise_sampling(params, parameter_intervals, functions, data, sample_size: int,  mh_sampling_iterations: int, eps=0,
-                        sd=0.15, theta_init=False, where=False, progress=False, burn_in=False, bins=20, timeout=False,
-                        debug=False, metadata=True, draw_plot=False):
+def init_mh(params, parameter_intervals, functions, data, sample_size: int, mh_sampling_iterations: int, eps=0,
+            sd=0.15, theta_init=False, where=False, progress=False, burn_in=False, bins=20, timeout=False,
+            debug=False, metadata=True, draw_plot=False):
     """ Initialisation method for Metropolis Hastings
 
     Args:

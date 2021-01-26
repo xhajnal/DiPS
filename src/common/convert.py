@@ -72,7 +72,7 @@ def ineq_to_constraints(functions: list, intervals: list, decoupled=True, silent
     if len(functions) is not len(intervals):
         if not silent:
             print(colored(f"len of functions {len(functions)} and intervals {len(intervals)} does not correspond", "red"))
-        return False
+        raise Exception(f"Constraints cannot be computed. len of functions {len(functions)} and intervals {len(intervals)} does not correspond.")
 
     ## Catching wrong interval errors
     try:

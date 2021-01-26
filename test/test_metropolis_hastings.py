@@ -84,7 +84,7 @@ class MyTestCase(unittest.TestCase):
         g[10] = '-x*(2*x*y - x - 2*y)*(x**4*y**4 - 2*x**4*y**3 + 4*x**4*y**2 - 3*x**4*y + x**4 - 4*x**3*y**4 + 6*x**3*y**3 - 8*x**3*y**2 + 3*x**3*y + 6*x**2*y**4 - 6*x**2*y**3 + 4*x**2*y**2 - 4*x*y**4 + 2*x*y**3 + y**4)*(5*x**4*y**4 - 10*x**4*y**3 + 10*x**4*y**2 - 5*x**4*y + x**4 - 20*x**3*y**4 + 30*x**3*y**3 - 20*x**3*y**2 + 5*x**3*y + 30*x**2*y**4 - 30*x**2*y**3 + 10*x**2*y**2 - 20*x*y**4 + 10*x*y**3 + 5*y**4)'
 
         #                  (params, parameter_intervals, functions,    data,  sample_size,      mh_sampling_iterations, eps=0, sd=0.15, theta_init=False, where=False, progress=False, burn_in=False, bins=20, timeout=False, debug=False, metadata=True, draw_plot=False)
-        initialise_sampling(params, parameter_intervals, functions=g, data=[], sample_size=100, mh_sampling_iterations=100, eps=0, debug=True)
+        init_mh(params, parameter_intervals, functions=g, data=[], sample_size=100, mh_sampling_iterations=100, eps=0, debug=True)
 
     def test_without_data_nor_observation2(self):
         print(colored('Metropolis-Hastings without data - it is sampled', 'blue'))
@@ -92,14 +92,14 @@ class MyTestCase(unittest.TestCase):
         params = ["x", "y"]
         parameter_intervals = [(0, 1), (0, 1)]
         f = ["p**2-2*p+1", "2*q*p**2-2*p**2-2*q*p+2*p", "(-2)*q*p**2+p**2+2*q*p"]
-        initialise_sampling(params, parameter_intervals, data=[], functions=f, sample_size=100, mh_sampling_iterations=100, eps=0, debug=True)
+        init_mh(params, parameter_intervals, data=[], functions=f, sample_size=100, mh_sampling_iterations=100, eps=0, debug=True)
 
     def test_given_observation(self):
         pass  ## current implementation allows only data
         # print(colored('Metropolis-Hastings with observations', 'blue'))
         # space = RefinedSpace([(0, 1), (0, 1)], ["p", "q"], ["Real", "Real"], [[[0, 0.5], [0, 0.5]]], [], true_point=[0.82, 0.92])
         # f = ["p**2-2*p+1", "2*q*p**2-2*p**2-2*q*p+2*p", "(-2)*q*p**2+p**2+2*q*p"]
-        # initialise_sampling(space, data=[0, 2, 1, 2, 1, 0, 2, 1, 0, 1], functions=f, observations_count=500, observations_samples_size=100, mh_sampling_iterations=100, eps=0, debug=True) ## using observations
+        # init_mh(space, data=[0, 2, 1, 2, 1, 0, 2, 1, 0, 1], functions=f, observations_count=500, observations_samples_size=100, mh_sampling_iterations=100, eps=0, debug=True) ## using observations
 
     def test_given_data(self):
         print(colored('Metropolis-Hastings with data', 'blue'))
@@ -108,7 +108,7 @@ class MyTestCase(unittest.TestCase):
         parameter_intervals = [(0, 1), (0, 1)]
         functions = ["p**2-2*p+1", "2*q*p**2-2*p**2-2*q*p+2*p", "(-2)*q*p**2+p**2+2*q*p"]
         data = [0.2, 0.5, 0.3]
-        initialise_sampling(params, parameter_intervals, data=data, functions=functions, sample_size=100, mh_sampling_iterations=100, eps=0, debug=True)
+        init_mh(params, parameter_intervals, data=data, functions=functions, sample_size=100, mh_sampling_iterations=100, eps=0, debug=True)
 
 
 if __name__ == '__main__':

@@ -207,6 +207,12 @@ def load_config():
 
     # Meta setting
     try:
+        save = config.get("settings", "show_progress").lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh']
+        my_config["show_progress"] = save
+    except configparser.NoOptionError:
+        my_config["show_progress"] = True
+
+    try:
         save = config.get("settings", "autosave_figures").lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh']
         my_config["save"] = save
     except configparser.NoOptionError:

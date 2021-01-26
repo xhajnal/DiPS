@@ -250,6 +250,9 @@ class Gui(Tk):
         self.show_mh_metadata = BooleanVar()  ## Chooses whether to visualise MH metadata plots or not
         self.show_mh_metadata.set(True)
 
+        ## Performance setting
+        self.show_progress = True  ## Flag to optimize performance by not showing progress bar
+
         ## Saving settings
         self.save_as_plain_text = BooleanVar()  ## Flag to save structures as txt instead of pickled
         self.save_as_plain_text.set(True)
@@ -258,7 +261,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.21.1"  ## Version of the gui
+        self.version = "1.21.2"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -1075,6 +1078,9 @@ class Gui(Tk):
         self.mh_timeout = config["mh_timeout"]
         self.mh_timeout_entry.delete(0, 'end')
         self.mh_timeout_entry.insert(END, self.mh_timeout)
+
+        # Performance setting
+        self.show_progress = config["show_progress"]
 
         # Meta setting
         self.save.set(config["save"])
@@ -3521,7 +3527,8 @@ class Gui(Tk):
             ## This progress is passed as whole to update the thing inside the called function
             assert isinstance(self.constraints, list)
             self.space.grid_sample(self.constraints, self.sample_size, silent=self.silent.get(), save=False,
-                                   progress=self.update_progress_bar, save_memory=not self.store_unsat_samples)
+                                   progress=self.update_progress_bar if self.show_progress else False,
+                                   save_memory=not self.store_unsat_samples)
         finally:
             try:
                 self.new_window.destroy()
@@ -3603,7 +3610,8 @@ class Gui(Tk):
             assert isinstance(self.constraints, list)
             self.clear_space()
             self.space.grid_sample(self.constraints, self.sample_size, silent=self.silent.get(), save=False,
-                                   progress=self.update_progress_bar, quantitative=True, save_memory=True)
+                                   progress=self.update_progress_bar if self.show_progress else False,
+                                   quantitative=True, save_memory=True)
         finally:
             try:
                 self.new_window.destroy()
@@ -3695,7 +3703,7 @@ class Gui(Tk):
         # self.page6_figure2.canvas.draw()
         # self.page6_figure2.canvas.flush_events()
 
-        from metropolis_hastings import initialise_sampling
+        from metropolis_hastings import init_mh
 
         try:
             self.cursor_toggle_busy(True)
@@ -3712,16 +3720,16 @@ class Gui(Tk):
             ## This progress is passed as whole to update the thing inside the called function
             assert isinstance(self.data, list)
             assert isinstance(self.functions, list)
-            self.mh_results = initialise_sampling(self.parameters, self.parameter_domains, self.functions, self.data,
-                                                  int(self.n_samples_entry.get()),
-                                                  int(self.MH_sampling_iterations_entry.get()),
-                                                  0,  # float(self.eps_entry.get()), ## setting eps=0,
-                                                  sd=float(self.sd_entry.get()), theta_init=self.parameter_point,
-                                                  where=[self.page6_figure2, self.page6_b],
-                                                  progress=self.update_progress_bar, debug=self.debug.get(),
-                                                  bins=int(float(self.bins_entry.get())), burn_in=float(self.burn_in_entry.get()),
-                                                  timeout=int(float(self.mh_timeout_entry.get())), draw_plot=self.draw_plot_window,
-                                                  metadata=self.show_mh_metadata.get())
+            self.mh_results = init_mh(self.parameters, self.parameter_domains, self.functions, self.data,
+                                      int(self.n_samples_entry.get()), int(self.MH_sampling_iterations_entry.get()), 0,
+                                      # float(self.eps_entry.get()), ## setting eps=0,
+                                      sd=float(self.sd_entry.get()), theta_init=self.parameter_point,
+                                      where=[self.page6_figure2, self.page6_b],
+                                      progress=self.update_progress_bar if self.show_progress else False,
+                                      debug=self.debug.get(), bins=int(float(self.bins_entry.get())),
+                                      burn_in=float(self.burn_in_entry.get()),
+                                      timeout=int(float(self.mh_timeout_entry.get())), draw_plot=self.draw_plot_window,
+                                      metadata=self.show_mh_metadata.get())
             spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b])
 
             if spam[0] is not False:
@@ -3762,7 +3770,7 @@ class Gui(Tk):
 
                 # try:
         #     self.cursor_toggle_busy(True)
-        #     initialise_sampling(self.space, self.data, self.functions, int(self.n_samples_entry.get()), int(self.N_obs_entry.get()), int(self.MH_samples_entry.get()), float(self.eps_entry.get()), where=[self.page6_figure2, self.page6_b])
+        #     init_mh(self.space, self.data, self.functions, int(self.n_samples_entry.get()), int(self.N_obs_entry.get()), int(self.MH_samples_entry.get()), float(self.eps_entry.get()), where=[self.page6_figure2, self.page6_b])
         # except:
         #     messagebox.showerror(sys.exc_info()[1], "Try to check whether the data, functions, and computed constraints are aligned.")
         # finally:
@@ -3873,13 +3881,17 @@ class Gui(Tk):
             try:
                 self.cursor_toggle_busy(True)
 
-                ## Progress Bar
-                self.new_window = Toplevel(self)
-                Label(self.new_window, text="Refinement progress:", anchor=W, justify=LEFT).pack()
-                Label(self.new_window, textvar=self.progress, anchor=W, justify=LEFT).pack()
-                self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
-                self.progress_bar.pack(expand=True, fill=BOTH, side=TOP)
-                self.update_progress_bar(change_to=0, change_by=False)
+                if self.show_progress:
+                    ## Progress Bar
+                    self.new_window = Toplevel(self)
+                    Label(self.new_window, text="Refinement progress:", anchor=W, justify=LEFT).pack()
+                    Label(self.new_window, textvar=self.progress, anchor=W, justify=LEFT).pack()
+
+
+                    self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
+                    self.progress_bar.pack(expand=True, fill=BOTH, side=TOP)
+                    self.update_progress_bar(change_to=0, change_by=False)
+
                 self.update()
 
                 ## Refresh of plot before refinement
@@ -3901,21 +3913,24 @@ class Gui(Tk):
                                         silent=self.silent.get(), version=int(self.alg_entry.get()),
                                         sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
                                         where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
-                                        delta=self.delta, gui=self.update_progress_bar, show_space=False,
-                                        iterative=self.iterative_refinement.get(), timeout=int(float(self.refinement_timeout_entry.get())))
+                                        delta=self.delta, gui=self.update_progress_bar if self.show_progress else False,
+                                        show_space=False, iterative=self.iterative_refinement.get(),
+                                        timeout=int(float(self.refinement_timeout_entry.get())))
                 else:
                     assert isinstance(self.constraints, list)
                     spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
                                         silent=self.silent.get(), version=int(self.alg_entry.get()),
                                         sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
                                         where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
-                                        delta=self.delta, gui=self.update_progress_bar, show_space=False,
-                                        iterative=self.iterative_refinement.get(), timeout=int(float(self.refinement_timeout_entry.get())))
+                                        delta=self.delta, gui=self.update_progress_bar if self.show_progress else False,
+                                        show_space=False, iterative=self.iterative_refinement.get(),
+                                        timeout=int(float(self.refinement_timeout_entry.get())))
             finally:
                 try:
                     self.cursor_toggle_busy(False)
-                    self.new_window.destroy()
-                    self.progress.set("0%")
+                    if self.show_progress:
+                        self.new_window.destroy()
+                        self.progress.set("0%")
                 except TclError:
                     return
 
