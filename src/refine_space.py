@@ -765,8 +765,17 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                 print("converted_intervals", egg)
 
             # private_check_deeper_interval(region, constraints, intervals, recursion_depth, epsilon, coverage, silent, debug=False, progress=False):
-            private_check_deeper_interval(rectangle, egg[0], egg[1], recursion_depth, epsilon, coverage, silent,
-                                          debug=debug, progress=gui, timeout=timeout)
+            if recursion_depth < 0:
+                private_check_deeper_interval(rectangle, egg[0], egg[1], 0, epsilon, coverage, silent,
+                                              debug=debug, progress=gui, timeout=timeout)
+
+            while space.get_coverage() < coverage:
+                keys = space.rectangles_unknown.keys()
+                key = max(keys)
+                for item in space.rectangles_unknown[key]:
+                    globals()["que"].enqueue([item, egg[0], egg[1], 0, epsilon, coverage, silent, debug, gui, timeout])
+                private_check_deeper_interval(*globals()["que"].dequeue())
+
         else:
             print(colored("Chosen version not found", "red"))
         space_coverage = space.get_coverage()

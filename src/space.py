@@ -894,7 +894,18 @@ class RefinedSpace:
         """ Removes white (hyper)rectangle """
         try:
             volume = get_rectangle_volume(white)
-            self.rectangles_unknown[volume].remove(white)
+            ## If there is only a single rectangle in list of volume=volume
+            if len(self.rectangles_unknown[volume]) == 1:
+                ## If it is the rectangle which I want to remove
+                if self.rectangles_unknown[volume][0] == white:
+                    ## Drop the whole item
+                    self.rectangles_unknown.pop(volume)
+                else:
+                    print("Could not remove white area ", white)
+                    return False
+            else:
+                ## Else remove the item from the list
+                self.rectangles_unknown[volume].remove(white)
         except Exception as ex:
             print(ex)
             print("Could not remove white area ", white)
