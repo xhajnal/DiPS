@@ -405,6 +405,11 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         timeout (int): timeout in seconds (set 0 for no timeout)
     """
 
+    ## TODO infer max_max_recursion, when it crashes if maxrecursion is higher
+    max_max_recursion = 14
+    # if recursion_depth > max_max_recursion:
+    #     recursion_depth = max_max_recursion
+
     if iterative:
         raise NotImplementedError("This feature is deprecated and was removed.")
 
@@ -766,7 +771,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
 
             # private_check_deeper_interval(region, constraints, intervals, recursion_depth, epsilon, coverage, silent, debug=False, progress=False):
             if recursion_depth < 0:
-                private_check_deeper_interval(rectangle, egg[0], egg[1], 0, epsilon, coverage, silent,
+                private_check_deeper_interval(rectangle, egg[0], egg[1], max_max_recursion, epsilon, coverage, silent,
                                               debug=debug, progress=gui, timeout=timeout)
 
             while space.get_coverage() < coverage:
