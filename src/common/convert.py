@@ -40,6 +40,7 @@ def parse_numbers(text: str):
 
 
 def is_float(value):
+    """ Returns whether given values is float """
     try:
         float(value)
         return True
@@ -48,7 +49,7 @@ def is_float(value):
 
 
 def to_sympy_intervals(intervals: list):
-    """ converts list of lists or pairs into list of Intervals"""
+    """ Converts list of lists or pairs into list of Intervals"""
     return list(map(lambda x: x if isinstance(x, Interval) else Interval(x[0], x[1]), intervals))
 
 

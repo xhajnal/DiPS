@@ -24,6 +24,7 @@ storm_results = spam["storm_results"]
 del spam
 
 if "prism" not in os.environ["PATH"]:
+    print(os.environ["PATH"])
     print("prism was probably not in PATH, adding it there")
     if "wind" in system().lower():
         os.environ["PATH"] = os.environ["PATH"] + ";" + prism_path
@@ -473,8 +474,8 @@ def call_storm(model_file, params, param_intervals, property_file, storm_output_
             return 404
 
         storm_args = ["storm-pars", "--prism", f"{model_file}", "--prop", ""]
-        storm_args_extra_long = ["(time", "storm-pars", "--prism", f"{model_file}",  "--prop", "", "--resources:timemem", ">>", f"{storm_output_file}", "2>&1"]
-        storm_args_long = ["time", "storm-pars", "--prism", f"{model_file}", "--prop", "", "--resources:timemem"]
+        storm_args_long = (["time"] + storm_args) + ["--resources:timemem"]
+        storm_args_extra_long = (["(time"] + storm_args) + ["--resources:timemem", ">>", f"{storm_output_file}", "2>&1"]
 
         region = []
         if params:
@@ -498,9 +499,16 @@ def call_storm(model_file, params, param_intervals, property_file, storm_output_
         with open(property_file) as property_file:
             properties = [line.rstrip() for line in property_file]
 
+            for index, property in enumerate(properties):
+                if property.endswith(","):
+                    properties[index] = property[:-1]
+                if property.endswith("&"):
+                    properties[index] = property[:-1]
+
             try:
                 subprocess.run(["storm-pars", "--version"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8")
             except Exception as err:
+                ## STORM Not found, writing command to Call Storm in Docker
                 print("call: " + colored("storm-pars --version", "blue"))
                 print("resulted in an error: " + colored(err, "red"))
                 storm_args_long[1] = "./storm-pars"
@@ -512,8 +520,6 @@ def call_storm(model_file, params, param_intervals, property_file, storm_output_
                 for property in properties:
                     if property == "":
                         continue
-                    if property.endswith(","):
-                        property = property[:-1]
                     if time:
                         storm_args_extra_long[5] = f"'{property}' )"
                         storm_args = storm_args_extra_long
@@ -523,19 +529,16 @@ def call_storm(model_file, params, param_intervals, property_file, storm_output_
                     print(" ".join(storm_args))
                 print()
                 return False
-
+            ## STORM found, calling it for each property
             for property in properties:
                 if property == "":
                     continue
-                if property.endswith(","):
-                    property = property[:-1]
                 if time:
                     storm_args_long[5] = f'{property}'
                     storm_args = storm_args_long
                 else:
                     storm_args[4] = f'{property}'
                 try:
-
                     output = subprocess.run(storm_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8")
                     storm_output_filee.write(output + "\n")
                     print(colored(output, "yellow"))

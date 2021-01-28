@@ -180,6 +180,7 @@ class Gui(Tk):
         self.data_file = StringVar()  ## Data file
         self.data_weights_file = StringVar()  ## Data weights file
         self.data_intervals_file = StringVar()  ## Data intervals file
+        self.mc_result_file = StringVar()  ## Data
         self.functions_file = StringVar()  ## Rational functions file
         self.constraints_file = StringVar()  ## constraints file
         self.space_file = StringVar()  ## Space file
@@ -261,7 +262,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.21.2"  ## Version of the gui
+        self.version = "1.22"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -469,8 +470,10 @@ class Gui(Tk):
         radio.grid(row=1, column=2, sticky=W, pady=4)
         createToolTip(radio, text='This option results in a command that would produce desired output. (If you installed Storm, open command line and insert the command. Then load output file.)')
 
-        Button(frame_left, text='Run parameter synthesis', command=self.synth_params).grid(row=3, column=0, sticky=W, padx=4, pady=4)
-        Button(frame_left, text='Open Prism/Storm output file', command=self.load_mc_output_file).grid(row=3, column=1, sticky=W, pady=4)
+        Button(frame_left, text='Run parametric model checking', command=self.synth_params).grid(row=3, column=0, sticky=W, padx=4, pady=4)
+        Button(frame_left, text='Open MC output file', command=self.load_functions_file).grid(row=3, column=1, sticky=W, pady=4)
+
+        Button(frame_left, text='Open refinement output file', command=self.load_refinement_output_file).grid(row=3, column=3, sticky=W, pady=4)
 
         Label(frame_left, text=f"Loaded Prism/Storm output file:", anchor=W, justify=LEFT).grid(row=4, column=0, sticky=W, padx=4, pady=4)
         self.mc_result_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_width() / 2), state=DISABLED)
@@ -828,7 +831,7 @@ class Gui(Tk):
         self.max_dept_entry = Entry(frame_left)
         self.coverage_entry = Entry(frame_left)
         # self.epsilon_entry = Entry(frame_left)
-        self.alg_entry = ttk.Combobox(frame_left, values=('1', '2', '3', '4', '5', '6'))
+        self.alg_entry = ttk.Combobox(frame_left, values=('1', '2', '3', '4', '5'))
         self.solver_entry = ttk.Combobox(frame_left, values=('z3', 'dreal'))
         self.delta_entry = Entry(frame_left)
         self.refinement_timeout_entry = Entry(frame_left)
@@ -1120,7 +1123,7 @@ class Gui(Tk):
             spam = filedialog.askopenfilename(initialdir=self.model_dir, title="Model loading - Select file",
                                               filetypes=(("pm files", "*.pm"), ("all files", "*.*")))
         ## If no file selected
-        if spam == "":
+        if spam == "" or spam == ():
             self.status_set("No file selected.")
             return
         else:
@@ -1162,7 +1165,7 @@ class Gui(Tk):
             spam = filedialog.askopenfilename(initialdir=self.property_dir, title="Property loading - Select file",
                                               filetypes=(("property files", "*.pctl"), ("all files", "*.*")))
         ## If no file selected
-        if spam == "":
+        if spam == "" or spam == ():
             self.status_set("No file selected.")
             return
         else:
@@ -1210,7 +1213,7 @@ class Gui(Tk):
             spam = filedialog.askopenfilename(initialdir=self.property_dir, title="Data-informed properties loading - Select file",
                                               filetypes=(("property files", "*.pctl"), ("all files", "*.*")))
         ## If no file selected
-        if spam == "":
+        if spam == "" or spam == ():
             self.status_set("No file selected.")
             return
         else:
@@ -1230,15 +1233,14 @@ class Gui(Tk):
             if not file:
                 self.save_data_informed_properties(os.path.join(self.tmp_dir, "data_informed_properties.pctl"))
 
-    def load_mc_output_file(self, file=False, ask=True, program=False, reset_param_and_intervals=True, refinement=False):
-        """ Loads parameter synthesis output text file
+    def load_functions_file(self, file=False, ask=True, program=False, reset_param_and_intervals=True):
+        """ Loads parametric model checking output text file
 
         Args:
             file (path/string): direct path to load the function file
             ask (Bool): if False it will not ask questions
             program (string): overrides the sel.program setting
             reset_param_and_intervals (Bool): if True the params will be reset
-            refinement (bool): load refinement results instead of functions
         """
         if program is False:
             program = self.program.get()
@@ -1275,19 +1277,12 @@ class Gui(Tk):
             self.status_set("No file selected.")
             return
 
-        self.functions_file.set(spam)
-        # print("self.functions_file.get() ", self.functions_file.get())
-        if not self.functions_file.get() == "":
+        self.mc_result_file.set(spam)
+        self.functions_changed = False
 
-            self.functions_changed = True
-            # self.model_changed = False
-            # self.property_changed = False
-        # print("self.functions_changed", self.functions_changed)
-
-        # print("self.factor", self.factor.get())
         try:
             self.cursor_toggle_busy(True)
-            if self.factorise.get() and not refinement:
+            if self.factorise.get():
                 self.status_set("Loading selected file and factorising...")
                 if not self.silent.get():
                     print("Loading selected file and factorising...")
@@ -1296,63 +1291,13 @@ class Gui(Tk):
                 if not self.silent.get():
                     print("Loading selected file ...")
 
-            spam = load_mc_result(os.path.abspath(self.functions_file.get()), tool=program,
-                                  factorize=self.factorise.get(), rewards_only=False, f_only=False,
-                                  refinement=refinement)
+            spam = load_mc_result(os.path.abspath(self.mc_result_file.get()), tool=program,
+                                  factorize=self.factorise.get(), rewards_only=False, f_only=False, refinement=False)
 
-            if refinement or spam[1] == "refinement":
-                refinement = True
-                skip_vis = False
-                ## Get prams and domains
-                self.parameters, self.parameter_domains, time_elapsed = spam[2], spam[3], spam[4]
-                ## Get refinements
-                spam = spam[0]
-                
-                ## Ask whether to show space
-                if self.space != "":
-                    ## Backup old space
-                    self.save_space(os.path.join(self.tmp_dir, "space.p"))
-                    self.space = ""
-                    # if askyesno("Loading PRISM refinement result", "Space is not clear, do you want to override with current results?"):
-                    #     ## Backup old space
-                    #     self.save_space(os.path.join(self.tmp_dir, "space.p"))
-                    #     self.space = ""
-                    # else:
-                    #     skip_vis = True
-                if not skip_vis:
-                    ## Show space
-                    if len(spam) > 1:
-                        messagebox.showwarning("Loading PRISM refinement result", "There is more refinements in the result, only the first is used.")
-
-                    ## Get first refinement
-                    try:
-                        spam = spam[0]
-                        self.space = space.RefinedSpace(self.parameter_domains, self.parameters)
-                        if len(self.parameters) == 1:
-                            for item in spam[0]:
-                                self.space.add_green([item])
-                            for item in spam[1]:
-                                self.space.add_red([item])
-                        else:
-                            self.space.extend_green(spam[0])
-                            self.space.extend_red(spam[1])
-                        self.space.time_last_refinement = time_elapsed
-                        self.space.time_refinement = self.space.time_refinement + time_elapsed
-
-                        self.clear_space()
-                        self.show_space(show_refinement=True, show_samples=False, show_true_point=False,
-                                        prefer_unsafe=self.show_red_in_multidim_refinement.get(),
-                                        title=f"achieved_coverage:{round(self.space.get_coverage(), 3)}, solver: {program}")
-
-                        self.space.remove_white(self.parameter_domains)
-                        self.print_space()
-                    except IndexError:
-                        pass
-            else:
-                self.functions, rewards = spam[0], spam[1]
-                ## Merge functions and rewards
-                for expression in rewards:
-                    self.functions.append(expression)
+            self.functions, rewards = spam[0], spam[1]
+            ## Merge functions and rewards
+            for expression in rewards:
+                self.functions.append(expression)
         finally:
             try:
                 self.cursor_toggle_busy(False)
@@ -1362,47 +1307,165 @@ class Gui(Tk):
         ## Print mc result into TextBox
         self.mc_result_text.configure(state='normal')
         self.mc_result_text.delete('1.0', END)
-        with open(self.functions_file.get(), 'r') as f:
+        with open(self.mc_result_file.get(), 'r') as f:
             self.mc_result_text.insert('1.0', f.read())
 
-        if refinement:
-            self.status_set("Refinement loaded.")
-            messagebox.showinfo("Loading PRISM refinement result", "Loaded refinement output can be seen in Synthesise functions tab.")
-        else:
-            self.unfold_functions()
+        self.unfold_functions()
 
-            if isinstance(self.functions, dict):
-                self.status_set(f"{len(self.functions.keys())} rational functions loaded")
-            elif isinstance(self.functions, list):
-                self.status_set(f"{len(self.functions)} rational functions loaded")
-            else:
-                raise Exception("Loading parameter synthesis results",
-                                f"Expected type of the functions is dict or list, got {type(self.functions)}")
+        if isinstance(self.functions, dict):
+            self.status_set(f"{len(self.functions.keys())} rational functions loaded")
+        elif isinstance(self.functions, list):
+            self.status_set(f"{len(self.functions)} rational functions loaded")
+        else:
+            raise Exception("Loading parameter synthesis results",
+                            f"Expected type of the functions is dict or list, got {type(self.functions)}")
+
+        if not self.silent.get():
+            print("Parsed list of functions: ", self.functions)
+
+        self.z3_functions = ""
+        for function in self.functions:
+            if is_this_z3_function(function):
+                self.store_z3_functions()
+                messagebox.showinfo("Loading rational functions", "Some of the functions contains z3 expressions, these are being stored and used only for z3 refinement, shown functions are translated into python expressions.")
+                break
+
+        ## Resetting parsed intervals
+        if reset_param_and_intervals:
+            self.parameters = []
+            self.parameter_domains = []
+
+        ## Check whether loaded
+        if not self.functions:
+            messagebox.showwarning("Loading rational functions", "No functions loaded. Please check input file.")
+        else:
+            pass
+            ## Autosave
+            ## TODO
+            # if not file:
+            #   self.save_functions(os.path.join(self.tmp_dir, f"functions_{program}"))
+
+    def load_refinement_output_file(self, file=False, program=False, reset_param_and_intervals=True, called_directly=True):
+        """ Loads model refinement output text file of PRISM/STORM
+
+        Args:
+            file (path/string): direct path to load the output file
+            program (string): overrides the self.program setting, in ["prism", "storm"]
+            reset_param_and_intervals (Bool): if True the params will be reset
+            called_directly (bool): if True it will say where is the visualisation, otherwise where is text
+        """
+        if program is False:
+            program = self.program.get()
+
+        if file:
+            if not os.path.isfile(file):
+                return
+        else:
+            print(f"Loading {program} output file ...")
+            self.status_set(f"Loading {program} output file - checking inputs")
 
             if not self.silent.get():
-                print("Parsed list of functions: ", self.functions)
-
-            self.z3_functions = ""
-            for function in self.functions:
-                if is_this_z3_function(function):
-                    self.store_z3_functions()
-                    messagebox.showinfo("Loading rational functions", "Some of the functions contains z3 expressions, these are being stored and used only for z3 refinement, shown functions are translated into python expressions.")
-                    break
-
-            ## Resetting parsed intervals
-            if reset_param_and_intervals:
-                self.parameters = []
-                self.parameter_domains = []
-
-            ## Check whether loaded
-            if not self.functions:
-                messagebox.showwarning("Loading rational functions", "No functions loaded. Please check input file.")
+                print("Used program: ", program)
+            if program == "prism":
+                initial_dir = self.prism_results
+            elif program == "storm":
+                initial_dir = self.storm_results
             else:
-                pass
-                ## Autosave
-                ## TODO
-                # if not file:
-                #   self.save_functions(os.path.join(self.tmp_dir, f"functions_{program}"))
+                messagebox.showwarning(f"Load partitioning output file", "Select a program for which you want to load data.")
+                return
+
+            self.status_set("Please select the prism/storm symbolic results to be loaded.")
+            file = filedialog.askopenfilename(initialdir=initial_dir, title=f"Loading {program} results - Select file",
+                                              filetypes=(("text files", "*.txt"), ("all files", "*.*")))
+
+        ## If no file / not a file selected
+        if file == "" or file == ():
+            self.status_set("No file selected.")
+            return
+
+        self.mc_result_file.set(file)
+
+        try:
+            self.cursor_toggle_busy(True)
+            self.status_set(f"Loading selected file: {file}")
+            if not self.silent.get():
+                print(f"Loading selected file: {file}")
+
+            spam = load_mc_result(file, tool=program, rewards_only=False,  f_only=False, refinement=True)
+
+            skip_vis = False
+            ## TODO
+            if program == "storm":
+                skip_vis = True
+
+            ## Get prams and domains
+            self.parameters, self.parameter_domains, time_elapsed = spam[2], spam[3], spam[4]
+            ## Get refinements
+            spam = spam[0]
+
+            ## Ask whether to show space
+            if self.space != "":
+                if called_directly:
+                    if askyesno("Loading PRISM refinement result", "Space is not clear, do you want to override with current results?"):
+                        ## Backup old space
+                        self.save_space(os.path.join(self.tmp_dir, "space.p"))
+                        self.space = ""
+                    else:
+                        skip_vis = True
+                else:
+                    ## Backup old space
+                    self.save_space(os.path.join(self.tmp_dir, "space.p"))
+                    self.space = ""
+
+            if not skip_vis:
+                ## Show space
+                if len(spam) > 1:
+                    messagebox.showwarning("Loading PRISM refinement result",
+                                           "There is more refinements in the result, only the first is used.")
+                ## Get first refinement
+                try:
+                    spam = spam[0]
+                    self.space = space.RefinedSpace(self.parameter_domains, self.parameters)
+                    if len(self.parameters) == 1:
+                        for item in spam[0]:
+                            self.space.add_green([item])
+                        for item in spam[1]:
+                            self.space.add_red([item])
+                    else:
+                        self.space.extend_green(spam[0])
+                        self.space.extend_red(spam[1])
+                    self.space.time_last_refinement = time_elapsed
+                    self.space.time_refinement = self.space.time_refinement + time_elapsed
+
+                    self.clear_space()
+                    self.show_space(show_refinement=True, show_samples=False, show_true_point=False,
+                                    prefer_unsafe=self.show_red_in_multidim_refinement.get(),
+                                    title=f"achieved_coverage:{round(self.space.get_coverage(), 3)}, solver: {program}")
+
+                    self.space.remove_white(self.parameter_domains)
+                    self.print_space()
+                except IndexError:
+                    pass
+        finally:
+            try:
+                self.cursor_toggle_busy(False)
+            except TclError:
+                return
+
+        ## Print mc result into TextBox
+        self.mc_result_text.configure(state='normal')
+        self.mc_result_text.delete('1.0', END)
+        with open(self.mc_result_file.get(), 'r') as f:
+            self.mc_result_text.insert('1.0', f.read())
+
+        self.status_set("Refinement results loaded.")
+        if called_directly:
+            if not skip_vis:
+                messagebox.showinfo(f"Loading {program} refinement results",
+                                    "Visualisation of refinement can be seen in Sample & Refine tab.")
+        else:
+            messagebox.showinfo(f"Loading {program} refinement results",
+                                "Loaded refinement output can be seen in Synthesise functions tab.")
 
     def store_z3_functions(self):
         """ Stores a copy of functions as a self.z3_functions """
@@ -1525,7 +1588,7 @@ class Gui(Tk):
                                               filetypes=filetypes)
 
         ## If no file selected
-        if spam == "":
+        if spam == "" or spam == ():
             self.status_set("No file selected.")
             return
         else:
@@ -1534,10 +1597,10 @@ class Gui(Tk):
             if os.path.splitext(spam)[1] == ".txt":
                 egg = parse_functions(spam)
                 if egg[0].startswith("PRISM"):
-                    self.load_mc_output_file(file=spam, program="prism")
+                    self.load_functions_file(file=spam, program="prism")
                     return
                 elif egg[0].startswith("Storm"):
-                    self.load_mc_output_file(file=spam, program="storm")
+                    self.load_functions_file(file=spam, program="storm")
                     return
 
             self.functions = []
@@ -1635,7 +1698,7 @@ class Gui(Tk):
             spam = filedialog.askopenfilename(initialdir=self.data_dir, title="Data loading - Select file",
                                               filetypes=filetypes)
         ## If no file selected
-        if spam == "":
+        if spam == "" or spam == ():
             self.status_set("No file selected.")
             return
         else:
@@ -1755,7 +1818,7 @@ class Gui(Tk):
                                               filetypes=filetypes)
 
         ## If no file selected
-        if spam == "":
+        if spam == "" or spam == ():
             self.status_set("No file selected.")
             return
         else:
@@ -1812,7 +1875,7 @@ class Gui(Tk):
                                               filetypes=filetypes)
 
         ## If no file selected
-        if spam == "":
+        if spam == "" or spam == ():
             self.status_set("No file selected.")
             return
         else:
@@ -1898,7 +1961,7 @@ class Gui(Tk):
             print("loaded constraints file", spam)
 
         ## If no file selected
-        if spam == "":
+        if spam == "" or spam == ():
             self.status_set("No file selected.")
             return
         else:
@@ -1993,7 +2056,7 @@ class Gui(Tk):
                                               filetypes=(("pickled files", "*.p"), ("all files", "*.*")))
 
         ## If no file selected
-        if spam == "":
+        if spam == "" or spam == ():
             self.status_set("No file selected.")
             return
         else:
@@ -2067,7 +2130,7 @@ class Gui(Tk):
                                               filetypes=(("pickled files", "*.p"), ("all files", "*.*")))
 
         ## If no file selected
-        if spam == "":
+        if spam == "" or spam == ():
             self.status_set("No file selected.")
             return
         else:
@@ -2332,6 +2395,7 @@ class Gui(Tk):
 
         ## Autosave
         self.save_data_informed_properties(os.path.join(self.tmp_dir, "data_informed_properties.pctl"))
+        self.data_informed_property_file.set(os.path.join(self.tmp_dir, "data_informed_properties.pctl"))
         # self.data_informed_property_text.configure(state='disabled')
 
     def save_data_informed_properties(self, file=False):
@@ -2754,123 +2818,141 @@ class Gui(Tk):
 
     ## ANALYSIS
     def synth_params(self, refinement=False):
-        """ Computes functions from model and temporal properties. Saves output as a text file. """
+        """ Computes functions from model and temporal properties. Saves output as a text file.
+
+        Args:
+            refinement (bool): if True refine space using data-informed properties
+
+        """
+        if refinement:
+            method = "Space partitioning"
+        else:
+            method = "Parametric model checking"
+
         print("Checking the inputs.")
+        self.status_set(f"{method} - checking inputs")
         self.check_changes("model")
         self.check_changes("properties")
-
-        print("Synthesising parameters ...")
-        self.status_set("Synthesising parameters.")
         proceed = True
+
+        print(f"{method} ...")
+        self.status_set(f"{method}.")
         if self.functions_changed:
-            proceed = askyesno("Parameter synthesis",
-                               "Synthesising the parameters will overwrite current functions. Do you want to proceed?")
+            proceed = askyesno(f"{method}", f"{method} will overwrite current results. Do you want to proceed?")
 
-        if proceed:
-            self.status_set("Parameter synthesis - checking inputs")
+        if not proceed:
+            return
 
-            if self.model_changed:
-                messagebox.showwarning("Parameter synthesis",
-                                       "The model for parameter synthesis has changed in the mean time, please consider that.")
-            if self.property_changed:
-                messagebox.showwarning("Parameter synthesis",
-                                       "The properties for parameter synthesis have changed in the mean time, please consider that.")
-            ## If model file not selected load model
-            if self.model_file.get() == "":
-                self.status_set("Load model for parameter synthesis")
-                self.load_model()
+        if self.model_changed:
+            messagebox.showwarning(f"{method}", f"The model for {method} has changed in the mean time, please consider that.")
 
-            ## If property file not selected load property
+        if (self.property_changed and not refinement) or (self.data_informed_property_changed and refinement):
+            messagebox.showwarning(f"{method}", f"The properties for {method} have changed in the mean time, please consider that.")
+
+        ## If model file not selected load model
+        if self.model_file.get() == "":
+            self.status_set(f"Load model for {method}")
+            self.load_model()
+
+        ## If property file not selected load property
+        if refinement:
+            if self.data_informed_property_file.get() == "":
+                self.status_set(f"Load property for {method}")
+                self.load_data_informed_properties()
+        else:
             if self.property_file.get() == "":
-                self.status_set("Load property for parameter synthesis")
+                self.status_set(f"Load property for {method}")
                 self.load_property()
 
-            ## Get model parameters, reset param domains and load new
-            self.constants, self.parameters = parse_params_from_model(self.model_file.get(), silent=True)
-            self.parameter_domains = []
-            self.validate_parameters(where="model", intervals=True, force=True)
-            # self.load_param_intervals_from_window()
+        ## Get model parameters, reset param domains and load new
+        self.constants, self.parameters = parse_params_from_model(self.model_file.get(), silent=True)
+        self.parameter_domains = []
+        self.validate_parameters(where="model", intervals=True, force=True)
+        # self.load_param_intervals_from_window()
 
-            print("param domains", self.parameter_domains)
-            print()
+        print("param domains", self.parameter_domains)
+        print()
 
+        if refinement:
+            property_file = self.data_informed_property_file.get()
+        else:
+            property_file = self.property_file.get()
+
+        output_file = filedialog.asksaveasfilename(initialdir=self.prism_results if self.program.get().lower() == "prism" else self.storm_results,
+                                                   title=f"{method}- Select file to save output",
+                                                   filetypes=(("text files", "*.txt"), ("all files", "*.*")))
+        try:
+            self.cursor_toggle_busy(True)
             if refinement:
-                property_file = self.data_informed_property_file.get()
-            else:
-                property_file = self.property_file.get()
-
-            output_file = filedialog.asksaveasfilename(initialdir=self.prism_results if self.program.get().lower() == "prism" else self.storm_results,
-                                                       title="Model checking - Select file to save output",
-                                                       filetypes=(("text files", "*.txt"), ("all files", "*.*")))
-
-            try:
-                self.cursor_toggle_busy(True)
-                if refinement:
-                    if self.program.get().lower() == "prism":
-                        self.status_set("Space refinement using PRISM is running ...")
-                    elif self.program.get().lower() == "storm":
-                        self.status_set("Parameter-lifting using Storm is running ...")
-                    coverage = round(float(self.coverage_entry.get()), 13)
-                else:
-                    self.status_set(f"Parametric model checking using {self.program.get()} is running ...")
-                    coverage = False
                 if self.program.get().lower() == "prism":
-                    if output_file == ():
-                        output_file = str(os.path.join(Path(self.prism_results), str(Path(self.model_file.get()).stem) + "_" + str(Path(property_file).stem) + ".txt"))
-
-                    call_prism_files(self.model_file.get(), [], param_intervals=self.parameter_domains, seq=False, no_prob_checks=False,
-                                     memory="", model_path="", properties_path=self.property_dir,
-                                     property_file=property_file, output_path=output_file,
-                                     gui=show_message, silent=self.silent.get(), coverage=coverage)
-                    ## Deriving output file
-
-                    if refinement:
-                        ## TODO
-                        pass
-                    else:
-                        self.functions_file.set(output_file)
-                    self.status_set(f"Parametric model checking using PRISM finished. Output here: {output_file}")
-                    self.load_mc_output_file(output_file, reset_param_and_intervals=False, refinement=refinement)
-
+                    self.status_set("Space refinement using PRISM is running ...")
                 elif self.program.get().lower() == "storm":
-                    if output_file == ():
-                        output_file = str(os.path.join(Path(self.storm_results), str(Path(self.model_file.get()).stem) + "_" + str(Path(property_file).stem)))
-
-                    call_storm(model_file=self.model_file.get(), params=[], param_intervals=[],
-                               property_file=property_file, storm_output_file=output_file,
-                               time=True, silent=self.silent.get())
-
-                    if refinement:
-                        ## TODO
-                        # raise NotImplementedError("Refinement with Storm not implemented so far, please select PRISM")
-                        pass
-                    else:
-                        self.functions_file.set(output_file)
-
-                    self.status_set("Command to run the parameter synthesis saved here: {}", self.functions_file.get())
-                    self.load_mc_output_file(output_file, reset_param_and_intervals=False, refinement=refinement)
-                else:
-                    ## Show window to inform to select the program
-                    self.status_set("Program for model checking not selected")
-                    messagebox.showwarning("Synthesise", "Select a program for model checking first.")
-                    return
-            finally:
-                try:
-                    self.cursor_toggle_busy(False)
-                except TclError:
-                    return
-
-            self.model_changed = False
-            if refinement:
-                self.data_informed_property_changed = False
+                    self.status_set("Parameter-lifting using Storm is running ...")
+                coverage = round(float(self.coverage_entry.get()), 13)
             else:
-                self.property_changed = False
-            ## Resetting parsed intervals
-            # self.parameters = []
-            # self.parameter_domains = []
+                self.status_set(f"Parametric model checking using {self.program.get()} is running ...")
+                coverage = False
 
-            # self.save_parsed_functions(os.path.join(self.tmp_dir, "parsed_functions"))
-            self.cursor_toggle_busy(False)
+            ## CALL PRISM/STORM
+            if self.program.get().lower() == "prism":
+                if output_file == ():
+                    output_file = str(os.path.join(Path(self.prism_results), str(Path(self.model_file.get()).stem) + "_" + str(Path(property_file).stem) + ".txt"))
+
+                call_prism_files(self.model_file.get(), [], param_intervals=self.parameter_domains, seq=False, no_prob_checks=False,
+                                 memory="", model_path="", properties_path=self.property_dir,
+                                 property_file=property_file, output_path=output_file,
+                                 gui=show_message, silent=self.silent.get(), coverage=coverage)
+                self.mc_result_file.set(output_file)
+                self.status_set(f"{method} using PRISM finished. Output here: {output_file}")
+                if refinement:
+                    self.load_refinement_output_file(output_file, reset_param_and_intervals=False, called_directly=False)
+                else:
+                    self.load_functions_file(output_file, reset_param_and_intervals=False)
+
+            elif self.program.get().lower() == "storm":
+                if output_file == ():
+                    output_file = str(os.path.join(Path(self.storm_results), str(Path(self.model_file.get()).stem) + "_" + str(Path(property_file).stem)))
+
+                if refinement:
+                    call_storm(model_file=self.model_file.get(), params=self.parameters, param_intervals=self.parameter_domains,
+                               property_file=property_file, storm_output_file=output_file, coverage=self.coverage, time=True,
+                               silent=self.silent.get())
+                else:
+                    call_storm(model_file=self.model_file.get(), params=[], param_intervals=[],
+                               property_file=property_file, storm_output_file=output_file, time=True,
+                               silent=self.silent.get())
+                self.mc_result_file.set(output_file)
+                if refinement:
+                    self.status_set(f"Parameter lifting using Storm finished. Output here: {output_file}")
+                else:
+                    self.status_set(f"Parametric model checking using Storm finished. Output here: {output_file}")
+                    # self.status_set("Command to run the parameter synthesis saved here: {}", self.functions_file.get())
+                if refinement:
+                    self.load_refinement_output_file(output_file, reset_param_and_intervals=False, called_directly=False)
+                else:
+                    self.load_functions_file(output_file, reset_param_and_intervals=False)
+            else:
+                ## Show window to inform to select the program
+                self.status_set(f"Program for {method} not selected")
+                messagebox.showwarning(f"{method}", f"Select a program for {method} first.")
+                return
+        finally:
+            try:
+                self.cursor_toggle_busy(False)
+            except TclError:
+                return
+
+        self.model_changed = False
+        if refinement:
+            self.data_informed_property_changed = False
+        else:
+            self.property_changed = False
+        ## Resetting parsed intervals
+        # self.parameters = []
+        # self.parameter_domains = []
+
+        # self.save_parsed_functions(os.path.join(self.tmp_dir, "parsed_functions"))
+        self.cursor_toggle_busy(False)
 
     def external_refine_PRISM(self):
         """ Calls PRISM to refine space using data-informed properties"""
@@ -3727,7 +3809,7 @@ class Gui(Tk):
                                       where=[self.page6_figure2, self.page6_b],
                                       progress=self.update_progress_bar if self.show_progress else False,
                                       debug=self.debug.get(), bins=int(float(self.bins_entry.get())),
-                                      burn_in=float(self.burn_in_entry.get()),
+                                      burn_in=float(self.burn_in_entry.get()), is_probability=True,
                                       timeout=int(float(self.mh_timeout_entry.get())), draw_plot=self.draw_plot_window,
                                       metadata=self.show_mh_metadata.get())
             spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b])
@@ -3822,6 +3904,7 @@ class Gui(Tk):
         if self.alg_entry.get() == "":
             messagebox.showwarning("Refine space", "Pick algorithm for the refinement before running.")
             return
+
         # if int(self.alg.get()) == 5:
         #     if self.functions == "":
         #         messagebox.showwarning("Refine space", "Load or synthesise functions before refinement.")
@@ -3831,147 +3914,128 @@ class Gui(Tk):
         #         return
         # else:
 
-        ## PARAMETER LIFTING
-        if int(self.alg_entry.get()) == 6:
-            self.check_changes("model")
-            self.check_changes("properties")
-            file = filedialog.asksaveasfilename(initialdir=self.results_dir, title="Parameter lifting - Select file",
-                                                filetypes=(("text files", "*.txt"), ("all files", "*.*")))
+        if self.constraints == "":
+            messagebox.showwarning("Refine space", "Load or calculate constraints before refinement.")
+            return
 
-            self.status_set("Space refinement is running ...")
-            params = parse_params_from_model(self.model_file.get())
-            print(colored(params, "blue"))
+        if self.space_coverage >= self.coverage:
+            messagebox.showinfo("Refine space", "You already achieved higher coverage than the goal.")
+            return
 
-            ## TODO add loading informed properties
+        if not self.validate_space("Refine Space"):
+            return
 
-            call_storm(model_file=self.model_file.get(), params=params, param_intervals=self.parameter_domains,
-                       property_file=self.property_file.get(), storm_output_file=file, coverage=self.coverage,
-                       time=True, silent=self.silent.get())
-        else:
+        if int(self.alg_entry.get()) <= 4 and not self.z3_constraints:
+            for constraint in self.constraints:
+                if is_this_exponential_function(constraint):
+                    if not askyesno("Refinement", "Some constraints contain exponential function, we recommend using interval algorithmic (algorithm 5). Do you want to proceed anyway?"):
+                        return
+                    break
 
-            if self.constraints == "":
-                messagebox.showwarning("Refine space", "Load or calculate constraints before refinement.")
+        if self.presampled_refinement.get() and not(self.space.get_sat_samples() + self.space.get_unsat_samples()):
+            messagebox.showwarning("Refine space", "No sampling to be used, please run it before Presampled refinement.")
+            return
+
+        if int(self.max_depth) > 14:
+            if not askyesno("Space refinement", "Recursion this deep may cause segmentation fault. Do you want to continue?"):
                 return
 
-            if self.space_coverage >= self.coverage:
-                messagebox.showinfo("Refine space", "You already achieved higher coverage than the goal.")
-                return
+        self.status_set("Space refinement is running ...")
+        # print(colored(f"self.space, {self.space.nice_print()}]", "blue"))
 
-            if not self.validate_space("Refine Space"):
-                return
+        try:
+            self.cursor_toggle_busy(True)
 
-            if int(self.alg_entry.get()) <= 4 and not self.z3_constraints:
-                for constraint in self.constraints:
-                    if is_this_exponential_function(constraint):
-                        if not askyesno("Refinement", "Some constraints contain exponential function, we recommend using interval algorithmic (algorithm 5). Do you want to proceed anyway?"):
-                            return
-                        break
+            if self.show_progress:
+                ## Progress Bar
+                self.new_window = Toplevel(self)
+                Label(self.new_window, text="Refinement progress:", anchor=W, justify=LEFT).pack()
+                Label(self.new_window, textvar=self.progress, anchor=W, justify=LEFT).pack()
 
-            if self.presampled_refinement.get() and not(self.space.get_sat_samples() + self.space.get_unsat_samples()):
-                messagebox.showwarning("Refine space", "No sampling to be used, please run it before Presampled refinement.")
-                return
+                self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
+                self.progress_bar.pack(expand=True, fill=BOTH, side=TOP)
+                self.update_progress_bar(change_to=0, change_by=False)
 
-            if int(self.max_depth) > 14:
-                if not askyesno("Space refinement", "Recursion this deep may cause segmentation fault. Do you want to continue?"):
-                    return
+            self.update()
 
-            self.status_set("Space refinement is running ...")
-            # print(colored(f"self.space, {self.space.nice_print()}]", "blue"))
+            ## Refresh of plot before refinement
+            if self.show_quantitative:
+                self.clear_space(warning=not(no_max_depth and self.space.get_coverage() < self.coverage))
+                self.show_quantitative = False
+                show_all = True
 
+            ## RETURNS TUPLE -- (SPACE,(NONE, ERROR TEXT)) or (SPACE, )
+            ## feeding z3 solver with z3 expressions, python expressions otherwise
+            # if int(self.alg.get()) == 5:
+            #     spam = check_deeper(self.space, [self.functions, self.data_intervals], self.max_depth, self.epsilon,
+            #                         self.coverage, silent=self.silent.get(), version=int(self.alg.get()), sample_size=False,
+            #                         debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
+            #                         solver=str(self.solver.get()), delta=self.delta, gui=self.update_progress_bar)
+            if str(self.solver_entry.get()) == "z3" and self.z3_constraints:
+                assert isinstance(self.z3_constraints, list)
+                spam = check_deeper(self.space, self.z3_constraints, self.max_depth, self.epsilon, self.coverage,
+                                    silent=self.silent.get(), version=int(self.alg_entry.get()),
+                                    sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
+                                    where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
+                                    delta=self.delta, gui=self.update_progress_bar if self.show_progress else False,
+                                    show_space=False, iterative=self.iterative_refinement.get(),
+                                    timeout=int(float(self.refinement_timeout_entry.get())))
+            else:
+                assert isinstance(self.constraints, list)
+                spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
+                                    silent=self.silent.get(), version=int(self.alg_entry.get()),
+                                    sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
+                                    where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
+                                    delta=self.delta, gui=self.update_progress_bar if self.show_progress else False,
+                                    show_space=False, iterative=self.iterative_refinement.get(),
+                                    timeout=int(float(self.refinement_timeout_entry.get())))
+        finally:
             try:
-                self.cursor_toggle_busy(True)
-
+                self.cursor_toggle_busy(False)
                 if self.show_progress:
-                    ## Progress Bar
-                    self.new_window = Toplevel(self)
-                    Label(self.new_window, text="Refinement progress:", anchor=W, justify=LEFT).pack()
-                    Label(self.new_window, textvar=self.progress, anchor=W, justify=LEFT).pack()
+                    self.new_window.destroy()
+                    self.progress.set("0%")
+            except TclError:
+                return
 
-
-                    self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
-                    self.progress_bar.pack(expand=True, fill=BOTH, side=TOP)
-                    self.update_progress_bar(change_to=0, change_by=False)
-
-                self.update()
-
-                ## Refresh of plot before refinement
-                if self.show_quantitative:
-                    self.clear_space(warning=not(no_max_depth and self.space.get_coverage() < self.coverage))
-                    self.show_quantitative = False
-                    show_all = True
-
-                ## RETURNS TUPLE -- (SPACE,(NONE, ERROR TEXT)) or (SPACE, )
-                ## feeding z3 solver with z3 expressions, python expressions otherwise
-                # if int(self.alg.get()) == 5:
-                #     spam = check_deeper(self.space, [self.functions, self.data_intervals], self.max_depth, self.epsilon,
-                #                         self.coverage, silent=self.silent.get(), version=int(self.alg.get()), sample_size=False,
-                #                         debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
-                #                         solver=str(self.solver.get()), delta=self.delta, gui=self.update_progress_bar)
-                if str(self.solver_entry.get()) == "z3" and self.z3_constraints:
-                    assert isinstance(self.z3_constraints, list)
-                    spam = check_deeper(self.space, self.z3_constraints, self.max_depth, self.epsilon, self.coverage,
-                                        silent=self.silent.get(), version=int(self.alg_entry.get()),
-                                        sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
-                                        where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
-                                        delta=self.delta, gui=self.update_progress_bar if self.show_progress else False,
-                                        show_space=False, iterative=self.iterative_refinement.get(),
-                                        timeout=int(float(self.refinement_timeout_entry.get())))
-                else:
-                    assert isinstance(self.constraints, list)
-                    spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
-                                        silent=self.silent.get(), version=int(self.alg_entry.get()),
-                                        sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
-                                        where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
-                                        delta=self.delta, gui=self.update_progress_bar if self.show_progress else False,
-                                        show_space=False, iterative=self.iterative_refinement.get(),
-                                        timeout=int(float(self.refinement_timeout_entry.get())))
-            finally:
-                try:
-                    self.cursor_toggle_busy(False)
-                    if self.show_progress:
-                        self.new_window.destroy()
-                        self.progress.set("0%")
-                except TclError:
-                    return
-
-            ## If the visualisation of the space did not succeed
-            if isinstance(spam, tuple):
-                self.space = spam[0]
-                if no_max_depth and self.space.get_coverage() < self.coverage:
-                    pass
-                else:
-                    messagebox.showinfo("Space refinement", spam[1])
-            else:
-                self.space = spam
-                self.show_space(show_refinement=True, show_samples=self.show_samples, show_true_point=self.show_true_point,
-                                prefer_unsafe=self.show_red_in_multidim_refinement.get(), show_all=show_all,
-                                warnings=not(no_max_depth and self.space.get_coverage() < self.coverage))
-                self.page6_figure.tight_layout()  ## By huypn
-                self.page6_figure.canvas.draw()
-                self.page6_figure.canvas.flush_events()
-
-                ## Autosave figure
-                if self.save.get():
-                    time_stamp = str(strftime("%d-%b-%Y-%H-%M-%S", localtime())) + ".png"
-                    self.page6_figure.savefig(os.path.join(self.refinement_results, "tmp", f"Space_refinement_{time_stamp}"),
-                                              bbox_inches='tight')
-                    print("Figure stored here: ", os.path.join(self.refinement_results, "tmp", f"Space_refinement_{time_stamp}"))
-                    with open(os.path.join(self.refinement_results, "tmp", "figure_to_title.txt"), "a+") as f:
-                        f.write(f"Space_refinement_{time_stamp} :\n")
-                        f.write(f"      constraints: {self.constraints_file.get()}\n")
-
-            self.print_space()
-
-            self.constraints_changed = False
-            self.space_changed = False
-
-            ## Autosave
-            self.save_space(os.path.join(self.tmp_dir, "space.p"))
-
+        ## If the visualisation of the space did not succeed
+        if isinstance(spam, tuple):
+            self.space = spam[0]
             if no_max_depth and self.space.get_coverage() < self.coverage:
-                self.refine_space()
+                pass
             else:
-                self.status_set("Space refinement finished.")
+                messagebox.showinfo("Space refinement", spam[1])
+        else:
+            self.space = spam
+            self.show_space(show_refinement=True, show_samples=self.show_samples, show_true_point=self.show_true_point,
+                            prefer_unsafe=self.show_red_in_multidim_refinement.get(), show_all=show_all,
+                            warnings=not(no_max_depth and self.space.get_coverage() < self.coverage))
+            self.page6_figure.tight_layout()  ## By huypn
+            self.page6_figure.canvas.draw()
+            self.page6_figure.canvas.flush_events()
+
+            ## Autosave figure
+            if self.save.get():
+                time_stamp = str(strftime("%d-%b-%Y-%H-%M-%S", localtime())) + ".png"
+                self.page6_figure.savefig(os.path.join(self.refinement_results, "tmp", f"Space_refinement_{time_stamp}"),
+                                          bbox_inches='tight')
+                print("Figure stored here: ", os.path.join(self.refinement_results, "tmp", f"Space_refinement_{time_stamp}"))
+                with open(os.path.join(self.refinement_results, "tmp", "figure_to_title.txt"), "a+") as f:
+                    f.write(f"Space_refinement_{time_stamp} :\n")
+                    f.write(f"      constraints: {self.constraints_file.get()}\n")
+
+        self.print_space()
+
+        self.constraints_changed = False
+        self.space_changed = False
+
+        ## Autosave
+        self.save_space(os.path.join(self.tmp_dir, "space.p"))
+
+        if no_max_depth and self.space.get_coverage() < self.coverage:
+            self.refine_space()
+        else:
+            self.status_set("Space refinement finished.")
 
     def edit_space(self):
         """ Edits space values """

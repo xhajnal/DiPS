@@ -184,7 +184,8 @@ def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False
                 else:
                     ## Get rid of Result:
                     if tool.lower().startswith("s"):
-                        raise NotImplementedError("Loading Storm refinement result not implemented yet")
+                        return [], "refinement", params, param_intervals, time_elapsed
+                        # raise NotImplementedError("Loading Storm refinement result not implemented yet")
                     ref_line = True
                     ## End of a single refinement result
                     if line.startswith("--"):
