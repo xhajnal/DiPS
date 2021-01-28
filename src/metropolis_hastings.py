@@ -780,7 +780,64 @@ def eval_function(function):
     return eval(function)
 
 
-def manual_log_like_normal(params, theta, functions, data, sample_size, eps=0, parallel=False, debug=False):
+def log_like_probability(point, data_point, sample_size, debug=False):
+    """ Log likelihood of probability function wrt. given data set
+
+     Args:
+         point (float): value of function in the point
+         data_point (float): data value
+         sample_size (int): number of samples in the set
+         debug (bool): if True extensive print will be used
+
+    Returns:
+         likelihood (float): P(data | functions(theta))
+    """
+
+    # lik = C(n,k) * p**k * (1-p)**(n-k)  ## formula
+    # lik = nCr(sample_size, data_point* sample_size) * point**(data_point*sample_size) * (1-point)**(sample_size-data_point*sample_size)  ## Our representation
+    ## log_lik = np.log(nCr(sample_size, data_point * sample_size)) + (data_point * sample_size * np.log(point) + (1 - data_point) * sample_size * np.log(1 - point))  ## Original log likelihood, but the C(n,k) does not change that the one loglik is greater and it strikes out in subtraction part
+    try:
+        # pseudo_log_lik = (data_point * sample_size * np.log(point) + (1 - data_point) * sample_size * np.log(1 - point))
+        ## put sample_size to front
+        pseudo_log_lik = sample_size * (data_point * np.log(point) + (1 - data_point) * np.log(1 - point))
+    except RuntimeWarning as warn:
+        if debug:
+            print(warn)
+        # if "divide by zero encountered in log" in str(warn):
+        #     pseudo_log_lik = float("-inf")
+        if point <= 0 or point >= 1:
+            ## When the point is exactly 1 or 0 and data is respective value as well
+            if (data_point == 0 or data_point == 1) and (point == 0 or point == 1):
+                print("point", point)
+                print("data point", data_point)
+                pseudo_lik = point ** (data_point * sample_size) * (1 - point) ** (sample_size - data_point * sample_size)
+                if pseudo_lik == 1:
+                    pseudo_log_lik = 0  ## np.log(1) == 0
+                elif pseudo_lik == 0:
+                    pseudo_log_lik = float("-inf")
+                else:
+                    raise warn
+            else:
+                pseudo_log_lik = float("-inf")
+        else:
+            raise warn
+        # show_message(2, "MH", f"function value {point} is invalid for log")
+
+    if debug:
+        likelihood = nCr(sample_size, data_point * sample_size) * point ** (data_point * sample_size) * (1 - point) ** (sample_size - data_point * sample_size)
+        print(colored(f"likelihood {likelihood}", "blue"))
+        ## Default form
+        # print(colored(f"pseudo log-likelihood {np.log(point ** (data_point * sample_size) * (1 - point) ** (sample_size - data_point * sample_size))}", "blue"))
+        print(colored(f"pseudo log-likelihood {pseudo_log_lik}", "blue"))
+        ## Default form
+        print(colored(f"log likelihood {np.log(likelihood)}", "blue"))
+        print(colored(f"log-likelihood {np.log(nCr(sample_size, data_point * sample_size)) + np.log(point) * (data_point * sample_size) + np.log(1 - point) * (sample_size - data_point * sample_size)}", "blue"))
+        print()
+
+    return pseudo_log_lik
+
+
+def manual_log_like_normal(params, theta, functions, data, sample_size, eps=0, is_probability=None, parallel=False, debug=False):
     """ Log likelihood of functions in parameter point theta drawing the data, P(functions(theta)| data)
 
     Args:
@@ -790,6 +847,7 @@ def manual_log_like_normal(params, theta, functions, data, sample_size, eps=0, p
         data (list): data that we wish to model, measurement values
         sample_size (int): number of samples in data
         eps (number): very small value used as probability of non-feasible values in prior - deprecated now
+        is_probability (bool): flag whether functions represent probabilities or not (None for unknown)
         parallel (Bool): flag to run this in parallel mode
         debug (bool): if True extensive print will be used
 
@@ -836,54 +894,23 @@ def manual_log_like_normal(params, theta, functions, data, sample_size, eps=0, p
         else:
             point = eval(functions[index])
 
-        # lik = C(n,k) * p**k * (1-p)**(n-k)  ## formula
-        # lik = nCr(sample_size, data_point* sample_size) * point**(data_point*sample_size) * (1-point)**(sample_size-data_point*sample_size)  ## Our representation
-        ## log_lik = np.log(nCr(sample_size, data_point * sample_size)) + (data_point * sample_size * np.log(point) + (1 - data_point) * sample_size * np.log(1 - point))  ## Original log likelihood, but the C(n,k) does not change that the one loglik is greater and it strikes out in subtraction part
-        try:
-            # pseudo_log_lik = (data_point * sample_size * np.log(point) + (1 - data_point) * sample_size * np.log(1 - point))
-            ## put sample_size to front
-            pseudo_log_lik = sample_size * (data_point * np.log(point) + (1 - data_point) * np.log(1 - point))
-        except RuntimeWarning as warn:
-            if debug:
-                print(warn)
-                print("function/data index:", index)
-                print("theta:", theta)
-                print(f"functions[{index}]:", point)
-                print(f"data[{index}]:", data_point)
-            # if "divide by zero encountered in log" in str(warn):
-            #     pseudo_log_lik = float("-inf")
-            if point <= 0 or point >= 1:
-                ## When the point is exactly 1 or 0 and data is respective value as well
-                if (data_point == 0 or data_point == 1) and (point == 0 or point == 1):
-                    print("point", point)
-                    print("data point", data_point)
-                    pseudo_lik = point**(data_point*sample_size) * (1-point)**(sample_size-data_point*sample_size)
-                    if pseudo_lik == 1:
-                        pseudo_log_lik = 0  ## np.log(1) == 0
-                    elif pseudo_lik == 0:
-                        pseudo_log_lik = float("-inf")
-                    else:
-                        raise warn
-                else:
-                    pseudo_log_lik = float("-inf")
-            else:
-                raise warn
-            # show_message(2, "MH", f"function value {point} is invalid for log")
-        res = res + pseudo_log_lik
         if debug:
             print(f"param point {theta}")
             print(f"data_point {data_point}")
             print(f"function {eval(functions[index])}")
-            likelihood = nCr(sample_size, data_point*sample_size) * point**(data_point*sample_size) * (1-point)**(sample_size-data_point*sample_size)
-            print(colored(f"likelihood {likelihood}", "blue"))
-            ## Default form
-            # print(colored(f"pseudo log-likelihood {np.log(point ** (data_point * sample_size) * (1 - point) ** (sample_size - data_point * sample_size))}", "blue"))
-            print(colored(f"pseudo log-likelihood {pseudo_log_lik}", "blue"))
-            ## Default form
-            print(colored(f"log likelihood {np.log(likelihood)}", "blue"))
-            print(colored(f"log-likelihood {np.log(nCr(sample_size, data_point * sample_size)) + np.log(point)*(data_point*sample_size) + np.log(1-point)*(sample_size-data_point*sample_size)}", "blue"))
 
-            print()
+        ## If not set whether is probability
+        if is_probability is None:
+            ## Check whether still probability
+            if point < 0 or point > 1:
+                print(colored(f"Function number {index + 1} evaluates in point {theta} out of range [0,1], {point}, switching to non-probability computation", "red"))
+                is_probability = False
+
+        if is_probability:
+            res = res + log_like_probability(point, data_point, sample_size, debug=debug)
+        else:
+            raise NotImplementedError("Only functions representing probability are implemented so far.")
+
         if str(res) == "-inf":
             warnings.filterwarnings("default")  ## normal state
             return res
@@ -920,7 +947,7 @@ def manual_log_like_normal(params, theta, functions, data, sample_size, eps=0, p
 
 
 def metropolis_hastings(params, parameter_intervals, param_init, functions, data, sample_size, iterations, eps, sd=0.15,
-                        progress=False, timeout=0, debug=False):
+                        is_probability=None, progress=False, timeout=0, debug=False):
     """ The core method of the Metropolis Hasting
 
         params (list of strings): parameter names
@@ -932,6 +959,7 @@ def metropolis_hastings(params, parameter_intervals, param_init, functions, data
         iterations (int): number of steps of walker
         eps (number): very small value used as probability of non-feasible values in prior - not used now
         sd (float): variation of walker in parameter space
+        is_probability (bool): flag whether functions represent probabilities or not (None for unknown)
         progress (Tkinter element or False): function processing progress
         timeout (int): timeout in seconds (0 for no timeout)
         debug (bool): if True extensive print will be used
@@ -955,6 +983,7 @@ def metropolis_hastings(params, parameter_intervals, param_init, functions, data
     ## For each MCMC iteration do
     has_moved = True
     theta_lik = 0
+
     for iteration in range(1, iterations + 1):
         ## Walk in parameter space - Get new parameter point from the current one
         theta_new = transition_model(theta, parameter_intervals, sd=sd)
@@ -962,9 +991,9 @@ def metropolis_hastings(params, parameter_intervals, param_init, functions, data
         ## Not recalculating the likelihood if we did not move
         if has_moved:
             ## Estimate likelihood of current point
-            theta_lik = manual_log_like_normal(params, theta, functions, data, sample_size, eps, debug=debug)
+            theta_lik = manual_log_like_normal(params, theta, functions, data, sample_size, eps, is_probability, debug=debug)
         ## Estimate likelihood of new point
-        theta_new_lik = manual_log_like_normal(params, theta_new, functions, data, sample_size, eps, debug=debug)
+        theta_new_lik = manual_log_like_normal(params, theta_new, functions, data, sample_size, eps, is_probability, debug=debug)
 
         if debug:
             print("iteration:", iteration)
@@ -1011,7 +1040,7 @@ def metropolis_hastings(params, parameter_intervals, param_init, functions, data
 
 
 def init_mh(params, parameter_intervals, functions, data, sample_size: int, mh_sampling_iterations: int, eps=0,
-            sd=0.15, theta_init=False, where=False, progress=False, burn_in=False, bins=20, timeout=False,
+            sd=0.15, theta_init=False, is_probability=None, where=False, progress=False, burn_in=False, bins=20, timeout=False,
             debug=False, metadata=True, draw_plot=False):
     """ Initialisation method for Metropolis Hastings
 
@@ -1025,6 +1054,7 @@ def init_mh(params, parameter_intervals, functions, data, sample_size: int, mh_s
         mh_sampling_iterations (int): number of iterations/steps in searching in space
         eps (number): very small value used as probability of non-feasible values in prior - not used now
         sd (float): variation of walker in parameter space
+        is_probability (bool): flag whether functions represent probabilities or not (None for unknown)
         where (tuple/list or False): output matplotlib sources to output created figure, if False a new will be created
         progress (Tkinter element or False): function processing progress
         burn_in (number): fraction or count of how many samples will be trimmed from beginning
@@ -1090,7 +1120,7 @@ def init_mh(params, parameter_intervals, functions, data, sample_size: int, mh_s
     print(colored(f"Initialisation of Metropolis-Hastings took {round(time() - start_time, 4)} seconds", "yellow"))
     ## MAIN LOOP
     #                    metropolis_hastings(params, parameter_intervals, param_init, functions, data, sample_size, iterations,        eps,     sd,      progress=False,      timeout=0,  debug=False):
-    accepted, rejected = metropolis_hastings(params, parameter_intervals, theta_init, functions, data, sample_size, mh_sampling_iterations, eps=eps, sd=sd, progress=progress, timeout=timeout, debug=debug)
+    accepted, rejected = metropolis_hastings(params, parameter_intervals, theta_init, functions, data, sample_size, mh_sampling_iterations, eps=eps, sd=sd, is_probability=is_probability, progress=progress, timeout=timeout, debug=debug)
 
     print(colored(f"Metropolis-Hastings took {round(time()-start_time, 4)} seconds", "yellow"))
 

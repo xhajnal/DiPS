@@ -406,7 +406,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
     """
 
     ## TODO infer max_max_recursion, when it crashes if maxrecursion is higher
-    max_max_recursion = 14
+    max_max_recursion = 12
     # if recursion_depth > max_max_recursion:
     #     recursion_depth = max_max_recursion
 
