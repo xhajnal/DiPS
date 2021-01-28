@@ -6,6 +6,7 @@ import numpy
 ## Importing my code
 from termcolor import colored
 
+from common.convert import parse_numbers
 from mc import call_prism
 from load import find_param, parse_params_from_model
 from common.config import load_config
@@ -248,6 +249,118 @@ def generate_data(model_types, n_samples, populations, dimension_sample_size,
 if __name__ == '__main__':
     import numpy as np
 
+    # ### Knuth Die
+    # ## Settings
+    # model = "Knuth/parametric_die.pm"
+    # prism_parameter_values = "p=0.1"
+    # n_samples = 1000
+    # silent = True
+    # sim_length = 100
+    #
+    # path_file = "brokolica.txt"
+    # values = {}
+    # for i in range(n_samples):
+    #     # print(f"calling: \n {model} -const {prism_parameter_values} -simpath {str(sim_length)} {path_file}")
+    #     call_prism(f"{model} -const {prism_parameter_values} -simpath {str(sim_length)} {path_file}",
+    #                silent=silent, prism_output_path=os.path.join(os.getcwd(), "results/prism_results"))
+    #     with open(os.path.join(os.getcwd(), "results/prism_results", path_file)) as file:
+    #         lines = file.readlines()
+    #         # print(lines)
+    #         last_line = lines[-1]
+    #         # print()
+    #         # print("last_line", last_line)
+    #         value = parse_numbers(last_line)[-1]
+    #         # print()
+    #         # print("value", value)
+    #         if value not in values.keys():
+    #             values[value] = 1
+    #         else:
+    #             values[value] = values[value] + 1
+    # print(values)
+    # os.remove(os.path.join(os.getcwd(), "results/prism_results", path_file))
+    # data = [6, 11, 68, 8, 97, 810]
+    # data = [item / n_samples for item in data]
+    # print("data", data)
+    #
+    # ### Knuth Die with 3params, author Tatjana Petrov
+    # ## Settings
+    # model = "Knuth/parametric_die_3_params.pm"
+    # prism_parameter_values = "p1=0.4,p2=0.7,p3=0.5"
+    # n_samples = 1000
+    # silent = True
+    # sim_length = 100
+    #
+    # path_file = "zemiak.txt"
+    # values = {}
+    # for i in range(n_samples):
+    #     # print(f"calling: \n {model} -const {prism_parameter_values} -simpath {str(sim_length)} {path_file}")
+    #     call_prism(f"{model} -const {prism_parameter_values} -simpath {str(sim_length)} {path_file}",
+    #                silent=silent, prism_output_path=os.path.join(os.getcwd(), "results/prism_results"))
+    #     with open(os.path.join(os.getcwd(), "results/prism_results", path_file)) as file:
+    #         lines = file.readlines()
+    #         # print(lines)
+    #         last_line = lines[-1]
+    #         # print()
+    #         # print("last_line", last_line)
+    #         value = parse_numbers(last_line)[-1]
+    #         # print()
+    #         # print("value", value)
+    #         if value not in values.keys():
+    #             values[value] = 1
+    #         else:
+    #             values[value] = values[value] + 1
+    # print(values)
+    # os.remove(os.path.join(os.getcwd(), "results/prism_results", path_file))
+    data = [208, 81, 100, 254, 261, 96]
+
+    # Get expected value
+    observations = []
+    for index, item in enumerate(data):
+        observations.extend([index+1]*item)
+    print(observations)
+    print(len(observations), "observations")
+    import scipy.stats as st
+    a = st.t.interval(0.95, len(observations) - 1, loc=np.mean(observations), scale=st.sem(observations))
+    print("mean", np.mean(observations))
+    print("confidence intervals for expected roll", a)
+
+    # data = [item/n_samples for item in data]
+    print("data", data)
+
+    ### Zeroconf
+    ## Settings
+    model = "zeroconf/zeroconf-10.pm"
+    prism_parameter_values = "p=0.8,q=0.8"
+    n_samples = 1000
+    silent = True
+    sim_length = 10000000
+
+    path_file = "krupica.txt"
+    values = {}
+    for i in range(n_samples):
+        # print(f"calling: \n {model} -const {prism_parameter_values} -simpath {str(sim_length)} {path_file}")
+        call_prism(f"{model} -const {prism_parameter_values} -simpath {str(sim_length)} {path_file}",
+                   silent=silent, prism_output_path=os.path.join(os.getcwd(), "results/prism_results"))
+        with open(os.path.join(os.getcwd(), "results/prism_results", path_file)) as file:
+            lines = file.readlines()
+            # print(lines)
+            last_line = lines[-1]
+            # print()
+            # print("last_line", last_line)
+            value = parse_numbers(last_line)[-1]
+            # print()
+            # print("value", value)
+            if value not in values.keys():
+                values[value] = 1
+            else:
+                values[value] = values[value] + 1
+    print(values)
+    os.remove(os.path.join(os.getcwd(), "results/prism_results", path_file))
+    data = [684, 316]
+    data = [item/n_samples for item in data]
+    print("data", data)
+
+    ### Honeybee
     model_types = ["semisynchronous"]
     populations = [2, 3, 4, 5, 10, 15]
     # populations = [3]

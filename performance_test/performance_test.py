@@ -17,7 +17,7 @@ from common.mathematics import create_intervals
 from load import load_data, get_f, parse_params_from_model
 from mc import call_storm, call_prism_files
 from mc_informed import general_create_data_informed_properties
-from metropolis_hastings import initialise_sampling, HastingsResults
+from metropolis_hastings import init_mh, HastingsResults
 from space import RefinedSpace
 from optimize import *
 from common.config import load_config
@@ -134,14 +134,20 @@ def compute_functions(model_file, property_file, output_path=False, parameter_do
         ## Using default paths
         prism_output_path = prism_results
         storm_output_path = storm_results
-    elif isinstance(output_path, Iterable):
-        prism_output_path = output_path[0]
-        storm_output_path = output_path[0]
-    else:
+    elif os.path.isabs(output_path):
         prism_output_path = output_path
         storm_output_path = output_path
-    storm_output_file = os.path.join(storm_output_path, basename(model_file))
-    storm_output_file = str(storm_output_file.split(".")[0]) + ".txt"
+    else:
+        prism_output_path = os.path.join(prism_results, output_path)
+        storm_output_path = os.path.join(storm_results, output_path)
+
+    if not os.path.isdir(prism_output_path):
+        if os.path.splitext(prism_output_path)[1] != ".txt":
+            prism_output_path = os.path.splitext(prism_output_path)[0] + ".txt"
+
+    if not os.path.isdir(storm_output_path):
+        if os.path.splitext(storm_output_path)[1] != ".txt":
+            storm_output_path = os.path.splitext(storm_output_path)[0] + ".txt"
 
     if model_checker == "prism" or model_checker == "both":
         call_prism_files(model_file, [], param_intervals=parameter_domains, seq=False, no_prob_checks=False,
@@ -149,12 +155,16 @@ def compute_functions(model_file, property_file, output_path=False, parameter_do
                          property_file=property_file, output_path=prism_output_path,
                          gui=False, silent=silent)
     if model_checker == "storm" or model_checker == "both":
+        try:
+            os.remove(storm_output_path)
+        except Exception as err:
+            print(err)
         call_storm(model_file=model_file, params=[], param_intervals=parameter_domains,
-                   property_file=property_file, storm_output_file=storm_output_file,
+                   property_file=property_file, storm_output_file=storm_output_path,
                    time=True, silent=silent)
 
 
-def refine(text, parameters, parameter_domains, constraints, timeout, silent, debug, alg=4):
+def refine(text, parameters, parameter_domains, constraints, timeout, silent, debug, alg=4, solver="z3"):
     """ Runs space refinement
 
     Args
@@ -166,14 +176,15 @@ def refine(text, parameters, parameter_domains, constraints, timeout, silent, de
         silent (bool): if silent printed output is set to minimum
         debug (bool): if True extensive print will be used
         alg (Int): version of the algorithm to be used
+        solver (string):: specified solver, allowed: z3, dreal
     """
-    print(colored(f"Refining, {text}", "yellow"))
+    print(colored(f"Refining, {text}", "green"))
     print("Now computing, current time is: ", datetime.now())
     print("max_depth", max_depth, "coverage", coverage)
     space = RefinedSpace(parameter_domains, parameters)
     spam = refine_space.check_deeper(space, constraints[i], max_depth, epsilon=epsilon, coverage=coverage,
                                      silent=silent, version=alg, sample_size=0, debug=debug, save=False,
-                                     solver="z3", delta=0.01, gui=False, show_space=False,
+                                     solver=solver, delta=0.01, gui=False, show_space=False,
                                      iterative=False, timeout=timeout)
     print("coverage reached", spam.get_coverage())
     if debug:
@@ -182,7 +193,7 @@ def refine(text, parameters, parameter_domains, constraints, timeout, silent, de
 
 if __name__ == '__main__':
     ## PRISM BENCHMARKS
-    test_cases = ["crowds", "brp", "nand", "Knuth"]  ## ["crowds", "brp", "nand", "Knuth"]
+    test_cases = ["crowds", "brp", "nand", "Knuth", "zeroconf"]  ## ["crowds", "brp", "nand", "Knuth", "zeroconf"]
     for test_case in test_cases:
         ## Skip PRISM BENCHMARKS?
         if not run_prism_benchmark:
@@ -192,27 +203,44 @@ if __name__ == '__main__':
                 settings = [[3, 5]]
             else:
                 settings = [[3, 5], [5, 5], [10, 5], [15, 5], [20, 5]]
+            is_probability = False
+
         if test_case == "brp":
             if shallow:
                 settings = [[16, 2]]
             else:
                 settings = [[16, 2], [128, 2], [128, 5], [256, 2], [256, 5]]
+            is_probability = False
+
         if test_case == "nand":
             if shallow:
                 settings = [[10, 1]]
             else:
                 settings = [[10, 1], [10, 2], [10, 3], [10, 4], [10, 5], [20, 1], [20, 2], [20, 3], [20, 4], [20, 5]]
+            is_probability = False
+
         if test_case == "Knuth":
-            settings = [""]
+            settings = ["", "_2_params", "_3_params"]  ## ["", "_2_params", "_3_params"]
+            is_probability = False
+
+        if test_case == "zeroconf":
+            settings = [10]
+            is_probability = False
 
         for constants in settings:
             if test_case == "Knuth":
-                model_name = f"parametric_die"
-                property_file = os.path.join(property_path, test_case, f"parametric_die_prop2.pctl")
+                model_name = f"{test_case}/parametric_die{constants}"
+                property_name = "BSCCs"
+                property_file = os.path.join(property_path, test_case, f"parametric_die_{property_name}.pctl")
+            elif test_case == "zeroconf":
+                model_name = f"{test_case}/{test_case}-{constants}"
+                property_name = "reach_BSCCs"
+                property_file = os.path.join(property_path, test_case, f"{test_case}-{property_name}.pctl")
             else:
-                model_name = f"{test_case}_{constants[0]}-{constants[1]}"
+                model_name = f"{test_case}/{test_case}_{constants[0]}-{constants[1]}"
                 property_file = os.path.join(property_path, test_case, f"{test_case}.pctl")
-            model_file = os.path.join(model_path, test_case, f"{model_name}.pm")
+                property_name = ""
+            model_file = os.path.join(model_path, f"{model_name}.pm")
             consts, parameters = parse_params_from_model(model_file, silent=True)
 
             if debug:
@@ -225,21 +253,42 @@ if __name__ == '__main__':
             if debug:
                 print("parameter_domains", parameter_domains)
 
+            if property_name:
+                function_file_name = f"{model_name}{property_name}"
+            else:
+                function_file_name = f"{model_name}"
+
             ## LOAD FUNCTIONS
             if run_optimise or run_sampling or run_refine or run_mh:
                 try:
-                    functions = load_functions(model_name, factorise=False, debug=debug)
+                    functions = load_functions(function_file_name, factorise=True, debug=debug)
                 except FileNotFoundError as err:
                     ## compute functions
-                    compute_functions(model_file, property_file, output_path=False, debug=debug)
-                    functions = load_functions(model_name, debug)
+                    try:
+                        os.mkdir(os.path.join(prism_results, test_case))
+                        os.mkdir(os.path.join(storm_results, test_case))
+                    except Exception as err:
+                        print(err)
+                        pass
+                    compute_functions(model_file, property_file, output_path=function_file_name, debug=debug)
+                    functions = load_functions(function_file_name, factorise=True, debug=debug)
+            else:
+                functions = []
+            assert isinstance(functions, list)
 
+            ## COPY-PASTED GENERATED DATASETS
             if shallow:
                 data_sets = [[0.5]]
             else:
                 data_sets = [[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]]
             if test_case == "Knuth":
-                data_sets = [[1/6]*6]
+                if shallow:
+                    data_sets = [[1 / 6] * 6, [0.208, 0.081, 0.1, 0.254, 0.261, 0.096]]  ## [[1 / 6] * 6, [0.208, 0.081, 0.1, 0.254, 0.261, 0.096]]
+                else:
+                    data_sets = [[1/6]*6, [0.006, 0.011, 0.068, 0.008, 0.097, 0.81], [0.208, 0.081, 0.1, 0.254, 0.261, 0.096]]  ## [1/6]*6, [0.006, 0.011, 0.068, 0.008, 0.097, 0.81], [0.208, 0.081, 0.1, 0.254, 0.261, 0.096]
+            if test_case == "zeroconf":
+                data_sets = [[0.684, 0.316]]
+
             for data_set in data_sets:
                 if debug:
                     print("data_set", data_set)
@@ -251,7 +300,6 @@ if __name__ == '__main__':
                 else:
                     n_samples = [100, 1500, 3500]
 
-                ## TODO more indices of n_samples
                 i = 0
                 intervals = []
                 for i in range(len(n_samples)):
@@ -264,7 +312,7 @@ if __name__ == '__main__':
                     start_time = time()
                     result_1 = optimize(functions, parameters, parameter_domains, data_set)
                     print(colored(
-                        f"Optimisation, data {data_set}, took {round(time() - start_time, 4)} seconds", "yellow"))
+                        f"Optimisation, data {data_set}, \n took {round(time() - start_time, 4)} seconds", "yellow"))
                     if debug:
                         print(result_1)
 
@@ -274,6 +322,8 @@ if __name__ == '__main__':
                         constraints.append(ineq_to_constraints(functions, intervals[i], decoupled=True))
                         if debug:
                             print(f"Constraints with {n_samples[i]} samples :{constraints[i]}")
+                else:
+                    constraints = []
 
                 ## SAMPLE SPACE
                 for i in range(len(n_samples)):
@@ -283,7 +333,7 @@ if __name__ == '__main__':
                     start_time = time()
                     sampling = space.grid_sample(constraints[i], grid_size, silent=True, debug=debug)
                     print(colored(
-                        f"Sampling, dataset {data_set}, grid size {grid_size}, # of samples {n_samples[i]} took {round(time() - start_time, 4)} seconds", "yellow"))
+                        f"Sampling, dataset {data_set}, grid size {grid_size}, {n_samples[i]} samples took {round(time() - start_time, 4)} seconds", "green"))
                     if debug:
                         print(sampling)
 
@@ -291,10 +341,12 @@ if __name__ == '__main__':
                 for i in range(len(n_samples)):
                     if not run_refine:
                         break
-                    ## TODO this fails
-                    refine(f"dataset {data_set}, # of samples {n_samples[i]}", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=3)
-                    refine(f"dataset {data_set}, # of samples {n_samples[i]}", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=4)
-                    refine(f"dataset {data_set}, # of samples {n_samples[i]}", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=5)
+                    refine(f"dataset {data_set}, {n_samples[i]} samples", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=3, solver="z3")
+                    refine(f"dataset {data_set}, {n_samples[i]} samples", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=4, solver="z3")
+                    refine(f"dataset {data_set}, {n_samples[i]} samples", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=5)
+
+                    refine(f"dataset {data_set}, {n_samples[i]} samples ", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=3, solver="dreal")
+                    refine(f"dataset {data_set}, {n_samples[i]} samples", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=4, solver="dreal")
 
                 ## METROPOLIS-HASTINGS
                 # space = RefinedSpace(parameter_domains, parameters)
@@ -303,7 +355,7 @@ if __name__ == '__main__':
                     if not run_mh:
                         break
                     start_time = time()
-                    mh_results = initialise_sampling(parameters, parameter_domains, functions, data_set, n_samples[i], iterations, 0, where=True, metadata=False, timeout=mh_timeout)
+                    mh_results = init_mh(parameters, parameter_domains, functions, data_set, n_samples[i], iterations, 0, is_probability=is_probability, where=True, metadata=False, timeout=mh_timeout)
                     assert isinstance(mh_results, HastingsResults)
                     print(colored(
                         f"this was MH, {iterations} iterations, dataset {data_set}, # of samples, {n_samples[i]} took {round(time() - start_time, 4)} seconds", "yellow"))
@@ -335,17 +387,17 @@ if __name__ == '__main__':
                             f.write(item + "\n")
 
                     try:
-                        os.mkdir(os.path.join(refinement_results, model_name))
+                        os.mkdir(os.path.join(refinement_results, test_case))
                     except FileExistsError as err:
                         pass
 
                     call_storm(model_file=model_file, params=parameters, param_intervals=storm_parameter_domains,
-                               property_file=save_informed_property_file, storm_output_file=os.path.join(refinement_results, model_name, f"{model_name}_refined_{data_sett}_data_set_{n_samples[i]}_samples_{conf}_confidence.txt"),
+                               property_file=save_informed_property_file, storm_output_file=os.path.join(refinement_results, f"{model_name}_refined_{data_sett}_data_set_{n_samples[i]}_samples_{conf}_confidence.txt"),
                                time=True, silent=False)
 
     ## Semisynchronous models
-    for multiparam in [False]:                                                ## [False, True]
-        for population_size in [2, 3, 4, 5, 10, 15]:                                                 ## [2, 3, 4, 5, 10, 15]
+    for multiparam in [False, True]:                                                ## [False, True]
+        for population_size in [2, 3, 4, 5, 10, 15]:                                ## [2, 3, 4, 5, 10, 15]
             for data_index, data_dir_subfolder in enumerate(["data", "data_1"]):    ## ["data", "data_1"]
                 ## SKIP Semisynchronous models
                 if not run_semisyn:
@@ -395,11 +447,11 @@ if __name__ == '__main__':
                 ## LOAD FUNCTIONS
                 if run_optimise or run_sampling or run_refine or run_mh:
                     try:
-                        functions = load_functions(model_name, debug=debug)
+                        functions = load_functions(f"{test_case}/{model_name}", debug=debug)
                     except FileNotFoundError as err:
                         ## Compute functions
-                        compute_functions(model_file, property_file, output_path=False, debug=debug)
-                        functions = load_functions(model_name, debug=debug)
+                        compute_functions(model_file, property_file, output_path=f"{test_case}/{model_name}", debug=debug)
+                        functions = load_functions(f"{test_case}/{model_name}", debug=debug)
 
                 ## LOAD DATA
                 data_set = load_data(os.path.join(data_dir, f"{data_dir_subfolder}/{params}/data_n={population_size}.csv"), debug=debug)
@@ -427,7 +479,8 @@ if __name__ == '__main__':
                 if run_optimise:
                     start_time = time()
                     result_1 = optimize(functions, parameters, parameter_domains, data_set)
-                    print(colored(f"Optimisation, pop size {population_size}, dataset {data_index+1}, multiparam {bool(multiparam)}, took {round(time() - start_time, 4)} seconds", "yellow"))
+                    print(colored(f"Optimisation, {'multiparam' if bool(multiparam) else '2-param'}, {population_size} bees, dataset {data_index+1}", "green"))
+                    print(colored(f"Optimisation took {round(time() - start_time, 4)} seconds", "yellow"))
                     if debug:
                         print(result_1)
 
@@ -445,7 +498,7 @@ if __name__ == '__main__':
                     space = RefinedSpace(parameter_domains, parameters)
                     start_time = time()
                     sampling = space.grid_sample(constraints[i], grid_size, silent=True, debug=debug)
-                    print(colored(f"Sampling, pop size {population_size}, grid size {grid_size}, dataset {data_index+1}, multiparam {bool(multiparam)}, # of samples {n_samples[i]} took {round(time() - start_time, 4)} seconds", "yellow"))
+                    print(colored(f"Sampling, {'multiparam' if bool(multiparam) else '2-param'} , {population_size} bees, grid size {grid_size}, dataset {data_index+1}, {n_samples[i]} samples, it took {round(time() - start_time, 4)} seconds", "yellow"))
                     if debug:
                         print(sampling)
 
@@ -453,10 +506,13 @@ if __name__ == '__main__':
                 for i in range(len(n_samples)):
                     if not run_refine:
                         break
-                    text = f"pop size {population_size}, dataset {data_index + 1}, multiparam {bool(multiparam)}, # of samples {n_samples[i]}"
-                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, alg=3)
-                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, alg=4)
+                    text = f"{'multiparam' if bool(multiparam) else '2-param'} , {population_size} bees, dataset {data_index + 1}, {n_samples[i]} samples "
+                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="z3", alg=3)
+                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="z3", alg=4)
                     refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, alg=5)
+
+                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="dreal", alg=3)
+                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="dreal", alg=4)
 
                 ## METROPOLIS-HASTINGS
                 # space = RefinedSpace(parameter_domains, parameters)
@@ -465,9 +521,9 @@ if __name__ == '__main__':
                     if not run_mh:
                         break
                     start_time = time()
-                    mh_results = initialise_sampling(parameters, parameter_domains, functions, data_set, n_samples[i], iterations, 0, where=True, metadata=False, timeout=mh_timeout)
+                    mh_results = init_mh(parameters, parameter_domains, functions, data_set, n_samples[i], iterations, 0, is_probability=True, where=True, metadata=False, timeout=mh_timeout)
                     assert isinstance(mh_results, HastingsResults)
-                    print(colored(f"this was MH, {iterations} iterations, pop size {population_size}, dataset {data_index+1}, multiparam {bool(multiparam)}, # of samples, {n_samples[i]} took {round(time() - start_time, 4)} seconds", "yellow"))
+                    print(colored(f"this was MH, {iterations} iterations, {'multiparam' if bool(multiparam) else '2-param'} , {population_size} bees, dataset {data_index+1}, {n_samples[i]} samples took {round(time() - start_time, 4)} seconds", "yellow"))
                     if debug:
                         print("# of accepted points", len(mh_results.accepted))
                         if mh_results.last_iter > 0:
