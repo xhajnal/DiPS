@@ -315,16 +315,22 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
 
             ## Calling the PRISM using our function
             if not property_file:
-                error = call_prism("{} prop_{}.pctl {}{}-param {}".format(file, N, memory, no_prob_checks, params),
-                                   seq=seq, model_path=model_path, properties_path=properties_path,
+                call = f"{file} prop_{N}.pctl {memory}{no_prob_checks}"
+                if model_parameters:
+                    call = f"{call}-param {params}"
+                error = call_prism(call, seq=seq, model_path=model_path, properties_path=properties_path,
                                    std_output_file=os.path.join(output_path, output_file), silent=silent, coverage=coverage)
             elif len(agents_quantities) == 1:
-                error = call_prism("{} {} {}{}-param {}".format(file, property_file, memory, no_prob_checks, params),
-                                   seq=seq, model_path=model_path, properties_path=properties_path,
+                call = f"{file} {property_file} {memory}{no_prob_checks}"
+                if model_parameters:
+                    call = f"{call}-param {params}"
+                error = call_prism(call, seq=seq, model_path=model_path, properties_path=properties_path,
                                    std_output_file=os.path.join(output_path, output_file), silent=silent, coverage=coverage)
             else:
-                error = call_prism("{} {} {}{}-param {}".format(file, property_file, memory, no_prob_checks, params),
-                                   seq=seq, model_path=model_path, properties_path=properties_path,
+                call = f"{file} {property_file} {memory}{no_prob_checks}"
+                if model_parameters:
+                    call = f"{call}-param {params}"
+                error = call_prism(call, seq=seq, model_path=model_path, properties_path=properties_path,
                                    std_output_file=os.path.join(output_path, "{}_{}.txt".format(str(file.stem).split(".")[0], str(Path(property_file).stem).split(".")[0])),
                                    silent=silent, coverage=coverage)
 
@@ -539,6 +545,7 @@ def call_storm(model_file, params, param_intervals, property_file, storm_output_
                 else:
                     storm_args[4] = f'{property}'
                 try:
+                    print(colored(f"Calling Storm with command: {' '.join(storm_args)}", "green"))
                     output = subprocess.run(storm_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8")
                     storm_output_filee.write(output + "\n")
                     print(colored(output, "yellow"))

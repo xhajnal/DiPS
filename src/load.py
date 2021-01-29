@@ -12,6 +12,7 @@ from sympy import factor, Interval
 ## Importing my code
 from common.config import load_config
 from common.convert import parse_numbers
+from common.my_storm import parse_refinement_into_space, merge_refinements
 
 spam = load_config()
 data_path = spam["data"]
@@ -25,7 +26,7 @@ del spam
 ###############################
 
 
-def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False, f_only=False, refinement=True):
+def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False, f_only=False, refinement=False, merge_results=False):
     """ Loads parameter synthesis from file into two maps - f list of rational functions for each property, and rewards list of rational functions for each reward
 
     Args:
@@ -35,6 +36,7 @@ def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False
         rewards_only (bool): if true it parse only rewards
         f_only (bool): if true it will parse only standard properties
         refinement (bool): load refinement results instead of functions
+        merge_results (bool): if Storm refinement, it will merge partial result to a single one
 
     Returns:
         (f,reward), where
@@ -61,7 +63,10 @@ def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False
     f = []
     rewards = []
 
-    ref_line = False
+    is_ref_lines = False    ## Prism flag for a refinement line
+    is_inner_ref_lines = False   ## Storm flag for refinement region
+    ref_index = 0
+
     spaces = []
     safe = []
     unsafe = []
@@ -97,14 +102,26 @@ def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False
                 if "R[exp]" in line:
                     here = "r"
             ## Parse params and intervals
-            if line.startswith('Command line: ') and params == []:
-                line = line.split("-param ")[-1]
+            if line.startswith('Command line') and params == []:
+                if tool.lower() == "prism":
+                    line = line.split("-param ")[-1]
+                elif tool.lower() == "storm" and refinement:
+                    line = line.split("--region ")[-1]
                 line = re.findall(r"[\'\"].*=.*[\'\"]", line)[0][1:-1]
                 entries = line.split(",")
                 for entry in entries:
-                    params.append(entry.split("=")[0])
-                    interval = entry.split("=")[1]
-                    param_intervals.append(list(map(eval, interval.split(":"))))
+                    if tool.lower() == "storm":
+                        entry = entry.replace("<=", "=")
+                        entry = entry.replace(">=", "=")
+                        entry = entry.replace("<", "=")
+                        entry = entry.replace("<", "=")
+                        spam = entry.split("=")
+                        params.append(spam[1])
+                        param_intervals.append(list(map(eval, [spam[0], spam[2]])))
+                    else:
+                        params.append(entry.split("=")[0])
+                        interval = entry.split("=")[1]
+                        param_intervals.append(list(map(eval, interval.split(":"))))
 
             # Parse times
             if line.startswith("Time for"):
@@ -113,7 +130,7 @@ def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False
             ## PRISM check if rewards
             if line.startswith('Parametric model checking: R'):
                 here = "r"
-            if (i >= 0 and line.startswith('Result')) or ref_line:
+            if (i >= 0 and line.startswith('Result')) or is_ref_lines:
                 if line.startswith('Result'):
                     if ": true\n" in line or ": false\n" in line:
                         refinement = True
@@ -182,41 +199,66 @@ def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False
                             f.append(line)
                 ## Load refinement results
                 else:
-                    ## Get rid of Result:
-                    if tool.lower().startswith("s"):
-                        return [], "refinement", params, param_intervals, time_elapsed
-                        # raise NotImplementedError("Loading Storm refinement result not implemented yet")
-                    ref_line = True
-                    ## End of a single refinement result
-                    if line.startswith("--"):
-                        ref_line = False
-                        spaces.append([safe, unsafe])
-                        safe = []
-                        unsafe = []
-                        continue
-                    line = line.replace("Result: ", "")
-                    if "true" in line:
-                        safe.append(list(eval(line.split(":")[0])))
-                    elif "false" in line:
-                        unsafe.append(list(eval(line.split(":")[0])))
-                    elif line == "\n":
-                        continue
-                    else:
-                        raise Exception(f"Error occurred when reading line {line_index} as a part of PRISM refinement")
+                    if tool.lower() == "storm":
+                        is_ref_lines = True
+                        ## Get rid of Result:
+                        if "Writing illustration of region check result to a stream is only implemented for two parameters" in line:
+                            return [], "refinement", params, param_intervals, time_elapsed
+
+                        ## Beginning or end of refinement
+                        if "##########################" in line:
+                            ## End of refinement
+                            if is_inner_ref_lines:
+                                ref_index = ref_index + 1
+                                spaces.append(space)
+                            else:
+                                space = []
+                            is_inner_ref_lines = not is_inner_ref_lines
+                            continue
+
+                        if is_inner_ref_lines:
+                            if line.startswith("#"):
+                                ## Trim out borders ##
+                                line = line[1:-2]
+                                space.append(line)
+
+                    elif tool.lower() == "prism":
+                        is_ref_lines = True
+                        ## End of a single refinement result
+                        if line.startswith("--"):
+                            is_ref_lines = False
+                            spaces.append([safe, unsafe])
+                            safe = []
+                            unsafe = []
+                            continue
+                        line = line.replace("Result: ", "")
+                        if "true" in line:
+                            safe.append(list(eval(line.split(":")[0])))
+                        elif "false" in line:
+                            unsafe.append(list(eval(line.split(":")[0])))
+                        elif line == "\n":
+                            continue
+                        else:
+                            raise Exception(f"Error occurred when reading line {line_index} as a part of PRISM refinement")
 
             line_index = line_index + 1
 
     if factorize:
         print(colored(f"Factorisation took {time_to_factorise} seconds", "yellow"))
     if refinement:
+        if tool.lower() == "storm":
+            if merge_results:
+                spaces = merge_refinements(spaces, params, param_intervals)
+            else:
+                spaces = [parse_refinement_into_space(space, params, param_intervals) for space in spaces]
         return spaces, "refinement", params, param_intervals, time_elapsed
     else:
         return f, rewards
 
 
-def get_refinement(path, tool="unknown"):
+def get_refinement(path, tool="unknown", merge_results=False):
     """ Loads refinement results of parameter synthesis from *path* folder """
-    return load_mc_result(path, tool, factorize=False, refinement=True)[0]
+    return load_mc_result(path, tool, factorize=False, refinement=True, merge_results=merge_results)[0]
 
 
 def get_f(path, tool="unknown", factorize=False, refinement=False):

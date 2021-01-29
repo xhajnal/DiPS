@@ -262,7 +262,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.22.1"  ## Version of the gui
+        self.version = "1.23"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -1392,13 +1392,9 @@ class Gui(Tk):
             if not self.silent.get():
                 print(f"Loading selected file: {file}")
 
-            spam = load_mc_result(file, tool=program, rewards_only=False,  f_only=False, refinement=True)
+            spam = load_mc_result(file, tool=program, rewards_only=False,  f_only=False, refinement=True, merge_results=True)
 
             skip_vis = False
-            ## TODO
-            if program == "storm":
-                skip_vis = True
-
             ## Get prams and domains
             self.parameters, self.parameter_domains, time_elapsed = spam[2], spam[3], spam[4]
             ## Get refinements
@@ -1418,35 +1414,51 @@ class Gui(Tk):
                     self.save_space(os.path.join(self.tmp_dir, "space.p"))
                     self.space = ""
 
+            ## Show space
             if not skip_vis:
-                ## Show space
-                if len(spam) > 1:
-                    messagebox.showwarning("Loading PRISM refinement result",
-                                           "There is more refinements in the result, only the first is used.")
-                ## Get first refinement
-                try:
-                    spam = spam[0]
-                    self.space = space.RefinedSpace(self.parameter_domains, self.parameters)
-                    if len(self.parameters) == 1:
-                        for item in spam[0]:
-                            self.space.add_green([item])
-                        for item in spam[1]:
-                            self.space.add_red([item])
-                    else:
-                        self.space.extend_green(spam[0])
-                        self.space.extend_red(spam[1])
+                if program == "prism":
+                    if len(spam) > 1:  ## number of refinements
+                        messagebox.showwarning("Loading PRISM refinement result",
+                                               "There is more refinements in the result, only the first is used.")
+                    ## Get first refinement
+                    try:
+                        spam = spam[0]
+                        self.space = space.RefinedSpace(self.parameter_domains, self.parameters)
+                        if len(self.parameters) == 1:
+                            for item in spam[0]:
+                                self.space.add_green([item])
+                            for item in spam[1]:
+                                self.space.add_red([item])
+                        else:
+                            self.space.extend_green(spam[0])
+                            self.space.extend_red(spam[1])
+                        self.space.time_last_refinement = time_elapsed
+                        self.space.time_refinement = self.space.time_refinement + time_elapsed
+
+                        self.clear_space()
+                        self.show_space(show_refinement=True, show_samples=False, show_true_point=False,
+                                        prefer_unsafe=self.show_red_in_multidim_refinement.get(),
+                                        title=f"Approximative refinement, achieved_coverage:{round(self.space.get_coverage(), 3)}, solver: {program}")
+
+                        self.space.remove_white(self.parameter_domains)
+                        self.print_space()
+                    except IndexError:
+                        pass
+
+                elif program == "storm":
+                    self.space = space.RefinedSpace(self.parameter_domains, self.parameters, rectangles_sat=spam[0], rectangles_unsat=spam[1], rectangles_unknown=spam[2])
+
                     self.space.time_last_refinement = time_elapsed
                     self.space.time_refinement = self.space.time_refinement + time_elapsed
-
                     self.clear_space()
                     self.show_space(show_refinement=True, show_samples=False, show_true_point=False,
                                     prefer_unsafe=self.show_red_in_multidim_refinement.get(),
-                                    title=f"achieved_coverage:{round(self.space.get_coverage(), 3)}, solver: {program}")
-
-                    self.space.remove_white(self.parameter_domains)
+                                    title=f"Parameter lifting, achieved_coverage:{round(self.space.get_coverage(), 3)}, solver: {program}")
+                    self.page6_figure.tight_layout()  ## By huypn
+                    self.page6_figure.canvas.draw()
+                    self.page6_figure.canvas.flush_events()
+                    self.update()
                     self.print_space()
-                except IndexError:
-                    pass
         finally:
             try:
                 self.cursor_toggle_busy(False)
@@ -3794,13 +3806,14 @@ class Gui(Tk):
             self.cursor_toggle_busy(True)
 
             ## Progress Bar
-            self.new_window = Toplevel(self)
-            Label(self.new_window, text="Metropolis Hastings progress:", anchor=W, justify=LEFT).pack()
-            Label(self.new_window, textvar=self.progress, anchor=W, justify=LEFT).pack()
-            self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
-            Label(self.new_window, textvar=self.progress_time, anchor=W, justify=LEFT).pack()
-            self.progress_bar.pack()
-            self.update()
+            if self.show_progress:
+                self.new_window = Toplevel(self)
+                Label(self.new_window, text="Metropolis Hastings progress:", anchor=W, justify=LEFT).pack()
+                Label(self.new_window, textvar=self.progress, anchor=W, justify=LEFT).pack()
+                self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
+                Label(self.new_window, textvar=self.progress_time, anchor=W, justify=LEFT).pack()
+                self.progress_bar.pack()
+                self.update()
 
             ## This progress is passed as whole to update the thing inside the called function
             assert isinstance(self.data, list)
@@ -3833,10 +3846,11 @@ class Gui(Tk):
                 self.update()
         finally:
             try:
-                self.new_window.destroy()
-                del self.new_window
+                if self.show_progress:
+                    self.new_window.destroy()
+                    del self.new_window
+                    self.progress.set("0%")
                 self.cursor_toggle_busy(False)
-                self.progress.set("0%")
             except TclError:
                 return
 
@@ -3949,8 +3963,8 @@ class Gui(Tk):
         try:
             self.cursor_toggle_busy(True)
 
+            ## Progress Bar
             if self.show_progress:
-                ## Progress Bar
                 self.new_window = Toplevel(self)
                 Label(self.new_window, text="Refinement progress:", anchor=W, justify=LEFT).pack()
                 Label(self.new_window, textvar=self.progress, anchor=W, justify=LEFT).pack()
@@ -3959,7 +3973,7 @@ class Gui(Tk):
                 self.progress_bar.pack(expand=True, fill=BOTH, side=TOP)
                 self.update_progress_bar(change_to=0, change_by=False)
 
-            self.update()
+                self.update()
 
             ## Refresh of plot before refinement
             if self.show_quantitative:
@@ -4075,8 +4089,13 @@ class Gui(Tk):
         if not self.parameters:
             print("Parsing parameters ...")
             globals()["parameters"] = set()
-            for polynome in where:
-                globals()["parameters"].update(find_param_old(polynome, debug=self.debug.get()))
+            if where == "model":
+                globals()["parameters"] = parse_params_from_model(self.model_file.get())
+            elif isinstance(where, str):
+                raise NotImplementedError(f"Validating parameters from {where} is not implemented yet")
+            else:
+                for polynome in where:
+                    globals()["parameters"].update(find_param_old(polynome, debug=self.debug.get()))
             globals()["parameters"] = sorted(list(globals()["parameters"]))
             self.parameters = globals()["parameters"]
             if not self.silent.get():
