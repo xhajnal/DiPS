@@ -746,7 +746,7 @@ def parse_weights(file, silent=True, debug=False):
     Returns:
     (list of string) weights
     """
-    return list(map(lambda x: float(x), parse_constraints(file, silent, debug)))
+    return [float(x) for x in parse_constraints(file, silent, debug)]
 
 
 def parse_data_intervals(file, silent=True, debug=False):

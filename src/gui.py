@@ -262,7 +262,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.22"  ## Version of the gui
+        self.version = "1.22.1"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -1234,12 +1234,13 @@ class Gui(Tk):
                 self.save_data_informed_properties(os.path.join(self.tmp_dir, "data_informed_properties.pctl"))
 
     def load_functions_file(self, file=False, ask=True, program=False, reset_param_and_intervals=True):
-        """ Loads parametric model checking output text file
+        """ Loads parametric model checking output text file, which contain rational functions, symbolic representation
+            of satisfaction/rewards of the model checking. Parses and shows the expressions.
 
         Args:
             file (path/string): direct path to load the function file
             ask (Bool): if False it will not ask questions
-            program (string): overrides the sel.program setting
+            program (string): overrides the sel.program setting in ["prism", "storm"]
             reset_param_and_intervals (Bool): if True the params will be reset
         """
         if program is False:
@@ -1265,7 +1266,7 @@ class Gui(Tk):
             elif program == "storm":
                 initial_dir = self.storm_results
             else:
-                messagebox.showwarning("Load rational functions", "Select a program for which you want to load data.")
+                messagebox.showwarning("Load rational functions", "Select a program for which you want to load functions.")
                 return
 
             self.status_set("Please select the prism/storm symbolic results to be loaded.")
@@ -1371,7 +1372,7 @@ class Gui(Tk):
             elif program == "storm":
                 initial_dir = self.storm_results
             else:
-                messagebox.showwarning(f"Load partitioning output file", "Select a program for which you want to load data.")
+                messagebox.showwarning(f"Load partitioning output file", "Select a program for which you want to load refinement results.")
                 return
 
             self.status_set("Please select the prism/storm symbolic results to be loaded.")
@@ -1580,7 +1581,7 @@ class Gui(Tk):
             elif self.program.get() == "storm":
                 initial_dir = self.storm_results
             else:
-                messagebox.showwarning("Load functions", "Select a program for which you want to load data.")
+                messagebox.showwarning("Load functions", "Select a program for which you want to load rational functions.")
                 return
 
             filetypes = (("pickle/text files", "*.p *.txt"), ("all files", "*.*"))
@@ -1708,7 +1709,6 @@ class Gui(Tk):
 
             if ".p" in self.data_file.get():
                 self.data = pickle_load(self.data_file.get())
-                self.unfold_data()
             elif ".txt" in self.data_file.get():
                 self.data = parse_weights(self.data_file.get())
             else:
@@ -1717,7 +1717,10 @@ class Gui(Tk):
                     messagebox.showerror("Loading data", f"Error, No data loaded.")
                     self.status_set("Data not loaded properly.")
                     return
-                self.unfold_data()
+
+            ## Unfolds and shows data
+            self.unfold_data()
+
             if not self.silent.get():
                 print("Loaded data: ", self.data)
 
