@@ -262,7 +262,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.23"  ## Version of the gui
+        self.version = "1.23.1"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -734,8 +734,14 @@ class Gui(Tk):
         self.sample_size_entry.grid(row=1, column=1)
         self.sample_size_entry.insert(END, '5')
 
-        Button(frame_left, text='Grid sampling', command=self.sample_space).grid(row=7, column=0, columnspan=2, padx=10, pady=4)
-        Button(frame_left, text='Grid quantitative sampling', command=self.sample_space_degree).grid(row=8, column=0,  columnspan=2, padx=10, pady=4)
+        grid_sampling_button = Button(frame_left, text='Grid sampling', command=self.sample_space)
+        grid_sampling_button.grid(row=7, column=0, columnspan=2, padx=10, pady=4)
+        createToolTip(grid_sampling_button, text="Creates uniform grid of points with the given number of points in each dimension. Validates constraints in those points. Plots result.")
+
+        grid_quantitative_sampling_button = Button(frame_left, text='Grid quantitative sampling', command=self.sample_space_degree)
+        grid_quantitative_sampling_button.grid(row=8, column=0,  columnspan=2, padx=10, pady=4)
+        createToolTip(grid_quantitative_sampling_button,
+                      text="Creates uniform grid of points with the given number of points in each dimension. Computes sum of distances to disatisfy respective constraint. Plots result.")
 
         # ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=2, rowspan=7, sticky='ns', padx=25, pady=25)
 
@@ -769,7 +775,7 @@ class Gui(Tk):
 
         label73 = Label(frame_left, text="Jump size: ", anchor=W, justify=LEFT)
         label73.grid(row=3, column=7)
-        createToolTip(label73, text='Standard variation of walker, the larger value the bigger steps are made')
+        createToolTip(label73, text='Standard deviation of walker jump length, the larger value the bigger jump in parameter space are made.')
         self.sd_entry = Entry(frame_left)
         self.sd_entry.grid(row=3, column=8)
         self.sd_entry.insert(END, '0.15')
@@ -790,6 +796,7 @@ class Gui(Tk):
 
         use_optimised_point_button = Checkbutton(frame_left, text="Use optimised point as initial", variable=self.init_mh_with_optimised_point)
         use_optimised_point_button.grid(row=8, column=7, sticky=W, padx=4, pady=4)
+        createToolTip(use_optimised_point_button, text="by ticking this Metropolis-Hastings will start search in optimised point.")
 
         Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=9, column=7, columnspan=2, pady=4)
 
@@ -812,7 +819,7 @@ class Gui(Tk):
 
         label66 = Label(frame_left, text="SMT solver: ", anchor=W, justify=LEFT)
         label66.grid(row=4, column=3, padx=0)
-        createToolTip(label66, text='When using SMT solver (alg 1-4), two options are possible, z3 or dreal (with delta complete decision procedures)')
+        createToolTip(label66, text='When using SMT solver (alg 1-4), two solvers are available, z3 or dreal')
 
         label67 = Label(frame_left, text="Delta for dreal: ", anchor=W, justify=LEFT)
         label67.grid(row=5, column=3, padx=0)
@@ -824,6 +831,7 @@ class Gui(Tk):
 
         presampled_refinement_checkbutton = Checkbutton(frame_left, text="Use presampled refinement", variable=self.presampled_refinement)
         presampled_refinement_checkbutton.grid(row=7, column=3, columnspan=2, padx=0)
+        createToolTip(presampled_refinement_checkbutton, text="Uses sampling before first refinement for creating region candidates to refine.")
 
         # iterative_refinement_checkbutton = Checkbutton(frame_left, text="Use iterative refinement (TBD)", variable=self.iterative_refinement)
         # iterative_refinement_checkbutton.grid(row=8, column=3, padx=0)
@@ -852,9 +860,17 @@ class Gui(Tk):
         self.delta_entry.insert(END, '0.01')
         self.refinement_timeout_entry.insert(END, '3600')
 
-        Button(frame_left, text='Exact Refine space', command=self.refine_space).grid(row=8, column=3, columnspan=2, pady=4, padx=0)
-        Button(frame_left, text='PRISM refine', command=self.external_refine_PRISM).grid(row=9, column=3, columnspan=1, pady=4, padx=0)
-        Button(frame_left, text='Storm refine', command=self.external_refine_Storm).grid(row=9, column=4, columnspan=1, pady=4, padx=0)
+        exact_refine_button = Button(frame_left, text='DiPS refine', command=self.refine_space)
+        exact_refine_button.grid(row=8, column=3, columnspan=2, pady=4, padx=0)
+        createToolTip(exact_refine_button, text="Run refinement with SMT solver (z3 / dreal) or interval arithmetic.")
+
+        prism_refine_button = Button(frame_left, text='PRISM refine', command=self.external_refine_PRISM)
+        prism_refine_button.grid(row=9, column=3, columnspan=1, pady=4, padx=0)
+        createToolTip(prism_refine_button, text="Run approximate refinement using sampling by PRISM.")
+
+        storm_refine_button = Button(frame_left, text='Storm refine', command=self.external_refine_Storm)
+        storm_refine_button.grid(row=9, column=4, columnspan=1, pady=4, padx=0)
+        createToolTip(storm_refine_button, text="Run parameter lifting, refinement method for models with multi-affine parametrisations, by Storm.")
 
         ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=10, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
 
