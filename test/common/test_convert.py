@@ -153,18 +153,38 @@ class MyTestCase(unittest.TestCase):
         print(colored("Checking splitting single constraint", 'blue'))
         self.assertEqual(split_constraint("0.7 < p+q < 0.8"), ["0.7", "p+q", "0.8"])
         self.assertEqual(split_constraint("0.7 < p+q"), ["0.7", "p+q", None])
+        self.assertEqual(split_constraint("p+q < 0.7"), [None, "p+q", "0.7"])
 
         self.assertEqual(split_constraint("0.7 > p+q < 0.8"), ["0.7", "p+q", "0.8"])
         self.assertEqual(split_constraint("0.7 > p+q"), ["0.7", "p+q", None])
+        self.assertEqual(split_constraint("p+q > 0.7"), [None, "p+q", "0.7"])
 
         self.assertEqual(split_constraint("0.7 <= p+q < 0.8"), ["0.7", "p+q", "0.8"])
         self.assertEqual(split_constraint("0.7 <= p+q"), ["0.7", "p+q", None])
+        self.assertEqual(split_constraint("p+q <= 0.7"), [None, "p+q", "0.7"])
 
         self.assertEqual(split_constraint("0.7 >= p+q < 0.8"), ["0.7", "p+q", "0.8"])
         self.assertEqual(split_constraint("0.7 >= p+q"), ["0.7", "p+q", None])
+        self.assertEqual(split_constraint("p+q >= 0.7"), [None, "p+q", "0.7"])
 
         self.assertEqual(split_constraint("0.7 = p+q < 0.8"), ["0.7", "p+q", "0.8"])
         self.assertEqual(split_constraint("0.7 = p+q"), ["0.7", "p+q", None])
+        self.assertEqual(split_constraint("p+q = 0.7"), [None, "p+q", "0.7"])
+
+    def test_parse_interval_bounds(self):
+        print(colored("Checking parsing of interval bounds", 'blue'))
+        self.assertEqual(parse_interval_bounds("0.7<p"), [[0.7, None]])
+        self.assertEqual(parse_interval_bounds("p<0.8"), [[None, 0.8]])
+        self.assertEqual(parse_interval_bounds("0.7<p<0.8"), [[0.7, 0.8]])
+        self.assertEqual(parse_interval_bounds("0.7<p<=0.8"), [[0.7, 0.8]])
+        self.assertEqual(parse_interval_bounds("0.7<=p<0.8"), [[0.7, 0.8]])
+        self.assertEqual(parse_interval_bounds("0.7<=p<=0.8"), [[0.7, 0.8]])
+        self.assertEqual(parse_interval_bounds("0.7<p<0.8,"), [[0.7, 0.8]])
+        self.assertEqual(parse_interval_bounds("0.7<p<0.8;"), [[0.7, 0.8]])
+        self.assertEqual(parse_interval_bounds("0.7<p<0.8, 7<q<8"), [[0.7, 0.8], [7, 8]])
+        self.assertEqual(parse_interval_bounds("0.7<p<0.8,7<q<8"), [[0.7, 0.8], [7, 8]])
+        self.assertEqual(parse_interval_bounds("0.7<p<0.8; 7<q<8"), [[0.7, 0.8], [7, 8]])
+        self.assertEqual(parse_interval_bounds("0.7<p<0.8;7<q<8"), [[0.7, 0.8], [7, 8]])
 
     def test_to_interval(self):
         print(colored("Checking transformation of a set of points into a set of intervals here", 'blue'))

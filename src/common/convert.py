@@ -288,7 +288,11 @@ def decouple_constraint(constraint: str, silent: bool = True, debug: bool = Fals
 
 
 def add_white_spaces(expression):
-    """ Adds white spaces in between <,>,=,<=, and >= so it can be easily parsed """
+    """ Adds white spaces in between <,>,=,<=, and >= so it can be easily parsed
+    Example:
+        "0.2>=p*q >=0.1"    --->  "0.2 >= p*q >= 0.1"
+
+    """
     just_equal = r"[^\s<>]=[^<>]|[^<>]=[^\s<>]"
     match = re.findall(just_equal, expression)
     # print(match)
@@ -389,8 +393,8 @@ def split_constraint(constraint):
     """ Splits normalised constraint in parts divided by (in)equality sign
 
     Example constraint:
-        "0.7 < p+q < 0.8"  --> ("0.7", "p+q", "0.8")
-        "0.7 < p+q"        --> ("0.7", "p+q", None)
+        "0.7 < p+q < 0.8"  --> ["0.7", "p+q", "0.8"]
+        "0.7 < p+q"        --> ["0.7", "p+q", None]
     """
     ## uniformize (in)equality signs and skip white spaces
     constraint = re.sub(r"\s*(<=|>=|=>|=<)\s*", "<", constraint)
@@ -405,11 +409,38 @@ def split_constraint(constraint):
         ## Single interval bound
         # print(item)
         constraint = constraint.split("<")
-        constraint = [constraint[0], constraint[1], None]
+        ## Check which side is number
+        if is_float(constraint[0]):
+            constraint = [constraint[0], constraint[1], None]
+        else:
+            constraint = [None, constraint[0], constraint[1]]
     else:
         raise Exception("Given constrain more than two (in)equality signs")
 
     return constraint
+
+
+def parse_interval_bounds(line: str):
+    """ Parses interval bounds of list of inequalities separated by ,/;
+        Returns list of pairs - intervals
+
+    Example:
+        "0<=p<=1/2;"               --> [[0, 0.5]]
+        "1/4<=q<=0.75, 0<=p<=1/2"  --> [[0.25, 0.75], [0, 0.5]]
+        "0<=p;"                    --> [[0, None]]
+    """
+
+    line = line.replace(";", ",")
+    inequalities = line.split(",")
+    ## Filter nonempty inequalities
+    inequalities = list(filter(lambda x: x != "", inequalities))
+    inequalities = [split_constraint(inequality) for inequality in inequalities]
+    ## Eval boundaries and omit the middle
+    for index, item in enumerate(inequalities):
+        inequalities[index][0] = eval(item[0]) if item[0] is not None else None
+        del inequalities[index][1]
+        inequalities[index][1] = eval(item[1]) if item[1] is not None else None
+    return inequalities
 
 
 def to_interval(points: list):

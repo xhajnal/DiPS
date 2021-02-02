@@ -262,7 +262,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.23.1"  ## Version of the gui
+        self.version = "1.24"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -1402,6 +1402,14 @@ class Gui(Tk):
 
         self.mc_result_file.set(file)
 
+        ## Print mc result into TextBox
+        self.mc_result_text.configure(state='normal')
+        self.mc_result_text.delete('1.0', END)
+        with open(self.mc_result_file.get(), 'r') as f:
+            self.mc_result_text.insert('1.0', f.read())
+
+        self.status_set("Refinement results loaded.")
+
         try:
             self.cursor_toggle_busy(True)
             self.status_set(f"Loading selected file: {file}")
@@ -1454,7 +1462,7 @@ class Gui(Tk):
                         self.clear_space()
                         self.show_space(show_refinement=True, show_samples=False, show_true_point=False,
                                         prefer_unsafe=self.show_red_in_multidim_refinement.get(),
-                                        title=f"Approximative refinement, achieved_coverage:{round(self.space.get_coverage(), 3)}, solver: {program}")
+                                        title=f"Approximate refinement, achieved_coverage:{round(self.space.get_coverage(), 3)}, solver: {program}")
 
                         self.space.remove_white(self.parameter_domains)
                         self.print_space()
@@ -1462,6 +1470,8 @@ class Gui(Tk):
                         pass
 
                 elif program == "storm":
+                    if len(self.parameters) != 2:
+                        raise NotImplementedError("The results are loaded, but merging of interval bound-wise results of Storm refinement implemented only for two parameters so far.")
                     self.space = space.RefinedSpace(self.parameter_domains, self.parameters, rectangles_sat=spam[0], rectangles_unsat=spam[1], rectangles_unknown=spam[2])
 
                     self.space.time_last_refinement = time_elapsed
@@ -1481,13 +1491,7 @@ class Gui(Tk):
             except TclError:
                 return
 
-        ## Print mc result into TextBox
-        self.mc_result_text.configure(state='normal')
-        self.mc_result_text.delete('1.0', END)
-        with open(self.mc_result_file.get(), 'r') as f:
-            self.mc_result_text.insert('1.0', f.read())
-
-        self.status_set("Refinement results loaded.")
+        self.status_set("Refinement results parsed and loaded.")
         if called_directly:
             if not skip_vis:
                 messagebox.showinfo(f"Loading {program} refinement results",

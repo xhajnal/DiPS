@@ -479,7 +479,7 @@ def call_storm(model_file, params, param_intervals, property_file, storm_output_
             print(f"{colored('property file', 'red')} {property_file} {colored('not found -- skipped', 'red')}")
             return 404
 
-        storm_args = ["storm-pars", "--prism", f"{model_file}", "--prop", ""]
+        storm_args = ["storm-pars", "--prism", f"{model_file}", "--prop", "", "--printfullresult"]
         storm_args_long = (["time"] + storm_args) + ["--resources:timemem"]
         storm_args_extra_long = (["(time"] + storm_args) + ["--resources:timemem", ">>", f"{storm_output_file}", "2>&1"]
 

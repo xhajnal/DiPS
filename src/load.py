@@ -11,7 +11,7 @@ from sympy import factor, Interval
 
 ## Importing my code
 from common.config import load_config
-from common.convert import parse_numbers
+from common.convert import parse_numbers, parse_interval_bounds
 from common.my_storm import parse_refinement_into_space, merge_refinements
 
 spam = load_config()
@@ -70,7 +70,9 @@ def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False
     spaces = []
     safe = []
     unsafe = []
+    unknown = []
     params = []
+
     param_intervals = []
     time_elapsed = 0
 
@@ -92,7 +94,7 @@ def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False
             print("Tool not recognised")
             return False, False
 
-        ## Parsing Rational functions
+        ## Parsing results
         line_index = 2
         for line in file:
             if line.startswith('Parametric model checking:') or line.startswith('Model checking property'):
@@ -111,13 +113,7 @@ def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False
                 entries = line.split(",")
                 for entry in entries:
                     if tool.lower() == "storm":
-                        entry = entry.replace("<=", "=")
-                        entry = entry.replace(">=", "=")
-                        entry = entry.replace("<", "=")
-                        entry = entry.replace("<", "=")
-                        spam = entry.split("=")
-                        params.append(spam[1])
-                        param_intervals.append(list(map(eval, [spam[0], spam[2]])))
+                        param_intervals.append(parse_interval_bounds(entry))
                     else:
                         params.append(entry.split("=")[0])
                         interval = entry.split("=")[1]
@@ -130,10 +126,15 @@ def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False
             ## PRISM check if rewards
             if line.startswith('Parametric model checking: R'):
                 here = "r"
-            if (i >= 0 and line.startswith('Result')) or is_ref_lines:
+
+            ## Parse results
+            if line.startswith('Result') or line.startswith("Region results:") or is_ref_lines:
                 if line.startswith('Result'):
                     if ": true\n" in line or ": false\n" in line:
                         refinement = True
+                if line.startswith("Region results:"):
+                    refinement = True
+                ## Parse rational functions
                 if not refinement:
                     ## PARSE THE EXPRESSION
                     # print("line:", line)
@@ -197,30 +198,59 @@ def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False
                                 time_to_factorise = time_to_factorise + (time() - start_time)
                         else:
                             f.append(line)
-                ## Load refinement results
+                ## Parse refinement results
                 else:
                     if tool.lower() == "storm":
-                        is_ref_lines = True
-                        ## Get rid of Result:
-                        if "Writing illustration of region check result to a stream is only implemented for two parameters" in line:
-                            return [], "refinement", params, param_intervals, time_elapsed
+                        if len(params) != 2:
+                            ## Mark start of the refinement lines
+                            if line.startswith("Region results:"):
+                                is_ref_lines = True
+                                continue
 
-                        ## Beginning or end of refinement
-                        if "##########################" in line:
-                            ## End of refinement
-                            if is_inner_ref_lines:
-                                ref_index = ref_index + 1
-                                spaces.append(space)
+                            ## If not refinement lines, go to next line
+                            if not is_ref_lines:
+                                continue
+
+                            ## If the end of refinement line, mark end go to next line
+                            if line == "\n":  # the line is empty
+                                is_ref_lines = False
+                                spaces.append([safe, unsafe, unknown])
+                                safe = []
+                                unsafe = []
+                                unknown = []
+                                continue
+
+                            ## Parse refinement lines
+                            if "AllSat" in line:
+                                safe.append(parse_interval_bounds(line.split(":")[0]))
+                            elif "AllViolated" in line:
+                                unsafe.append(parse_interval_bounds(line.split(":")[0]))
+                            elif "Unknown" in line or "ExistsViolated" in line or "ExistsSat" in line:
+                                unknown.append(parse_interval_bounds(line.split(":")[0]))
                             else:
-                                space = []
-                            is_inner_ref_lines = not is_inner_ref_lines
-                            continue
+                                raise Exception(f"Error occurred when reading line {line_index} as a part of Storm refinement")
+                        else:
+                            is_ref_lines = True
+                            ## Get rid of Result:
+                            if "Writing illustration of region check result to a stream is only implemented for two parameters" in line:
+                                raise Exception(f"An error occurred, DiPS parsed 2 parameters but Storm did not.")
 
-                        if is_inner_ref_lines:
-                            if line.startswith("#"):
-                                ## Trim out borders ##
-                                line = line[1:-2]
-                                space.append(line)
+                            ## Beginning or end of refinement
+                            if "##########################" in line:
+                                ## End of refinement
+                                if is_inner_ref_lines:
+                                    ref_index = ref_index + 1
+                                    spaces.append(space)
+                                else:
+                                    space = []
+                                is_inner_ref_lines = not is_inner_ref_lines
+                                continue
+
+                            if is_inner_ref_lines:
+                                if line.startswith("#"):
+                                    ## Trim out borders ##
+                                    line = line[1:-2]
+                                    space.append(line)
 
                     elif tool.lower() == "prism":
                         is_ref_lines = True
@@ -247,10 +277,11 @@ def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False
         print(colored(f"Factorisation took {time_to_factorise} seconds", "yellow"))
     if refinement:
         if tool.lower() == "storm":
-            if merge_results:
-                spaces = merge_refinements(spaces, params, param_intervals)
-            else:
-                spaces = [parse_refinement_into_space(space, params, param_intervals) for space in spaces]
+            if len(params) == 2:
+                if merge_results:
+                    spaces = merge_refinements(spaces, params, param_intervals)
+                else:
+                    spaces = [parse_refinement_into_space(space, params, param_intervals) for space in spaces]
         return spaces, "refinement", params, param_intervals, time_elapsed
     else:
         return f, rewards
