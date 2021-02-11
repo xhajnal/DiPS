@@ -118,6 +118,53 @@ except NameError:
     raise Exception("z3 not loaded properly")
 
 
+def call_refine_from_que(space: RefinedSpace, queu, alg=4):
+    globals()["space"] = space
+    globals()["que"] = queu
+    globals()["start_time"] = time()
+    globals()["parameters"] = space.get_params()
+    globals()["init_coverage"] = space.get_coverage()
+    assert globals()["init_coverage"] == 0
+
+    while globals()["que"].size() > 0:
+        ## TODO all algs
+        if alg == 1:
+            raise NotImplementedError("alg 1 does not work with queue, we cannot use it")
+        elif alg == 2:
+            private_check_deeper_queue(*globals()["que"].dequeue())
+        elif alg == 3:
+            private_check_deeper_queue_checking(*globals()["que"].dequeue())
+        elif alg == 4:
+            private_check_deeper_queue_checking_both(*globals()["que"].dequeue())
+        elif alg == 5:
+            raise NotImplementedError("Interval arithmetic not implemented so far fo MHMH method")
+
+
+def are_param_types_assigned():
+    try:
+        for param in globals()["parameters"]:
+            spam = globals()[param]
+        return True
+    except KeyError:
+        return False
+    except Exception:
+        raise Exception("Uncaught exception raised during checking parameter types.")
+
+
+def assign_param_types(solver):
+    for param in globals()["parameters"]:
+        if solver == "z3":
+            globals()[param] = Real(param)
+        elif solver == "dreal":
+            globals()[param] = Variable(param)
+        else:
+            try:
+                raise Exception(f"Unknown solver: {solver}")
+            except:
+                raise Exception("Unknown solver.")
+    ## EXAMPLE: p = Real(p)
+
+
 def check_unsafe(region, constraints, silent: bool = False, called=False, solver="z3", delta=0.001,
                  debug: bool = False):
     """ Check if the given region is unsafe or not using z3 or dreal.
@@ -155,22 +202,14 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
             parameters.update(find_param(polynomial))
         globals()["parameters"] = sorted(list(globals()["parameters"]))
         ## EXAMPLE:  parameters >> ['p','q']
-        for param in globals()["parameters"]:
-            if solver == "z3":
-                globals()[param] = Real(param)
-            elif solver == "dreal":
-                globals()[param] = Variable(param)
-            else:
-                try:
-                    raise Exception(f"Unknown solver: {solver}")
-                except:
-                    raise Exception("Unknown solver.")
-        ## EXAMPLE: p = Real(p)
+        assign_param_types(solver)
 
         space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
     else:
-        ## The parameters are stored as globals
         space = globals()["space"]
+        ## Check whether the parameters are stored as globals
+        if not are_param_types_assigned():
+            assign_param_types(solver)
 
     ## Choosing solver
     if solver == "z3":
@@ -285,24 +324,13 @@ def check_safe(region, constraints, silent: bool = False, called=False, solver="
             parameters.update(find_param(polynomial))
         globals()["parameters"] = sorted(list(globals()["parameters"]))
         ## EXAMPLE:  parameters >> ['p','q']
-
-        for param in globals()["parameters"]:
-            if solver == "z3":
-                globals()[param] = Real(param)
-            elif solver == "dreal":
-                globals()[param] = Variable(param)
-            else:
-                try:
-                    raise Exception(f"Unknown solver: {solver}")
-                except:
-                    raise Exception(
-                        "Unknown solver.")
-        ## EXAMPLE: p = Real(p)
-
+        assign_param_types(solver)
         space = RefinedSpace(copy.deepcopy(region), parameters, types=False, rectangles_sat=[], rectangles_unsat=[])
     else:
-        ## The parameters are stored as globals
         space = globals()["space"]
+        ## Check whether the parameters are stored as globals
+        if not are_param_types_assigned():
+            assign_param_types(solver)
 
     ## Choosing solver
     if solver == "z3":
@@ -379,7 +407,7 @@ def check_safe(region, constraints, silent: bool = False, called=False, solver="
             return result
 
 
-def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent, version, sample_size=False,
+def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent, version=4, sample_size=False,
                  debug=False, save=False, title="", where=False, show_space=True, solver="z3", delta=0.001, gui=False,
                  iterative=False, timeout=0):
     """ Refining the parameter space into safe and unsafe regions with respective alg/method

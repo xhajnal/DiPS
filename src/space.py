@@ -894,6 +894,8 @@ class RefinedSpace:
         """ Removes white (hyper)rectangle """
         try:
             volume = get_rectangle_volume(white)
+            # get str id
+            # volume = float(volume)
             ## If there is only a single rectangle in list of volume=volume
             if len(self.rectangles_unknown[volume]) == 1:
                 ## If it is the rectangle which I want to remove
