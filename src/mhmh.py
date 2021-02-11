@@ -3,12 +3,13 @@ from math import floor
 from time import time
 
 from numpy import linspace
+from termcolor import colored
 
 import refine_space
 from common.config import load_config
 from common.mathematics import get_rectangle_volume
 from common.queue import Queue
-from metropolis_hastings import init_mh
+from metropolis_hastings import init_mh, HastingsResults
 from refine_space import private_check_deeper_queue_checking_both
 from space import RefinedSpace
 
@@ -58,9 +59,13 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
         gui (bool or Callable): called from the graphical user interface
     """
     ## Run MH
-    a = init_mh(params, parameter_intervals, functions, data, sample_size, mh_sampling_iterations, eps=eps,
-                sd=sd, theta_init=theta_init, where=True, progress=progress, burn_in=burn_in, bins=bins,
-                timeout=timeout, debug=debug, metadata=metadata, draw_plot=draw_plot)
+    mh_result = init_mh(params, parameter_intervals, functions, data, sample_size, mh_sampling_iterations, eps=eps,
+                        sd=sd, theta_init=theta_init, where=True, progress=progress, burn_in=burn_in, bins=bins,
+                        timeout=timeout, debug=debug, metadata=metadata, draw_plot=draw_plot)
+    assert isinstance(mh_result, HastingsResults)
+    time_mhmh_took = mh_result.time_it_took
+    transformation_started = time()
+
     ## Create bins
     intervals = []
     for interval in parameter_intervals:
@@ -69,7 +74,6 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
         for index in range(len(spam) - 1):
             add_this.append([round(spam[index], round(bins/4)), round(spam[index + 1], round(bins/4))])
         intervals.append(add_this)
-
     if debug:
         print(intervals)
 
@@ -83,36 +87,33 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
         picks = picks * len(item)
     # print("number of picks", picks)
 
-    ## CREATE A LIST OF EMPTY LISTS
-    my_list = [[]]*picks
-    # print("my_list", my_list)
+    ## Initialise my_list - create a list of empty lists
+    rectangularised_space = [[]]*picks
 
+    ##
     number = 1
     for index, interval in enumerate(intervals):
         # print("number", number)
         for pick_index in range(picks):
             # print("   pick_index", pick_index)
             # print(" will append index", pick_index // number % len(interval), "of interval", interval, " : ", interval[pick_index // number % len(interval)])
-            my_list[pick_index] = [*my_list[pick_index], list(interval[pick_index // number % len(interval)])]   ## TODO changed "tuple" to "list"
+            rectangularised_space[pick_index] = [*rectangularised_space[pick_index], list(interval[pick_index // number % len(interval)])]   ## TODO changed "tuple" to "list"
             # my_list[pick_index].append(interval[pick_index % number])
             # print("   my_list now", my_list)
         number = number * len(interval)
 
     if debug:
-        print("my_list", my_list)
+        print("Rectangularised Space based on MH bins", rectangularised_space)
 
     ## Convert rectangularised space into dictionary to count points in each hyperrectangle
     ## This is dictionary rectangle -> number of accepted points inside
     my_dictionary = {}
-    for item in my_list:
+    for item in rectangularised_space:
         item = tuple(map(lambda x: tuple(x), item))  ## TODO swapped back to tuples to do dictionary stuff
         my_dictionary[tuple(item)] = 0
 
-    if debug:
-        print("my_dictionary", my_dictionary)
-
     ## Count points in each hyperrectangle
-    for point in a.get_all_accepted():
+    for point in mh_result.get_all_accepted():
         # print(point)
         point = point[:-1]
         ## print(point)
@@ -132,7 +133,7 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
 
     ## Parse the bins
     if debug:
-        print(my_dictionary)
+        print("Dictionary (hype)rectangle -> number of accepted points within the rectangle: \n", my_dictionary)
 
     ## Flip da dictionary: number of accepted points -> list of rectangles
     my_new_dictionary = {}
@@ -148,14 +149,16 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
 
     ## Compute expected number of points per bin
     expected_values = mh_sampling_iterations / picks
-    print("we expect to see ", expected_values, "per hyperectangle")
+    print("We expect to see ", expected_values, "per (hype)rectangle")
 
     ## Split the space based on the MH results
     space = RefinedSpace(parameter_intervals, params)
-    space.rectangles_unknown = {rect_size: my_list}
-    del my_list
+    space.rectangles_unknown = {rect_size: rectangularised_space}
+    del rectangularised_space
 
-    ## Run refinement
+    ## Fill the Queue
+    if debug:
+        print(f"Choosing rectangles to refine:")
     que = Queue()  ## initialise queue
     picked = 0     ## number of picked rectangles
     sizes = sorted(copy(list(my_new_dictionary.keys())))  ## list of numbers of accepted points per rectangle
@@ -164,7 +167,7 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
         if abs(expected_values - sizes[0]) > abs(expected_values - sizes[-1]):
             items = my_new_dictionary[sizes[0]]
             if debug:
-                print(f"picking highest value {sizes[0]} of rectangle {items} over right value {sizes[-1]}")
+                print(f"Picking highest value {sizes[0]} of rectangle {items} over right value {sizes[-1]}")
             for item in items:
                 item = [list(x) for x in item]
                 que.enqueue([item, constraints, recursion_depth, epsilon, coverage, silent, None, solver, delta, debug, gui, timeout])
@@ -174,76 +177,50 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
         else:
             items = my_new_dictionary[sizes[-1]]
             if debug:
-                print(f"picking highest value {sizes[-1]} of rectangles {items} over right value {sizes[0]}")
+                print(f"Picking highest value {sizes[-1]} of rectangles {items} over right value {sizes[0]}")
             for item in items:
                 item = [list(x) for x in item]
                 que.enqueue([item, constraints, recursion_depth, epsilon, coverage, silent, None, solver, delta, debug, gui, timeout])
             picked = picked + len(items)
             sizes = sizes[:-1]  ## remove picked size
 
-    ## for half of the rectangle add then to queue
-    # left_index = 0
-    # right_index = picks - 1
-    # for a
-        # left_rectangle = list(new_my_dictionary.keys())[left_index]
-        # right_rectangle = list(new_my_dictionary.keys())[right_index]
-        #
-        # left_value = new_my_dictionary[left_rectangle]
-        # right_value = new_my_dictionary[right_rectangle]
-        #
-        # ## Convert rectangle interval values to float
-        # left_rectangle = list(left_rectangle)
-        # for index, interval in enumerate(left_rectangle):
-        #     # try:
-        #     #     left_rectangle[index] = list(map(lambda x: float(x), interval))
-        #     # except TypeError:
-        #     #     print(interval)
-        #     # interval =
-        #     left_rectangle[index] = [float(x) for x in interval]
-        #
-        # right_rectangle = list(right_rectangle)
-        # for index, interval in enumerate(right_rectangle):
-        #     right_rectangle[index] = [float(x) for x in interval]
-        #
-        # # left_rectangle = [[(float(y), float(z)) for (y, z) in x] for x in left_rectangle]
-        # # right_rectangle = [[(float(y), float(z)) for (y, z) in x] for x in right_rectangle]
-        #
-        #
-        # if abs(expected_values-left_value) > abs(expected_values-right_value):
-        #     que.enqueue([left_rectangle, constraints, depth, epsilon, coverage, silent, None, solver, delta, debug, gui, timeout])
-        #     left_index = left_index + 1
-        #     print(f"picking left value {left_value} of rectangle {left_rectangle} over right value {right_value}")
-        # else:
-        #     ## TODO put right rectangle to queue
-        #     right_index = right_index - 1
-        #     print(f"picking right value {right_value} of rectangle {right_rectangle} over left value {left_value}")
-        #     que.enqueue([right_rectangle, constraints, depth, epsilon, coverage, silent, None, solver, delta, debug, gui, timeout])
-
-    ## refine_space.glob_start_time = time()
-    ## refine_space.glob_parameters = params
-
     if debug:
         print()
-        print("Rectangles to be selected to refine", space.get_white())
+        print("While all rectangles are:", space.get_white())
         print()
 
     ## Optimize memory
     del sizes
     del my_new_dictionary
 
-    ref_start_time = time()
-    refine_space.call_refine_from_que(space, que, alg=version)
-    print(f"ref took {round(time() - ref_start_time, 2)} seconds")
+    ## Compute time it took
+    transformation_took = time() - transformation_started
+    time_mhmh_took = time_mhmh_took + transformation_took
 
+    ref_start_time = time()
+
+    # Call refinement
+    refine_space.call_refine_from_que(space, que, alg=version)
+
+    ## Finish time business
+    time_refinement_took = time() - ref_start_time
+    time_mhmh_took = time_mhmh_took + time_refinement_took
+
+    ## Refinement Visualisation
+    print(colored(f"Refinement of MHMH took {round(time_refinement_took, 2)} seconds", "yellow"))
+
+    space.title = f"using max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version}, {solver}"
     space_shown = space.show(green=True, red=True, sat_samples=False, unsat_samples=False, save=save, where=where,
-                             show_all=not gui)
+                             show_all=not gui, is_mhmh=True)
+    print(colored(f"The whole MHMH took {round(time_mhmh_took, 2)} seconds", "yellow"))
 
 
 if __name__ == '__main__':
+    ## Trivial example of two different approaches: MHMH and standard refinement
+    print(colored("Trivial example of two different approaches: MHMH and standard refinement", "blue"))
     params = ["p", "q"]
     parameter_intervals = [(0, 1), (8, 9)]
     f = ["p**2-2*p+1", "2*q*p**2-2*p**2-2*q*p+2*p", "(-2)*q*p**2+p**2+2*q*p"]
-
     constraints = ["p**2-2*p+1 > 0.1", "p**2-2*p+1 < 0.8", "2*q*p**2-2*p**2-2*q*p+2*p > 0.1", "2*q*p**2-2*p**2-2*q*p+2*p < 0.7", "(-2)*q*p**2+p**2+2*q*p > 0.3", "(-2)*q*p**2+p**2+2*q*p < 0.69"]
     depth = 10
     epsilon = 0
@@ -258,11 +235,10 @@ if __name__ == '__main__':
     initialise_mhmh(params, parameter_intervals, data=[], functions=f, sample_size=100, mh_sampling_iterations=1000,
                     eps=0, silent=silent, debug=debug, bins=11, constraints=constraints, recursion_depth=depth, epsilon=epsilon,
                     coverage=coverage, solver=solver, gui=False, where=False)
-    print(f"MHMH took {round(time() - start_time,2)} seconds")
+
     print()
 
     ## Normal refinement for comparison
-    start_time = time()
     refine_space.check_deeper(parameter_intervals, constraints, depth, epsilon, coverage, silent, 4, sample_size=False,
                               debug=False, save=False, title="", where=False, show_space=True, solver="z3", delta=0.001, gui=False,
                               iterative=False, timeout=0)

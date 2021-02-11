@@ -226,7 +226,8 @@ class RefinedSpace:
         self.wrapper = DocumentWrapper(width=70)
 
     def show(self, title="", green=True, red=True, sat_samples=False, unsat_samples=False, quantitative=False,
-             true_point=True, save=False, where=False, show_all=True, prefer_unsafe=None, hide_legend=False, hide_title=False):
+             true_point=True, save=False, where=False, show_all=True, prefer_unsafe=None, is_presampled=False,
+             is_mhmh=False,  hide_legend=False, hide_title=False):
         """ Visualises the space
 
         Args:
@@ -241,6 +242,8 @@ class RefinedSpace:
             where (tuple/list): output matplotlib sources to output created figure
             show_all (bool): if True, not only newly added rectangles are shown
             prefer_unsafe (bool): if True unsafe space is shown in multidimensional space instead of safe
+            is_presampled (bool): if True it will mark the refinement as presampled
+            is_mhmh (bool): if True it will mark the refinement as MHMH, used MH to presample/precut space
             hide_legend (bool): if True no legend will be shown
             hide_title (bool): if True no title will be shown (useful in the case of large picture, when tight layout fails)
         """
@@ -296,9 +299,17 @@ class RefinedSpace:
 
             pretitle = ""
             if (green or red) and (sat_samples or unsat_samples):
-                pretitle = pretitle + "Refinement and Sampling,"  #\n red = unsafe region / unsat points, green = safe region / sat points, white = in between"
+                if is_presampled:
+                    pretitle = pretitle + "Presampled Refinement,"
+                elif is_mhmh:
+                    pretitle = pretitle + "MHMH and Sampling,"
+                else:
+                    pretitle = pretitle + "Refinement and Sampling,"  #\n red = unsafe region / unsat points, green = safe region / sat points, white = in between"
             elif green or red:
-                pretitle = pretitle + "Refinement,"  #\n red = unsafe region, green = safe region, white = in between"
+                if is_mhmh:
+                    pretitle = pretitle + "MHMH,"
+                else:
+                    pretitle = pretitle + "Refinement,"  #\n red = unsafe region, green = safe region, white = in between"
             elif sat_samples or unsat_samples:
                 pretitle = pretitle + "Samples,"  # \n red = unsat points, green = sat points"
             elif quantitative:

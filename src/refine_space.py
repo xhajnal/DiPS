@@ -126,6 +126,8 @@ def call_refine_from_que(space: RefinedSpace, queu, alg=4):
     globals()["init_coverage"] = space.get_coverage()
     assert globals()["init_coverage"] == 0
 
+    start_time = time()
+
     while globals()["que"].size() > 0:
         ## TODO all algs
         if alg == 1:
@@ -138,6 +140,9 @@ def call_refine_from_que(space: RefinedSpace, queu, alg=4):
             private_check_deeper_queue_checking_both(*globals()["que"].dequeue())
         elif alg == 5:
             raise NotImplementedError("Interval arithmetic not implemented so far fo MHMH method")
+
+    ## Saving how much time refinement took
+    space.refinement_took(time() - start_time)
 
 
 def are_param_types_assigned():
@@ -856,8 +861,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                             print("with constraints", constraints)
                         single_rectangle_start_time = time()
                         if not silent:
-                            print(
-                                f"Using DFS method with {('dreal', 'z3')[solver == 'z3']} solver to solve spliced rectangle number {index + 1} of {numb_of_white_rectangles}")
+                            print(f"Using DFS method with {('dreal', 'z3')[solver == 'z3']} solver to solve spliced rectangle number {index + 1} of {numb_of_white_rectangles}")
                         private_check_deeper(rectangle, constraints, next_depth, epsilon, coverage, silent,
                                              solver=solver, delta=delta, debug=debug, timeout=timeout)
 
@@ -865,9 +869,8 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                         ## If the visualisation of the space did not succeed space_shown = (None, error message)
                         space_coverage = space.get_coverage()
                         if not where:
-                            space_shown = space.show(
-                                title=f"max_recursion_depth:{next_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version}, {solver}, \n Refinement took {socket.gethostname()} {round(time() - single_rectangle_start_time)} second(s)",
-                                green=True, red=True, save=save, where=where, show_all=not gui)
+                            space_shown = space.show(title=f"max_recursion_depth:{next_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version}, {solver}, \n Refinement took {socket.gethostname()} {round(time() - single_rectangle_start_time)} second(s)",
+                                                     green=True, red=True, save=save, where=where, show_all=not gui, is_presampled=sample_size)
                         if not silent:
                             print()
                         if space_coverage >= coverage:
@@ -933,9 +936,8 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
 
             space_coverage = space.get_coverage()
             if not where:
-                space_shown = space.show(
-                    title=f"max_recursion_depth:{next_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version} \n Refinement took {socket.gethostname()} {round(time() - single_rectangle_start_time)} second(s)",
-                    green=True, red=True, save=save, where=where, show_all=not gui)
+                space_shown = space.show(title=f"max_recursion_depth:{next_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space_coverage)}, alg{version} \n Refinement took {socket.gethostname()} {round(time() - single_rectangle_start_time)} second(s)",
+                                         green=True, red=True, save=save, where=where, show_all=not gui, is_presampled=sample_size)
             if not silent:
                 print()
             if space_coverage >= coverage:
@@ -952,14 +954,14 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         if show_space:
             space_shown = space.show(green=True, red=True, sat_samples=gui and len(space.params) <= 2,
                                      unsat_samples=gui and len(space.params) <= 2, save=save, where=where,
-                                     show_all=not gui)
+                                     show_all=not gui, is_presampled=False)
         else:
             space_shown = [False]
     else:  ## TODO THIS IS A HOTFIX
         if show_space:
             space_shown = space.show(green=True, red=True, sat_samples=gui and len(space.params) <= 2,
                                      unsat_samples=gui and len(space.params) <= 2, save=save, where=where,
-                                     show_all=not gui)
+                                     show_all=not gui, is_presampled=True)
         else:
             space_shown = [False]
     print(colored(f"Result coverage is: {space_coverage}", "blue"))
