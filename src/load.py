@@ -854,7 +854,7 @@ def parse_data_intervals(file, silent=True, debug=False):
                 lines = lines.split(";")
                 lines = list(map(lambda x: eval(x), lines))
             else:
-                lines = re.sub(r'\)\s*,\s*(Interval|)\(', r');Interval(', lines)
+                lines = re.sub(r'\)\s*,\s*(Interval|)\(', r');(', lines)
                 lines = lines.split(";")
                 lines = list(map(lambda x: Interval(*eval(x)), lines))
         else:

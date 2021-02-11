@@ -1,7 +1,11 @@
 import math
 import multiprocessing
+import operator
 import warnings
 from collections.abc import Iterable
+from fractions import Fraction
+from functools import reduce
+from statsmodels.stats.proportion import proportion_confint
 import scipy.stats as st
 from sympy import Interval, factor
 import numpy as np
@@ -67,15 +71,15 @@ def create_intervals(confidence, n_samples, data):
     return intervals
 
 
-def create_interval_NEW(confidence, samples=False, n_samples=False, mean=False, s=False, true_std=False, is_prob=False, is_normal=False, side="both"):
+def create_interval_NEW(confidence, samples=False, n_samples=False, sample_mean=False, sd=False, true_std=False, is_prob=False, is_normal=False, side="both"):
     """ Returns confidence interval of mean based on samples
 
         Args:
             confidence (float): confidence level, C
             samples (list of numbers): samples
             n_samples (int): number of samples (not necessary if the samples are provided)
-            mean (float): mean of samples (not necessary if the samples are provided)
-            s (float): standard deviation of sample
+            sample_mean (float): mean of samples (not necessary if the samples are provided)
+            sd (float): standard deviation of sample
             true_std (float): population standard deviation (sigma) (False if not known)
             is_prob (Bool): marks that the we estimate CI for probability values
             is_normal (Bool): marks that population follows normal distribution
@@ -88,14 +92,14 @@ def create_interval_NEW(confidence, samples=False, n_samples=False, mean=False, 
 
     if samples:
         n_samples = len(samples)
-        mean = float(np.mean(samples))
-        s = float(np.std(samples))
+        sample_mean = float(np.mean(samples))
+        sd = float(np.std(samples))
         std_err = float(st.sem(samples))
     else:
-        if s is False and n_samples < 30:
+        if sd is False and n_samples < 30:
             raise Exception("confidence intervals", "Missing standard deviation to estimate mean with less than 30 samples.")
         else:
-            std_err = s / math.sqrt(n_samples)
+            std_err = sd / math.sqrt(n_samples)
 
     if side == "both":
         alpha = (1 - confidence) / 2
@@ -107,12 +111,12 @@ def create_interval_NEW(confidence, samples=False, n_samples=False, mean=False, 
         t = st.t.ppf((1 + confidence), n_samples - 1)
 
     if is_prob:  ## CI for probabilities
-        if mean == 0:  ## Rule of three
+        if sample_mean == 0:  ## Rule of three
             return Interval(0, 3/n_samples)
-        elif mean == 1:  ## Rule of three
+        elif sample_mean == 1:  ## Rule of three
             return Interval(1 - 3/n_samples, 1)
         elif n_samples >= 30:  ##  Binomial proportion confidence interval: Normal/Gaussian distribution of the proportion: https://machinelearningmastery.com/confidence-intervals-for-machine-learning/
-            h = z * math.sqrt((mean * (1 - mean)) / n_samples)
+            h = z * math.sqrt((sample_mean * (1 - sample_mean)) / n_samples)
         elif n_samples < 30:
             interval = st.bayes_mvs(samples, confidence)[0][1]  ## 0 is the mean, 1 is the interval estimate
             return Interval(interval[0], interval[1])
@@ -129,21 +133,21 @@ def create_interval_NEW(confidence, samples=False, n_samples=False, mean=False, 
 
     h = float(h)
     if side == "both":
-        return Interval(mean - h, mean + h)
+        return Interval(sample_mean - h, sample_mean + h)
     elif side == "right":
         if is_prob:
-            return Interval(0, mean + h)
+            return Interval(0, sample_mean + h)
         else:
-            return Interval(float('-inf'), mean + h)
+            return Interval(float('-inf'), sample_mean + h)
     else:
         if is_prob:
-            return Interval(mean - h, 1)
+            return Interval(sample_mean - h, 1)
         else:
-            return Interval(mean - h, float('inf'))
+            return Interval(sample_mean - h, float('inf'))
 
 
 def create_interval(confidence, n_samples, data_point):
-    """ Returns interval of probabilistic data_point +- margin
+    """ Returns interval of probabilistic data_point +- margin using margin function
 
     Args:
         confidence (float): confidence level, C
@@ -186,8 +190,7 @@ def margin_experimental(confidence, n_samples, data_point):
         n_samples (int): number of samples to compute margin
         data_point (float):, the value to be margined
     """
-    return st.norm.ppf(1 - (1 - confidence) / 2) * math.sqrt(
-        data_point * (1 - data_point) / n_samples) + 0.5 / n_samples + 0.005
+    return st.norm.ppf(1 - (1 - confidence) / 2) * math.sqrt(data_point * (1 - data_point) / n_samples) + 0.5 / n_samples + 0.005
 
 
 def cartesian_product(*arrays):
@@ -232,9 +235,13 @@ def get_rectangle_volume(rectangle):
     if not rectangle:
         raise Exception("Empty rectangle has no volume")
     for interval in rectangle:
-        intervals.append(interval[1] - interval[0])
+        intervals.append(Fraction(str(interval[1])) - Fraction(str(interval[0])))
 
-    product = prod(intervals)
+    ## Python 3.8+
+    product = reduce(operator.mul, intervals, 1)
+    ## Python 3.1-7
+    # product = prod(intervals)
+
     # if isinstance(product, np.float64):
     #     product = float(product)
 

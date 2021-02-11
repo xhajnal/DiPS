@@ -149,9 +149,10 @@ class MyTestCase(unittest.TestCase):
 
     def test_get_rectangle_volume(self):
         print(colored("get_rectangle_volume tests", 'blue'))
-        self.assertEqual(round(get_rectangle_volume([[0.0, 0]]), 1), 0)
-        self.assertEqual(round(get_rectangle_volume([[0.0, 0.5]]), 1), 0.5)
-        self.assertEqual(round(get_rectangle_volume([[0.0, 0.2], [0, 0.2]]), 2), 0.04)
+        self.assertEqual(get_rectangle_volume([[0.0, 0]]), 0)
+        self.assertEqual(get_rectangle_volume([[0.0, 0.5]]), Fraction(1, 2))
+        self.assertEqual(get_rectangle_volume([[0.0, 0.2], [0, 0.2]]), Fraction(4, 100))
+        self.assertEqual(get_rectangle_volume([[0.7, 0.8], [8.7, 8.8]]), Fraction(1, 100))
 
     def test_weight_list(self):
         print(colored("Weight list", 'blue'))
