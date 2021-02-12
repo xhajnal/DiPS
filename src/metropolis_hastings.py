@@ -740,9 +740,10 @@ def acceptance_rule(x_likelihood, x_new_likelihood, debug=False):
     ## If likelihood of new point is higher (than likelihood of current point) accept the new point
     if x_new_likelihood > x_likelihood:
         return True
+    elif str(x_new_likelihood) == "-inf":  ## if log-likelihood of ne point is -inf discard point
+        return False
     else:
         ## Chance to accept even if the likelihood of the new point is lower (than likelihood of current point)
-
         accept = np.random.uniform(0, 1)
         if debug:
             print("acceptance_rule threshold", accept)

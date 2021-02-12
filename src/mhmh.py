@@ -1,10 +1,8 @@
 from copy import copy
+from fractions import Fraction
 from math import floor
 from time import time
-
-from numpy import linspace
 from termcolor import colored
-
 import refine_space
 from common.config import load_config
 from common.mathematics import get_rectangle_volume
@@ -23,10 +21,10 @@ tmp_dir = config["tmp"]
 del config
 
 
-def initialise_mhmh(params, parameter_intervals, functions, constraints, data, sample_size: int, mh_sampling_iterations: int, eps=0,
-                    sd=0.15, theta_init=False, where=False, progress=False, burn_in=False, bins=20, timeout=False,
-                    debug=False, metadata=True, draw_plot=False, save=False, silent=True, recursion_depth=10, epsilon=0.001,
-                    delta=0.001, coverage=0.95, version=4, solver="z3", gui=False):
+def initialise_mhmh(params, parameter_intervals, functions, constraints, data, sample_size, mh_sampling_iterations,
+                    eps=0, sd=0.15, theta_init=False, is_probability=None, where=False, progress=False, burn_in=False,
+                    bins=20, timeout=False, debug=False, metadata=True, draw_plot=False, save=False, silent=True,
+                    recursion_depth=10, epsilon=0.001, delta=0.001, coverage=0.95, version=4, solver="z3", gui=False):
     """ Initialisation method for MHMH - space refinement with prior splitting based on MH
 
     Args:
@@ -40,6 +38,7 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
         eps (number): very small value used as probability of non-feasible values in prior - not used now
         sd (float): variation of walker in parameter space
         theta_init (list of floats): initial parameter point
+        is_probability (bool): flag whether functions represent probabilities or not (None for unknown)
         where (tuple/list or False): output matplotlib sources to output created figure, if False a new will be created
         progress (Tkinter element or False): function processing progress
         burn_in (number): fraction or count of how many samples will be trimmed from beginning
@@ -60,8 +59,11 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
     """
     ## Run MH
     mh_result = init_mh(params, parameter_intervals, functions, data, sample_size, mh_sampling_iterations, eps=eps,
-                        sd=sd, theta_init=theta_init, where=True, progress=progress, burn_in=burn_in, bins=bins,
-                        timeout=timeout, debug=debug, metadata=metadata, draw_plot=draw_plot)
+                        sd=sd, theta_init=theta_init, is_probability=is_probability, where=True, progress=progress,
+                        burn_in=burn_in, bins=bins, timeout=timeout, debug=debug, metadata=metadata, draw_plot=draw_plot)
+    if mh_result is False:
+        raise Exception("MMHM cannot continue as Metropolis Hasting resulted in no accepted point, consider using more iterations.")
+
     assert isinstance(mh_result, HastingsResults)
     time_mhmh_took = mh_result.time_it_took
     transformation_started = time()
@@ -70,10 +72,11 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
     intervals = []
     for interval in parameter_intervals:
         add_this = []
-        spam = linspace(interval[0], interval[1], bins, endpoint=True)
-        for index in range(len(spam) - 1):
-            add_this.append([round(spam[index], round(bins/4)), round(spam[index + 1], round(bins/4))])
+        for index in range(bins):
+            add_this.append([Fraction(index, bins-1)*(interval[1] - interval[0]) + interval[0], Fraction(index+1, bins-1)*(interval[1] - interval[0]) + interval[0]])
         intervals.append(add_this)
+    del add_this
+
     if debug:
         print(intervals)
 
@@ -119,17 +122,22 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
         ## print(point)
         indices = []
         for index in range(len(point)):
-            interval_length = parameter_intervals[index][1]-parameter_intervals[index][0]
-            relative_position = (point[index]-parameter_intervals[index][0]) / interval_length
+            interval_length = parameter_intervals[index][1] - parameter_intervals[index][0]
+            relative_position = (point[index] - parameter_intervals[index][0]) / interval_length
             relative_interval = relative_position * (bins-1)
-            indices.append((float(round(interval_length/(bins-1)*floor(relative_interval)+parameter_intervals[index][0], round(bins/4))),
-                            float(round(interval_length/(bins-1)*(floor(relative_interval)+1)+parameter_intervals[index][0], round(bins/4)))))
+
+            indices.append((Fraction(interval_length, bins-1)*floor(relative_interval) + parameter_intervals[index][0],
+                           Fraction(interval_length, bins-1)*(floor(relative_interval)+1) + parameter_intervals[index][0]))
         indices = tuple(indices)
         ## print("indices", indices)
-        my_dictionary[indices] = my_dictionary[indices] + 1
+        try:
+            my_dictionary[indices] = my_dictionary[indices] + 1
+        except KeyError as err:
+            print(indices)
+            raise err
 
     ## Compute size of bins:
-    rect_size = get_rectangle_volume(list(my_dictionary.keys())[0])
+    rect_size = get_rectangle_volume(rectangularised_space[0])
 
     ## Parse the bins
     if debug:
@@ -162,7 +170,7 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
     que = Queue()  ## initialise queue
     picked = 0     ## number of picked rectangles
     sizes = sorted(copy(list(my_new_dictionary.keys())))  ## list of numbers of accepted points per rectangle
-    while picked < picks/2:  ## TODO choose a threshold of how many rectangles to refine
+    while picked < picks:  ## TODO choose a threshold of how many rectangles to refine
         ## Choose left or right side
         if abs(expected_values - sizes[0]) > abs(expected_values - sizes[-1]):
             items = my_new_dictionary[sizes[0]]
@@ -170,7 +178,7 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
                 print(f"Picking highest value {sizes[0]} of rectangle {items} over right value {sizes[-1]}")
             for item in items:
                 item = [list(x) for x in item]
-                que.enqueue([item, constraints, recursion_depth, epsilon, coverage, silent, None, solver, delta, debug, gui, timeout])
+                que.enqueue([item, constraints, min(recursion_depth, 3), epsilon, coverage, silent, None, solver, delta, debug, gui, timeout])
             picked = picked + len(items)
             sizes = sizes[1:]  ## remove picked size
 
@@ -180,9 +188,26 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
                 print(f"Picking highest value {sizes[-1]} of rectangles {items} over right value {sizes[0]}")
             for item in items:
                 item = [list(x) for x in item]
-                que.enqueue([item, constraints, recursion_depth, epsilon, coverage, silent, None, solver, delta, debug, gui, timeout])
+                que.enqueue([item, constraints, min(recursion_depth, 3), epsilon, coverage, silent, None, solver, delta, debug, gui, timeout])
             picked = picked + len(items)
             sizes = sizes[:-1]  ## remove picked size
+
+    sizes = list(reversed(sizes))
+    for index, size in enumerate(sizes):
+        if size < 0.25*expected_values:
+            items = my_new_dictionary[size]
+            if debug:
+                print(f"Picking a value below 1/4 of expected number accepted points {size} of rectangle {items}")
+            for item in items:
+                item = [list(x) for x in item]
+                que.enqueue(
+                    [item, constraints, min(recursion_depth, 3), epsilon, coverage, silent, None, solver, delta, debug,
+                     gui, timeout])
+            picked = picked + len(items)
+            sizes = sizes[1:]
+        else:
+            sizes = list(reversed(sizes))
+            break
 
     if debug:
         print()
@@ -190,8 +215,8 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
         print()
 
     ## Optimize memory
-    del sizes
-    del my_new_dictionary
+    # del sizes
+    # del my_new_dictionary
 
     ## Compute time it took
     transformation_took = time() - transformation_started
@@ -202,6 +227,14 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
     # Call refinement
     refine_space.call_refine_from_que(space, que, alg=version)
 
+    if space.get_coverage() < coverage:
+        refine_space.check_deeper(space, constraints, depth, max(eps, rect_size/2**depth), coverage, silent, version,
+                                  sample_size=False, debug=debug, save=save, title="", where=True,
+                                  show_space=False, solver=solver, delta=delta, gui=False, iterative=False,
+                                  timeout=timeout)
+    del sizes
+    del my_new_dictionary
+
     ## Finish time business
     time_refinement_took = time() - ref_start_time
     time_mhmh_took = time_mhmh_took + time_refinement_took
@@ -209,39 +242,53 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
     ## Refinement Visualisation
     print(colored(f"Refinement of MHMH took {round(time_refinement_took, 2)} seconds", "yellow"))
 
-    space.title = f"using max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version}, {solver}"
+    space.title = f"using max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{space.get_coverage()}, alg{version}, {solver}"
     space_shown = space.show(green=True, red=True, sat_samples=False, unsat_samples=False, save=save, where=where,
                              show_all=not gui, is_mhmh=True)
     print(colored(f"The whole MHMH took {round(time_mhmh_took, 2)} seconds", "yellow"))
+
+    return space, mh_result
 
 
 if __name__ == '__main__':
     ## Trivial example of two different approaches: MHMH and standard refinement
     print(colored("Trivial example of two different approaches: MHMH and standard refinement", "blue"))
     params = ["p", "q"]
-    parameter_intervals = [(0, 1), (8, 9)]
+    parameter_intervals = [(0, 1), (0, 1)]
     f = ["p**2-2*p+1", "2*q*p**2-2*p**2-2*q*p+2*p", "(-2)*q*p**2+p**2+2*q*p"]
+
+    ## TEST
+    # parameter_intervals = [(20, 30), (0, 1)]
+    # f = ["((p/10)-2)**2-2*((p/10)-2)+1", "2*q*((p/10)-2)**2-2*((p/10)-2)**2-2*q*((p/10)-2)+2*((p/10)-2)", "(-2)*q*((p/10)-2)**2+((p/10)-2)**2+2*q*((p/10)-2)"]
     constraints = ["p**2-2*p+1 > 0.1", "p**2-2*p+1 < 0.8", "2*q*p**2-2*p**2-2*q*p+2*p > 0.1", "2*q*p**2-2*p**2-2*q*p+2*p < 0.7", "(-2)*q*p**2+p**2+2*q*p > 0.3", "(-2)*q*p**2+p**2+2*q*p < 0.69"]
+
+    data = [0.04, 0.02, 0.94]
+
     depth = 10
     epsilon = 0
     coverage = 0.95
 
-    silent = False
+    show_matadata = False
+    bins = 11
+
+    silent = True
     debug = False
     gui = False
     solver = "z3"
 
-    start_time = time()
-    initialise_mhmh(params, parameter_intervals, data=[], functions=f, sample_size=100, mh_sampling_iterations=1000,
-                    eps=0, silent=silent, debug=debug, bins=11, constraints=constraints, recursion_depth=depth, epsilon=epsilon,
-                    coverage=coverage, solver=solver, gui=False, where=False)
+    timeout = 3600
 
-    print()
+    start_time = time()
+    space, mh_result = initialise_mhmh(params, parameter_intervals, data=data, functions=f, sample_size=100,
+                                       mh_sampling_iterations=1000, eps=0, silent=silent, debug=debug, bins=bins,
+                                       is_probability=True, constraints=constraints, metadata=show_matadata,
+                                       recursion_depth=depth, epsilon=epsilon, coverage=coverage, solver=solver, gui=False,
+                                       where=False, timeout=timeout)
 
     ## Normal refinement for comparison
-    refine_space.check_deeper(parameter_intervals, constraints, depth, epsilon, coverage, silent, 4, sample_size=False,
-                              debug=False, save=False, title="", where=False, show_space=True, solver="z3", delta=0.001, gui=False,
-                              iterative=False, timeout=0)
+    space2 = refine_space.check_deeper(parameter_intervals, constraints, -1, epsilon, coverage, silent, 4,
+                                       sample_size=False, debug=False, save=False, title="", where=False,
+                                       show_space=True, solver="z3", delta=0.001, gui=False, iterative=False, timeout=timeout)
 
-    print(f"Standard refinement took {round(time() - start_time, 2)} seconds")
+    print(f"Standard refinement took {round(space2.time_refinement, 2)} seconds")
     print()

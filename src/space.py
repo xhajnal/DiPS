@@ -756,17 +756,24 @@ class RefinedSpace:
         if not self.get_flat_white():
             return 0
         else:
-            return self.get_volume() - self.get_nonwhite_volume()
+            volume = 0
+            for item in list(self.rectangles_unknown.keys()):
+                volume = volume + item*len(self.rectangles_unknown[item])
+            return volume
 
     def get_nonwhite_volume(self):
         """ Returns volume of nonwhite subspace """
         return self.get_green_volume() + self.get_red_volume()
 
-    def get_coverage(self):
+    def get_coverage_old(self, fract=False):
         """ Returns proportion of nonwhite subspace (coverage) """
         # print("self.get_nonwhite_volume()", self.get_nonwhite_volume())
         # print("self.get_volume()", self.get_volume())
-        return self.get_nonwhite_volume() / self.get_volume()
+        coverage = self.get_nonwhite_volume() / self.get_volume()
+        if fract:
+            return coverage
+        else:
+            return float(coverage)
         ## TODO use this after editing space make it sound
         # if self.get_nonwhite_volume() == 0:
         #     return 0
@@ -774,6 +781,14 @@ class RefinedSpace:
         #     return 1
         # else:
         #     return self.get_nonwhite_volume() / self.get_volume()
+
+    def get_coverage(self, fract=False):
+        """ Returns proportion of nonwhite subspace (coverage) """
+        coverage = (1 - self.get_white_volume()) / self.get_volume()
+        if fract:
+            return coverage
+        else:
+            return float(coverage)
 
     def get_sat_samples(self):
         """ Returns green (sat) samples """

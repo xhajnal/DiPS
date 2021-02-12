@@ -124,7 +124,7 @@ def call_refine_from_que(space: RefinedSpace, queu, alg=4):
     globals()["start_time"] = time()
     globals()["parameters"] = space.get_params()
     globals()["init_coverage"] = space.get_coverage()
-    assert globals()["init_coverage"] == 0
+    # assert globals()["init_coverage"] == 0
 
     start_time = time()
 
@@ -881,8 +881,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                             print("Adding ", rectangle, "to queue")
                             print("with constraints", constraints)
                         globals()["que"].enqueue(
-                            [rectangle, constraints, next_depth, epsilon, coverage, silent, None, solver, delta, debug,
-                             gui])
+                            [rectangle, constraints, next_depth, epsilon, coverage, silent, None, solver, delta, debug, gui])
                     elif version == 5:
                         if debug:
                             print("Adding ", rectangle, "to queue")
