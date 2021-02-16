@@ -1,14 +1,11 @@
-import subprocess
+import math
 import sys
 import os
-import multiprocessing
 from copy import copy
 from datetime import datetime
 from os.path import basename, isfile
-from typing import Iterable
 from sympy import factor
 from time import time
-from termcolor import colored
 
 import refine_space
 from common.convert import ineq_to_constraints
@@ -18,6 +15,7 @@ from load import load_data, get_f, parse_params_from_model
 from mc import call_storm, call_prism_files
 from mc_informed import general_create_data_informed_properties
 from metropolis_hastings import init_mh, HastingsResults
+from mhmh import initialise_mhmh
 from space import RefinedSpace
 from optimize import *
 from common.config import load_config
@@ -36,7 +34,7 @@ tmp = spam["tmp"]
 sys.setrecursionlimit(4000000)
 
 ## SET OF RUNS
-run_prism_benchmark = False
+run_prism_benchmark = True
 run_semisyn = True
 shallow = True  ## only a single setting will be chosen from a set within the benchmark
 
@@ -45,10 +43,13 @@ run_optimise = True
 run_sampling = True
 run_refine = True
 run_mh = True
-run_lifting = False
+run_lifting = True
+run_presampled_refine = True
+run_mhmh = True
 
 ## GLOBAL SETTINGS
 model_checker = "storm"  ## choose from "prism", "storm", "both"
+precision = 4  ## number of decimal points to show
 
 global debug
 globals()['debug'] = False
@@ -73,6 +74,10 @@ refine_timeout = spam["refine_timeout"]  # 3600
 iterations = spam["mh_iterations"]  # 500000
 mh_timeout = spam["mh_timeout"]  # 3600
 del spam
+
+
+def round_sig(number, precision=precision):
+    return round(number, precision - int(math.floor(math.log10(abs(number)))) - 1)
 
 
 def load_functions(path, factorise=False, debug=False):
@@ -164,7 +169,7 @@ def compute_functions(model_file, property_file, output_path=False, parameter_do
                    time=True, silent=silent)
 
 
-def refine(text, parameters, parameter_domains, constraints, timeout, silent, debug, alg=4, solver="z3"):
+def refine(text, parameters, parameter_domains, constraints, timeout, silent, debug, alg=4, solver="z3", sample_size=False, repetitions=5):
     """ Runs space refinement
 
     Args
@@ -176,19 +181,44 @@ def refine(text, parameters, parameter_domains, constraints, timeout, silent, de
         silent (bool): if silent printed output is set to minimum
         debug (bool): if True extensive print will be used
         alg (Int): version of the algorithm to be used
-        solver (string):: specified solver, allowed: z3, dreal
+        solver (string): specified solver, allowed: z3, dreal
+        sample_size (Int or bool): number of samples in dimension used for presampling, False for no presampling
     """
     print(colored(f"Refining, {text}", "green"))
-    print("Now computing, current time is: ", datetime.now())
-    print("max_depth", max_depth, "coverage", coverage)
-    space = RefinedSpace(parameter_domains, parameters)
-    spam = refine_space.check_deeper(space, constraints[i], max_depth, epsilon=epsilon, coverage=coverage,
-                                     silent=silent, version=alg, sample_size=0, debug=debug, save=False,
-                                     solver=solver, delta=0.01, gui=False, show_space=False,
-                                     iterative=False, timeout=timeout)
-    print("coverage reached", spam.get_coverage())
-    if debug:
-        print("refined space", spam.nice_print())
+    print("max_depth", max_depth, "coverage", coverage, "epsilon", epsilon, "alg", alg, "solver", solver, "current time is: ", datetime.now())
+
+    avrg_time, avrg_check_time, avrg_smt_time = 0, 0, 0
+
+    for run in range(repetitions):
+        space = RefinedSpace(parameter_domains, parameters)
+        spam = refine_space.check_deeper(space, constraints[i], max_depth, epsilon=epsilon, coverage=coverage,
+                                         silent=silent, version=alg, sample_size=sample_size, debug=debug, save=False,
+                                         solver=solver, delta=0.01, gui=False, show_space=debug, iterative=False, timeout=timeout)
+        print("coverage reached", spam.get_coverage()) if not silent else None
+        if debug:
+            print("refined space", spam.nice_print())
+
+        avrg_time += space.time_last_refinement
+        try:
+            avrg_check_time += space.time_check
+            avrg_smt_time += space.time_smt
+        except:
+            pass
+
+    avrg_time = avrg_time/repetitions
+    if repetitions > 1:
+        print(colored(f"Average time of {repetitions} runs is {round_sig(avrg_time)}", "yellow"))
+
+    else:
+        print(colored(f"Refinement took {round_sig(avrg_time)}", "yellow"))
+
+    try:
+        avrg_check_time = avrg_check_time / repetitions
+        avrg_smt_time = avrg_smt_time / repetitions
+        print(colored(f"Average of check calls took {round_sig(avrg_check_time)} seconds, {round_sig(100 * avrg_check_time / avrg_time, 2)}% of refinement", "yellow"))
+        print(colored(f"Average of SMT calls took {round_sig(avrg_smt_time, 8)} seconds, {round_sig(100 * avrg_smt_time / avrg_check_time, 2) if space.time_check > 0 else None}% of checks, {round_sig(100 * avrg_smt_time / avrg_time, 2)}% of refinement", "yellow"))
+    except:
+        pass
 
 
 if __name__ == '__main__':
@@ -254,12 +284,12 @@ if __name__ == '__main__':
                 print("parameter_domains", parameter_domains)
 
             if property_name:
-                function_file_name = f"{model_name}{property_name}"
+                function_file_name = f"{model_name}_{property_name}"
             else:
                 function_file_name = f"{model_name}"
 
             ## LOAD FUNCTIONS
-            if run_optimise or run_sampling or run_refine or run_mh:
+            if run_optimise or run_sampling or run_refine or run_mh or run_mhmh or run_presampled_refine:
                 try:
                     functions = load_functions(function_file_name, factorise=True, debug=debug)
                 except FileNotFoundError as err:
@@ -312,11 +342,11 @@ if __name__ == '__main__':
                     start_time = time()
                     result_1 = optimize(functions, parameters, parameter_domains, data_set)
                     print(colored(
-                        f"Optimisation, data {data_set}, \n took {round(time() - start_time, 4)} seconds", "yellow"))
+                        f"Optimisation, data {data_set}, \nIt took {round_sig(time() - start_time, precision)} seconds", "yellow"))
                     if debug:
                         print(result_1)
 
-                if run_sampling or run_refine:
+                if run_sampling or run_refine or run_mhmh or run_presampled_refine:
                     constraints = []
                     for i in range(len(n_samples)):
                         constraints.append(ineq_to_constraints(functions, intervals[i], decoupled=True))
@@ -333,7 +363,7 @@ if __name__ == '__main__':
                     start_time = time()
                     sampling = space.grid_sample(constraints[i], grid_size, silent=True, debug=debug)
                     print(colored(
-                        f"Sampling, dataset {data_set}, grid size {grid_size}, {n_samples[i]} samples took {round(time() - start_time, 4)} seconds", "green"))
+                        f"Sampling, dataset {data_set}, grid size {grid_size}, {n_samples[i]} samples took {round_sig(time() - start_time, precision)} seconds", "green"))
                     if debug:
                         print(sampling)
 
@@ -341,10 +371,12 @@ if __name__ == '__main__':
                 for i in range(len(n_samples)):
                     if not run_refine:
                         break
+                    refine(f"dataset {data_set}, {n_samples[i]} samples", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=2, solver="z3")
                     refine(f"dataset {data_set}, {n_samples[i]} samples", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=3, solver="z3")
                     refine(f"dataset {data_set}, {n_samples[i]} samples", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=4, solver="z3")
                     refine(f"dataset {data_set}, {n_samples[i]} samples", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=5)
 
+                    refine(f"dataset {data_set}, {n_samples[i]} samples", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=2, solver="dreal")
                     refine(f"dataset {data_set}, {n_samples[i]} samples ", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=3, solver="dreal")
                     refine(f"dataset {data_set}, {n_samples[i]} samples", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=4, solver="dreal")
 
@@ -358,7 +390,7 @@ if __name__ == '__main__':
                     mh_results = init_mh(parameters, parameter_domains, functions, data_set, n_samples[i], iterations, 0, is_probability=is_probability, where=True, metadata=False, timeout=mh_timeout)
                     assert isinstance(mh_results, HastingsResults)
                     print(colored(
-                        f"this was MH, {iterations} iterations, dataset {data_set}, # of samples, {n_samples[i]} took {round(time() - start_time, 4)} seconds", "yellow"))
+                        f"this was MH, {iterations} iterations, dataset {data_set}, # of samples, {n_samples[i]} took {round_sig(time() - start_time, precision)} seconds", "yellow"))
                     if debug:
                         print("# of accepted points", len(mh_results.accepted))
                         if mh_results.last_iter > 0:
@@ -366,6 +398,21 @@ if __name__ == '__main__':
                             iter_time = (time() - start_time) * (iterations / mh_results.last_iter)
                             print("time it would take to finish", iter_time)
                         print()
+
+                ## MHMH
+                for i in range(len(n_samples)):
+                    if not run_mhmh:
+                        break
+                    start_time = time()
+                    a, b = initialise_mhmh(parameters, parameter_domains, data=[], functions=functions, sample_size=100,
+                                           mh_sampling_iterations=1000, eps=0, silent=silent, debug=debug, bins=11,
+                                           constraints=constraints, recursion_depth=max_depth, epsilon=epsilon,
+                                           coverage=coverage, version=4, solver="z3", gui=False, where=False)
+
+                    a, b = initialise_mhmh(parameters, parameter_domains, data=[], functions=functions, sample_size=100,
+                                           mh_sampling_iterations=1000, eps=0, silent=silent, debug=debug, bins=11,
+                                           constraints=constraints,  recursion_depth=max_depth, epsilon=epsilon,
+                                           coverage=coverage, version=4, solver="dreal", gui=False, where=False)
 
                 ## LIFTING WITH STORM HERE
                 storm_parameter_domains = copy(parameter_domains)
@@ -445,7 +492,7 @@ if __name__ == '__main__':
                     print("parameter_domains", parameter_domains)
 
                 ## LOAD FUNCTIONS
-                if run_optimise or run_sampling or run_refine or run_mh:
+                if run_optimise or run_sampling or run_refine or run_mh or run_mhmh or run_presampled_refine:
                     try:
                         functions = load_functions(f"{test_case}/{model_name}", debug=debug)
                     except FileNotFoundError as err:
@@ -480,11 +527,11 @@ if __name__ == '__main__':
                     start_time = time()
                     result_1 = optimize(functions, parameters, parameter_domains, data_set)
                     print(colored(f"Optimisation, {'multiparam' if bool(multiparam) else '2-param'}, {population_size} bees, dataset {data_index+1}", "green"))
-                    print(colored(f"Optimisation took {round(time() - start_time, 4)} seconds", "yellow"))
+                    print(colored(f"Optimisation took {round_sig(time() - start_time, precision)} seconds", "yellow"))
                     if debug:
                         print(result_1)
 
-                if run_sampling or run_refine:
+                if run_sampling or run_refine or run_mhmh or run_presampled_refine:
                     constraints = []
                     for i in range(len(n_samples)):
                         constraints.append(ineq_to_constraints(functions, intervals[i], decoupled=True))
@@ -498,7 +545,7 @@ if __name__ == '__main__':
                     space = RefinedSpace(parameter_domains, parameters)
                     start_time = time()
                     sampling = space.grid_sample(constraints[i], grid_size, silent=True, debug=debug)
-                    print(colored(f"Sampling, {'multiparam' if bool(multiparam) else '2-param'} , {population_size} bees, grid size {grid_size}, dataset {data_index+1}, {n_samples[i]} samples, it took {round(time() - start_time, 4)} seconds", "yellow"))
+                    print(colored(f"Sampling, {'multiparam' if bool(multiparam) else '2-param'} , {population_size} bees, grid size {grid_size}, dataset {data_index+1}, {n_samples[i]} samples, it took {round_sig(time() - start_time, precision)} seconds", "yellow"))
                     if debug:
                         print(sampling)
 
@@ -507,10 +554,12 @@ if __name__ == '__main__':
                     if not run_refine:
                         break
                     text = f"{'multiparam' if bool(multiparam) else '2-param'} , {population_size} bees, dataset {data_index + 1}, {n_samples[i]} samples "
+                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="z3", alg=2)
                     refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="z3", alg=3)
                     refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="z3", alg=4)
                     refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, alg=5)
 
+                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="dreal", alg=2)
                     refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="dreal", alg=3)
                     refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="dreal", alg=4)
 
@@ -523,7 +572,7 @@ if __name__ == '__main__':
                     start_time = time()
                     mh_results = init_mh(parameters, parameter_domains, functions, data_set, n_samples[i], iterations, 0, is_probability=True, where=True, metadata=False, timeout=mh_timeout)
                     assert isinstance(mh_results, HastingsResults)
-                    print(colored(f"this was MH, {iterations} iterations, {'multiparam' if bool(multiparam) else '2-param'} , {population_size} bees, dataset {data_index+1}, {n_samples[i]} samples took {round(time() - start_time, 4)} seconds", "yellow"))
+                    print(colored(f"this was MH, {iterations} iterations, {'multiparam' if bool(multiparam) else '2-param'} , {population_size} bees, dataset {data_index+1}, {n_samples[i]} samples took {round_sig(time() - start_time, precision)} seconds", "yellow"))
                     if debug:
                         print("# of accepted points", len(mh_results.accepted))
                         if mh_results.last_iter > 0:
@@ -531,4 +580,37 @@ if __name__ == '__main__':
                             iter_time = (time() - start_time) * (iterations / mh_results.last_iter)
                             print("time it would take to finish", iter_time)
                         print()
+
+                ## PRESAMPLED REFINEMENT
+                for i in range(len(n_samples)):
+                    if not run_presampled_refine:
+                        break
+                    text = f"{'presampled multiparam' if bool(multiparam) else '2-param'} , {population_size} bees, dataset {data_index + 1}, {n_samples[i]} samples "
+                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="z3", alg=3, sample_size=21)
+                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="z3", alg=4, sample_size=21)
+                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, alg=5, sample_size=21)
+
+                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="dreal", alg=3, sample_size=21)
+                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="dreal", alg=4, sample_size=21)
+
+                ## MHMH
+                for i in range(len(n_samples)):
+                    if not run_mhmh:
+                        break
+                    start_time = time()
+                    where = None
+                    gui = False
+                    metadata = False
+                    bins = 11
+
+                    a, b = initialise_mhmh(parameters, parameter_domains, data=data_set, functions=functions, sample_size=n_samples[i],
+                                           mh_sampling_iterations=10000, eps=0, silent=silent, debug=debug, bins=bins, metadata=metadata,
+                                           constraints=constraints[i], recursion_depth=max_depth, epsilon=epsilon,
+                                           coverage=coverage, version=4, solver="z3", gui=gui, where=where, is_probability=True)
+
+                    a, b = initialise_mhmh(parameters, parameter_domains, data=data_set, functions=functions, sample_size=n_samples[i],
+                                           mh_sampling_iterations=10000, eps=0, silent=silent, debug=debug, bins=bins, metadata=metadata,
+                                           constraints=constraints[i],  recursion_depth=max_depth, epsilon=epsilon,
+                                           coverage=coverage, version=4, solver="dreal", gui=gui, where=where, is_probability=True)
+                    print()
 
