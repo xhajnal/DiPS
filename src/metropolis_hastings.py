@@ -907,10 +907,10 @@ def manual_log_like_normal(params, theta, functions, data, sample_size, eps=0, i
                 print(colored(f"Function number {index + 1} evaluates in point {theta} out of range [0,1], {point}, switching to non-probability computation", "red"))
                 is_probability = False
 
-        if is_probability:
-            res = res + log_like_probability(point, data_point, sample_size, debug=debug)
-        else:
+        if is_probability is False:
             raise NotImplementedError("Only functions representing probability are implemented so far.")
+        else:
+            res = res + log_like_probability(point, data_point, sample_size, debug=debug)
 
         if str(res) == "-inf":
             warnings.filterwarnings("default")  ## normal state

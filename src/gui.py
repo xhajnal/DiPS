@@ -83,7 +83,7 @@ except Exception as error:
 try:
     from mc_informed import general_create_data_informed_properties
     from load import load_mc_result, find_param, load_data, find_param_old, parse_constraints, parse_functions, parse_params_from_model, parse_weights, parse_data_intervals
-    from common.mathematics import create_intervals
+    from common.mathematics import create_intervals, create_broadest_intervals
     import space
     from refine_space import check_deeper
     from mc import call_prism_files, call_storm
@@ -580,9 +580,9 @@ class Gui(Tk):
         frame_right.columnconfigure(1, weight=1)
         frame_right.pack(side=RIGHT, fill=X)
 
-        label43 = Label(frame_left, text="N_samples, number of samples: ", anchor=W, justify=LEFT)
-        label43.grid(row=0, column=0, sticky=W, padx=4, pady=4)
-        createToolTip(label43, text='Number of samples')
+        label44 = Label(frame_left, text="N_samples, number of samples: ", anchor=W, justify=LEFT)
+        label44.grid(row=0, column=0, sticky=W, padx=4, pady=4)
+        createToolTip(label44, text='Number of samples')
 
         self.n_samples_entry = Entry(frame_left)
         self.n_samples_entry.grid(row=0, column=1)
@@ -639,17 +639,25 @@ class Gui(Tk):
         self.confidence_entry.insert(END, '0.90')
         self.n_samples_entry.insert(END, '60')
 
-        Button(frame_left, text='Compute intervals', command=self.compute_data_intervals).grid(row=6, column=0, sticky=W, padx=4, pady=4)
-        Button(frame_left, text='Open intervals file', command=self.load_data_intervals).grid(row=6, column=1, sticky=W, padx=4, pady=4)
-        Button(frame_left, text='Save intervals', command=self.save_data_intervals).grid(row=6, column=2, sticky=W, padx=4, pady=4)
+        label43 = Label(frame_left, text="Interval method: ", anchor=W, justify=LEFT)
+        label43.grid(row=6, column=0, padx=0)
+        createToolTip(label43, text='Choose from interval method')
 
-        Label(frame_left, text=f"Loaded/computed intervals:", anchor=W, justify=LEFT).grid(row=7, column=0, sticky=W, padx=4, pady=4)
+        self.interval_method_entry = ttk.Combobox(frame_left, values=('CLT', 'Rule of three', 'Agresti-Coull', 'Wilson', 'Clopper_Pearson', 'Jeffreys', 'broadest'))
+        self.interval_method_entry.grid(row=6, column=1)
+        self.interval_method_entry.current(1)
+
+        Button(frame_left, text='Compute intervals', command=self.compute_data_intervals).grid(row=7, column=0, sticky=W, padx=4, pady=4)
+        Button(frame_left, text='Open intervals file', command=self.load_data_intervals).grid(row=7, column=1, sticky=W, padx=4, pady=4)
+        Button(frame_left, text='Save intervals', command=self.save_data_intervals).grid(row=7, column=2, sticky=W, padx=4, pady=4)
+
+        Label(frame_left, text=f"Loaded/computed intervals:", anchor=W, justify=LEFT).grid(row=8, column=0, sticky=W, padx=4, pady=4)
 
         self.data_intervals_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_height() * 0.8 / 40), state=DISABLED)  # height=10, width=30
         # self.data_intervals_text.config(state="disabled")
         # self.data_intervals_text.bind("<FocusOut>", self.refresh_data_intervals)
         self.data_intervals_text.bind("<Key>", lambda x: self.data_intervals_text_modified.set(True) if x.char != "" else None)
-        self.data_intervals_text.grid(row=8, column=0, rowspan=2, columnspan=50, sticky=W, padx=4, pady=4)
+        self.data_intervals_text.grid(row=9, column=0, rowspan=2, columnspan=50, sticky=W, padx=4, pady=4)
         # ttk.Separator(frame_left, orient=VERTICAL).grid(row=0, column=17, rowspan=10, sticky='ns', padx=50, pady=10)
         for i in range(50):
             frame_left.columnconfigure(i, weight=1)
@@ -3564,7 +3572,15 @@ class Gui(Tk):
 
         self.status_set("Intervals are being created ...")
         assert isinstance(self.data, list)
-        self.data_intervals = create_intervals(float(self.confidence_entry.get()), int(self.n_samples_entry.get()), self.data)
+
+        method = self.interval_method_entry.get()
+        ## ('CLT', 'Rule of three', 'Agresti-Coull', 'Wilson', 'Clopper_Pearson', 'Jeffreys', 'broadest')
+        if method == "CLT":
+            self.data_intervals = create_intervals(float(self.confidence_entry.get()), int(self.n_samples_entry.get()), self.data)
+        elif method == "broadest":
+            self.data_intervals = create_broadest_intervals(float(self.confidence_entry.get()), int(self.n_samples_entry.get()), self.data)
+        else:
+            raise NotImplementedError("We are sorry, this option is not implemented so far.")
 
         intervals = ""
         if not self.silent.get():
