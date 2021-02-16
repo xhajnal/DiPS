@@ -418,7 +418,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
 
     Args:
-        region: (list of intervals/space) array of pairs, low and high bound, defining the parameter space to be refined
+        region: (list of intervals or space) array of pairs, low and high bound, defining the parameter space to be refined
         constraints  (list of strings): array of properties
         recursion_depth (Int): max number of recursions to do
         epsilon (float): minimal size of rectangle to be checked
@@ -478,10 +478,10 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         region = space.region
 
         ## Check whether the set of params is equal
-        print("space parameters: ", space.params)
+        print("space parameters: ", space.params) if not silent else None
         globals()["parameters"] = space.params
         parameters = globals()["parameters"]
-        print("parsed parameters: ", parameters)
+        print("parsed parameters: ", parameters) if not silent else None
 
         ## TODO add possible check like this
         # if not sorted(space.params) == sorted(parameters):
@@ -499,8 +499,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                 globals()["parameters"].update(find_param(polynomial))
         globals()["parameters"] = sorted(list(globals()["parameters"]))
         parameters = globals()["parameters"]
-        if debug:
-            print("parsed parameters: ", parameters)
+        print("parsed parameters: ", parameters) if debug else None
 
         ## Regions
         ### Taking care of unchangeable tuples

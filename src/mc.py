@@ -72,8 +72,7 @@ def set_java_heap_win(size):
 
 ## TODO rewrite this without the paths, just files
 def call_prism(args, seq=False, silent: bool = False, model_path=model_path, properties_path=properties_path,
-               prism_output_path=prism_results, std_output_file=False, coverage=False,
-               debug=False):
+               prism_output_path=prism_results, std_output_file=False, coverage=False, debug=False):
     """  Solves problem of calling prism from another directory.
 
     Args:
@@ -318,6 +317,7 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
                 call = f"{file} prop_{N}.pctl {memory}{no_prob_checks}"
                 if model_parameters:
                     call = f"{call}-param {params}"
+                output_file = f"{os.path.splitext(file)[0]}.txt"
                 error = call_prism(call, seq=seq, model_path=model_path, properties_path=properties_path,
                                    std_output_file=os.path.join(output_path, output_file), silent=silent, coverage=coverage)
             elif len(agents_quantities) == 1:

@@ -108,7 +108,7 @@ class MyTestCase(unittest.TestCase):
         parameter_intervals = [(0, 1), (0, 1)]
         functions = ["p**2-2*p+1", "2*q*p**2-2*p**2-2*q*p+2*p", "(-2)*q*p**2+p**2+2*q*p"]
         data = [0.2, 0.5, 0.3]
-        init_mh(params, parameter_intervals, data=data, functions=functions, sample_size=100, mh_sampling_iterations=100, eps=0, debug=True)
+        init_mh(params, parameter_intervals, data=data, functions=functions, sample_size=100, mh_sampling_iterations=100, eps=0, debug=True, is_probability=True)
 
 
 if __name__ == '__main__':

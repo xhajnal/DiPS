@@ -71,7 +71,7 @@ class MyTestCase(unittest.TestCase):
         for population in agents_quantities:
             path1 = os.path.join(cwd, 'models/asynchronous_2.pm')
             path2 = os.path.join(cwd, 'properties/prop_2.pctl')
-            call_prism(f"{path1} {path2} -param p=0:1,q=0:1,alpha=0:1", seq=False, std_output_path=prism_results)
+            call_prism(f"{path1} {path2} -param p=0:1,q=0:1,alpha=0:1", seq=False, prism_output_path=prism_results)
 
     def test_call_prism_files(self):
         agents_quantities = [2, 3]

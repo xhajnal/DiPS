@@ -113,7 +113,8 @@ def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False
                 entries = line.split(",")
                 for entry in entries:
                     if tool.lower() == "storm":
-                        param_intervals.append(parse_interval_bounds(entry))
+                        if refinement:
+                            param_intervals.append(parse_interval_bounds(entry))
                     else:
                         params.append(entry.split("=")[0])
                         interval = entry.split("=")[1]

@@ -8,7 +8,6 @@ from common.config import load_config
 from common.mathematics import get_rectangle_volume
 from common.queue import Queue
 from metropolis_hastings import init_mh, HastingsResults
-from refine_space import private_check_deeper_queue_checking_both
 from space import RefinedSpace
 
 config = load_config()
@@ -240,11 +239,12 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
     time_mhmh_took = time_mhmh_took + time_refinement_took
 
     ## Refinement Visualisation
-    print(colored(f"Refinement of MHMH took {round(time_refinement_took, 2)} seconds", "yellow"))
+    print(colored(f"Refinement of MHMH using alg {version} with {solver} solver took {round(time_refinement_took, 2)} seconds", "yellow"))
 
     space.title = f"using max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{space.get_coverage()}, alg{version}, {solver}"
-    space_shown = space.show(green=True, red=True, sat_samples=False, unsat_samples=False, save=save, where=where,
-                             show_all=not gui, is_mhmh=True)
+    if where is not None:
+        space_shown = space.show(green=True, red=True, sat_samples=False, unsat_samples=False, save=save, where=where,
+                                 show_all=not gui, is_mhmh=True)
     print(colored(f"The whole MHMH took {round(time_mhmh_took, 2)} seconds", "yellow"))
 
     return space, mh_result
