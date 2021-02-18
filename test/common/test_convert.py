@@ -31,12 +31,18 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(ineq_to_constraints(["x+3"], [[0, 1]], decoupled=True), ["x+3 >= 0", "x+3 <= 1"])
         self.assertEqual(ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 2)], decoupled=True), ['x >= 0', 'x <= 1', '2*x >= 0', '2*x <= 2'])
 
-        self.assertEqual(ineq_to_constraints(["x+3"], [], decoupled=True), False)
+        ## No intervals
+        with self.assertRaises(Exception) as context:
+            ineq_to_constraints(["x+3"], [], decoupled=True)
+            self.assertTrue("Constraints cannot be computed" in str(context.exception))
 
         self.assertEqual(ineq_to_constraints(["x+3"], [[0, 1]], decoupled=False), ["0 <= x+3 <= 1"], )
         self.assertEqual(ineq_to_constraints(["x", "2*x"], [Interval(0, 1), Interval(0, 2)], decoupled=False), ['0 <= x <= 1', '0 <= 2*x <= 2'])
 
-        self.assertEqual(ineq_to_constraints(["x+3"], [], decoupled=False), False)
+        ## No intervals
+        with self.assertRaises(Exception) as context:
+            ineq_to_constraints(["x+3"], [], decoupled=False)
+            self.assertTrue("Constraints cannot be computed" in str(context.exception))
 
         ## Bad intervals
         with self.assertRaises(Exception) as context:
@@ -53,14 +59,23 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(ineq_to_constraints([sympy.factor("x+3")], [[0, 1]], decoupled=True), [sympy.factor("x+3 >= 0"), sympy.factor("x+3 <= 1")])
         self.assertEqual(ineq_to_constraints([sympy.factor("x"), sympy.factor("2*x")], [Interval(0, 1), Interval(0, 2)], decoupled=True), [sympy.factor('x >= 0'), sympy.factor('x <= 1'), sympy.factor('2*x >= 0'), sympy.factor('2*x <= 2')])
 
-        self.assertEqual(ineq_to_constraints([sympy.factor("x+3")], [], decoupled=True), False)
+        ## No intervals
+        with self.assertRaises(Exception) as context:
+            ineq_to_constraints([sympy.factor("x+3")], [], decoupled=True)
+        self.assertTrue("Constraints cannot be computed" in str(context.exception))
+        self.assertTrue("does not correspond" in str(context.exception))
+
 
         self.assertEqual(ineq_to_constraints([sympy.factor("x+3")], [[0, 1]], decoupled=False), [sympy.factor("x+3 >= 0"), sympy.factor("x+3 <= 1")])
 
         self.assertEqual(ineq_to_constraints([sympy.factor("x"), sympy.factor("2*x")], [Interval(0, 1), Interval(0, 2)],
                                              decoupled=False), [sympy.factor('x >= 0'), sympy.factor('x <= 1'), sympy.factor('2*x >= 0'), sympy.factor('2*x <= 2')])
 
-        self.assertEqual(ineq_to_constraints([sympy.factor("x+3")], [], decoupled=False), False)
+        ## No intervals
+        with self.assertRaises(Exception) as context:
+            ineq_to_constraints([sympy.factor("x+3")], [], decoupled=False)
+        self.assertTrue("Constraints cannot be computed" in str(context.exception))
+        self.assertTrue("does not correspond" in str(context.exception))
 
         ## Bad intervals
         with self.assertRaises(Exception) as context:
@@ -170,6 +185,9 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(split_constraint("0.7 = p+q < 0.8"), ["0.7", "p+q", "0.8"])
         self.assertEqual(split_constraint("0.7 = p+q"), ["0.7", "p+q", None])
         self.assertEqual(split_constraint("p+q = 0.7"), [None, "p+q", "0.7"])
+
+        self.assertEqual(split_constraint("p < q"), [None, "p", "q"])
+        self.assertEqual(split_constraint("l > m"), [None, "l", "m"])
 
     def test_parse_interval_bounds(self):
         print(colored("Checking parsing of interval bounds", 'blue'))

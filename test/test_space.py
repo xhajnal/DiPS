@@ -2,7 +2,8 @@ import pickle
 import unittest
 import warnings
 
-from src.space import *
+from common.files import pickle_dump
+from space import *
 
 curr_dir = os.path.dirname(__file__)
 
@@ -26,7 +27,8 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(space.get_green_volume(), 0)
         self.assertEqual(space.get_red(), [])
         self.assertEqual(space.get_red_volume(), 0)
-        self.assertEqual(space.get_white(), {1: [[[0, 1]]]})
+        self.assertEqual(list(space.get_white().keys()), [1])
+        self.assertEqual(space.get_white()[1][0].region, [[0, 1]])
         self.assertEqual(space.get_white_volume(), 1)
         self.assertEqual(space.get_nonwhite(), [])
         self.assertEqual(space.get_nonwhite_volume(), 0)
@@ -41,7 +43,8 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(space.get_green_volume(), 0)
         self.assertEqual(space.get_red(), [])
         self.assertEqual(space.get_red_volume(), 0)
-        self.assertEqual(space.get_white(), {2: [[[0, 1], [2, 4]]]})
+        self.assertEqual(list(space.get_white().keys()), [2])
+        self.assertEqual(space.get_white()[2][0].region, [[0, 1], [2, 4]])
         self.assertEqual(space.get_white_volume(), 2)
         self.assertEqual(space.get_nonwhite(), [])
         self.assertEqual(space.get_nonwhite_volume(), 0)
@@ -93,19 +96,19 @@ class MyTestCase(unittest.TestCase):
         space = RefinedSpace((0, 1), ["x"])
 
         ## Setting region of new space
-        space.set_region([0, 2])
-        self.assertEqual(space.get_region(), [0, 2])
+        space.set_region([[0, 2]])
+        self.assertEqual(space.get_region(), [[0, 2]])
 
         ## Setting region of not empty space
-        space.add_red([0, 0.2])
+        space.add_red([[0, 0.2]])
         with self.assertRaises(NotImplementedError):
-            space.set_region([0, 2])
+            space.set_region([[0, 2]])
 
         ## Setting region of space which was made empty
-        space.remove_red([0, 0.2])
+        space.remove_red([[0, 0.2]])
         self.assertEqual(space.is_refined(), False)
-        space.set_region([0, 2])
-        self.assertEqual(space.get_region(), [0, 2])
+        space.set_region([[0, 2]])
+        self.assertEqual(space.get_region(), [[0, 2]])
 
     def test_space_basics(self):
         print(colored("Basic space tests", 'blue'))
@@ -140,40 +143,40 @@ class MyTestCase(unittest.TestCase):
         #        n, epsilon, self.get_coverage(), version, socket.gethostname(), round(time.time() - start_time, 1)))
 
         space.show(f"No green, \n achieved_coverage: {space.get_coverage() * 100}%")
-        self.assertEqual(round(space.get_green_volume(), 1), 0.0)
-        self.assertEqual(round(space.get_red_volume(), 1), 0.0)
-        self.assertEqual(round(space.get_nonwhite_volume(), 1), 0.0)
+        self.assertEqual(float(space.get_green_volume()), 0.0)
+        self.assertEqual(float(space.get_red_volume()), 0.0)
+        self.assertEqual(float(space.get_nonwhite_volume()), 0.0)
 
         space.add_green([[0, 0.5]])
         space.show(f"First half green added,\n achieved_coverage: {space.get_coverage() * 100}%")
-        self.assertEqual(round(space.get_green_volume(), 1), 0.5)
-        self.assertEqual(round(space.get_red_volume(), 1), 0.0)
-        self.assertEqual(round(space.get_nonwhite_volume(), 1), 0.5)
+        self.assertEqual(float(space.get_green_volume()), 0.5)
+        self.assertEqual(float(space.get_red_volume()), 0.0)
+        self.assertEqual(float(space.get_nonwhite_volume()), 0.5)
 
         space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"], ["Real", "Real"], [[[0, 0.5], [0, 0.5]]], [])
         space.show(f"Left bottom quarter green added,\n achieved_coverage: {space.get_coverage() * 100}%")
-        self.assertEqual(round(space.get_green_volume(), 2), 0.25)
-        self.assertEqual(round(space.get_red_volume(), 1), 0.0)
-        self.assertEqual(round(space.get_nonwhite_volume(), 2), 0.25)
+        self.assertEqual(float(space.get_green_volume()), 0.25)
+        self.assertEqual(float(space.get_red_volume()), 0.0)
+        self.assertEqual(float(space.get_nonwhite_volume()), 0.25)
 
         space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"], ["Real", "Real"], [], [[[0, 0.5], [0, 0.5]]])
         space.show(f"Left bottom quarter red added,\n achieved_coverage: {space.get_coverage() * 100}%")
-        self.assertEqual(round(space.get_green_volume(), 1), 0.0)
-        self.assertEqual(round(space.get_red_volume(), 2), 0.25)
-        self.assertEqual(round(space.get_nonwhite_volume(), 2), 0.25)
+        self.assertEqual(float(space.get_green_volume()), 0.0)
+        self.assertEqual(float(space.get_red_volume()), 0.25)
+        self.assertEqual(float(space.get_nonwhite_volume()), 0.25)
 
         space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"], ["Real", "Real"], [[[0, 0.2], [0, 0.2]]], [[[0.5, 0.7], [0.1, 0.3]]])
         space.show(f"One green and one red region added,\n achieved_coverage: {space.get_coverage() * 100}%")
-        self.assertEqual(round(space.get_green_volume(), 2), 0.04)
-        self.assertEqual(round(space.get_red_volume(), 2), 0.04)
-        self.assertEqual(round(space.get_nonwhite_volume(), 2), 0.08)
+        self.assertEqual(float(space.get_green_volume()), 0.04)
+        self.assertEqual(float(space.get_red_volume()), 0.04)
+        self.assertEqual(float(space.get_nonwhite_volume()), 0.08)
 
         space = RefinedSpace([(0, 1), (0, 1)], ["x", "y"], ["Real", "Real"], [[[0, 0.2], [0, 0.2]], [[0.4, 0.6], [0.6, 0.8]]],
                              [[[0.5, 0.7], [0.1, 0.3]], [[0.6, 0.8], [0.8, 1]]])
         space.show(f"Two green and two red regions added,\n  achieved_coverage: {space.get_coverage() * 100}%")
-        self.assertEqual(round(space.get_green_volume(), 2), 0.08)
-        self.assertEqual(round(space.get_red_volume(), 2), 0.08)
-        self.assertEqual(round(space.get_nonwhite_volume(), 2), 0.16)
+        self.assertEqual(float(space.get_green_volume()), 0.08)
+        self.assertEqual(float(space.get_red_volume()), 0.08)
+        self.assertEqual(float(space.get_nonwhite_volume()), 0.16)
 
     def test_add_white_rectangles(self):
         print(colored("Space adding white rectangles", 'blue'))
@@ -219,13 +222,41 @@ class MyTestCase(unittest.TestCase):
     def test_visualisation_multidim(self):
         print(colored("Multidimensional space visualisations tests", 'blue'))
         warnings.warn("This test does not contain any assert, please check the produced visualisations.", RuntimeWarning)
-        space = RefinedSpace([[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]], ['r_0', 'r_1', 'r_2'], ['Real', 'Real', 'Real'], [[(0.75, 1.0), (0.0, 0.5), (0.0, 0.5)]], [[(0.75, 1.0), (0.0, 0.5), (0.5, 1.0)], [(0.75, 1.0), (0.5, 1.0), (0.0, 0.5)], [(0.75, 1.0), (0.5, 1.0), (0.5, 1.0)], [(0.0, 0.25), (0.0, 0.25), (0.0, 0.5)], [(0.25, 0.5), (0.0, 0.25), (0.0, 0.5)], [(0.0, 0.25), (0.0, 0.25), (0.5, 1.0)], [(0.25, 0.5), (0.0, 0.25), (0.5, 1.0)], [(0.0, 0.25), (0.75, 1.0), (0.0, 0.5)], [(0.25, 0.5), (0.75, 1.0), (0.0, 0.5)], [(0.0, 0.25), (0.75, 1.0), (0.5, 1.0)], [(0.25, 0.5), (0.75, 1.0), (0.5, 1.0)], [(0.5, 0.75), (0.0, 0.25), (0.0, 0.5)], [(0.5, 0.75), (0.0, 0.25), (0.5, 1.0)], [(0.5, 0.75), (0.75, 1.0), (0.0, 0.5)], [(0.5, 0.75), (0.75, 1.0), (0.5, 1.0)]], [[(0.0, 0.25), (0.25, 0.5), (0.0, 0.5)], [(0.25, 0.5), (0.25, 0.5), (0.0, 0.5)], [(0.0, 0.25), (0.25, 0.5), (0.5, 1.0)], [(0.25, 0.5), (0.25, 0.5), (0.5, 1.0)], [(0.0, 0.25), (0.5, 0.75), (0.0, 0.5)], [(0.25, 0.5), (0.5, 0.75), (0.0, 0.5)], [(0.0, 0.25), (0.5, 0.75), (0.5, 1.0)], [(0.25, 0.5), (0.5, 0.75), (0.5, 1.0)], [(0.5, 0.75), (0.25, 0.5), (0.0, 0.5)], [(0.5, 0.75), (0.25, 0.5), (0.5, 1.0)], [(0.5, 0.75), (0.5, 0.75), (0.0, 0.5)], [(0.5, 0.75), (0.5, 0.75), (0.5, 1.0)]], [], [], None)
+        # region, params, types = None, rectangles_sat = False, rectangles_unsat = False, rectangles_unknown = None, sat_samples = None, unsat_samples = None, dist_samples = False, true_point = False, title = False, prefer_unsafe = False)
+        space = RefinedSpace([[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]], ['r_0', 'r_1', 'r_2'], ['Real', 'Real', 'Real'],
+                             [[(0.75, 1.0), (0.0, 0.5), (0.0, 0.5)]],
+                             [[(0.75, 1.0), (0.0, 0.5), (0.5, 1.0)], [(0.75, 1.0), (0.5, 1.0), (0.0, 0.5)],
+                              [(0.75, 1.0), (0.5, 1.0), (0.5, 1.0)], [(0.0, 0.25), (0.0, 0.25), (0.0, 0.5)],
+                              [(0.25, 0.5), (0.0, 0.25), (0.0, 0.5)],
+                              [(0.0, 0.25), (0.0, 0.25), (0.5, 1.0)], [(0.25, 0.5), (0.0, 0.25), (0.5, 1.0)],
+                              [(0.0, 0.25), (0.75, 1.0), (0.0, 0.5)], [(0.25, 0.5), (0.75, 1.0), (0.0, 0.5)],
+                              [(0.0, 0.25), (0.75, 1.0), (0.5, 1.0)],
+                              [(0.25, 0.5), (0.75, 1.0), (0.5, 1.0)], [(0.5, 0.75), (0.0, 0.25), (0.0, 0.5)],
+                              [(0.5, 0.75), (0.0, 0.25), (0.5, 1.0)], [(0.5, 0.75), (0.75, 1.0), (0.0, 0.5)],
+                              [(0.5, 0.75), (0.75, 1.0), (0.5, 1.0)]],
+                             [[(0.0, 0.25), (0.25, 0.5), (0.0, 0.5)], [(0.25, 0.5), (0.25, 0.5), (0.0, 0.5)],
+                              [(0.0, 0.25), (0.25, 0.5), (0.5, 1.0)], [(0.25, 0.5), (0.25, 0.5), (0.5, 1.0)],
+                              [(0.0, 0.25), (0.5, 0.75), (0.0, 0.5)],
+                              [(0.25, 0.5), (0.5, 0.75), (0.0, 0.5)], [(0.0, 0.25), (0.5, 0.75), (0.5, 1.0)],
+                              [(0.25, 0.5), (0.5, 0.75), (0.5, 1.0)], [(0.5, 0.75), (0.25, 0.5), (0.0, 0.5)],
+                              [(0.5, 0.75), (0.25, 0.5), (0.5, 1.0)],
+                              [(0.5, 0.75), (0.5, 0.75), (0.0, 0.5)], [(0.5, 0.75), (0.5, 0.75), (0.5, 1.0)]], [], [])
 
         ## Multiple lines connecting values of respective parameter should appear now
         ## TODO - add space with samples
         # space.show(sat_samples=True, unsat_samples=True)
 
         ## Boundaries of parameters should appear now
+        space.show(green=True, red=True)
+
+    def test_mytest(self):
+        print("custom test")
+        warnings.warn("This test does not contain any assert, please check the produced visualisations.",
+                      RuntimeWarning)
+        region = [[0.10833112547121317, 0.16716256090740642], [0.1626640123956038, 0.2816531970502363], [0.1626640123956038, 0.323], [0.1626640123956038, 0.4425], [0.1626640123956038, 0.72], [0.1626640123956038, 0.7], [0, 1], [0, 1], [0, 1], [0, 1]]
+        params = ['r_0', 'r_1', 'r_2', 'r_3', 'r_4', 'r_5', 'r_6', 'r_7', 'r_8', 'r_9']
+        space = RefinedSpace(region, params)
+        pickle_dump(space, "analytical.p")
         space.show(green=True, red=True)
 
 

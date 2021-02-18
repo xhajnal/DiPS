@@ -57,6 +57,38 @@ class MyTestCase(unittest.TestCase):
         sample_space.glob_compress = False
         self.assertEqual(sample_space.check_sample([0, 0]), [None, False])
 
+        ## Single sided constraint
+        sample_space.glob_space = RefinedSpace([(0, 1), (0, 1)], ["p", "q"])
+        sample_space.glob_constraints = ["p < q"]
+        sample_space.glob_compress = True
+        self.assertEqual(sample_space.check_sample([0, 0]), False)
+        self.assertEqual(sample_space.check_sample([0, 0.5]), True)
+        self.assertEqual(sample_space.check_sample([0.5, 0]), False)
+        self.assertEqual(sample_space.check_sample([0.5, 0.5]), False)
+        self.assertEqual(sample_space.check_sample([0.3, 0.3]), False)
+
+        sample_space.glob_compress = False
+        self.assertEqual(sample_space.check_sample([0, 0]), [False])
+        self.assertEqual(sample_space.check_sample([0, 0.5]), [True])
+        self.assertEqual(sample_space.check_sample([0.5, 0]), [False])
+        self.assertEqual(sample_space.check_sample([0.5, 0.5]), [False])
+        self.assertEqual(sample_space.check_sample([0.3, 0.3]), [False])
+
+        sample_space.glob_constraints = ["p > q"]
+        sample_space.glob_compress = True
+        self.assertEqual(sample_space.check_sample([0, 0]), False)
+        self.assertEqual(sample_space.check_sample([0, 0.5]), False)
+        self.assertEqual(sample_space.check_sample([0.5, 0]), True)
+        self.assertEqual(sample_space.check_sample([0.5, 0.5]), False)
+        self.assertEqual(sample_space.check_sample([0.3, 0.3]), False)
+
+        sample_space.glob_compress = False
+        self.assertEqual(sample_space.check_sample([0, 0]), [False])
+        self.assertEqual(sample_space.check_sample([0, 0.5]), [False])
+        self.assertEqual(sample_space.check_sample([0.5, 0]), [True])
+        self.assertEqual(sample_space.check_sample([0.5, 0.5]), [False])
+        self.assertEqual(sample_space.check_sample([0.3, 0.3]), [False])
+
     def test_sample_sat_degree(self):
         print(colored("Testing satisfaction degree of a sample", 'blue'))
         sample_space.glob_sort = False
@@ -112,6 +144,37 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(list(map(lambda x: round(x, 2), sample_space.sample_sat_degree([0.5, 0]))), [0.2, 0.5])
         self.assertEqual(list(map(lambda x: round(x, 2), sample_space.sample_sat_degree([0.5, 0.5]))), [-0.2, 0])
         self.assertEqual(list(map(lambda x: round(x, 2), sample_space.sample_sat_degree([0.3, 0.3]))), [0.2, 0])
+
+        sample_space.glob_space = RefinedSpace([(0, 1), (0, 1)], ["p", "q"])
+        constraints = ["p < q"]
+        constraints = list(map(normalise_constraint, constraints))
+        constraints = split_constraints(constraints)
+        sample_space.glob_constraints = constraints
+
+        sample_space.glob_compress = True
+        self.assertEqual(sample_space.sample_sat_degree([0, 0]), 0)
+        self.assertEqual(sample_space.sample_sat_degree([4, 5]), 1)
+        self.assertEqual(sample_space.sample_sat_degree([5, 4]), -1)
+        sample_space.glob_compress = False
+        self.assertEqual(sample_space.sample_sat_degree([0, 0]), [0])
+        self.assertEqual(sample_space.sample_sat_degree([4, 5]), [1])
+        self.assertEqual(sample_space.sample_sat_degree([5, 4]), [-1])
+
+        constraints = ["p > q"]
+        constraints = list(map(normalise_constraint, constraints))
+        constraints = split_constraints(constraints)
+        sample_space.glob_constraints = constraints
+
+        sample_space.glob_compress = True
+        self.assertEqual(sample_space.sample_sat_degree([0, 0]), 0)
+        self.assertEqual(sample_space.sample_sat_degree([4, 5]), -1)
+        self.assertEqual(sample_space.sample_sat_degree([5, 4]), 1)
+        sample_space.glob_compress = False
+        self.assertEqual(sample_space.sample_sat_degree([0, 0]), [0])
+        self.assertEqual(sample_space.sample_sat_degree([4, 5]), [-1])
+        self.assertEqual(sample_space.sample_sat_degree([5, 4]), [1])
+
+
 
     def test_space_sample(self):
         print(colored("Sampling space test here", 'blue'))

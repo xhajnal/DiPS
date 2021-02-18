@@ -479,7 +479,7 @@ class MyTestCase(unittest.TestCase):
         # check_deeper([(0, 0.5), (0, 0.5)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), 5, 0, 0.95, silent=False, version=5, show_space=show_space)
 
         ## VERY VERY INTERESTING RESULT
-        check_deeper([(0, 1), (0, 1)], ineq_to_constraints(f[2], create_intervals(0.95, 1500, [0.1, 0.3, 0.6])), 14, 0.01 ** 2, 0.997, False, 5, show_space=show_space)
+        # check_deeper([(0, 1), (0, 1)], ineq_to_constraints(f[2], create_intervals(0.95, 1500, [0.1, 0.3, 0.6])), 14, 0.01 ** 2, 0.997, False, 5, show_space=show_space)
 
         print(colored('End of two-param test', 'blue'))
 
@@ -534,7 +534,7 @@ class MyTestCase(unittest.TestCase):
         print("space", space)
 
         ## check_deeper(region, constraints,                                  recursion_depth, epsilon, coverage, silent, version, sample_size=False, debug=False, save=False, title="", where=False, show_space=True, solver="z3", delta=0.001, gui=False):
-        check_deeper(space, ineq_to_constraints(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 15, 0, 0.95, silent=False, version=5, sample_size=3, show_space=show_space)
+        # check_deeper(space, ineq_to_constraints(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 15, 0, 0.95, silent=False, version=5, sample_size=3, show_space=show_space)
         print("space", space)
         print(space.get_coverage())
 
@@ -549,7 +549,7 @@ class MyTestCase(unittest.TestCase):
 
         # check_deeper([[0, 1], [2, 2.5]], ineq_to_constraints(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 20, 0, 0.95, silent=False, version=5, show_space=show_space)
 
-        check_deeper([(0, 1), (2, 3)], ineq_to_constraints(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 15, 0, 0.95, silent=False, version=5, sample_size=11, show_space=show_space)
+        # check_deeper([(0, 1), (2, 3)], ineq_to_constraints(["x", "y"], [Interval(0, 3), Interval(2.5, 3)]), 15, 0, 0.95, silent=False, version=5, sample_size=11, show_space=show_space)
 
         # check_deeper([(0, 0.5), (0, 0.5)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), 5, 0, 0.95, silent=False, version=5, show_space=show_space)
 

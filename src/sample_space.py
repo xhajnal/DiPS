@@ -85,6 +85,8 @@ def sample_sat_degree(parameter_value):
         mid = eval(constraint[1])
         if constraint[2] is None:
             dist = eval(f"{mid} - {eval(constraint[0])}")
+        elif constraint[0] is None:
+            dist = eval(f"{eval(constraint[2])} - {mid}")
         else:
             dist = min(eval(f"{mid} - {eval(constraint[0])}"), eval(f"{eval(constraint[2])} - {mid}"))
 
