@@ -127,7 +127,7 @@ def sample_space(space, constraints, sample_size, compress=False, silent=True, s
     if debug:
         silent = False
 
-    if isinstance(parallel, int):
+    if parallel > 1:
         pool_size = parallel
     else:
         pool_size = multiprocessing.cpu_count() - 1
@@ -171,7 +171,7 @@ def sample_space(space, constraints, sample_size, compress=False, silent=True, s
     glob_compress = compress
     glob_constraints = constraints
 
-    print(colored(f"Sampling initialisation took {round(time() - start_time, 4)} seconds", "yellow"))
+    print(colored(f"Sampling initialisation took {round(time() - start_time, 4)} seconds", "yellow")) if not silent else None
 
     ## ACTUAL SAMPLING
     if parallel and not quantitative:
@@ -229,7 +229,7 @@ def sample_space(space, constraints, sample_size, compress=False, silent=True, s
 
     space.sampling_took(time() - start_time)
     space.title = f"using grid_size:{sample_size}"
-    print(colored(f"Sampling took {round(time()-start_time, 4)} seconds", "yellow"))
+    print(colored(f"Sampling took {round(time()-start_time, 4)} seconds", "yellow")) if not silent else None
 
     if parallel:
         if quantitative:

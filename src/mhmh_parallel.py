@@ -1,9 +1,15 @@
+import itertools
 from copy import copy
 from fractions import Fraction
 from math import floor
 from time import time
 from termcolor import colored
-import refine_space
+
+## My imports
+from common.convert import ineq_to_constraints
+from common.mathematics import create_intervals
+from refine_space import check_deeper
+from refine_space_parallel import check_deeper_parallel
 from common.config import load_config
 from common.space_stuff import get_rectangle_volume
 from common.queue import Queue
@@ -161,18 +167,17 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
     expected_values = mh_sampling_iterations / picks
     print("We expect to see ", expected_values, "per (hype)rectangle") if not silent else None
 
-    ## Split the space based on the MH results
+    ## Initialise and add only rectangles to be refined
     space = RefinedSpace(parameter_intervals, params)
-    space.rectangles_unknown = {rect_size: rectangularised_space}
+    space.rectangles_unknown = {}
     del rectangularised_space
 
     ## Fill the Queue
     if debug:
         print(f"Choosing rectangles to refine:")
-    que = Queue()  ## initialise queue
     picked = 0     ## number of picked rectangles
     sizes = sorted(copy(list(my_new_dictionary.keys())))  ## list of numbers of accepted points per rectangle
-    while picked < picks:  ## TODO choose a threshold of how many rectangles to refine
+    while picked < 1/2*picks:  ## TODO choose a threshold of how many rectangles to refine
         ## Choose left or right side
         if abs(expected_values - sizes[0]) > abs(expected_values - sizes[-1]):
             items = my_new_dictionary[sizes[0]]
@@ -180,8 +185,9 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
                 print(f"Picking highest value {sizes[0]} of rectangle {items} over right value {sizes[-1]}")
             for item in items:
                 item = [list(x) for x in item]
-                que.enqueue([item, constraints, min(recursion_depth, 3), epsilon, coverage, silent, None, solver, delta, debug, gui, ref_timeout])
+                space.add_white(item)
             picked = picked + len(items)
+            del my_new_dictionary[sizes[0]]  ## remove picked size
             sizes = sizes[1:]  ## remove picked size
 
         else:
@@ -190,8 +196,9 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
                 print(f"Picking highest value {sizes[-1]} of rectangles {items} over right value {sizes[0]}")
             for item in items:
                 item = [list(x) for x in item]
-                que.enqueue([item, constraints, min(recursion_depth, 3), epsilon, coverage, silent, None, solver, delta, debug, gui, ref_timeout])
+                space.add_white(item)
             picked = picked + len(items)
+            del my_new_dictionary[sizes[-1]]  ## remove picked size
             sizes = sizes[:-1]  ## remove picked size
 
     sizes = list(reversed(sizes))
@@ -202,18 +209,18 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
                 print(f"Picking a value below 1/4 of expected number accepted points {size} of rectangle {items}")
             for item in items:
                 item = [list(x) for x in item]
-                que.enqueue(
-                    [item, constraints, min(recursion_depth, 3), epsilon, coverage, silent, None, solver, delta, debug,
-                     gui, ref_timeout])
+                space.add_white(item)
             picked = picked + len(items)
-            sizes = sizes[1:]
+            del my_new_dictionary[size]  ## remove picked size
+            sizes = sizes[1:]  ## remove picked size
         else:
             sizes = list(reversed(sizes))
             break
 
     if debug:
         print()
-        print("While all rectangles are:", space.get_white())
+        print("Selected rectangles to be refined:", space.get_white())
+        print("we added", len(space.get_white()[rect_size]), "rectangles")
         print()
 
     ## Optimize memory
@@ -225,15 +232,25 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
     time_mhmh_took = time_mhmh_took + transformation_took
 
     ref_start_time = time()
+    check_deeper_parallel(space, constraints, recursion_depth=0, epsilon=0, coverage=1,
+                          silent=silent, version=version, sample_size=False, debug=debug, save=save, title="",
+                          where=None, show_space=False, solver=solver, delta=delta, gui=False, iterative=False,
+                          timeout=ref_timeout)
 
-    # Call refinement
-    refine_space.call_refine_from_que(space, que, alg=version)
+    ## TODO add the rest of rectangles
+    rectangle_to_be_added = list(itertools.chain.from_iterable(my_new_dictionary.values()))
+    for item in rectangle_to_be_added:
+        space.add_white(item)
 
-    if space.get_coverage() < coverage:
-        refine_space.check_deeper(space, constraints, depth, max(epsilon, space.get_volume()/2**(recursion_depth + 1)), coverage, silent, version,
-                                  sample_size=False, debug=debug, save=save, title="", where=True,
-                                  show_space=False, solver=solver, delta=delta, gui=False, iterative=False,
-                                  timeout=ref_timeout)
+    if debug:
+        print("we added", len(rectangle_to_be_added), "more rectangles")
+
+    epsilon = max(epsilon, space.get_volume() / 2 ** (recursion_depth + 1))
+    check_deeper_parallel(space, constraints, recursion_depth=recursion_depth, epsilon=epsilon, coverage=coverage,
+                          silent=silent, version=version, sample_size=False, debug=debug, save=save, title="",
+                          where=None, show_space=False, solver=solver, delta=delta, gui=False, iterative=False,
+                          timeout=ref_timeout)
+
     del sizes
     del my_new_dictionary
 
@@ -271,27 +288,41 @@ if __name__ == '__main__':
     epsilon = 0
     coverage = 0.95
 
+    ## TODO delete this
+    intervals = create_intervals(float(0.95), int(100), data)
+    constraints = ineq_to_constraints(f, intervals, decoupled=True)
+
     show_matadata = False
     bins = 11
 
     silent = True
     debug = False
     gui = False
-    solver = "z3"
+    version = 2  ## in [2,5]
+    solver = "dreal"
 
     timeout = 3600
 
     start_time = time()
     space, mh_result = initialise_mhmh(params, parameter_intervals, data=data, functions=f, sample_size=100,
-                                       mh_sampling_iterations=1000, eps=0, silent=silent, debug=debug, bins=bins,
+                                       mh_sampling_iterations=10000, eps=0, silent=silent, debug=debug, bins=bins,
                                        is_probability=True, constraints=constraints, metadata=show_matadata,
-                                       recursion_depth=depth, epsilon=epsilon, coverage=coverage, solver=solver, gui=False,
-                                       where=False, timeout=timeout)
+                                       recursion_depth=depth, epsilon=epsilon, coverage=coverage, version=version,
+                                       solver=solver, gui=False, where=False, mh_timeout=timeout)
+    print(f"MHMH took {round(space.time_refinement, 2)} seconds")
+    print()
+
+    ## Parallel refinement for comparison
+    space2 = check_deeper_parallel(parameter_intervals, constraints, -1, epsilon, coverage, silent, version, sample_size=False,
+                                   debug=False, save=False, title="", where=False, show_space=True, solver=solver, delta=0.001,
+                                   gui=False, iterative=False, timeout=timeout)
+    print(f"Parallel refinement took {round(space2.time_refinement, 2)} seconds")
+    print()
 
     ## Normal refinement for comparison
-    space2 = refine_space.check_deeper(parameter_intervals, constraints, -1, epsilon, coverage, silent, 4,
-                                       sample_size=False, debug=False, save=False, title="", where=False,
-                                       show_space=True, solver="z3", delta=0.001, gui=False, iterative=False, timeout=timeout)
+    space3 = check_deeper(parameter_intervals, constraints, -1, epsilon, coverage, silent, version, sample_size=False,
+                          debug=False, save=False, title="", where=False, show_space=True, solver=solver, delta=0.001,
+                          gui=False, iterative=False, timeout=timeout)
 
-    print(f"Standard refinement took {round(space2.time_refinement, 2)} seconds")
+    print(f"Standard refinement took {round(space3.time_refinement, 2)} seconds")
     print()

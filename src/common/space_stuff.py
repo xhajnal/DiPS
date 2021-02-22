@@ -1,6 +1,79 @@
 import copy
+import operator
+from fractions import Fraction
+from functools import reduce
+
 import numpy as np
-from common.mathematics import is_in, cartesian_product
+from mpmath import mpi
+
+from common.mathematics import cartesian_product
+from rectangle import My_Rectangle
+
+
+def is_in(region1, region2):
+    """ Returns True if the region1 is in the region2, returns False otherwise
+
+    Args:
+        region1 (list of pairs): (hyper)space defined by the regions
+        region2 (list of pairs): (hyper)space defined by the regions
+    """
+    if len(region1) is not len(region2):
+        print("The intervals does not have the same size")
+        return False
+
+    for dimension in range(len(region1)):
+        if mpi(region1[dimension]) not in mpi(region2[dimension]):
+            return False
+    return True
+
+
+def get_rectangle_volume(rectangle):
+    """ Computes the volume of the given (hyper)rectangle
+
+    Args:
+        rectangle:  (list of intervals) defining the (hyper)rectangle
+    """
+    intervals = []
+    if isinstance(rectangle, My_Rectangle):
+        rectangle = rectangle.region
+
+    ## If there is empty rectangle
+    if not rectangle:
+        raise Exception("Empty rectangle has no volume")
+    for interval in rectangle:
+        intervals.append(Fraction(str(interval[1])) - Fraction(str(interval[0])))
+
+    ## Python 3.8+
+    product = reduce(operator.mul, intervals, 1)
+    ## Python 3.1-7
+    # product = prod(intervals)
+
+    # if isinstance(product, np.float64):
+    #     product = float(product)
+
+    return product
+
+
+def split_by_longest_dimension(region):
+    """ Splits given region, (hyper)rectangle, into two by splitting the longest dimension in halves """
+    index, maximum = 0, 0
+    for i in range(len(region)):
+        value = region[i][1] - region[i][0]
+        if value > maximum:
+            index = i
+            maximum = value
+    low = region[index][0]
+    high = region[index][1]
+
+    ## Compute the half of region
+    threshold = low + (high - low) / 2
+
+    ##  Update space
+    model_low = copy.deepcopy(region)
+    model_low[index] = (low, threshold)
+    model_high = copy.deepcopy(region)
+    model_high[index] = (threshold, high)
+    return model_low, model_high, index, threshold
 
 
 def refine_by(region1, region2, debug: bool = False):

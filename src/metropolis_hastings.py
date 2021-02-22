@@ -874,7 +874,7 @@ def manual_log_like_normal(params, theta, functions, data, sample_size, eps=0, i
     res = 0
 
     if parallel:
-        if isinstance(parallel, int):
+        if parallel > 1:
             pool_size = parallel
         else:
             pool_size = multiprocessing.cpu_count() - 1
@@ -1041,8 +1041,8 @@ def metropolis_hastings(params, parameter_intervals, param_init, functions, data
 
 
 def init_mh(params, parameter_intervals, functions, data, sample_size: int, mh_sampling_iterations: int, eps=0,
-            sd=0.15, theta_init=False, is_probability=None, where=False, progress=False, burn_in=False, bins=20, timeout=False,
-            debug=False, metadata=True, draw_plot=False):
+            sd=0.15, theta_init=False, is_probability=None, where=False, progress=False, burn_in=False, bins=20, timeout=0,
+            silent=False, debug=False, metadata=True, draw_plot=False):
     """ Initialisation method for Metropolis Hastings
 
     Args:
@@ -1061,6 +1061,7 @@ def init_mh(params, parameter_intervals, functions, data, sample_size: int, mh_s
         burn_in (number): fraction or count of how many samples will be trimmed from beginning
         bins (int): number of segments per dimension in the output plot
         timeout (int): timeout in seconds (0 for no timeout)
+        silent (bool): if silent printed output is set to minimum
         debug (bool): if True extensive print will be used
         metadata (bool): if True metadata will be plotted
         draw_plot (Callable): function showing intermediate plots
@@ -1115,30 +1116,30 @@ def init_mh(params, parameter_intervals, functions, data, sample_size: int, mh_s
     #     print("samples", samples)
     #
     #     data = np.array(samples)[np.random.randint(0, sample_size, sample_size)]
-    print("data", data)
-    print("Initial parameter point: ", theta_init)
+    print("data", data) if not silent else None
+    print("Initial parameter point: ", theta_init) if not silent else None
 
-    print(colored(f"Initialisation of Metropolis-Hastings took {round(time() - start_time, 4)} seconds", "yellow"))
+    print(colored(f"Initialisation of Metropolis-Hastings took {round(time() - start_time, 4)} seconds", "yellow"))  if not silent else None
     ## MAIN LOOP
     #                    metropolis_hastings(params, parameter_intervals, param_init, functions, data, sample_size, iterations,        eps,     sd,      progress=False,      timeout=0,  debug=False):
     accepted, rejected = metropolis_hastings(params, parameter_intervals, theta_init, functions, data, sample_size, mh_sampling_iterations, eps=eps, sd=sd, is_probability=is_probability, progress=progress, timeout=timeout, debug=debug)
 
-    print(colored(f"Metropolis-Hastings took {round(time()-start_time, 4)} seconds", "yellow"))
+    print(colored(f"Metropolis-Hastings took {round(time()-start_time, 4)} seconds", "yellow")) if not silent else None
 
     globals()["mh_results"].set_accepted(accepted)
     globals()["mh_results"].set_rejected(rejected)
 
-    print("accepted.shape", accepted.shape)
+    print("accepted.shape", accepted.shape) if not silent else None
     if len(accepted) == 0:
         print("Metropolis-Hastings, no accepted point found")
         return False
 
     ## Dumping results
-    print(f"Set of accepted points is stored here: {tmp_dir}/accepted.p")
+    print(f"Set of accepted points is stored here: {tmp_dir}/accepted.p") if not silent else None
     pickle_dump(accepted, os.path.join(tmp_dir, f"accepted.p"))
-    print(f"Set of rejected points is stored here: {tmp_dir}/rejected.p")
+    print(f"Set of rejected points is stored here: {tmp_dir}/rejected.p") if not silent else None
     pickle_dump(rejected, os.path.join(tmp_dir, f"rejected.p"))
-    print(f"Whole class is stored here: {tmp_dir}/mh_class.p")
+    print(f"Whole class is stored here: {tmp_dir}/mh_class.p") if not silent else None
     pickle_dump(globals()["mh_results"], os.path.join(tmp_dir, f"mh_class.p"))
 
     ## Showing metadata visualisations

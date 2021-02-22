@@ -7,7 +7,8 @@ from os.path import basename, isfile
 from sympy import factor
 from time import time
 
-import refine_space
+from refine_space import check_deeper
+from refine_space_parallel import check_deeper_parallel
 from common.convert import ineq_to_constraints
 from common.files import pickle_load
 from common.mathematics import create_intervals
@@ -15,7 +16,7 @@ from load import load_data, get_f, parse_params_from_model
 from mc import call_storm, call_prism_files
 from mc_informed import general_create_data_informed_properties
 from metropolis_hastings import init_mh, HastingsResults
-from mhmh import initialise_mhmh
+from mhmh_parallel import initialise_mhmh
 from space import RefinedSpace
 from optimize import *
 from common.config import load_config
@@ -34,22 +35,23 @@ tmp = spam["tmp"]
 sys.setrecursionlimit(4000000)
 
 ## SET OF RUNS
-run_prism_benchmark = True
+run_prism_benchmark = False
 run_semisyn = True
 shallow = True  ## only a single setting will be chosen from a set within the benchmark
 
 ## SET METHODS
-run_optimise = True
-run_sampling = True
+run_optimise = False
+run_sampling = False
 run_refine = True
-run_mh = True
-run_lifting = True
-run_presampled_refine = True
-run_mhmh = True
+run_mh = False
+run_lifting = False
+run_presampled_refine = False
+run_mhmh = False
 
 ## GLOBAL SETTINGS
 model_checker = "storm"  ## choose from "prism", "storm", "both"
 precision = 4  ## number of decimal points to show
+repetitions = 5  ## number of runs for each setting
 
 global debug
 globals()['debug'] = False
@@ -70,13 +72,31 @@ coverage = spam["coverage"]  # 0.95
 epsilon = 0
 refine_timeout = spam["refine_timeout"]  # 3600
 
+## PRESAMPLED REFINEMENT SETTINGS
+ref_sample_size = 21
+
 ## MH SETTINGS
+mh_bins = 11  ## number of bins per dimension
 iterations = spam["mh_iterations"]  # 500000
 mh_timeout = spam["mh_timeout"]  # 3600
+mh_where = None  ## skip showing figures
+mh_gui = False  ## skip showing progress
+mh_metadata = False  ## skip showing metadata
+
+## MHMH SETTINGS
+mhmh_bins = 11  ## number of bins per dimension
+mhmh_iterations = 1000
+mhmh_timeout = 3600
+mhmh_where = None  ## skip showing figures
+mhmh_gui = False  ## skip showing progress
+mhmh_metadata = False  ## skip showing metadata
+
 del spam
 
 
 def round_sig(number, precision=precision):
+    if number == 0.0:
+        return number
     return round(number, precision - int(math.floor(math.log10(abs(number)))) - 1)
 
 
@@ -169,7 +189,8 @@ def compute_functions(model_file, property_file, output_path=False, parameter_do
                    time=True, silent=silent)
 
 
-def refine(text, parameters, parameter_domains, constraints, timeout, silent, debug, alg=4, solver="z3", sample_size=False, repetitions=5):
+def repeat_refine(text, parameters, parameter_domains, constraints, timeout, silent, debug, alg=4, solver="z3",
+                  sample_size=False, repetitions=repetitions, parallel=True):
     """ Runs space refinement
 
     Args
@@ -183,20 +204,38 @@ def refine(text, parameters, parameter_domains, constraints, timeout, silent, de
         alg (Int): version of the algorithm to be used
         solver (string): specified solver, allowed: z3, dreal
         sample_size (Int or bool): number of samples in dimension used for presampling, False for no presampling
+        repetitions (Int): number of runs per setting
+        parallel (bool): flag whether to run in parallel mode
     """
     print(colored(f"Refining, {text}", "green"))
-    print("max_depth", max_depth, "coverage", coverage, "epsilon", epsilon, "alg", alg, "solver", solver, "current time is: ", datetime.now())
+    print("max_depth", max_depth, "coverage", coverage, "epsilon", epsilon, "alg", colored(alg, "green"), "solver", colored(solver, "green"), "current time is: ", datetime.now())
 
     avrg_time, avrg_check_time, avrg_smt_time = 0, 0, 0
 
     for run in range(repetitions):
         space = RefinedSpace(parameter_domains, parameters)
-        spam = refine_space.check_deeper(space, constraints[i], max_depth, epsilon=epsilon, coverage=coverage,
-                                         silent=silent, version=alg, sample_size=sample_size, debug=debug, save=False,
-                                         solver=solver, delta=0.01, gui=False, show_space=debug, iterative=False, timeout=timeout)
+        if parallel:
+            try:
+                spam = check_deeper_parallel(space, constraints[i], max_depth, epsilon=epsilon, coverage=coverage,
+                                             silent=silent, version=alg, sample_size=sample_size, debug=debug, save=False,
+                                             solver=solver, delta=0.01, gui=False, show_space=debug, iterative=False,
+                                             parallel=parallel, timeout=timeout)
+            except NotImplementedError:
+                print(colored("skipping this, not implemented", "blue"))
+        else:
+            spam = check_deeper(space, constraints[i], max_depth, epsilon=epsilon, coverage=coverage,
+                                silent=silent, version=alg, sample_size=sample_size, debug=debug, save=False,
+                                solver=solver, delta=0.01, gui=False, show_space=debug, iterative=False, timeout=timeout)
         print("coverage reached", spam.get_coverage()) if not silent else None
         if debug:
             print("refined space", spam.nice_print())
+
+        sys.stdout.write(f"{run + 1}/{repetitions}, ")
+
+        if avrg_time/(run + 1) > timeout:
+            print(colored(f"Timeout reached,  run number {run+1} with time {space.time_last_refinement}", "red"))
+            avrg_time = 99999999999999999
+            break
 
         avrg_time += space.time_last_refinement
         try:
@@ -221,9 +260,44 @@ def refine(text, parameters, parameter_domains, constraints, timeout, silent, de
         pass
 
 
+def repeat_mhmh(text, parameters, parameter_domains, data, functions, sample_size, mh_sampling_iterations, eps, silent,
+                debug, bins, metadata, constraints, recursion_depth, epsilon, coverage, version, solver, gui, where,
+                is_probability, repetitions=repetitions):
+
+    ## TODO add info on what is running
+    print(colored(f"{text}", "green"))
+    print("max_depth", max_depth, "coverage", coverage, "epsilon", epsilon, "alg", colored(version, "green"), "solver", colored(solver, "green"), "current time is: ", datetime.now())
+
+    avrg_time = 0
+    for run in range(repetitions):
+        #                  initialise_mhmh(params, parameter_intervals, functions, constraints, data, sample_size, mh_sampling_iterations,
+        #                                  eps=0, sd=0.15, theta_init=False, is_probability=None, where=False, progress=False, burn_in=False,
+        #                                  bins=20, timeout=False, debug=False, metadata=True, draw_plot=False, save=False, silent=True,
+        #                                  recursion_depth=10, epsilon=0.001, delta=0.001, coverage=0.95, version=4, solver="z3", gui=False
+        space, mh_result = initialise_mhmh(parameters, parameter_domains, functions=functions, constraints=constraints,
+                                           data=data, sample_size=sample_size, mh_sampling_iterations=mh_sampling_iterations,
+                                           eps=eps, is_probability=is_probability, where=where, bins=bins, mh_timeout=mhmh_timeout,
+                                           silent=silent, debug=debug, metadata=metadata, recursion_depth=recursion_depth, epsilon=epsilon,
+                                           coverage=coverage, version=version, solver=solver, gui=gui, ref_timeout=refine_timeout)
+        sys.stdout.write(f"{run + 1}/{repetitions}, ")
+
+        if avrg_time/(run + 1) > mhmh_timeout:
+            print(colored(f"Timeout reached,  run number {run+1} with time {mh_result.time_it_took + space.time_refinement}, MH {mh_result.time_it_took}, refinement{space.time_refinement}", "red"))
+            avrg_time = 99999999999999999
+            break
+
+        avrg_time += mh_result.time_it_took + space.time_refinement
+
+    avrg_time = avrg_time/repetitions
+    if repetitions > 1:
+        print(colored(f"Average time of {repetitions} runs is {round_sig(avrg_time)}", "yellow"))
+    else:
+        print(colored(f"MHMH took {round_sig(avrg_time)}", "yellow"))
+
+
 if __name__ == '__main__':
     ## PRISM BENCHMARKS
-    test_cases = ["crowds", "brp", "nand", "Knuth", "zeroconf"]  ## ["crowds", "brp", "nand", "Knuth", "zeroconf"]
+    test_cases = ["zeroconf"]  ## ["crowds", "brp", "nand", "Knuth", "zeroconf"]
     for test_case in test_cases:
         ## Skip PRISM BENCHMARKS?
         if not run_prism_benchmark:
@@ -371,15 +445,36 @@ if __name__ == '__main__':
                 for i in range(len(n_samples)):
                     if not run_refine:
                         break
-                    refine(f"dataset {data_set}, {n_samples[i]} samples", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=2, solver="z3")
-                    refine(f"dataset {data_set}, {n_samples[i]} samples", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=3, solver="z3")
-                    refine(f"dataset {data_set}, {n_samples[i]} samples", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=4, solver="z3")
-                    refine(f"dataset {data_set}, {n_samples[i]} samples", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=5)
+                    text = f"dataset {data_set}, {n_samples[i]} samples"
+                    if not shallow:
+                        repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=2, solver="z3")
+                        repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=2, solver="dreal")
 
-                    refine(f"dataset {data_set}, {n_samples[i]} samples", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=2, solver="dreal")
-                    refine(f"dataset {data_set}, {n_samples[i]} samples ", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=3, solver="dreal")
-                    refine(f"dataset {data_set}, {n_samples[i]} samples", parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=4, solver="dreal")
+                        repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=3, solver="z3")
+                        repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=3, solver="dreal")
+                    
+                    repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=4, solver="z3")
+                    repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=4, solver="dreal")
 
+                    repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=5)
+                    
+                ## PRESAMPLED REFINEMENT
+                for i in range(len(n_samples)):
+                    if not run_presampled_refine:
+                        break
+                    text = f"Presampled, dataset {data_set}, {n_samples[i]} samples"
+                    if not shallow:
+                        repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=2, solver="z3", sample_size=ref_sample_size)
+                        repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=2, solver="dreal", sample_size=ref_sample_size)
+
+                        repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=3, solver="z3", sample_size=ref_sample_size)
+                        repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=3, solver="dreal", sample_size=ref_sample_size)
+                        
+                    repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=4, solver="z3", sample_size=ref_sample_size)
+                    repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=4, solver="dreal", sample_size=ref_sample_size)
+
+                    repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent, debug, alg=5, sample_size=ref_sample_size)
+                    
                 ## METROPOLIS-HASTINGS
                 # space = RefinedSpace(parameter_domains, parameters)
                 ## TODO more indices of n_samples
@@ -387,7 +482,9 @@ if __name__ == '__main__':
                     if not run_mh:
                         break
                     start_time = time()
-                    mh_results = init_mh(parameters, parameter_domains, functions, data_set, n_samples[i], iterations, 0, is_probability=is_probability, where=True, metadata=False, timeout=mh_timeout)
+                    mh_results = init_mh(parameters, parameter_domains, functions, data_set, n_samples[i], iterations, 0,
+                                         silent=silent, debug=debug, is_probability=is_probability, where=True,
+                                         metadata=False, timeout=mh_timeout)
                     assert isinstance(mh_results, HastingsResults)
                     print(colored(
                         f"this was MH, {iterations} iterations, dataset {data_set}, # of samples, {n_samples[i]} took {round_sig(time() - start_time, precision)} seconds", "yellow"))
@@ -404,15 +501,24 @@ if __name__ == '__main__':
                     if not run_mhmh:
                         break
                     start_time = time()
-                    a, b = initialise_mhmh(parameters, parameter_domains, data=[], functions=functions, sample_size=100,
-                                           mh_sampling_iterations=1000, eps=0, silent=silent, debug=debug, bins=11,
-                                           constraints=constraints, recursion_depth=max_depth, epsilon=epsilon,
-                                           coverage=coverage, version=4, solver="z3", gui=False, where=False)
+                    text = f"MHMH, dataset {data_set}, {n_samples[i]} samples"
+                    repeat_mhmh(text, parameters, parameter_domains, data=data_set, functions=functions,
+                                sample_size=n_samples[i], mh_sampling_iterations=mhmh_iterations, eps=0, silent=silent,
+                                debug=debug, bins=mhmh_bins, metadata=mhmh_metadata, constraints=constraints[i],
+                                recursion_depth=max_depth, epsilon=epsilon, coverage=coverage, version=4, solver="z3",
+                                gui=mhmh_gui, where=mhmh_where, is_probability=True, repetitions=repetitions)
 
-                    a, b = initialise_mhmh(parameters, parameter_domains, data=[], functions=functions, sample_size=100,
-                                           mh_sampling_iterations=1000, eps=0, silent=silent, debug=debug, bins=11,
-                                           constraints=constraints,  recursion_depth=max_depth, epsilon=epsilon,
-                                           coverage=coverage, version=4, solver="dreal", gui=False, where=False)
+                    repeat_mhmh(text, parameters, parameter_domains, data=data_set, functions=functions,
+                                sample_size=n_samples[i], mh_sampling_iterations=mhmh_iterations, eps=0, silent=silent,
+                                debug=debug, bins=mhmh_bins, metadata=mhmh_metadata, constraints=constraints[i],
+                                recursion_depth=max_depth, epsilon=epsilon, coverage=coverage, version=4, solver="dreal",
+                                gui=mhmh_gui, where=mhmh_where, is_probability=True, repetitions=repetitions)
+
+                    repeat_mhmh(text, parameters, parameter_domains, data=data_set, functions=functions,
+                                sample_size=n_samples[i], mh_sampling_iterations=mhmh_iterations, eps=0, silent=silent,
+                                debug=debug, bins=mhmh_bins, metadata=mhmh_metadata, constraints=constraints[i],
+                                recursion_depth=max_depth, epsilon=epsilon, coverage=coverage, version=5, solver=None,
+                                gui=mhmh_gui, where=mhmh_where, is_probability=True, repetitions=repetitions)
 
                 ## LIFTING WITH STORM HERE
                 storm_parameter_domains = copy(parameter_domains)
@@ -554,14 +660,17 @@ if __name__ == '__main__':
                     if not run_refine:
                         break
                     text = f"{'multiparam' if bool(multiparam) else '2-param'} , {population_size} bees, dataset {data_index + 1}, {n_samples[i]} samples "
-                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="z3", alg=2)
-                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="z3", alg=3)
-                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="z3", alg=4)
-                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, alg=5)
+                    if not shallow:
+                        repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="z3", alg=2)
+                        repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="dreal", alg=2)
 
-                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="dreal", alg=2)
-                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="dreal", alg=3)
-                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="dreal", alg=4)
+                        repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="z3", alg=3)
+                        repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="dreal", alg=3)
+                        
+                    repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="z3", alg=4)
+                    repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="dreal", alg=4)
+
+                    repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, alg=5)
 
                 ## METROPOLIS-HASTINGS
                 # space = RefinedSpace(parameter_domains, parameters)
@@ -570,7 +679,9 @@ if __name__ == '__main__':
                     if not run_mh:
                         break
                     start_time = time()
-                    mh_results = init_mh(parameters, parameter_domains, functions, data_set, n_samples[i], iterations, 0, is_probability=True, where=True, metadata=False, timeout=mh_timeout)
+                    mh_results = init_mh(parameters, parameter_domains, functions, data_set, n_samples[i], iterations, 0,
+                                         silent=silent, debug=debug, is_probability=True, where=True, metadata=False,
+                                         timeout=mh_timeout)
                     assert isinstance(mh_results, HastingsResults)
                     print(colored(f"this was MH, {iterations} iterations, {'multiparam' if bool(multiparam) else '2-param'} , {population_size} bees, dataset {data_index+1}, {n_samples[i]} samples took {round_sig(time() - start_time, precision)} seconds", "yellow"))
                     if debug:
@@ -586,31 +697,41 @@ if __name__ == '__main__':
                     if not run_presampled_refine:
                         break
                     text = f"{'presampled multiparam' if bool(multiparam) else '2-param'} , {population_size} bees, dataset {data_index + 1}, {n_samples[i]} samples "
-                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="z3", alg=3, sample_size=21)
-                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="z3", alg=4, sample_size=21)
-                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, alg=5, sample_size=21)
+                    if not shallow:
+                        repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="z3", alg=2, sample_size=ref_sample_size)
+                        repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="dreal", alg=2, sample_size=ref_sample_size)
 
-                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="dreal", alg=3, sample_size=21)
-                    refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="dreal", alg=4, sample_size=21)
+                        repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="z3", alg=3, sample_size=ref_sample_size)
+                        repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="dreal", alg=3, sample_size=ref_sample_size)
+
+                    repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="z3", alg=4, sample_size=ref_sample_size)
+                    repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, solver="dreal", alg=4, sample_size=ref_sample_size)
+
+                    repeat_refine(text, parameters, parameter_domains, constraints, refine_timeout, silent=silent, debug=debug, alg=5, sample_size=ref_sample_size)
 
                 ## MHMH
                 for i in range(len(n_samples)):
                     if not run_mhmh:
                         break
                     start_time = time()
-                    where = None
-                    gui = False
-                    metadata = False
-                    bins = 11
+                    text = f"MHMH, dataset {data_set}, {n_samples[i]} samples"
 
-                    a, b = initialise_mhmh(parameters, parameter_domains, data=data_set, functions=functions, sample_size=n_samples[i],
-                                           mh_sampling_iterations=10000, eps=0, silent=silent, debug=debug, bins=bins, metadata=metadata,
-                                           constraints=constraints[i], recursion_depth=max_depth, epsilon=epsilon,
-                                           coverage=coverage, version=4, solver="z3", gui=gui, where=where, is_probability=True)
+                    repeat_mhmh(text, parameters, parameter_domains, data=data_set, functions=functions,
+                                sample_size=n_samples[i], mh_sampling_iterations=mhmh_iterations, eps=0, silent=silent, debug=debug,
+                                bins=mhmh_bins, metadata=mhmh_metadata, constraints=constraints[i], recursion_depth=max_depth,
+                                epsilon=epsilon, coverage=coverage, version=4, solver="z3", gui=mhmh_gui, where=mhmh_where,
+                                is_probability=True, repetitions=repetitions)
 
-                    a, b = initialise_mhmh(parameters, parameter_domains, data=data_set, functions=functions, sample_size=n_samples[i],
-                                           mh_sampling_iterations=10000, eps=0, silent=silent, debug=debug, bins=bins, metadata=metadata,
-                                           constraints=constraints[i],  recursion_depth=max_depth, epsilon=epsilon,
-                                           coverage=coverage, version=4, solver="dreal", gui=gui, where=where, is_probability=True)
+                    repeat_mhmh(text, parameters, parameter_domains, data=data_set, functions=functions,
+                                sample_size=n_samples[i], mh_sampling_iterations=mhmh_iterations, eps=0, silent=silent, debug=debug,
+                                bins=mhmh_bins, metadata=mhmh_metadata, constraints=constraints[i], recursion_depth=max_depth,
+                                epsilon=epsilon, coverage=coverage, version=4, solver="dreal", gui=mhmh_gui, where=mhmh_where,
+                                is_probability=True, repetitions=repetitions)
+
+                    repeat_mhmh(text, parameters, parameter_domains, data=data_set, functions=functions,
+                                sample_size=n_samples[i], mh_sampling_iterations=mhmh_iterations, eps=0, silent=silent, debug=debug,
+                                bins=mhmh_bins, metadata=mhmh_metadata, constraints=constraints[i], recursion_depth=max_depth,
+                                epsilon=epsilon, coverage=coverage, version=5, solver=None, gui=mhmh_gui, where=mhmh_where,
+                                is_probability=True, repetitions=repetitions)
                     print()
 

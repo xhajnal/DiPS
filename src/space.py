@@ -13,10 +13,11 @@ from matplotlib.ticker import MaxNLocator
 from termcolor import colored  ## Colored output
 
 ## Importing my code
-from common.mathematics import get_rectangle_volume
+from common.space_stuff import get_rectangle_volume
 from sample_n_visualise import visualise_by_param  ## Multidimensional refinement proxy
 from common.document_wrapper import DocumentWrapper  ## Text wrapper for figure tight layout
 from common.config import load_config
+from rectangle import My_Rectangle
 
 spam = load_config()
 results_dir = spam["results"]
@@ -147,7 +148,7 @@ class RefinedSpace:
         ## UNKNOWN RECTANGLES
         # print("rectangles_unknown", rectangles_unknown)
         if rectangles_unknown is None:
-            self.rectangles_unknown = {get_rectangle_volume(self.region): [self.region]}
+            self.rectangles_unknown = {get_rectangle_volume(self.region): [My_Rectangle(self.region, True)]}
         elif not isinstance(rectangles_unknown, Iterable):
             raise Exception("Given rectangles_unknown is not iterable")
         elif isinstance(rectangles_unknown, dict):
@@ -159,9 +160,9 @@ class RefinedSpace:
             for rectangle in rectangles_unknown:
                 volume = get_rectangle_volume(rectangle)
                 if volume in self.rectangles_unknown.keys():
-                    self.rectangles_unknown[volume].append(rectangle)
+                    self.rectangles_unknown[volume].append(My_Rectangle(rectangle, True))
                 else:
-                    self.rectangles_unknown[volume] = [rectangle]
+                    self.rectangles_unknown[volume] = [My_Rectangle(rectangle, True)]
         elif rectangles_unknown is False:
             self.rectangles_unknown = dict()
         else:
@@ -217,6 +218,8 @@ class RefinedSpace:
         self.time_sampling = 0
         self.time_last_refinement = 0
         self.time_refinement = 0
+        self.time_check = 0
+        self.time_smt = 0
 
         self.prefer_unsafe = prefer_unsafe
 
@@ -709,7 +712,7 @@ class RefinedSpace:
             return self.rectangles_unknown
         rectangles_unknown = []
         for key in self.rectangles_unknown.keys():
-            rectangles_unknown.extend(self.rectangles_unknown[key])
+            rectangles_unknown.extend(list(map(lambda x: x.region, self.rectangles_unknown[key])))
         return rectangles_unknown
 
         ## Old implementation (slower)
@@ -757,6 +760,10 @@ class RefinedSpace:
             return 0
         else:
             volume = 0
+            if isinstance(self.rectangles_unknown, list):
+                for item in self.rectangles_unknown:
+                    volume = volume + get_rectangle_volume(item)
+                return volume
             for item in list(self.rectangles_unknown.keys()):
                 volume = volume + item*len(self.rectangles_unknown[item])
             return volume
@@ -784,7 +791,8 @@ class RefinedSpace:
 
     def get_coverage(self, fract=False):
         """ Returns proportion of nonwhite subspace (coverage) """
-        coverage = (1 - self.get_white_volume()) / self.get_volume()
+        volume = self.get_volume()
+        coverage = (volume - self.get_white_volume()) / volume
         if fract:
             return coverage
         else:
@@ -808,7 +816,7 @@ class RefinedSpace:
 
     def is_refined(self):
         """ Answers whether the space is refined, refinement was run"""
-        return bool((len(self.rectangles_unknown) != 1) or self.rectangles_sat or self.rectangles_unsat)
+        return bool((self.get_flat_white() != [self.region]) or self.rectangles_sat or self.rectangles_unsat)
 
     def is_sampled(self):
         """ Answers whether the space is sampled, sampling was run"""
@@ -843,7 +851,7 @@ class RefinedSpace:
         if self.is_refined():
             raise NotImplementedError("Changing region of already refined space not implemented yet, sorry!")
         else:
-            self.rectangles_unknown = [region]
+            self.rectangles_unknown = {get_rectangle_volume(region): [My_Rectangle(region, True)]}
             self.region = region
 
     def add_green(self, green):
@@ -867,8 +875,15 @@ class RefinedSpace:
         self.rectangles_unsat_to_show.extend(reds)
 
     def add_white(self, white):
-        """ Adds white (hyper)rectangle """
+        """ Adds white (hyper)rectangle
+
+        Args:
+            white (rectangle or My_rectangle): a rectangle to be add to white space
+        """
         volume = get_rectangle_volume(white)
+        if not isinstance(white, My_Rectangle):
+            white = My_Rectangle(white, is_white=True)
+
         if volume in self.rectangles_unknown.keys():
             self.rectangles_unknown[volume].append(white)
         else:
@@ -917,15 +932,18 @@ class RefinedSpace:
             pass
 
     def remove_white(self, white):
-        """ Removes white (hyper)rectangle """
+        """ Removes white (hyper)rectangle
+
+        Args:
+            white (rectangle or My_rectangle): a rectangle to be removed from white space
+        """
         try:
             volume = get_rectangle_volume(white)
-            # get str id
-            # volume = float(volume)
+
             ## If there is only a single rectangle in list of volume=volume
             if len(self.rectangles_unknown[volume]) == 1:
                 ## If it is the rectangle which I want to remove
-                if self.rectangles_unknown[volume][0] == white:
+                if self.rectangles_unknown[volume][0].region == white:
                     ## Drop the whole item
                     self.rectangles_unknown.pop(volume)
                 else:
@@ -933,7 +951,15 @@ class RefinedSpace:
                     return False
             else:
                 ## Else remove the item from the list
-                self.rectangles_unknown[volume].remove(white)
+                # self.rectangles_unknown[volume].remove(white)
+                found = False
+                for index, item in enumerate(self.rectangles_unknown[volume]):
+                    if item.region == white:
+                        del self.rectangles_unknown[volume][index]
+                        found = True
+                if not found:
+                    raise Exception(f"White {white} not found!")
+                del found
         except Exception as ex:
             print(ex)
             print("Could not remove white area ", white)

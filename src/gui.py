@@ -1118,9 +1118,15 @@ class Gui(Tk):
         pyplt.rcParams["savefig.directory"] = self.figures_dir
 
         os.chdir(workspace)
+
+        try:
+            os.mkdir(os.path.join(self.figures_dir, "tmp"))
+        except FileExistsError:
+            pass
+        
         try:
             os.mkdir(os.path.join(self.refinement_results, "tmp"))
-        except FileExistsError as err:
+        except FileExistsError:
             pass
 
     ## LOGIC

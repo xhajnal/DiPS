@@ -1,17 +1,11 @@
 import math
 import multiprocessing
-import operator
 import warnings
 from collections.abc import Iterable
-from fractions import Fraction
-from functools import reduce
 from statsmodels.stats.proportion import proportion_confint
 import scipy.stats as st
 from sympy import Interval, factor
 import numpy as np
-from mpmath import mpi
-from numpy import prod
-from rectangle import My_Rectangle
 
 
 def nCr(n, k):
@@ -337,50 +331,6 @@ def cartesian_product(*arrays):
     for i, a in enumerate(np.ix_(*arrays)):
         arr[..., i] = a
     return arr.reshape(-1, la)
-
-
-def is_in(region1, region2):
-    """ Returns True if the region1 is in the region2, returns False otherwise
-
-    Args:
-        region1 (list of pairs): (hyper)space defined by the regions
-        region2 (list of pairs): (hyper)space defined by the regions
-    """
-    if len(region1) is not len(region2):
-        print("The intervals does not have the same size")
-        return False
-
-    for dimension in range(len(region1)):
-        if mpi(region1[dimension]) not in mpi(region2[dimension]):
-            return False
-    return True
-
-
-def get_rectangle_volume(rectangle):
-    """ Computes the volume of the given (hyper)rectangle
-
-    Args:
-        rectangle:  (list of intervals) defining the (hyper)rectangle
-    """
-    intervals = []
-    if isinstance(rectangle, My_Rectangle):
-        rectangle = rectangle.region
-
-    ## If there is empty rectangle
-    if not rectangle:
-        raise Exception("Empty rectangle has no volume")
-    for interval in rectangle:
-        intervals.append(Fraction(str(interval[1])) - Fraction(str(interval[0])))
-
-    ## Python 3.8+
-    product = reduce(operator.mul, intervals, 1)
-    ## Python 3.1-7
-    # product = prod(intervals)
-
-    # if isinstance(product, np.float64):
-    #     product = float(product)
-
-    return product
 
 
 def create_matrix(sample_size, dim):

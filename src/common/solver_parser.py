@@ -154,4 +154,9 @@ def pass_models_to_sons(example, counterexample, index, threshold, solver):
     if 9 in model_low or 9 in model_high:
         raise Exception
 
+    assert isinstance(model_low, list)
+    assert len(model_low) == 2
+    assert isinstance(model_high, list)
+    assert len(model_high) == 2
+
     return model_low, model_high
