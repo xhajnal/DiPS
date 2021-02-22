@@ -13,12 +13,14 @@ import multiprocessing
 from mpmath import mpi
 from termcolor import colored
 from z3 import Real, Int, Bool, BitVec, Solver, set_param, Z3Exception, unsat, unknown, Not, Or, sat
+
+import refine_space
 from common.convert import decouple_constraints, to_interval, constraints_to_ineq
 from common.solver_parser import pass_models_to_sons
 from common.space_stuff import is_in, refine_by, get_rectangle_volume, split_by_longest_dimension
 from load import find_param
 from rectangle import My_Rectangle
-from refine_space import assign_param_types
+from refine_space import assign_param_types, private_presample
 from sample_space import sample_space as sample
 from space import RefinedSpace
 
@@ -207,6 +209,12 @@ def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverag
     ## White space
     numb_of_white_rectangles = space.count_white_rectangles()
     globals()["numb_of_white_rectangles"] = numb_of_white_rectangles
+
+    ## PRESAMPLING
+    refine_space.space = space
+    refine_space.numb_of_white_rectangles = numb_of_white_rectangles
+    if sample_size:
+        private_presample(region, constraints, sample_size, where, show_space, gui, save, silent, debug)
 
     # NORMAL REFINEMENT - WITHOUT/AFTER PRESAMPLING
     ## Parsing version/algorithm
