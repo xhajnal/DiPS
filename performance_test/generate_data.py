@@ -1,3 +1,4 @@
+import sys
 import time
 import os
 import socket
@@ -326,6 +327,59 @@ if __name__ == '__main__':
 
     # data = [item/n_samples for item in data]
     print("data", data)
+
+
+    ## 50 bees
+    model = "../20_synchronous.pm"
+    prism_parameter_values = "r_00=0.1,r_01=0.103,r_02=0.106,r_03=0.109,r_04=0.112,r_05=0.115,r_06=0.118,r_07=0.121,r_08=0.124,r_09=0.127,r_10=0.13,r_11=0.133,r_12=0.136,r_13=0.139,r_14=0.142,r_15=0.145,r_16=0.148,r_17=0.151,r_18=0.154,r_19=0.157"
+    n_samples = 3000
+    silent = True
+    sim_length = 1000
+
+    ## TODO uncomment following lines to rerun
+    # path_file = "skorica.txt"
+    # values = {}
+    # for i in range(n_samples):
+    #     sys.stdout.write(f"{i+1},")
+    #     # print(f"calling: \n {model} -const {prism_parameter_values} -simpath {str(sim_length)} {path_file}")
+    #     call_prism(f"{model} -const {prism_parameter_values} -simpath {str(sim_length)} {path_file}",
+    #                silent=silent, prism_output_path=os.path.join(os.getcwd(), "results/prism_results"))
+    #     with open(os.path.join(os.getcwd(), "results/prism_results", path_file)) as file:
+    #         lines = file.readlines()
+    #         # for line in lines:
+    #         #     print(line)
+    #         last_line = lines[-1]
+    #         # print()
+    #         # print("last_line", last_line)
+    #         line = last_line.split(" ")
+    #         line = line[2:-1]
+    #         value = sum(list(map(lambda x: int(x), line)))
+    #         # print()
+    #         # print("value", value)
+    #         if value not in values.keys():
+    #             values[value] = 1
+    #         else:
+    #             values[value] = values[value] + 1
+    # print()
+    # print(values)
+    # os.remove(os.path.join(os.getcwd(), "results/prism_results", path_file))
+
+    data = [363/n_samples, 720/n_samples, 827/n_samples, 577/n_samples, 304/n_samples, 146/n_samples, 41/n_samples, 16/n_samples, 6/n_samples, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    x = range(21)
+    y = data
+
+    fig, ax = plt.subplots()
+    # ax.yaxis.set_major_formatter(formatter)
+    plt.xticks(x)
+    plt.bar(x, y)
+    # plt.xticks(x, ('Bill', 'Fred', 'Mary', 'Sue'))
+    plt.show()
+    print("data", data)
+
 
     ### Zeroconf
     ## Settings
