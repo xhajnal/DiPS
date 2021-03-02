@@ -102,14 +102,15 @@ def sample_sat_degree(parameter_value):
         return distance_list
 
 
-def sample_space(space, constraints, sample_size, compress=False, silent=True, save=False, debug: bool = False,
-                 progress=False, quantitative=False, parallel=10, save_memory=False):
+def sample_space(space, constraints, sample_size, boundaries=False, compress=False, silent=True, save=False, debug: bool = False,
+                 progress=False, quantitative=False, parallel=True, save_memory=False, stop_on_unknown=False):
     """ Samples the space in **sample_size** samples in each dimension and saves if the point is in respective interval
 
     Args:
         space: (space.RefinedSpace): space
         constraints  (list of strings): array of properties
         sample_size (int): number of samples in dimension
+        boundaries (list of intervals): subspace to sample, False for default region of space
         compress (bool): if True, only a conjunction of the values (prop in the interval) is used
         silent (bool): if silent printed output is set to minimum
         debug (bool): if True extensive print will be used
@@ -159,7 +160,10 @@ def sample_space(space, constraints, sample_size, compress=False, silent=True, s
 
     ## Create list of parameter values to sample
     for index in range(len(space.params)):
-        parameter_values.append(np.linspace(space.region[index][0], space.region[index][1], sample_size, endpoint=True))
+        if boundaries:
+            parameter_values.append(np.linspace(boundaries[index][0], boundaries[index][1], sample_size, endpoint=True))
+        else:
+            parameter_values.append(np.linspace(space.region[index][0], space.region[index][1], sample_size, endpoint=True))
     sampling = create_matrix(sample_size, len(space.params))
     parameter_values = cartesian_product(*parameter_values)
 
@@ -182,9 +186,37 @@ def sample_space(space, constraints, sample_size, compress=False, silent=True, s
     ## ACTUAL SAMPLING
     if parallel and not quantitative:
         ## Parallel sampling
-        with multiprocessing.Pool(pool_size) as p:
-            sat_list = list(p.map(check_sample, parameter_values))
-            ## TODO check how to alter progress when using Pool
+        if stop_on_unknown:
+            ## TODO implement this, very good idea on paper
+            raise NotImplementedError("this optimisation is not implemented so far, please use option stop_on_unknown=False")
+            current = None
+            with multiprocessing.Pool(pool_size) as p:
+                results = [p.apply_async(check_sample, item).get() for item in parameter_values]
+
+            print(results)
+            return results
+            #     for item in parameter_values:
+            #         print("item", item)
+            #         result = p.apply_async(check_sample, item)
+            #         print("result, ", result)
+            #         if current is None:
+            #             if result is True:
+            #                 current = "safe"
+            #             else:
+            #                 current = "unsafe"
+            #         elif current == "safe":
+            #             if result is False:
+            #                 current = "neither"
+            #                 p.terminate()
+            #         elif current == "unsafe":
+            #             if result is True:
+            #                 current = "neither"
+            #                 p.terminate()
+            # return current
+        else:
+            with multiprocessing.Pool(pool_size) as p:
+                sat_list = list(p.map(check_sample, parameter_values))
+                ## TODO check how to alter progress when using Pool
 
         ## TODO this can be optimised by putting two lists separately
         for index, item in enumerate(parameter_values):
@@ -247,4 +279,164 @@ def sample_space(space, constraints, sample_size, compress=False, silent=True, s
             return True
         else:
             return True
+
+
+def sample_region(region, params, constraints, sample_size, boundaries=False, compress=False, silent=True, save=False,
+                  debug=False, progress=False, quantitative=False, parallel=True, save_memory=False, stop_on_unknown=False):
+    """ Samples the space in **sample_size** samples in each dimension and saves if the point is in respective interval
+
+    Args:
+        region: (Rectangle): region to be sampled
+        params: (list of strings): parameters
+        constraints  (list of strings): array of properties
+        sample_size (int): number of samples in dimension
+        boundaries (list of intervals): subspace to sample, False for default region of space
+        compress (bool): if True, only a conjunction of the values (prop in the interval) is used
+        silent (bool): if silent printed output is set to minimum
+        debug (bool): if True extensive print will be used
+        save (bool): if True output is pickled
+        debug (bool): if True extensive print will be used
+        progress (Tkinter element): progress bar
+        quantitative (bool): if True return how far is the point from satisfying / not satisfying the constraints
+        parallel (Bool): flag to run this in parallel mode
+        save_memory (Bool): if True saves only sat samples
+
+    """
+    start_time = time()
+    global glob_space
+    global glob_debug
+    global glob_compress
+    global glob_constraints
+
+    ## TODO this can be optimised using check_sample without using space
+    glob_space = RefinedSpace(region, params)
+
+    assert isinstance(region, Iterable)
+    if debug:
+        silent = False
+
+    if parallel is True:
+        pool_size = multiprocessing.cpu_count() - 1
+    elif parallel > 1:
+        pool_size = min(parallel, multiprocessing.cpu_count() - 1)
+    elif parallel == 1:
+        pool_size = 1
+
+    ## Convert z3 functions
+    for index, constraint in enumerate(constraints):
+        if is_this_z3_function(constraint):
+            constraints[index] = translate_z3_function(constraint)
+
+    ## Convert constraints for quantitative sampling
+    if quantitative:
+        constraints = copy(constraints)
+        constraints = list(map(normalise_constraint, constraints))
+
+        ## Split constraints into two pairs ((left, mid)(mid, right)) or ((left, right), None)
+        constraints = split_constraints(constraints)
+
+    parameter_values = []
+    if debug:
+        print("space.params", params)
+        print("space.region", region)
+        print("sample_size", sample_size)
+
+    ## Create list of parameter values to sample
+    for index in range(len(params)):
+        if boundaries:
+            parameter_values.append(np.linspace(boundaries[index][0], boundaries[index][1], sample_size, endpoint=True))
+        else:
+            parameter_values.append(np.linspace(region[index][0], region[index][1], sample_size, endpoint=True))
+    sampling = create_matrix(sample_size, len(params))
+    parameter_values = cartesian_product(*parameter_values)
+
+    if not silent:
+        print("sampling here")
+        print("sample_size", sample_size)
+        print("params", params)
+        print("parameter_values", parameter_values)
+    if debug:
+        print("sampling", sampling)
+
+    del sampling
+    glob_debug = debug
+    glob_compress = compress
+    glob_constraints = constraints
+
+    print(colored(f"Sampling initialisation took {round(time() - start_time, 4)} seconds", "yellow")) if not silent else None
+
+    ## ACTUAL SAMPLING
+    if parallel and not quantitative:
+        ## Parallel sampling
+        if stop_on_unknown:
+            ## TODO implement this, very good idea on paper
+            raise NotImplementedError("this optimisation is not implemented so far, please use option stop_on_unknown=False")
+            current = None
+            with multiprocessing.Pool(pool_size) as p:
+                results = [p.apply_async(check_sample, item).get() for item in parameter_values]
+
+            print(results)
+            return results
+            #     for item in parameter_values:
+            #         print("item", item)
+            #         result = p.apply_async(check_sample, item)
+            #         print("result, ", result)
+            #         if current is None:
+            #             if result is True:
+            #                 current = "safe"
+            #             else:
+            #                 current = "unsafe"
+            #         elif current == "safe":
+            #             if result is False:
+            #                 current = "neither"
+            #                 p.terminate()
+            #         elif current == "unsafe":
+            #             if result is True:
+            #                 current = "neither"
+            #                 p.terminate()
+            # return current
+        else:
+            with multiprocessing.Pool(pool_size) as p:
+                sat_list = list(p.map(check_sample, parameter_values))
+
+    elif parallel and quantitative:
+        ## Parallel quantitative sampling
+        with multiprocessing.Pool(pool_size) as p:
+            dist_list = list(p.map(sample_sat_degree, parameter_values))
+
+    elif not quantitative:
+        ## Sequential sampling
+        sat_list, unsat_list = [], []
+        for index, item in enumerate(parameter_values):
+            spam = check_sample(item, save_memory)
+            if spam is True:
+                sat_list.append(item)
+            elif spam is False:
+                unsat_list.append(item)
+            else:
+                raise Exception(f"Checking {parameter_values} resulted in unexpected value: {spam}")
+            if progress:
+                progress(index / len(parameter_values))
+    else:
+        ## Sequential quantitative sampling
+        dist_map = {}
+        for index, item in enumerate(parameter_values):
+            dist_map[item] = sample_sat_degree(item)
+
+            if progress:
+                progress(index / len(parameter_values))
+
+    ## Setting flag to not visualise sat if no unsat and vice versa
+    print(colored(f"Sampling took {round(time()-start_time, 4)} seconds", "yellow")) if not silent else None
+
+    if parallel:
+        if quantitative:
+            return dist_list
+        else:
+            return sat_list
+    else:
+        if quantitative:
+            return dist_map
+        else:
+            return sat_list, unsat_list
 

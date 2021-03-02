@@ -1038,24 +1038,30 @@ class RefinedSpace:
         self.rectangles_unsat_to_show = []
         return PatchCollection(rectangles_unsat, facecolor='r', alpha=0.5)
 
-    def grid_sample(self, constraints, sample_size, silent: bool = False, save=False, debug=False, progress=False,
-                    quantitative=False, save_memory=False):
+    def grid_sample(self, constraints, sample_size, boundaries=None, silent=False, save=False, debug=False,
+                    progress=False, quantitative=False, parallel=True, save_memory=False):
         """ Executes grid sampling
 
         Args:
             constraints  (list of strings): array of properties
             sample_size (int): number of samples in dimension
+            boundaries (list of intervals): subspace to sample, default is whole space
             silent (bool): if silent printed output is set to minimum
             save (bool): if True output is pickled
             debug (bool): if True extensive print will be used
             progress (Tkinter element): progress bar
             quantitative (bool): if True return how far is the point from satisfying / not satisfying the constraints
+            parallel (Bool): flag to run this in parallel mode
             save_memory (Bool): if True saves only sat samples
         """
         from sample_space import sample_space
         self.gridsampled = True
-        sample_space(self, constraints, sample_size, compress=True, silent=silent, save=save, debug=debug,
-                     progress=progress, quantitative=quantitative, save_memory=save_memory)
+
+        if boundaries is False or boundaries is None:
+            boundaries = self.region
+
+        sample_space(self, constraints, sample_size, boundaries=boundaries, compress=True, silent=silent, save=save, debug=debug,
+                     progress=progress, quantitative=quantitative,  parallel=parallel, save_memory=save_memory, stop_on_unknown=False)
 
     ## TODO DEPRECATED NOT USED NOW, plot.scatter used instead
     def show_samples(self, which):

@@ -4,24 +4,20 @@ from platform import system
 from time import strftime, localtime, time
 from collections.abc import Iterable
 import copy
-
-## Local
 import multiprocessing
-
-
-## My imports
 from mpmath import mpi
 from termcolor import colored
 from z3 import Real, Int, Bool, BitVec, Solver, set_param, Z3Exception, unsat, unknown, Not, Or, sat
 
+## My imports
 import refine_space
-from common.convert import decouple_constraints, to_interval, constraints_to_ineq
+from common.convert import decouple_constraints, constraints_to_ineq
 from common.solver_parser import pass_models_to_sons
-from common.space_stuff import is_in, refine_by, get_rectangle_volume, split_by_longest_dimension
+from common.space_stuff import is_in, refine_by, split_by_longest_dimension, rectangular_hull, expand_rectangle
 from load import find_param
 from rectangle import My_Rectangle
-from refine_space import assign_param_types, private_presample
-from sample_space import sample_space as sample
+from refine_space import private_presample
+from sample_space import sample_space, sample_region
 from space import RefinedSpace
 
 
@@ -85,10 +81,12 @@ def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverag
     # if recursion_depth > max_max_recursion:
     #     recursion_depth = max_max_recursion
 
-    if parallel > 1:
-        pool_size = parallel
-    else:
+    if parallel is True:
         pool_size = multiprocessing.cpu_count() - 1
+    elif parallel > 1:
+        pool_size = min(parallel, multiprocessing.cpu_count() - 1)
+    elif parallel == 1:
+        pool_size = 1
 
     if iterative:
         raise NotImplementedError("This feature is deprecated and was removed.")
@@ -283,26 +281,60 @@ def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverag
             global glob_delta
             glob_delta = delta
 
-        with multiprocessing.Pool(pool_size) as p:
+        # ### SAMPLING
+        # ## Iterate through the rectangles (in reversed order to delete by index)
+        # sampl_start_time = time()
+        # i = 0
+        # y = 0
+        # new_rectangles_to_be_refined = []
+        # for index in reversed(range(len(rectangles_to_be_refined))):
+        #     y += 1
+        #     rectangle = rectangles_to_be_refined[index]
+        #     result = sample_space(space, constraints, sample_size=2, boundaries=rectangle, compress=True, silent=silent, save=False, debug=debug,
+        #                           progress=False, quantitative=False, parallel=parallel, save_memory=False, stop_on_unknown=False)
+        #     # print(result)
+        #     current = result[0]
+        #     if all(map(lambda x: x == current, result)):
+        #         new_rectangles_to_be_refined.append(rectangle)
+        #         continue
+        #     else:
+        #     # if result == "neither":
+        #         ## Remove rectangle from space, split it and remove from "queue"
+        #         # print(colored(f"about to delete rectangle {rectangle} with index {index} in {rectangles_to_be_refined}", "red"))
+        #         space.remove_white(rectangle)
+        #         rectangle_low, rectangle_high, index, threshold = split_by_longest_dimension(rectangle)
+        #         space.add_white(rectangle_low)
+        #         space.add_white(rectangle_high)
+        #         # del rectangles_to_be_refined[index]
+        #         i += 1
+        # print(colored(f"this iteration of sampling took {round(time() - sampl_start_time, 4)} and deleted {i} rectangles out of {y}", "yellow"))
+        # rectangles_to_be_refined = new_rectangles_to_be_refined
+
+        ## TODO probably delete following two lines
+        import warnings
+        warnings.filterwarnings("ignore")
+
+        ## REFINEMENT
+        with multiprocessing.Pool(pool_size) as pool:
             if version == 2:
                 print(f"Selecting biggest rectangles method with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
-                refined_rectangles = list(p.map(private_check_deeper_parallel, rectangles_to_be_refined))
+                refined_rectangles = list(pool.map(private_check_deeper_parallel, rectangles_to_be_refined))
             elif version == 3:
                 print(f"Selecting biggest rectangles method with passing examples with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
                 raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
-                refined_rectangles = list(p.map(private_check_deeper_checking_parallel, rectangles_to_be_refined))
+                refined_rectangles = list(pool.map(private_check_deeper_checking_parallel, rectangles_to_be_refined))
                 # raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
             elif version == 4:
                 print(f"Selecting biggest rectangles method with passing examples and counterexamples with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
                 raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
-                refined_rectangles = list(p.map(private_check_deeper_checking_both_parallel, rectangles_to_be_refined))
+                refined_rectangles = list(pool.map(private_check_deeper_checking_both_parallel, rectangles_to_be_refined))
                 # raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
             elif version == 5:
                 print(f"Selecting biggest rectangles method with interval arithmetics") if not silent else None
-                refined_rectangles = list(p.map(private_check_deeper_interval_parallel, rectangles_to_be_refined))
+                refined_rectangles = list(pool.map(private_check_deeper_interval_parallel, rectangles_to_be_refined))
                 ## TODO check how to alter progress when using Pool
 
-        ## Parse refined rectangles and update space
+        # Parse refined rectangles and update space
         for index, item in enumerate(refined_rectangles):
             white = rectangles_to_be_refined[index]
             space.remove_white(white)
