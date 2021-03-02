@@ -79,8 +79,8 @@ if __name__ == '__main__':
             text = f"dataset {data_set}, confidence level {C}, {n_samples} samples"
             space = RefinedSpace(parameter_domains, parameters)
             repeat_refine(text, parameters, parameter_domains, constraints, timeout, silent, debug, alg=2, solver="z3",
-                          sample_size=False, repetitions=2, parallel=1)
+                          sample_size=False, sample_guided=sample_guided, repetitions=repetitions, parallel=cores)
             repeat_refine(text, parameters, parameter_domains, constraints, timeout, silent, debug, alg=2, solver="dreal",
-                          sample_size=False, repetitions=2, parallel=1)
+                          sample_size=False, sample_guided=sample_guided, repetitions=repetitions, parallel=cores)
             repeat_refine(text, parameters, parameter_domains, constraints, timeout, silent, debug, alg=5, solver="z3",
-                          sample_size=False, repetitions=repetitions, parallel=cores)
+                          sample_size=False, sample_guided=sample_guided, repetitions=repetitions, parallel=cores)

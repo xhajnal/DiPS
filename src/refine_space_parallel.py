@@ -13,7 +13,8 @@ from z3 import Real, Int, Bool, BitVec, Solver, set_param, Z3Exception, unsat, u
 import refine_space
 from common.convert import decouple_constraints, constraints_to_ineq
 from common.solver_parser import pass_models_to_sons
-from common.space_stuff import is_in, refine_by, split_by_longest_dimension, rectangular_hull, expand_rectangle
+from common.space_stuff import is_in, refine_by, split_by_longest_dimension, rectangular_hull, expand_rectangle, \
+    split_by_all_dimensions
 from load import find_param
 from rectangle import My_Rectangle
 from refine_space import private_presample
@@ -40,14 +41,17 @@ except NameError:
 ## Global variables
 global glob_parameters
 global glob_constraints
+global glob_functions
 global glob_intervals
 global glob_solver
 
 global glob_delta
 
+global glob_sample_size
+
 
 def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverage, silent, version=4, sample_size=False,
-                          debug=False, save=False, title="", where=False, show_space=True, solver="z3", delta=0.001,
+                          sample_guided=False, debug=False, save=False, title="", where=False, show_space=True, solver="z3", delta=0.001,
                           gui=False, iterative=False, parallel=True, timeout=0):
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
 
@@ -60,6 +64,7 @@ def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverag
         silent (bool): if silent printed output is set to minimum
         version (Int): version of the algorithm to be used
         sample_size (Int): number of samples in dimension used for presampling
+        sample_guided (bool): flag to run sampling-guided refinement
         debug (bool): if True extensive print will be used
         save (bool): if True output is stored
         title (string):: text to be added in Figure titles
@@ -68,7 +73,7 @@ def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverag
         solver (string):: specified solver, allowed: z3, dreal
         delta (number):: used for delta solving using dreal
         gui (bool or Callable): called from the graphical user interface
-        iterative (bool) : iterative approach, TBD
+        iterative (bool) : iterative approach, deprecated
         parallel (Bool): flag to run this in parallel mode
         timeout (int): timeout in seconds (set 0 for no timeout)
     """
@@ -271,8 +276,10 @@ def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverag
         rectangles_to_be_refined = list(map(lambda x: x.region, space.rectangles_unknown[key]))
 
         if version == 5:
-            glob_constraints = egg[0]
+            global glob_functions
+            glob_functions = egg[0]
             glob_intervals = egg[1]
+            glob_constraints = constraints
         else:
             glob_constraints = constraints
             global glob_solver
@@ -310,45 +317,90 @@ def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverag
         # print(colored(f"this iteration of sampling took {round(time() - sampl_start_time, 4)} and deleted {i} rectangles out of {y}", "yellow"))
         # rectangles_to_be_refined = new_rectangles_to_be_refined
 
-        ## TODO probably delete following two lines
-        import warnings
-        warnings.filterwarnings("ignore")
-
-        ## REFINEMENT
-        with multiprocessing.Pool(pool_size) as pool:
-            if version == 2:
-                print(f"Selecting biggest rectangles method with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
-                refined_rectangles = list(pool.map(private_check_deeper_parallel, rectangles_to_be_refined))
-            elif version == 3:
-                print(f"Selecting biggest rectangles method with passing examples with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
-                raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
-                refined_rectangles = list(pool.map(private_check_deeper_checking_parallel, rectangles_to_be_refined))
-                # raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
-            elif version == 4:
-                print(f"Selecting biggest rectangles method with passing examples and counterexamples with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
-                raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
-                refined_rectangles = list(pool.map(private_check_deeper_checking_both_parallel, rectangles_to_be_refined))
-                # raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
-            elif version == 5:
-                print(f"Selecting biggest rectangles method with interval arithmetics") if not silent else None
-                refined_rectangles = list(pool.map(private_check_deeper_interval_parallel, rectangles_to_be_refined))
-                ## TODO check how to alter progress when using Pool
-
-        # Parse refined rectangles and update space
-        for index, item in enumerate(refined_rectangles):
-            white = rectangles_to_be_refined[index]
-            space.remove_white(white)
-            if item is True:
-                space.add_green(white)
-            elif item is False:
-                space.add_red(white)
+        if sample_guided:
+            global glob_sample_size
+            if sample_guided is True:
+                glob_sample_size = 2  ## Selected by the best performance on hsb models
             else:
-                if item[2] is not None:
-                    space.add_white(My_Rectangle(item[0], is_white=True, model=item[2]))
-                    space.add_white(My_Rectangle(item[1], is_white=True, model=item[3]))
+                glob_sample_size = sample_guided
+
+            ## PARALLEL SAMPLING-GUIDED REFINEMENT
+            ## TODO probably delete following two lines
+            import warnings
+            warnings.filterwarnings("ignore")
+
+            with multiprocessing.Pool(pool_size) as pool:
+                if version == 2:
+                    print(f"Selecting biggest rectangles method with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
+                    refined_rectangles = list(pool.map(private_check_deeper_parallel_sampled, rectangles_to_be_refined))
+                elif version == 3:
+                    print(f"Selecting biggest rectangles method with passing examples with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
+                    raise NotImplementedError("So far only alg 2 are implemented for parallel runs.")
+                    refined_rectangles = list(pool.map(private_check_deeper_checking_parallel_sampled, rectangles_to_be_refined))
+                    # raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
+                elif version == 4:
+                    print(f"Selecting biggest rectangles method with passing examples and counterexamples with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
+                    raise NotImplementedError("So far only alg 2 are implemented for parallel runs.")
+                    refined_rectangles = list(pool.map(private_check_deeper_checking_both_parallel_sampled, rectangles_to_be_refined))
+                    # raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
+                elif version == 5:
+                    print(f"Selecting biggest rectangles method with interval arithmetics") if not silent else None
+                    refined_rectangles = list(pool.map(private_check_deeper_interval_parallel_sampled, rectangles_to_be_refined))
+
+            # Parse refined rectangles and update space
+            for index, item in enumerate(refined_rectangles):
+                white = rectangles_to_be_refined[index]
+                space.remove_white(white)
+                if item is True:
+                    space.add_green(white)
+                elif item is False:
+                    space.add_red(white)
                 else:
-                    space.add_white(item[0])
-                    space.add_white(item[1])
+                    for rectangle in item:
+                        print("rectangle", rectangle) if debug else None
+                        if version == 2 or version == 5:
+                            space.add_white(My_Rectangle(rectangle, is_white=True, model=(None, None)))
+                        else:
+                            space.add_white(
+                                My_Rectangle(rectangle[0], is_white=True, model=(rectangle[1][0], rectangle[1][1])))
+        else:
+            ## PARALLEL REFINEMENT
+            with multiprocessing.Pool(pool_size) as pool:
+                if version == 2:
+                    print(f"Selecting biggest rectangles method with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
+                    refined_rectangles = list(pool.map(private_check_deeper_parallel, rectangles_to_be_refined))
+                elif version == 3:
+                    print(f"Selecting biggest rectangles method with passing examples with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
+                    raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
+                    refined_rectangles = list(pool.map(private_check_deeper_checking_parallel, rectangles_to_be_refined))
+                    # raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
+                elif version == 4:
+                    print(f"Selecting biggest rectangles method with passing examples and counterexamples with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
+                    raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
+                    refined_rectangles = list(pool.map(private_check_deeper_checking_both_parallel, rectangles_to_be_refined))
+                    # raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
+                elif version == 5:
+                    print(f"Selecting biggest rectangles method with interval arithmetics") if not silent else None
+                    refined_rectangles = list(pool.map(private_check_deeper_interval_parallel, rectangles_to_be_refined))
+                    ## TODO check how to alter progress when using Pool
+
+            # Parse refined rectangles and update space
+            for index, item in enumerate(refined_rectangles):
+                white = rectangles_to_be_refined[index]
+                space.remove_white(white)
+                if item is True:
+                    space.add_green(white)
+                elif item is False:
+                    space.add_red(white)
+                else:
+                    if item[2] is not None:
+                        space.add_white(My_Rectangle(item[0], is_white=True, model=item[2]))
+                        space.add_white(My_Rectangle(item[1], is_white=True, model=item[3]))
+                    else:
+                        space.add_white(item[0])
+                        space.add_white(item[1])
+
+        print(space.nice_print()) if debug else None
 
         ## End if recursion depth was 0 (now -1)
         if recursion_depth == -1:
@@ -618,6 +670,82 @@ def private_check_deeper_parallel(region, constraints=None, solver=None, delta=N
     return rectangle_low, rectangle_high, None, None
 
 
+def private_check_deeper_parallel_sampled(region, constraints=None, solver=None, delta=None, silent=None, debug=None):
+    """ Refining the parameter space into safe and unsafe regions
+
+    Args:
+        region (list of pairs of numbers): list of intervals, low and high bound, defining the parameter space to be refined
+        constraints  (list of strings): array of properties
+        solver (string):: specified solver, allowed: z3, dreal
+        delta (number):: used for delta solving using dreal
+        silent (bool): if silent printed output is set to minimum
+        debug (bool): if True extensive print will be used
+    """
+    if constraints is None:
+        constraints = glob_constraints
+    if solver is None:
+        solver = glob_solver
+    if delta is None and solver == "dreal":
+        delta = glob_delta
+    if silent is None:
+        silent = glob_silent
+    if debug is None:
+        debug = glob_debug
+
+    print("region", region) if debug else None
+    # print("glob_sample_size", glob_sample_size)
+    sat_list, unsat_list = sample_region(region, glob_parameters, constraints, sample_size=glob_sample_size, boundaries=region,
+                                         compress=True, silent=True, save=False, debug=debug, progress=False,
+                                         quantitative=False, parallel=False, save_memory=False, stop_on_unknown=True)
+    if sat_list == [] or unsat_list == []:  ## all unsat or all sat
+        # if unsat_list != []:  ## some un sat samples
+        if check_unsafe_parallel(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
+            return False
+        elif check_safe_parallel(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
+            return True
+    else:
+        print("region", region) if debug else None
+        print("sat_list", sat_list) if debug else None
+        print("unsat_list", unsat_list) if debug else None
+        rectangle_of_sats = rectangular_hull(sat_list)
+        print("rectangle_of_sats", rectangle_of_sats) if debug else None
+        rectangle_of_sats = expand_rectangle(rectangle_of_sats, region, [glob_sample_size]*len(region))
+        print("expanded rectangle_of_sats", rectangle_of_sats) if debug else None
+        rectangle_of_unsats = rectangular_hull(unsat_list)
+        print("rectangle_of_unsats", rectangle_of_unsats) if debug else None
+        rectangle_of_unsats = expand_rectangle(rectangle_of_unsats, region, [glob_sample_size]*len(region))
+        print("expanded rectangle_of_unsats", rectangle_of_unsats) if debug else None
+        ## TODO this can be improved by second splitting of the smaller rectangle
+        if rectangle_of_unsats == rectangle_of_sats:
+            regions = split_by_all_dimensions(region)
+            if len(regions) == 1:
+                print(f"here 0: region: {region}: \n sat samples: {sat_list}, \n unsat samples: {unsat_list} \n {rectangle_of_sats}, {rectangle_of_unsats}")
+        elif is_in(rectangle_of_sats, rectangle_of_unsats):
+            regions = refine_by(rectangle_of_unsats, rectangle_of_sats, debug=False)
+            if len(regions) == 1:
+                print(f"here 1: region: {region}: \n sat samples: {sat_list}, \n unsat samples: {unsat_list} \n {rectangle_of_sats}, {rectangle_of_unsats}")
+        elif is_in(rectangle_of_unsats, rectangle_of_sats):
+            regions = refine_by(rectangle_of_sats, rectangle_of_unsats, debug=False)
+            if len(regions) == 1:
+                print(f"here 2: {rectangle_of_sats}, {rectangle_of_unsats}")
+        else:
+            regions = [rectangle_of_sats, rectangle_of_unsats]
+            if len(regions) == 1:
+                print(f"here 3: {rectangle_of_sats}, {rectangle_of_unsats}")
+            ## TODO this can happen when e.g. all sat are on left and all unsat on right side
+            # raise NotImplementedError(f'Splitting for this "weird" sampling result not implemented so far with region {region}, rectangle of sat points {rectangle_of_sats}, rectangle of unsat points {rectangle_of_unsats}')
+        print(f"By sampling we split the region into regions: {regions}") if debug else None
+        return regions
+
+    ## Find index of maximum dimension to be split
+    rectangle_low, rectangle_high, index, threshold = split_by_longest_dimension(region)
+
+    print("rectangle_low", rectangle_low) if debug else None
+    print("rectangle_high", rectangle_high) if debug else None
+
+    return [rectangle_low, rectangle_high]
+
+
 def private_check_deeper_checking_parallel(region, constraints=None, model=None, solver=None, delta=None, silent=None, debug=None):
     """ WE SUGGEST USING METHOD PASSING BOTH, EXAMPLE AND COUNTEREXAMPLE
         Refining the parameter space into safe and unsafe regions with passing examples,
@@ -756,6 +884,79 @@ def private_check_deeper_interval_parallel(region, constraints=None, intervals=N
     rectangle_low, rectangle_high, index, threshold = split_by_longest_dimension(region)
 
     return rectangle_low, rectangle_high, None, None
+
+
+def private_check_deeper_interval_parallel_sampled(region, functions=None, intervals=None, silent=None, debug=None):
+    """ Refining the parameter space into safe and unsafe regions
+
+    Args:
+        region (list of pairs of numbers): list of intervals, low and high bound, defining the parameter space to be refined
+        functions  (list of strings): array of properties
+        intervals (list of pairs/ sympy.Intervals): array of interval to constrain constraints
+        silent (bool): if silent printed output is set to minimum
+        debug (bool): if True extensive print will be used
+    """
+    if functions is None:
+        functions = glob_functions
+    constraints = glob_constraints
+    if intervals is None:
+        intervals = glob_intervals
+    if silent is None:
+        silent = glob_silent
+    if debug is None:
+        debug = glob_debug
+
+    print("region", region) if debug else None
+    # print("glob_sample_size", glob_sample_size)
+    sat_list, unsat_list = sample_region(region, glob_parameters, constraints, sample_size=glob_sample_size,
+                                         boundaries=region, compress=True, silent=True, save=False, debug=debug, progress=False,
+                                         quantitative=False, parallel=False, save_memory=False, stop_on_unknown=True)
+    if sat_list == [] or unsat_list == []:  ## all unsat or all sat
+        # if unsat_list != []:  ## some un sat samples
+        if check_interval_out_parallel(region, functions, intervals, silent=silent, debug=debug) is True:
+            return False
+        elif check_interval_in_parallel(region, functions, intervals, silent=silent, debug=debug) is True:
+            return True
+    else:
+        print("region", region) if debug else None
+        print("sat_list", sat_list) if debug else None
+        print("unsat_list", unsat_list) if debug else None
+        rectangle_of_sats = rectangular_hull(sat_list)
+        print("rectangle_of_sats", rectangle_of_sats) if debug else None
+        rectangle_of_sats = expand_rectangle(rectangle_of_sats, region, [glob_sample_size] * len(region))
+        print("expanded rectangle_of_sats", rectangle_of_sats) if debug else None
+        rectangle_of_unsats = rectangular_hull(unsat_list)
+        print("rectangle_of_unsats", rectangle_of_unsats) if debug else None
+        rectangle_of_unsats = expand_rectangle(rectangle_of_unsats, region, [glob_sample_size] * len(region))
+        print("expanded rectangle_of_unsats", rectangle_of_unsats) if debug else None
+        ## TODO this can be improved by second splitting of the smaller rectangle
+        if rectangle_of_unsats == rectangle_of_sats:
+            regions = split_by_all_dimensions(region)
+            if len(regions) == 1:
+                print(
+                    f"here 0: region: {region}: \n sat samples: {sat_list}, \n unsat samples: {unsat_list} \n {rectangle_of_sats}, {rectangle_of_unsats}")
+        elif is_in(rectangle_of_sats, rectangle_of_unsats):
+            regions = refine_by(rectangle_of_unsats, rectangle_of_sats, debug=False)
+            if len(regions) == 1:
+                print(
+                    f"here 1: region: {region}: \n sat samples: {sat_list}, \n unsat samples: {unsat_list} \n {rectangle_of_sats}, {rectangle_of_unsats}")
+        elif is_in(rectangle_of_unsats, rectangle_of_sats):
+            regions = refine_by(rectangle_of_sats, rectangle_of_unsats, debug=False)
+            if len(regions) == 1:
+                print(f"here 2: {rectangle_of_sats}, {rectangle_of_unsats}")
+        else:
+            regions = [rectangle_of_sats, rectangle_of_unsats]
+            if len(regions) == 1:
+                print(f"here 3: {rectangle_of_sats}, {rectangle_of_unsats}")
+            ## TODO this can happen when e.g. all sat are on left and all unsat on right side
+            # raise NotImplementedError(f'Splitting for this "weird" sampling result not implemented so far with region {region}, rectangle of sat points {rectangle_of_sats}, rectangle of unsat points {rectangle_of_unsats}')
+        print(f"By sampling we split the region into regions: {regions}") if debug else None
+        return regions
+
+    ## Find index of maximum dimension to be split
+    rectangle_low, rectangle_high, index, threshold = split_by_longest_dimension(region)
+
+    return [rectangle_low, rectangle_high]
 
 
 def check_interval_in_parallel(region, constraints, intervals, silent=False, debug=False):

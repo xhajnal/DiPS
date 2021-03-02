@@ -2,12 +2,37 @@ import copy
 import operator
 from fractions import Fraction
 from functools import reduce
+from typing import Iterable
 
 import numpy as np
 from mpmath import mpi
 
 from common.mathematics import cartesian_product
 from rectangle import My_Rectangle
+
+
+def rectangular_hull(points):
+    """ Creates a single smallest (hyper)rectangle wrapping all the points"""
+    assert isinstance(points, Iterable)
+    min_point = []
+    max_point = []
+    ## TODO can be optimised
+    for index in range(len(points[0])):
+        min_point.append(min(list(map(lambda x: x[index], points))))
+        max_point.append(max(list(map(lambda x: x[index], points))))
+    return points_to_rectangle([min_point, max_point])
+
+
+def points_to_rectangle(points):
+    """ Converts set of endpoint into (hyper)rectangle"""
+    rectangle = []
+    for dimension in range(len(points[0])):
+        spam = []
+        for point in points:
+            spam.append(point[dimension])
+        rectangle.append(spam)
+
+    return rectangle
 
 
 def is_in(region1, region2):
@@ -70,13 +95,53 @@ def split_by_longest_dimension(region):
 
     ##  Update space
     model_low = copy.deepcopy(region)
-    model_low[index] = (low, threshold)
+    model_low[index] = [low, threshold]
     model_high = copy.deepcopy(region)
-    model_high[index] = (threshold, high)
-    return model_low, model_high, index, threshold
+    model_high[index] = [threshold, high]
+    return [model_low, model_high, index, threshold]
 
 
-def refine_by(region1, region2, debug: bool = False):
+def split_by_all_dimensions(region):
+    """ Splits given hyper rectangle into set of rectangles by splitting in each dimension"""
+    thresholds = []
+    for index, dimension in enumerate(region):
+        ## Compute the half of dimension
+        low = dimension[0]
+        high = dimension[1]
+        thresholds.append(low + (high - low) / 2)
+
+    rectangles = []
+    # print("len", "{0:b}".format(2**(len(region)-1)))
+    for index in range(2**(len(region))):
+        # print("index", index)
+        rectangle = []
+        # print("binary", "{0:b}".format(index + 2**(len(region)))[1:])
+        for dim_index, dimension in enumerate("{0:b}".format(index + 2**(len(region)))[1:]):
+            # print("dim_index", dim_index)
+            if dimension == "0":
+                rectangle.append([region[dim_index][0], thresholds[dim_index]])
+            else:
+                rectangle.append([thresholds[dim_index], region[dim_index][1]])
+        # print("rectangle", rectangle)
+        rectangles.append(rectangle)
+    return rectangles
+
+
+def expand_rectangle(rectangle, region, sample_sizes):
+    """ Expands the rectangle half of the size of sampling size respecting boundaries """
+    for index, dimension in enumerate(rectangle):
+        ## half of the rectangle size * dimension size / number of rectangles in dimension (sample size minus 1)
+        delta = 1/2*(region[index][1]-region[index][0])/(sample_sizes[index]-1)
+        if dimension[0] > region[index][0]:
+            ## New value of rectangle's lower value of dimension
+            rectangle[index][0] = rectangle[index][0] - delta
+        if dimension[1] < region[index][1]:
+            ## New value of rectangle's upper value of dimension
+            rectangle[index][1] = rectangle[index][1] + delta
+    return rectangle
+
+
+def refine_by(region1, region2, debug=False):
     """ Returns the first (hyper)space refined/spliced by the second (hyperspace) into orthogonal subspaces
 
     Args:

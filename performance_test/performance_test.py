@@ -225,7 +225,7 @@ def repeat_sampling(space, constraints, sample_size, boundaries=None, silent=Fal
 
 
 def repeat_refine(text, parameters, parameter_domains, constraints, timeout, silent, debug, alg=4, solver="z3",
-                  sample_size=False, repetitions=repetitions, parallel=True):
+                  sample_size=False, sample_guided=False, repetitions=repetitions, parallel=True):
     """ Runs space refinement for multiple times
 
     Args
@@ -239,6 +239,7 @@ def repeat_refine(text, parameters, parameter_domains, constraints, timeout, sil
         alg (Int): version of the algorithm to be used
         solver (string): specified solver, allowed: z3, dreal
         sample_size (Int or bool): number of samples in dimension used for presampling, False for no presampling
+        sample_guided (bool): flag to run sampling-guided refinement
         repetitions (Int): number of runs per setting
         parallel (bool): flag whether to run in parallel mode
     """
@@ -252,8 +253,9 @@ def repeat_refine(text, parameters, parameter_domains, constraints, timeout, sil
         if parallel:
             try:
                 spam = check_deeper_parallel(space, constraints, max_depth, epsilon=epsilon, coverage=coverage,
-                                             silent=silent, version=alg, sample_size=sample_size, debug=debug, save=False,
-                                             solver=solver, delta=0.01, gui=False, show_space=debug, iterative=False,
+                                             silent=silent, version=alg, sample_size=sample_size,
+                                             sample_guided=sample_guided,  debug=debug, save=False, solver=solver,
+                                             delta=0.01, gui=False, show_space=debug, iterative=False,
                                              parallel=parallel, timeout=timeout)
             except NotImplementedError as err:
                 print(colored("skipping this, not implemented", "blue"))
