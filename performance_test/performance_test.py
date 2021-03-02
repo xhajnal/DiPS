@@ -189,9 +189,44 @@ def compute_functions(model_file, property_file, output_path=False, parameter_do
                    time=True, silent=silent)
 
 
+def repeat_sampling(space, constraints, sample_size, boundaries=None, silent=False, save=False, debug=False,
+                    progress=False, quantitative=False, parallel=True, save_memory=False, repetitions=40):
+    """ Runs space sampling
+
+
+        Args:
+            constraints  (list of strings): array of properties
+            sample_size (int): number of samples in dimension
+            boundaries (list of intervals): subspace to sample, default is whole space
+            silent (bool): if silent printed output is set to minimum
+            save (bool): if True output is pickled
+            debug (bool): if True extensive print will be used
+            progress (Tkinter element): progress bar
+            quantitative (bool): if True return how far is the point from satisfying / not satisfying the constraints
+            parallel (Bool): flag to run this in parallel mode
+            save_memory (Bool): if True saves only sat samples
+    """
+    avrg_time = 0
+    for run in range(repetitions):
+        sampling = space.grid_sample(constraints, sample_size, boundaries=boundaries, silent=silent, save=save,
+                                     debug=debug, progress=progress, quantitative=quantitative, parallel=parallel,
+                                     save_memory=save_memory)
+        if debug:
+            space.show(sat_samples=True, unsat_samples=True)
+
+        avrg_time += space.time_last_sampling
+
+    avrg_time = avrg_time/repetitions
+    if repetitions > 1:
+        print(colored(f"Average time of {repetitions} runs is {round_sig(avrg_time)}", "yellow"))
+
+    else:
+        print(colored(f"Refinement took {round_sig(avrg_time)}", "yellow"))
+
+
 def repeat_refine(text, parameters, parameter_domains, constraints, timeout, silent, debug, alg=4, solver="z3",
                   sample_size=False, repetitions=repetitions, parallel=True):
-    """ Runs space refinement
+    """ Runs space refinement for multiple times
 
     Args
         text (string): text to be printed
@@ -216,14 +251,15 @@ def repeat_refine(text, parameters, parameter_domains, constraints, timeout, sil
         space = RefinedSpace(parameter_domains, parameters)
         if parallel:
             try:
-                spam = check_deeper_parallel(space, constraints[i], max_depth, epsilon=epsilon, coverage=coverage,
+                spam = check_deeper_parallel(space, constraints, max_depth, epsilon=epsilon, coverage=coverage,
                                              silent=silent, version=alg, sample_size=sample_size, debug=debug, save=False,
                                              solver=solver, delta=0.01, gui=False, show_space=debug, iterative=False,
                                              parallel=parallel, timeout=timeout)
-            except NotImplementedError:
+            except NotImplementedError as err:
                 print(colored("skipping this, not implemented", "blue"))
+                print(err)
         else:
-            spam = check_deeper(space, constraints[i], max_depth, epsilon=epsilon, coverage=coverage,
+            spam = check_deeper(space, constraints, max_depth, epsilon=epsilon, coverage=coverage,
                                 silent=silent, version=alg, sample_size=sample_size, debug=debug, save=False,
                                 solver=solver, delta=0.01, gui=False, show_space=debug, iterative=False, timeout=timeout)
         print("coverage reached", spam.get_coverage()) if not silent else None
@@ -433,13 +469,10 @@ if __name__ == '__main__':
                 for i in range(len(n_samples)):
                     if not run_sampling:
                         break
+                    print(colored(f"Sampling, dataset {data_set}, grid size {grid_size}, {n_samples[i]} samples"))
                     space = RefinedSpace(parameter_domains, parameters)
-                    start_time = time()
-                    sampling = space.grid_sample(constraints[i], grid_size, silent=True, debug=debug)
-                    print(colored(
-                        f"Sampling, dataset {data_set}, grid size {grid_size}, {n_samples[i]} samples took {round_sig(time() - start_time, precision)} seconds", "green"))
-                    if debug:
-                        print(sampling)
+                    repeat_sampling(space, constraints[i], grid_size, silent=silent, save=False, debug=debug,
+                                    quantitative=False, parallel=True, repetitions=40)
 
                 ## REFINE SPACE
                 for i in range(len(n_samples)):
@@ -648,12 +681,10 @@ if __name__ == '__main__':
                 for i in range(len(n_samples)):
                     if not run_sampling:
                         break
+                    print(colored(f"Sampling, {'multiparam' if bool(multiparam) else '2-param'} , {population_size} bees, grid size {grid_size}, dataset {data_index+1}, {n_samples[i]} samples"))
                     space = RefinedSpace(parameter_domains, parameters)
-                    start_time = time()
-                    sampling = space.grid_sample(constraints[i], grid_size, silent=True, debug=debug)
-                    print(colored(f"Sampling, {'multiparam' if bool(multiparam) else '2-param'} , {population_size} bees, grid size {grid_size}, dataset {data_index+1}, {n_samples[i]} samples, it took {round_sig(time() - start_time, precision)} seconds", "yellow"))
-                    if debug:
-                        print(sampling)
+                    repeat_sampling(space, constraints[i], grid_size, silent=silent, save=False, debug=debug,
+                                    quantitative=False, parallel=True, repetitions=40)
 
                 ## REFINE SPACE
                 for i in range(len(n_samples)):
@@ -681,7 +712,7 @@ if __name__ == '__main__':
                     start_time = time()
                     mh_results = init_mh(parameters, parameter_domains, functions, data_set, n_samples[i], iterations, 0,
                                          silent=silent, debug=debug, is_probability=True, where=True, metadata=False,
-                                         timeout=mh_timeout)
+                                         timeout=mh_timeout, parallel=3)
                     assert isinstance(mh_results, HastingsResults)
                     print(colored(f"this was MH, {iterations} iterations, {'multiparam' if bool(multiparam) else '2-param'} , {population_size} bees, dataset {data_index+1}, {n_samples[i]} samples took {round_sig(time() - start_time, precision)} seconds", "yellow"))
                     if debug:

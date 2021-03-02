@@ -849,7 +849,7 @@ def manual_log_like_normal(params, theta, functions, data, sample_size, eps=0, i
         sample_size (int): number of samples in data
         eps (number): very small value used as probability of non-feasible values in prior - deprecated now
         is_probability (bool): flag whether functions represent probabilities or not (None for unknown)
-        parallel (Bool): flag to run this in parallel mode
+        parallel (Bool): flag to run this in parallel mode (for each functions)
         debug (bool): if True extensive print will be used
 
     Returns:
@@ -878,6 +878,8 @@ def manual_log_like_normal(params, theta, functions, data, sample_size, eps=0, i
             pool_size = parallel
         else:
             pool_size = multiprocessing.cpu_count() - 1
+
+        pool_size = min(pool_size, len(functions), multiprocessing.cpu_count() - 1)
 
         # global glob_param_names
         # global glob_theta
@@ -948,7 +950,7 @@ def manual_log_like_normal(params, theta, functions, data, sample_size, eps=0, i
 
 
 def metropolis_hastings(params, parameter_intervals, param_init, functions, data, sample_size, iterations, eps, sd=0.15,
-                        is_probability=None, progress=False, timeout=0, debug=False):
+                        is_probability=None, progress=False, timeout=0, parallel=False, debug=False):
     """ The core method of the Metropolis Hasting
 
         params (list of strings): parameter names
@@ -963,6 +965,7 @@ def metropolis_hastings(params, parameter_intervals, param_init, functions, data
         is_probability (bool): flag whether functions represent probabilities or not (None for unknown)
         progress (Tkinter element or False): function processing progress
         timeout (int): timeout in seconds (0 for no timeout)
+        parallel (Bool): flag to run likelihood computation in parallel mode (for each functions)
         debug (bool): if True extensive print will be used
 
     Returns:
@@ -992,9 +995,9 @@ def metropolis_hastings(params, parameter_intervals, param_init, functions, data
         ## Not recalculating the likelihood if we did not move
         if has_moved:
             ## Estimate likelihood of current point
-            theta_lik = manual_log_like_normal(params, theta, functions, data, sample_size, eps, is_probability, debug=debug)
+            theta_lik = manual_log_like_normal(params, theta, functions, data, sample_size, eps, is_probability, parallel=parallel, debug=debug)
         ## Estimate likelihood of new point
-        theta_new_lik = manual_log_like_normal(params, theta_new, functions, data, sample_size, eps, is_probability, debug=debug)
+        theta_new_lik = manual_log_like_normal(params, theta_new, functions, data, sample_size, eps, is_probability, parallel=parallel, debug=debug)
 
         if debug:
             print("iteration:", iteration)
@@ -1042,7 +1045,7 @@ def metropolis_hastings(params, parameter_intervals, param_init, functions, data
 
 def init_mh(params, parameter_intervals, functions, data, sample_size: int, mh_sampling_iterations: int, eps=0,
             sd=0.15, theta_init=False, is_probability=None, where=False, progress=False, burn_in=False, bins=20, timeout=0,
-            silent=False, debug=False, metadata=True, draw_plot=False):
+            parallel=False, silent=False, debug=False, metadata=True, draw_plot=False):
     """ Initialisation method for Metropolis Hastings
 
     Args:
@@ -1061,6 +1064,7 @@ def init_mh(params, parameter_intervals, functions, data, sample_size: int, mh_s
         burn_in (number): fraction or count of how many samples will be trimmed from beginning
         bins (int): number of segments per dimension in the output plot
         timeout (int): timeout in seconds (0 for no timeout)
+        parallel (Bool): flag to run likelihood computation in parallel mode (for each functions)
         silent (bool): if silent printed output is set to minimum
         debug (bool): if True extensive print will be used
         metadata (bool): if True metadata will be plotted
@@ -1121,8 +1125,8 @@ def init_mh(params, parameter_intervals, functions, data, sample_size: int, mh_s
 
     print(colored(f"Initialisation of Metropolis-Hastings took {round(time() - start_time, 4)} seconds", "yellow"))  if not silent else None
     ## MAIN LOOP
-    #                    metropolis_hastings(params, parameter_intervals, param_init, functions, data, sample_size, iterations,        eps,     sd,      progress=False,      timeout=0,  debug=False):
-    accepted, rejected = metropolis_hastings(params, parameter_intervals, theta_init, functions, data, sample_size, mh_sampling_iterations, eps=eps, sd=sd, is_probability=is_probability, progress=progress, timeout=timeout, debug=debug)
+    #                    metropolis_hastings(params, parameter_intervals, param_init, functions, data, sample_size, iterations,        eps,     sd,      progress=False,      timeout=0,  parallel=False,  debug=False):
+    accepted, rejected = metropolis_hastings(params, parameter_intervals, theta_init, functions, data, sample_size, mh_sampling_iterations, eps=eps, sd=sd, is_probability=is_probability, progress=progress, timeout=timeout, parallel=parallel, debug=debug)
 
     print(colored(f"Metropolis-Hastings took {round(time()-start_time, 4)} seconds", "yellow")) if not silent else None
 

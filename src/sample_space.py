@@ -1,6 +1,8 @@
 import multiprocessing
 from copy import copy
 from time import time
+from typing import Iterable
+
 import numpy as np
 from termcolor import colored
 
@@ -57,11 +59,13 @@ def check_sample(parameter_value, save_memory=False):
             ## TODO, the following line works only for the sequential version
             if not save_memory:
                 glob_space.add_unsat_samples([list(parameter_value)])
+            # print("False")
             return False
         sat_list.append(is_sat)
     if glob_compress:
         ## TODO, the following line works only for the sequential version
         glob_space.add_sat_samples([list(parameter_value)])
+        # print("True")
         return True
     else:
         return sat_list
@@ -127,10 +131,12 @@ def sample_space(space, constraints, sample_size, compress=False, silent=True, s
     if debug:
         silent = False
 
-    if parallel > 1:
-        pool_size = parallel
-    else:
+    if parallel is True:
         pool_size = multiprocessing.cpu_count() - 1
+    elif parallel > 1:
+        pool_size = min(parallel, multiprocessing.cpu_count() - 1)
+    elif parallel == 1:
+        pool_size = 1
 
     ## Convert z3 functions
     for index, constraint in enumerate(constraints):
