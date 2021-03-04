@@ -229,8 +229,9 @@ class RefinedSpace:
         self.wrapper = DocumentWrapper(width=70)
 
     def show(self, title="", green=True, red=True, sat_samples=False, unsat_samples=False, quantitative=False,
-             true_point=True, save=False, where=False, show_all=True, prefer_unsafe=None, is_presampled=False,
-             is_mhmh=False,  hide_legend=False, hide_title=False):
+             true_point=True, save=False, where=False, show_all=True, prefer_unsafe=None, is_parallel_sampling=False,
+             is_parallel_refinement=False, is_presampled=False, is_mhmh=False, is_sampling_guided=False,
+             hide_legend=False, hide_title=False):
         """ Visualises the space
 
         Args:
@@ -245,8 +246,11 @@ class RefinedSpace:
             where (tuple/list): output matplotlib sources to output created figure
             show_all (bool): if True, not only newly added rectangles are shown
             prefer_unsafe (bool): if True unsafe space is shown in multidimensional space instead of safe
+            is_parallel_sampling (int): number of cores used for sampling
+            is_parallel_refinement (int):  number of cores used for refinement
             is_presampled (bool): if True it will mark the refinement as presampled
             is_mhmh (bool): if True it will mark the refinement as MHMH, used MH to presample/precut space
+            is_sampling_guided (bool): flag whether refinement was sampling-guided
             hide_legend (bool): if True no legend will be shown
             hide_title (bool): if True no title will be shown (useful in the case of large picture, when tight layout fails)
         """
@@ -303,20 +307,20 @@ class RefinedSpace:
             pretitle = ""
             if (green or red) and (sat_samples or unsat_samples):
                 if is_presampled:
-                    pretitle = pretitle + "Presampled Refinement,"
+                    pretitle = pretitle + f"Presampled {'Parallel ' if is_parallel_refinement else ''}Refinement,"
                 elif is_mhmh:
-                    pretitle = pretitle + "MHMH and Sampling,"
+                    pretitle = pretitle + f"MHMH and {'Parallel ' if is_parallel_sampling else ''}Sampling,"
                 else:
-                    pretitle = pretitle + "Refinement and Sampling,"  #\n red = unsafe region / unsat points, green = safe region / sat points, white = in between"
+                    pretitle = pretitle + f"{'Parallel ' if is_parallel_refinement else ''}{'Sampling-guided ' if is_sampling_guided else ''}Refinement and {'Parallel ' if is_parallel_sampling else ''}Sampling,"  #\n red = unsafe region / unsat points, green = safe region / sat points, white = in between"
             elif green or red:
                 if is_mhmh:
-                    pretitle = pretitle + "MHMH,"
+                    pretitle = pretitle + f"{'Parallel ' if is_parallel_refinement else ''}MHMH,"
                 else:
-                    pretitle = pretitle + "Refinement,"  #\n red = unsafe region, green = safe region, white = in between"
+                    pretitle = pretitle + f"{'Parallel ' if is_parallel_refinement else ''}{'Sampling-guided ' if is_sampling_guided else ''}Refinement,"  #\n red = unsafe region, green = safe region, white = in between"
             elif sat_samples or unsat_samples:
-                pretitle = pretitle + "Samples,"  # \n red = unsat points, green = sat points"
+                pretitle = pretitle + f"{'Parallel ' if is_parallel_sampling else ''}Sampling,"  # \n red = unsat points, green = sat points"
             elif quantitative:
-                pretitle = pretitle + "Quantitative samples, \n Sum of L1 distances to dissatisfy constraints. \n The greener the point is the further it is from the threshold \n where it stops to satisfy constraints. \n  Note that green point can be unsat and vice versa."
+                pretitle = pretitle + f"Quantitative {'Parallel ' if is_parallel_sampling else ''}Sampling, \n Sum of L1 distances to dissatisfy constraints. \n The greener the point is the further it is from the threshold \n where it stops to satisfy constraints. \n  Note that green point can be unsat and vice versa."
             if (sat_samples or unsat_samples) and (self.sat_samples or self.unsat_samples):
                 pretitle = pretitle + f"\n Last sampling took {socket.gethostname()} {round(self.time_last_sampling, 2)} of {round(self.time_sampling, 2)} sec. whole sampling time"
             if (green or red) and (self.rectangles_sat or self.rectangles_unsat):
@@ -1060,8 +1064,9 @@ class RefinedSpace:
         if boundaries is False or boundaries is None:
             boundaries = self.region
 
-        sample_space(self, constraints, sample_size, boundaries=boundaries, compress=True, silent=silent, save=save, debug=debug,
-                     progress=progress, quantitative=quantitative,  parallel=parallel, save_memory=save_memory, stop_on_unknown=False)
+        return sample_space(self, constraints, sample_size, boundaries=boundaries, compress=True, silent=silent,
+                            save=save, debug=debug, progress=progress, quantitative=quantitative,  parallel=parallel,
+                            save_memory=save_memory, stop_on_unknown=False)
 
     ## TODO DEPRECATED NOT USED NOW, plot.scatter used instead
     def show_samples(self, which):

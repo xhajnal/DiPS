@@ -2261,7 +2261,8 @@ class Gui(Tk):
                                                    unsat_samples=show_samples, true_point=show_true_point, save=False,
                                                    where=[self.page6_figure, self.page6_a], show_all=show_all,
                                                    prefer_unsafe=prefer_unsafe, quantitative=quantitative, title=title,
-                                                   hide_legend=self.hide_legend_refinement.get(), hide_title=self.hide_title_refinement.get())
+                                                   hide_legend=self.hide_legend_refinement.get(), is_parallel_sampling=True,
+                                                   hide_title=self.hide_title_refinement.get())
                     ## If no plot provided
                     if figure is None:
                         if warnings:

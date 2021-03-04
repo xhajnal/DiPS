@@ -9,14 +9,14 @@ from time import time
 
 from refine_space import check_deeper
 from refine_space_parallel import check_deeper_parallel
-from common.convert import ineq_to_constraints
+from common.convert import ineq_to_constraints, round_sig
 from common.files import pickle_load
 from common.mathematics import create_intervals
 from load import load_data, get_f, parse_params_from_model
 from mc import call_storm, call_prism_files
 from mc_informed import general_create_data_informed_properties
 from metropolis_hastings import init_mh, HastingsResults
-from mhmh_parallel import initialise_mhmh
+from mhmh import initialise_mhmh
 from space import RefinedSpace
 from optimize import *
 from common.config import load_config
@@ -90,14 +90,9 @@ mhmh_timeout = 3600
 mhmh_where = None  ## skip showing figures
 mhmh_gui = False  ## skip showing progress
 mhmh_metadata = False  ## skip showing metadata
+mhmh_run_in_parallel = True
 
 del spam
-
-
-def round_sig(number, precision=precision):
-    if number == 0.0:
-        return number
-    return round(number, precision - int(math.floor(math.log10(abs(number)))) - 1)
 
 
 def load_functions(path, factorise=False, debug=False):
@@ -223,6 +218,8 @@ def repeat_sampling(space, constraints, sample_size, boundaries=None, silent=Fal
     else:
         print(colored(f"Refinement took {round_sig(avrg_time)}", "yellow"))
 
+    return avrg_time, sampling
+
 
 def repeat_refine(text, parameters, parameter_domains, constraints, timeout, silent, debug, alg=4, solver="z3",
                   sample_size=False, sample_guided=False, repetitions=repetitions, parallel=True):
@@ -268,7 +265,7 @@ def repeat_refine(text, parameters, parameter_domains, constraints, timeout, sil
         if debug:
             print("refined space", spam.nice_print())
 
-        sys.stdout.write(f"{run + 1}/{repetitions}, ")
+        sys.stdout.write(f"{run + 1}/{repetitions} ({round_sig(space.time_last_refinement)} s), ")
 
         if avrg_time/(run + 1) > timeout:
             print(colored(f"Timeout reached,  run number {run+1} with time {space.time_last_refinement}", "red"))
@@ -297,10 +294,12 @@ def repeat_refine(text, parameters, parameter_domains, constraints, timeout, sil
     except:
         pass
 
+    return avrg_time, space
+
 
 def repeat_mhmh(text, parameters, parameter_domains, data, functions, sample_size, mh_sampling_iterations, eps, silent,
                 debug, bins, metadata, constraints, recursion_depth, epsilon, coverage, version, solver, gui, where,
-                is_probability, repetitions=repetitions):
+                is_probability, repetitions=repetitions, parallel=mhmh_run_in_parallel):
 
     ## TODO add info on what is running
     print(colored(f"{text}", "green"))
@@ -308,16 +307,16 @@ def repeat_mhmh(text, parameters, parameter_domains, data, functions, sample_siz
 
     avrg_time = 0
     for run in range(repetitions):
-        #                  initialise_mhmh(params, parameter_intervals, functions, constraints, data, sample_size, mh_sampling_iterations,
-        #                                  eps=0, sd=0.15, theta_init=False, is_probability=None, where=False, progress=False, burn_in=False,
-        #                                  bins=20, timeout=False, debug=False, metadata=True, draw_plot=False, save=False, silent=True,
-        #                                  recursion_depth=10, epsilon=0.001, delta=0.001, coverage=0.95, version=4, solver="z3", gui=False
-        space, mh_result = initialise_mhmh(parameters, parameter_domains, functions=functions, constraints=constraints,
-                                           data=data, sample_size=sample_size, mh_sampling_iterations=mh_sampling_iterations,
-                                           eps=eps, is_probability=is_probability, where=where, bins=bins, mh_timeout=mhmh_timeout,
-                                           silent=silent, debug=debug, metadata=metadata, recursion_depth=recursion_depth, epsilon=epsilon,
-                                           coverage=coverage, version=version, solver=solver, gui=gui, ref_timeout=refine_timeout)
-        sys.stdout.write(f"{run + 1}/{repetitions}, ")
+        space, mh_result = initialise_mhmh(parameters, parameter_domains, functions=functions,
+                                           constraints=constraints, data=data, sample_size=sample_size,
+                                           mh_sampling_iterations=mh_sampling_iterations,
+                                           eps=eps, is_probability=is_probability, where=where, bins=bins,
+                                           mh_timeout=mhmh_timeout, silent=silent, debug=debug,
+                                           metadata=metadata, recursion_depth=recursion_depth,
+                                           epsilon=epsilon, coverage=coverage, version=version,
+                                           solver=solver, gui=gui, parallel=parallel, ref_timeout=refine_timeout)
+
+        sys.stdout.write(f"{run + 1}/{repetitions}, ({round_sig(mh_result.time_it_took + space.time_refinement)} s) ")
 
         if avrg_time/(run + 1) > mhmh_timeout:
             print(colored(f"Timeout reached,  run number {run+1} with time {mh_result.time_it_took + space.time_refinement}, MH {mh_result.time_it_took}, refinement{space.time_refinement}", "red"))
@@ -331,6 +330,8 @@ def repeat_mhmh(text, parameters, parameter_domains, data, functions, sample_siz
         print(colored(f"Average time of {repetitions} runs is {round_sig(avrg_time)}", "yellow"))
     else:
         print(colored(f"MHMH took {round_sig(avrg_time)}", "yellow"))
+
+    return avrg_time, space, mh_result
 
 
 if __name__ == '__main__':
@@ -466,6 +467,8 @@ if __name__ == '__main__':
                             print(f"Constraints with {n_samples[i]} samples :{constraints[i]}")
                 else:
                     constraints = []
+
+                print(constraints) if debug else None
 
                 ## SAMPLE SPACE
                 for i in range(len(n_samples)):
@@ -678,6 +681,8 @@ if __name__ == '__main__':
                         constraints.append(ineq_to_constraints(functions, intervals[i], decoupled=True))
                         if debug:
                             print(f"constraints with {n_samples[i]} samples :{constraints[i]}")
+
+                    print(constraints) if debug else None
 
                 ## SAMPLE SPACE
                 for i in range(len(n_samples)):

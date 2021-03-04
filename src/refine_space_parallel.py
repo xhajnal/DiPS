@@ -74,7 +74,7 @@ def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverag
         delta (number):: used for delta solving using dreal
         gui (bool or Callable): called from the graphical user interface
         iterative (bool) : iterative approach, deprecated
-        parallel (Bool): flag to run this in parallel mode
+        parallel (int): number of threads to use in parallel, when True (#cores - 1) is used
         timeout (int): timeout in seconds (set 0 for no timeout)
     """
     global glob_parameters
@@ -417,20 +417,20 @@ def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverag
         if show_space:
             space_shown = space.show(green=True, red=True, sat_samples=gui and len(space.params) <= 2,
                                      unsat_samples=gui and len(space.params) <= 2, save=save, where=where,
-                                     show_all=not gui, is_presampled=False)
+                                     show_all=not gui, is_presampled=False, is_sampling_guided=sample_guided)
         else:
             space_shown = [False]
     else:  ## TODO THIS IS A HOTFIX
         if show_space:
             space_shown = space.show(green=True, red=True, sat_samples=gui and len(space.params) <= 2,
                                      unsat_samples=gui and len(space.params) <= 2, save=save, where=where,
-                                     show_all=not gui, is_presampled=True)
+                                     show_all=not gui, is_presampled=True, is_sampling_guided=sample_guided)
         else:
             space_shown = [False]
 
     if not silent:
         print(colored(f"Result coverage is: {space.get_coverage()}", "blue"))
-        print(colored(f"Refinement took {round(space.time_last_refinement, 4)} seconds", "yellow"))
+        print(colored(f"Parallel refinement took {round(space.time_last_refinement, 4)} seconds", "yellow"))
         print(colored(f"Check calls took {round(space.time_check, 4)} seconds, {round(100 * space.time_check / space.time_last_refinement, 2)}% of refinement", "yellow"))
         print(colored(f"SMT calls took {round(space.time_smt, 4)} seconds, {round(100 * space.time_smt / space.time_check, 2) if space.time_check > 0 else None}% of checks, {round(100 * space.time_smt / space.time_last_refinement, 2)}% of refinement", "yellow"))
     if where:
@@ -698,11 +698,13 @@ def private_check_deeper_parallel_sampled(region, constraints=None, solver=None,
                                          compress=True, silent=True, save=False, debug=debug, progress=False,
                                          quantitative=False, parallel=False, save_memory=False, stop_on_unknown=True)
     if sat_list == [] or unsat_list == []:  ## all unsat or all sat
-        # if unsat_list != []:  ## some un sat samples
-        if check_unsafe_parallel(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
-            return False
-        elif check_safe_parallel(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
-            return True
+        if unsat_list:  ## some unsat samples
+            if check_unsafe_parallel(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
+                return False
+
+        if sat_list:  ## some sat samples
+            if check_safe_parallel(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
+                return True
     else:
         print("region", region) if debug else None
         print("sat_list", sat_list) if debug else None
@@ -913,10 +915,12 @@ def private_check_deeper_interval_parallel_sampled(region, functions=None, inter
                                          quantitative=False, parallel=False, save_memory=False, stop_on_unknown=True)
     if sat_list == [] or unsat_list == []:  ## all unsat or all sat
         # if unsat_list != []:  ## some un sat samples
-        if check_interval_out_parallel(region, functions, intervals, silent=silent, debug=debug) is True:
-            return False
-        elif check_interval_in_parallel(region, functions, intervals, silent=silent, debug=debug) is True:
-            return True
+        if unsat_list:
+            if check_interval_out_parallel(region, functions, intervals, silent=silent, debug=debug) is True:
+                return False
+        if sat_list:
+            if check_interval_in_parallel(region, functions, intervals, silent=silent, debug=debug) is True:
+                return True
     else:
         print("region", region) if debug else None
         print("sat_list", sat_list) if debug else None

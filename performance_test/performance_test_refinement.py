@@ -2,6 +2,7 @@ import sys
 import os
 from termcolor import colored
 
+import performance_test
 from performance_test import repeat_sampling, load_functions, repeat_refine
 from common.convert import ineq_to_constraints
 from common.mathematics import create_intervals
@@ -41,6 +42,7 @@ C = 0.95
 
 precision = 4
 repetitions = 20
+sample_guided = True
 del spam
 
 if __name__ == '__main__':

@@ -1,8 +1,21 @@
+import math
 import re
 from termcolor import colored
 from sympy import Interval
 import locale
 locale.setlocale(locale.LC_ALL, '')
+
+
+def round_sig(number, precision=4):
+    """ Round number with given number of significant numbers - precision
+
+    Args:
+        number (number): number to round
+        precision (int): number of significant numbers
+    """
+    if number == 0.0:
+        return number
+    return round(number, precision - int(math.floor(math.log10(abs(number)))) - 1)
 
 
 def parse_numbers(text: str):
