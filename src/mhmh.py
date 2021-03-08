@@ -296,7 +296,7 @@ if __name__ == '__main__':
     debug = False
     gui = False
     version = 2  ## in [2,5]
-    solver = "dreal"
+    solver = "z3"  ## in ["z3", "dreal"] if version in [2,3,4] else irrelevant
 
     ## TEST 1 - comment following tests to run this one
     ## Trivial example of two different approaches: MHMH and standard refinement
@@ -327,8 +327,8 @@ if __name__ == '__main__':
                                        bins=bins, is_probability=True, constraints=constraints,
                                        metadata=show_matadata, recursion_depth=depth, epsilon=epsilon,
                                        coverage=coverage, version=version, solver=solver, gui=False,
-                                       where=False, mh_timeout=timeout)
-    print(f"MHMH took {round_sig(space.time_refinement, 4)} seconds")
+                                       where=False, parallel=False, mh_timeout=timeout)
+    print(f"Sequential MHMH took {round_sig(space.time_refinement, 4)} seconds")
     print()
 
     ## MHMH parallel
@@ -337,7 +337,7 @@ if __name__ == '__main__':
                                          is_probability=True, constraints=constraints, metadata=show_matadata,
                                          recursion_depth=depth, epsilon=epsilon, coverage=coverage, version=version,
                                          solver=solver, gui=False, where=False, parallel=True, mh_timeout=timeout)
-    print(f"MHMH took {round_sig(space2.time_refinement, 4)} seconds")
+    print(f"Parallel MHMH took {round_sig(space2.time_refinement, 4)} seconds")
     print()
 
     ## Parallel refinement for comparison
@@ -352,5 +352,5 @@ if __name__ == '__main__':
                           debug=False, save=False, title="", where=False, show_space=True, solver=solver, delta=0.001,
                           gui=False, iterative=False, timeout=timeout)
 
-    print(f"Standard refinement took {round_sig(space4.time_refinement, 4)} seconds")
+    print(f"Sequential refinement took {round_sig(space4.time_refinement, 4)} seconds")
     print()

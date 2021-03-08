@@ -222,7 +222,7 @@ def repeat_sampling(space, constraints, sample_size, boundaries=None, silent=Fal
 
 
 def repeat_refine(text, parameters, parameter_domains, constraints, timeout, silent, debug, alg=4, solver="z3",
-                  sample_size=False, sample_guided=False, repetitions=repetitions, parallel=True):
+                  sample_size=False, sample_guided=False, repetitions=repetitions, where=None, parallel=True):
     """ Runs space refinement for multiple times
 
     Args
@@ -245,22 +245,29 @@ def repeat_refine(text, parameters, parameter_domains, constraints, timeout, sil
 
     avrg_time, avrg_check_time, avrg_smt_time = 0, 0, 0
 
+    if debug or where is False:
+        show_space = True
+        where = False
+    else:
+        show_space = False
+        where = None
+
     for run in range(repetitions):
         space = RefinedSpace(parameter_domains, parameters)
         if parallel:
             try:
                 spam = check_deeper_parallel(space, constraints, max_depth, epsilon=epsilon, coverage=coverage,
-                                             silent=silent, version=alg, sample_size=sample_size,
+                                             silent=silent, version=alg, sample_size=sample_size, where=where,
                                              sample_guided=sample_guided,  debug=debug, save=False, solver=solver,
-                                             delta=0.01, gui=False, show_space=debug, iterative=False,
+                                             delta=0.01, gui=False, show_space=show_space, iterative=False,
                                              parallel=parallel, timeout=timeout)
             except NotImplementedError as err:
                 print(colored("skipping this, not implemented", "blue"))
                 print(err)
         else:
             spam = check_deeper(space, constraints, max_depth, epsilon=epsilon, coverage=coverage,
-                                silent=silent, version=alg, sample_size=sample_size, debug=debug, save=False,
-                                solver=solver, delta=0.01, gui=False, show_space=debug, iterative=False, timeout=timeout)
+                                silent=silent, version=alg, sample_size=sample_size, debug=debug, save=False, where=where,
+                                solver=solver, delta=0.01, gui=False, show_space=show_space, iterative=False, timeout=timeout)
         print("coverage reached", spam.get_coverage()) if not silent else None
         if debug:
             print("refined space", spam.nice_print())
@@ -539,7 +546,7 @@ if __name__ == '__main__':
                     if not run_mhmh:
                         break
                     start_time = time()
-                    text = f"MHMH, dataset {data_set}, {n_samples[i]} samples"
+                    text = f"{'Parallel ' if mhmh_run_in_parallel else''}MHMH, dataset {data_set}, {n_samples[i]} samples"
                     repeat_mhmh(text, parameters, parameter_domains, data=data_set, functions=functions,
                                 sample_size=n_samples[i], mh_sampling_iterations=mhmh_iterations, eps=0, silent=silent,
                                 debug=debug, bins=mhmh_bins, metadata=mhmh_metadata, constraints=constraints[i],
@@ -752,24 +759,24 @@ if __name__ == '__main__':
                     if not run_mhmh:
                         break
                     start_time = time()
-                    text = f"MHMH, dataset {data_set}, {n_samples[i]} samples"
+                    text = f"{'Parallel ' if mhmh_run_in_parallel else''}MHMH, dataset {data_set}, {n_samples[i]} samples"
 
                     repeat_mhmh(text, parameters, parameter_domains, data=data_set, functions=functions,
                                 sample_size=n_samples[i], mh_sampling_iterations=mhmh_iterations, eps=0, silent=silent, debug=debug,
                                 bins=mhmh_bins, metadata=mhmh_metadata, constraints=constraints[i], recursion_depth=max_depth,
-                                epsilon=epsilon, coverage=coverage, version=4, solver="z3", gui=mhmh_gui, where=mhmh_where,
-                                is_probability=True, repetitions=repetitions)
+                                epsilon=epsilon, coverage=coverage, version=2, solver="z3", gui=mhmh_gui, where=mhmh_where,
+                                is_probability=True, repetitions=repetitions, parallel=mhmh_run_in_parallel)
 
                     repeat_mhmh(text, parameters, parameter_domains, data=data_set, functions=functions,
                                 sample_size=n_samples[i], mh_sampling_iterations=mhmh_iterations, eps=0, silent=silent, debug=debug,
                                 bins=mhmh_bins, metadata=mhmh_metadata, constraints=constraints[i], recursion_depth=max_depth,
-                                epsilon=epsilon, coverage=coverage, version=4, solver="dreal", gui=mhmh_gui, where=mhmh_where,
-                                is_probability=True, repetitions=repetitions)
+                                epsilon=epsilon, coverage=coverage, version=2, solver="dreal", gui=mhmh_gui, where=mhmh_where,
+                                is_probability=True, repetitions=repetitions, parallel=mhmh_run_in_parallel)
 
                     repeat_mhmh(text, parameters, parameter_domains, data=data_set, functions=functions,
                                 sample_size=n_samples[i], mh_sampling_iterations=mhmh_iterations, eps=0, silent=silent, debug=debug,
                                 bins=mhmh_bins, metadata=mhmh_metadata, constraints=constraints[i], recursion_depth=max_depth,
                                 epsilon=epsilon, coverage=coverage, version=5, solver=None, gui=mhmh_gui, where=mhmh_where,
-                                is_probability=True, repetitions=repetitions)
+                                is_probability=True, repetitions=repetitions, parallel=mhmh_run_in_parallel)
                     print()
 

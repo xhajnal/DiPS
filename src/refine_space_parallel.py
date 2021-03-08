@@ -417,14 +417,16 @@ def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverag
         if show_space:
             space_shown = space.show(green=True, red=True, sat_samples=gui and len(space.params) <= 2,
                                      unsat_samples=gui and len(space.params) <= 2, save=save, where=where,
-                                     show_all=not gui, is_presampled=False, is_sampling_guided=sample_guided)
+                                     show_all=not gui, is_presampled=False, is_sampling_guided=sample_guided,
+                                     is_parallel_refinement=parallel)
         else:
             space_shown = [False]
     else:  ## TODO THIS IS A HOTFIX
         if show_space:
             space_shown = space.show(green=True, red=True, sat_samples=gui and len(space.params) <= 2,
                                      unsat_samples=gui and len(space.params) <= 2, save=save, where=where,
-                                     show_all=not gui, is_presampled=True, is_sampling_guided=sample_guided)
+                                     show_all=not gui, is_presampled=True, is_sampling_guided=sample_guided,
+                                     is_parallel_refinement=parallel)
         else:
             space_shown = [False]
 
