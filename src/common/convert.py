@@ -433,9 +433,13 @@ def split_constraint(constraint):
     return constraint
 
 
-def parse_interval_bounds(line: str):
+def parse_interval_bounds(line: str, parse_param=False):
     """ Parses interval bounds of list of inequalities separated by ,/;
         Returns list of pairs - intervals
+
+    Args:
+        line (str): line to parse
+        parse_param (bool): if True return param name instead
 
     Example:
         "0<=p<=1/2;"               --> [[0, 0.5]]
@@ -444,6 +448,7 @@ def parse_interval_bounds(line: str):
     """
 
     line = line.replace(";", ",")
+    params = []
     inequalities = line.split(",")
     ## Filter nonempty inequalities
     inequalities = list(filter(lambda x: x != "", inequalities))
@@ -451,9 +456,15 @@ def parse_interval_bounds(line: str):
     ## Eval boundaries and omit the middle
     for index, item in enumerate(inequalities):
         inequalities[index][0] = eval(item[0]) if item[0] is not None else None
+        if parse_param:
+            params.append(inequalities[index][1])
         del inequalities[index][1]
         inequalities[index][1] = eval(item[1]) if item[1] is not None else None
-    return inequalities
+
+    if parse_param:
+        return params
+    else:
+        return inequalities
 
 
 def to_interval(points: list):

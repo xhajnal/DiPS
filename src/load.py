@@ -111,14 +111,16 @@ def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False
                     line = line.split("--region ")[-1]
                 line = re.findall(r"[\'\"].*=.*[\'\"]", line)[0][1:-1]
                 entries = line.split(",")
+
                 for entry in entries:
                     if tool.lower() == "storm":
                         if refinement:
-                            param_intervals.append(parse_interval_bounds(entry))
+                            params.append(parse_interval_bounds(entry, parse_param=True)[0])
+                            param_intervals.append(parse_interval_bounds(entry)[0])  ## Parse storm param intervals
                     else:
                         params.append(entry.split("=")[0])
                         interval = entry.split("=")[1]
-                        param_intervals.append(list(map(eval, interval.split(":"))))
+                        param_intervals.append(list(map(eval, interval.split(":"))))  ## Parse PRISM param intervals
 
             # Parse times
             if line.startswith("Time for"):

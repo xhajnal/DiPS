@@ -204,6 +204,24 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(parse_interval_bounds("0.7<p<0.8; 7<q<8"), [[0.7, 0.8], [7, 8]])
         self.assertEqual(parse_interval_bounds("0.7<p<0.8;7<q<8"), [[0.7, 0.8], [7, 8]])
 
+        self.assertEqual(parse_interval_bounds('0.0<=p1<=1.0'), [[0.0, 1.0]])
+
+    def test_parse_param_from_interval_bounds(self):
+        self.assertEqual(parse_interval_bounds("0.7<p", parse_param=True), ["p"])
+        self.assertEqual(parse_interval_bounds("p<0.8", parse_param=True), ["p"])
+        self.assertEqual(parse_interval_bounds("0.7<p<0.8", parse_param=True), ["p"])
+        self.assertEqual(parse_interval_bounds("0.7<p<=0.8", parse_param=True), ["p"])
+        self.assertEqual(parse_interval_bounds("0.7<=p<0.8", parse_param=True), ["p"])
+        self.assertEqual(parse_interval_bounds("0.7<=p<=0.8", parse_param=True), ["p"])
+        self.assertEqual(parse_interval_bounds("0.7<p<0.8,", parse_param=True), ["p"])
+        self.assertEqual(parse_interval_bounds("0.7<p<0.8;", parse_param=True), ["p"])
+        self.assertEqual(parse_interval_bounds("0.7<p<0.8, 7<q<8", parse_param=True), ["p", "q"])
+        self.assertEqual(parse_interval_bounds("0.7<p<0.8,7<q<8", parse_param=True), ["p", "q"])
+        self.assertEqual(parse_interval_bounds("0.7<p<0.8; 7<q<8", parse_param=True), ["p", "q"])
+        self.assertEqual(parse_interval_bounds("0.7<p<0.8;7<q<8", parse_param=True), ["p", "q"])
+
+        self.assertEqual(parse_interval_bounds('0.0<=p1<=1.0', parse_param=True), ["p1"])
+
     def test_to_interval(self):
         print(colored("Checking transformation of a set of points into a set of intervals here", 'blue'))
         self.assertEqual(to_interval([[0, 5]]), [[0, 0], [5, 5]])
