@@ -2115,7 +2115,11 @@ class Gui(Tk):
                 self.space_changed = True
                 self.space_file.set(spam)
 
-                self.space = pickle_load(self.space_file.get())
+                try:
+                    self.space = pickle_load(self.space_file.get())
+                except Exception as err:
+                    self.space == ""
+                    messagebox.showwarning("Loading space", f"Space could not be load: {err}")
 
                 if self.space == "":
                     return
@@ -2938,10 +2942,10 @@ class Gui(Tk):
                     self.status_set("Space refinement using PRISM is running ...")
                 elif self.program.get().lower() == "storm":
                     self.status_set("Parameter-lifting using Storm is running ...")
-                coverage = round(float(self.coverage_entry.get()), 13)
+                self.coverage = round(float(self.coverage_entry.get()), 13)
             else:
                 self.status_set(f"Parametric model checking using {self.program.get()} is running ...")
-                coverage = False
+                self.coverage = False
 
             ## CALL PRISM/STORM
             if self.program.get().lower() == "prism":
@@ -2951,7 +2955,7 @@ class Gui(Tk):
                 call_prism_files(self.model_file.get(), [], param_intervals=self.parameter_domains, seq=False, no_prob_checks=False,
                                  memory="", model_path="", properties_path=self.property_dir,
                                  property_file=property_file, output_path=output_file,
-                                 gui=show_message, silent=self.silent.get(), coverage=coverage)
+                                 gui=show_message, silent=self.silent.get(), coverage=self.coverage)
                 self.mc_result_file.set(output_file)
                 self.status_set(f"{method} using PRISM finished. Output here: {output_file}")
                 if refinement:
