@@ -102,20 +102,21 @@ def pass_models_to_sons(example, counterexample, index, threshold, solver):
             s.add(example_points[index] > threshold)
             above = s.check() != z3.unsat
 
-            s = Solver()
-            s.add(example_points[index] == threshold)
-            exact = s.check() != z3.unsat
+            if not above:
+                s = Solver()
+                s.add(example_points[index] == threshold)
+                exact = s.check() != z3.unsat
         else:
             above = example_points[index] > threshold
             exact = example_points[index] == threshold
 
-        if exact:
+        if above:
+            model_low[0] = None
+            model_high[0] = example
+        elif exact:
             ## as exact thresholds can be ambiguous for a solver we do not pass this information
             model_low[0] = None
             model_high[0] = None
-        elif above:
-            model_low[0] = None
-            model_high[0] = example
         else:
             model_low[0] = example
             model_high[0] = None
@@ -133,20 +134,21 @@ def pass_models_to_sons(example, counterexample, index, threshold, solver):
             s.add(counterexample_points[index] > threshold)
             above = s.check() != z3.unsat
 
-            s = Solver()
-            s.add(counterexample_points[index] == threshold)
-            exact = s.check() != z3.unsat
+            if not above:
+                s = Solver()
+                s.add(counterexample_points[index] == threshold)
+                exact = s.check() != z3.unsat
         else:
             above = counterexample_points[index] > threshold
             exact = counterexample_points[index] == threshold
 
-        if exact:
+        if above:
+            model_low[1] = None
+            model_high[1] = counterexample
+        elif exact:
             ## as exact thresholds can be ambiguous for a solver we do not pass this information
             model_low[1] = None
             model_high[1] = None
-        elif above:
-            model_low[1] = None
-            model_high[1] = counterexample
         else:
             model_low[1] = counterexample
             model_high[1] = None

@@ -5,8 +5,10 @@ from time import strftime, localtime, time
 from collections.abc import Iterable
 import copy
 import multiprocessing
+
 from mpmath import mpi
 from termcolor import colored
+from timeout_decorator import timeout_decorator
 from z3 import Real, Int, Bool, BitVec, Solver, set_param, Z3Exception, unsat, unknown, Not, Or, sat
 
 ## My imports
@@ -18,7 +20,7 @@ from common.space_stuff import is_in, refine_by, split_by_longest_dimension, rec
 from load import find_param
 from rectangle import My_Rectangle
 from refine_space import private_presample
-from sample_space import sample_space, sample_region
+from sample_space import sample_region
 from space import RefinedSpace
 
 
@@ -52,7 +54,7 @@ global glob_sample_size
 
 def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverage, silent, version=4, sample_size=False,
                           sample_guided=False, debug=False, save=False, title="", where=False, show_space=True, solver="z3", delta=0.001,
-                          gui=False, iterative=False, parallel=True, timeout=0):
+                          gui=False, iterative=False, parallel=True, timeout=0, single_call_timeout=0):
     """ Refining the parameter space into safe and unsafe regions with respective alg/method
 
     Args:
@@ -75,7 +77,8 @@ def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverag
         gui (bool or Callable): called from the graphical user interface
         iterative (bool) : iterative approach, deprecated
         parallel (int): number of threads to use in parallel, when True (#cores - 1) is used
-        timeout (int): timeout in seconds (set 0 for no timeout)
+        timeout (int): timeout of refinement in seconds (set 0 for no timeout)
+        single_call_timeout (int): timeout of a single SMT/interval arithmetics call in seconds (set 0 for no timeout)
     """
     global glob_parameters
     global glob_constraints
@@ -270,8 +273,10 @@ def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverag
         glob_parameters = parameters
         global glob_silent
         global glob_debug
+        global glob_single_call_timeout
         glob_silent = silent
         glob_debug = debug
+        glob_single_call_timeout = single_call_timeout
 
         rectangles_to_be_refined = list(map(lambda x: x.region, space.rectangles_unknown[key]))
 
@@ -288,7 +293,7 @@ def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverag
             global glob_delta
             glob_delta = delta
 
-        # ### SAMPLING
+        # ### OLD SAMPLING-GUIDED
         # ## Iterate through the rectangles (in reversed order to delete by index)
         # sampl_start_time = time()
         # i = 0
@@ -400,6 +405,7 @@ def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverag
                         space.add_white(item[0])
                         space.add_white(item[1])
 
+        print(colored(f"Current coverage is {space.get_coverage()}, current time is {datetime.datetime.now()}", "blue")) if not silent else None
         print(space.nice_print()) if debug else None
 
         ## End if recursion depth was 0 (now -1)
@@ -444,7 +450,7 @@ def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverag
         return space
 
 
-def check_unsafe_parallel(region, constraints, silent: bool = False, called=False, solver="z3", delta=0.001, debug=False):
+def check_unsafe_parallel(region, constraints, silent=False, solver="z3", delta=0.001, debug=False, timeout=0):
     """ Check if the given region is unsafe or not using z3 or dreal.
 
     It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given
@@ -454,10 +460,10 @@ def check_unsafe_parallel(region, constraints, silent: bool = False, called=Fals
         region (list of pairs of numbers): list of intervals, low and high bound, defining the parameter space to be refined
         constraints  (list of strings): array of functions (rational functions in the case of Markov Chains)
         silent (bool): if silent printed output is set to minimum
-        called (bool): True for standalone call - it updates the global variables and creates new space
         solver (string): specified solver, allowed: z3, dreal
         delta (number): used for delta solving using dreal
         debug (bool): if True extensive print will be used
+        timeout (int): timeout in seconds (set 0 for no timeout)
     """
     global glob_parameters
 
@@ -478,14 +484,18 @@ def check_unsafe_parallel(region, constraints, silent: bool = False, called=Fals
         set_param(max_lines=1, max_width=1000000)
         s = Solver()
 
+        if timeout > 0:
+            # print("z3 single call timeout set to", timeout)
+            s.set("timeout", timeout)
+
         ## Adding regional restrictions to solver (hyperrectangle boundaries)
         j = 0
         for param in glob_parameters:
             if debug:
                 print(f"globals()[param] {globals()[param]}")
                 print(f"region[{j}] {region[j]}")
-            s.add(globals()[param] >= float(region[j][0]))
-            s.add(globals()[param] <= region[j][1])
+            s.add(globals()[param] > region[j][0])
+            s.add(globals()[param] < region[j][1])
             j = j + 1
 
         ## Adding properties to solver
@@ -498,10 +508,16 @@ def check_unsafe_parallel(region, constraints, silent: bool = False, called=Fals
                 print(f"constraints[{i}] {constraints[i]}")
                 print(f"evaled constraints[{i}] {eval(constraints[i])}")
 
+        start_time = time()
+        # timeout_decorator.timeout(timeout)
         check = s.check()
+        # print(colored(f"This check unsafe took {time() - start_time} seconds", "yellow"))
+        if time()-start_time > timeout + 0.3:
+            print(colored(f"This check unsafe took {time() - start_time} seconds, which is {time()-start_time-timeout} seconds longer than timeout {timeout}, while the region is {check}", "red"))
+
         ## If there is no example of satisfaction, hence all unsat, hence unsafe, hence red
         if check == unsat:
-            print(f'The region {region} is {colored("is unsafe", "red")}') if debug else None
+            print(f'The region {region} is {colored("is unsafe", "red")}') if not silent else None
             return True
         elif check == unknown:
             return False
@@ -523,10 +539,10 @@ def check_unsafe_parallel(region, constraints, silent: bool = False, called=Fals
             ## TODO possibly a problematic when changing the solver with the same space
             globals()[param] = Variable(param)
             if j == 0:
-                f_sat = logical_and(globals()[param] >= region[j][0], globals()[param] <= region[j][1])
+                f_sat = logical_and(globals()[param] > region[j][0], globals()[param] < region[j][1])
             else:
-                f_sat = logical_and(f_sat, globals()[param] >= region[j][0])
-                f_sat = logical_and(f_sat, globals()[param] <= region[j][1])
+                f_sat = logical_and(f_sat, globals()[param] > region[j][0])
+                f_sat = logical_and(f_sat, globals()[param] < region[j][1])
             j = j + 1
 
         ## Adding properties to dreal solver
@@ -534,17 +550,19 @@ def check_unsafe_parallel(region, constraints, silent: bool = False, called=Fals
             print(f"constraints[{i}] {constraints[i]}") if debug else None
             f_sat = logical_and(f_sat, eval(constraints[i]))
 
+        if timeout > 0:
+            timeout_decorator.timeout(timeout)
         result = CheckSatisfiability(f_sat, delta)
 
         if result is not None:
             print(f"Counterexample of unsafety: {result}") if debug else None
             return result
         else:
-            print(f'The region {region} is {colored("is unsafe", "red")}') if debug else None
+            print(f'The region {region} is {colored("is unsafe", "red")}') if not silent else None
             return True
 
 
-def check_safe_parallel(region, constraints, silent: bool = False, called=False, solver="z3", delta=0.001, debug: bool = False):
+def check_safe_parallel(region, constraints, silent=False, solver="z3", delta=0.001, debug=False, timeout=0):
     """ Check if the given region is safe or not using z3 or dreal.
 
     It means whether for all parametrisations in **region** every property(prop) is evaluated within the given
@@ -554,17 +572,17 @@ def check_safe_parallel(region, constraints, silent: bool = False, called=False,
         region (list of pairs of numbers): list of intervals, low and high bound, defining the parameter space to be refined
         constraints  (list of strings): array of properties
         silent (bool): if silent printed output is set to minimum
-        called (bool): True for standalone call - it updates the global variables and creates new space
         solver (string):: specified solver, allowed: z3, dreal
         delta (number):: used for delta solving using dreal
         debug (bool): if True extensive print will be used
+        timeout (int): timeout in seconds (set 0 for no timeout)
     """
     global glob_parameters
     ## Initialisation
     if debug:
         silent = False
 
-    print(f"checking safe {region} using {('dreal', 'z3')[solver == 'z3']} solver, current time is {datetime.datetime.now()}") if not silent else None
+    print(f"Checking safe {region} using {('dreal', 'z3')[solver == 'z3']} solver, current time is {datetime.datetime.now()}") if not silent else None
 
     if solver == "z3":  ## avoiding collision name
         del delta
@@ -578,14 +596,17 @@ def check_safe_parallel(region, constraints, silent: bool = False, called=False,
         ## Initialisation of z3 solver
         s = Solver()
 
+        if timeout > 0:
+            s.set("timeout", timeout)
+
         ## Adding regional restrictions to solver (hyperrectangle boundaries)
         j = 0
         for param in glob_parameters:
             if debug:
                 print(f"globals()[param] {globals()[param]}")
                 print(f"region[{j}] {region[j]}")
-            s.add(globals()[param] >= region[j][0])
-            s.add(globals()[param] <= region[j][1])
+            s.add(globals()[param] > region[j][0])
+            s.add(globals()[param] < region[j][1])
             j = j + 1
 
         ## Adding properties to z3 solver
@@ -594,7 +615,18 @@ def check_safe_parallel(region, constraints, silent: bool = False, called=False,
             formula = Or(formula, Not(eval(constraints[i])))
         print(f"formula {formula}") if debug else None
         s.add(formula)
+
+        # start_time = time()
+
+        timeout_decorator.timeout(timeout)
         check = s.check()
+        # if time()-start_time > timeout + 0.3:
+        #     print(colored(f"This check safe took {time() - start_time} seconds, which is {time()-start_time-timeout} seconds longer than timeout {timeout}, while the region is {check}", "red"))
+        #     print(formula)
+        #     for param in glob_parameters:
+        #         print(globals()[param])
+        #         print(region[j][0])
+        #         print(region[j][1])
 
         ## If there is an example of falsification
         if check == sat:
@@ -604,7 +636,7 @@ def check_safe_parallel(region, constraints, silent: bool = False, called=False,
             return False
         ## Else there is no example of falsification, hence all sat, hence safe, hence green
         else:
-            print(f"The region {region} is " + colored("is safe", "green")) if debug else None
+            print(f"The region {region} is " + colored("is safe", "green")) if not silent else None
             return True
 
     elif solver == "dreal":
@@ -618,10 +650,10 @@ def check_safe_parallel(region, constraints, silent: bool = False, called=False,
                 print(f"globals()[param] {globals()[param]}")
                 print(f"region[{j}] {region[j]}")
             if j == 0:
-                f_sat = logical_and(globals()[param] >= region[j][0], globals()[param] <= region[j][1])
+                f_sat = logical_and(globals()[param] > region[j][0], globals()[param] < region[j][1])
             else:
-                f_sat = logical_and(f_sat, globals()[param] >= region[j][0])
-                f_sat = logical_and(f_sat, globals()[param] <= region[j][1])
+                f_sat = logical_and(f_sat, globals()[param] > region[j][0])
+                f_sat = logical_and(f_sat, globals()[param] < region[j][1])
             j = j + 1
 
         ## Adding properties to solver
@@ -629,17 +661,20 @@ def check_safe_parallel(region, constraints, silent: bool = False, called=False,
         for i in range(1, len(constraints)):
             formula = logical_or(formula, logical_not(eval(constraints[i])))
         f_sat = logical_and(f_sat, formula)
+
+        # if timeout > 0:
+        #     timeout_decorator.timeout(timeout)
         result = CheckSatisfiability(f_sat, delta)
 
         if result is None:
-            print(f"The region {region} is " + colored("is safe", "green")) if debug else None
+            print(f"The region {region} is " + colored("is safe", "green")) if not silent else None
             return True
         else:
             print(f"Counterexample of safety: {result}") if debug else None
             return result
 
 
-def private_check_deeper_parallel(region, constraints=None, solver=None, delta=None, silent=None, debug=None):
+def private_check_deeper_parallel(region, constraints=None, solver=None, delta=None, silent=None, debug=None, single_call_timeout=None):
     """ Refining the parameter space into safe and unsafe regions
 
     Args:
@@ -649,6 +684,7 @@ def private_check_deeper_parallel(region, constraints=None, solver=None, delta=N
         delta (number):: used for delta solving using dreal
         silent (bool): if silent printed output is set to minimum
         debug (bool): if True extensive print will be used
+        single_call_timeout (int): timeout of a single SMT/interval arithmetics call in seconds (set 0 for no timeout)
     """
     if constraints is None:
         constraints = glob_constraints
@@ -660,19 +696,22 @@ def private_check_deeper_parallel(region, constraints=None, solver=None, delta=N
         silent = glob_silent
     if debug is None:
         debug = glob_debug
+    if single_call_timeout is None:
+        single_call_timeout = glob_single_call_timeout
 
-    if check_unsafe_parallel(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
+    if check_unsafe_parallel(region, constraints, silent, solver=solver, delta=delta, debug=debug, timeout=single_call_timeout) is True:
         return False
-    elif check_safe_parallel(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
+    elif check_safe_parallel(region, constraints, silent, solver=solver, delta=delta, debug=debug, timeout=single_call_timeout) is True:
         return True
 
     ## Find index of maximum dimension to be split
+    print(f'The region {region} is {colored("is unknown", "yellow")}') if not silent else None
     rectangle_low, rectangle_high, index, threshold = split_by_longest_dimension(region)
 
     return rectangle_low, rectangle_high, None, None
 
 
-def private_check_deeper_parallel_sampled(region, constraints=None, solver=None, delta=None, silent=None, debug=None):
+def private_check_deeper_parallel_sampled(region, constraints=None, solver=None, delta=None, silent=None, debug=None, single_call_timeout=0):
     """ Refining the parameter space into safe and unsafe regions
 
     Args:
@@ -682,6 +721,7 @@ def private_check_deeper_parallel_sampled(region, constraints=None, solver=None,
         delta (number):: used for delta solving using dreal
         silent (bool): if silent printed output is set to minimum
         debug (bool): if True extensive print will be used
+        single_call_timeout (int): timeout of a single SMT/interval arithmetics call in seconds (set 0 for no timeout)
     """
     if constraints is None:
         constraints = glob_constraints
@@ -750,7 +790,7 @@ def private_check_deeper_parallel_sampled(region, constraints=None, solver=None,
     return [rectangle_low, rectangle_high]
 
 
-def private_check_deeper_checking_parallel(region, constraints=None, model=None, solver=None, delta=None, silent=None, debug=None):
+def private_check_deeper_checking_parallel(region, constraints=None, model=None, solver=None, delta=None, silent=None, debug=None, single_call_timeout=0):
     """ WE SUGGEST USING METHOD PASSING BOTH, EXAMPLE AND COUNTEREXAMPLE
         Refining the parameter space into safe and unsafe regions with passing examples,
 
@@ -762,6 +802,7 @@ def private_check_deeper_checking_parallel(region, constraints=None, model=None,
         delta (number):: used for delta solving using dreal
         silent (bool): if silent printed output is set to minimum
         debug (bool): if True extensive print will be used
+        single_call_timeout (int): timeout of a single SMT/interval arithmetics call in seconds (set 0 for no timeout)
     """
     if constraints is None:
         constraints = glob_constraints
@@ -798,7 +839,7 @@ def private_check_deeper_checking_parallel(region, constraints=None, model=None,
     return rectangle_low, rectangle_high, model_low, model_high
 
 
-def private_check_deeper_checking_both_parallel(region, constraints=None, model=None, solver=None, delta=None, silent=None, debug=None):
+def private_check_deeper_checking_both_parallel(region, constraints=None, model=None, solver=None, delta=None, silent=None, debug=None, single_call_timeout=0):
     """ Refining the parameter space into safe and unsafe regions
 
     Args:
@@ -809,6 +850,7 @@ def private_check_deeper_checking_both_parallel(region, constraints=None, model=
         delta (number):: used for delta solving using dreal
         silent (bool): if silent printed output is set to minimum
         debug (bool): if True extensive print will be used
+        single_call_timeout (int): timeout of a single SMT/interval arithmetics call in seconds (set 0 for no timeout)
     """
     if constraints is None:
         constraints = glob_constraints
@@ -859,38 +901,7 @@ def private_check_deeper_checking_both_parallel(region, constraints=None, model=
     return rectangle_low, rectangle_high, model_low, model_high
 
 
-def private_check_deeper_interval_parallel(region, constraints=None, intervals=None, silent=None, debug=None):
-    """ Refining the parameter space into safe and unsafe regions
-
-    Args:
-        region (list of pairs of numbers): list of intervals, low and high bound, defining the parameter space to be refined
-        constraints  (list of strings): array of properties
-        intervals (list of pairs/ sympy.Intervals): array of interval to constrain constraints
-        silent (bool): if silent printed output is set to minimum
-        debug (bool): if True extensive print will be used
-    """
-    if constraints is None:
-        constraints = glob_constraints
-    if intervals is None:
-        intervals = glob_intervals
-    if silent is None:
-        silent = glob_silent
-    if debug is None:
-        debug = glob_debug
-
-    ## Resolve the result
-    if check_interval_out_parallel(region, constraints, intervals, silent=silent, debug=debug) is True:
-        return False
-    elif check_interval_in_parallel(region, constraints, intervals, silent=silent, debug=debug) is True:
-        return True
-
-    ## Find index of maximum dimension to be split
-    rectangle_low, rectangle_high, index, threshold = split_by_longest_dimension(region)
-
-    return rectangle_low, rectangle_high, None, None
-
-
-def private_check_deeper_interval_parallel_sampled(region, functions=None, intervals=None, silent=None, debug=None):
+def private_check_deeper_interval_parallel(region, functions=None, intervals=None, silent=None, debug=None, single_call_timeout=0):
     """ Refining the parameter space into safe and unsafe regions
 
     Args:
@@ -899,6 +910,39 @@ def private_check_deeper_interval_parallel_sampled(region, functions=None, inter
         intervals (list of pairs/ sympy.Intervals): array of interval to constrain constraints
         silent (bool): if silent printed output is set to minimum
         debug (bool): if True extensive print will be used
+        single_call_timeout (int): timeout of a single SMT/interval arithmetics call in seconds (set 0 for no timeout)
+    """
+    if functions is None:
+        functions = glob_functions
+    if intervals is None:
+        intervals = glob_intervals
+    if silent is None:
+        silent = glob_silent
+    if debug is None:
+        debug = glob_debug
+
+    ## Resolve the result
+    if check_interval_out_parallel(region, functions, intervals, silent=silent, debug=debug) is True:
+        return False
+    elif check_interval_in_parallel(region, functions, intervals, silent=silent, debug=debug) is True:
+        return True
+
+    ## Find index of maximum dimension to be split
+    rectangle_low, rectangle_high, index, threshold = split_by_longest_dimension(region)
+
+    return rectangle_low, rectangle_high, None, None
+
+
+def private_check_deeper_interval_parallel_sampled(region, functions=None, intervals=None, silent=None, debug=None, single_call_timeout=0):
+    """ Refining the parameter space into safe and unsafe regions
+
+    Args:
+        region (list of pairs of numbers): list of intervals, low and high bound, defining the parameter space to be refined
+        functions  (list of strings): array of properties
+        intervals (list of pairs/ sympy.Intervals): array of interval to constrain constraints
+        silent (bool): if silent printed output is set to minimum
+        debug (bool): if True extensive print will be used
+        single_call_timeout (int): timeout of a single SMT/interval arithmetics call in seconds (set 0 for no timeout)
     """
     if functions is None:
         functions = glob_functions
@@ -965,7 +1009,7 @@ def private_check_deeper_interval_parallel_sampled(region, functions=None, inter
     return [rectangle_low, rectangle_high]
 
 
-def check_interval_in_parallel(region, constraints, intervals, silent=False, debug=False):
+def check_interval_in_parallel(region, constraints, intervals, silent=False, debug=False, timeout=0):
     """ Check if the given region is unsafe or not.
 
     It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given
@@ -977,6 +1021,7 @@ def check_interval_in_parallel(region, constraints, intervals, silent=False, deb
         intervals (list of pairs/ sympy.Intervals): array of interval to constrain constraints
         silent (bool): if silent printed output is set to minimum
         debug (bool): if True extensive print will be used
+        timeout (int): timeout in seconds (set 0 for no timeout)
     """
     global glob_parameters
     if debug:
@@ -1005,7 +1050,7 @@ def check_interval_in_parallel(region, constraints, intervals, silent=False, deb
     return True
 
 
-def check_interval_out_parallel(region, constraints, intervals, silent=False, debug=False):
+def check_interval_out_parallel(region, constraints, intervals, silent=False, debug=False, timeout=0):
     """ Check if the given region is unsafe or not.
 
     It means whether there exists a parametrisation in **region** every property(prop) is evaluated within the given
@@ -1017,6 +1062,7 @@ def check_interval_out_parallel(region, constraints, intervals, silent=False, de
         intervals (list of pairs/ sympy.Intervals): array of interval to constrain constraints
         silent (bool): if silent printed output is set to minimum
         debug (bool): if True extensive print will be used
+        timeout (int): timeout in seconds (set 0 for no timeout)
     """
     global glob_parameters
     if debug:
@@ -1033,6 +1079,8 @@ def check_interval_out_parallel(region, constraints, intervals, silent=False, de
 
     ## Check that all prop are in its interval
     for index, prop in enumerate(constraints):
+        # print("prop", prop)
+        # print("eval prop", eval(prop))
         prop_eval = eval(prop)
 
         ## TODO THIS CAN BE OPTIMISED

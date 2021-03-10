@@ -114,35 +114,35 @@ except NameError:
 
 
 ## This is depricated
-def call_refine_from_que(space: RefinedSpace, queu, alg=4):
-    globals()["space"] = space
-    globals()["que"] = queu
-    globals()["start_time"] = time()
-    globals()["parameters"] = space.get_params()
-    globals()["init_coverage"] = space.get_coverage()
-    # assert globals()["init_coverage"] == 0
-
-    start_time = time()
-
-    while globals()["que"].size() > 0:
-        ## TODO refactor this as it is using old methods
-        if alg == 1:
-            raise NotImplementedError("alg 1 does not work with queue, we cannot use it")
-        elif alg == 2:
-            private_check_deeper(*globals()["que"].dequeue())
-        elif alg == 3:
-            private_check_deeper_checking(*globals()["que"].dequeue())
-        elif alg == 4:
-            private_check_deeper_checking_both(*globals()["que"].dequeue())
-        elif alg == 5:
-            raise NotImplementedError("Interval arithmetic not implemented so far fo MHMH method")
-
-    ## Refresh parameters:
-    for param in globals()["parameters"]:
-        del globals()[param]
-
-    ## Saving how much time refinement took
-    space.refinement_took(time() - start_time)
+# def call_refine_from_que(space: RefinedSpace, queu, alg=4):
+#     globals()["space"] = space
+#     globals()["que"] = queu
+#     globals()["start_time"] = time()
+#     globals()["parameters"] = space.get_params()
+#     globals()["init_coverage"] = space.get_coverage()
+#     # assert globals()["init_coverage"] == 0
+#
+#     start_time = time()
+#
+#     while globals()["que"].size() > 0:
+#         ## TODO refactor this as it is using old methods
+#         if alg == 1:
+#             raise NotImplementedError("alg 1 does not work with queue, we cannot use it")
+#         elif alg == 2:
+#             private_check_deeper(*globals()["que"].dequeue())
+#         elif alg == 3:
+#             private_check_deeper_checking(*globals()["que"].dequeue())
+#         elif alg == 4:
+#             private_check_deeper_checking_both(*globals()["que"].dequeue())
+#         elif alg == 5:
+#             raise NotImplementedError("Interval arithmetic not implemented so far fo MHMH method")
+#
+#     ## Refresh parameters:
+#     for param in globals()["parameters"]:
+#         del globals()[param]
+#
+#     ## Saving how much time refinement took
+#     space.refinement_took(time() - start_time)
 
 
 def are_param_types_assigned():
@@ -229,8 +229,8 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
             if debug:
                 print(f"globals()[param] {globals()[param]}")
                 print(f"region[{j}] {region[j]}")
-            s.add(globals()[param] >= float(region[j][0]))
-            s.add(globals()[param] <= region[j][1])
+            s.add(globals()[param] > float(region[j][0]))
+            s.add(globals()[param] < region[j][1])
             j = j + 1
 
         ## Adding properties to solver
@@ -247,7 +247,7 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
         ## If there is no example of satisfaction, hence all unsat, hence unsafe, hence red
         space.time_smt = space.time_smt + time() - b
         if check == unsat:
-            print(f'The region {region} is {colored("is unsafe", "red")}') if debug else None
+            print(f'The region {region} is {colored("is unsafe", "red")}') if not silent else None
             space.add_red(region)
             return True
         elif check == unknown:
@@ -268,10 +268,10 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
             ## TODO possibly a problematic when changing the solver with the same space
             globals()[param] = Variable(param)
             if j == 0:
-                f_sat = logical_and(globals()[param] >= region[j][0], globals()[param] <= region[j][1])
+                f_sat = logical_and(globals()[param] > region[j][0], globals()[param] < region[j][1])
             else:
-                f_sat = logical_and(f_sat, globals()[param] >= region[j][0])
-                f_sat = logical_and(f_sat, globals()[param] <= region[j][1])
+                f_sat = logical_and(f_sat, globals()[param] > region[j][0])
+                f_sat = logical_and(f_sat, globals()[param] < region[j][1])
             j = j + 1
 
         ## Adding properties to dreal solver
@@ -287,7 +287,7 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
             return result
         else:
             space.add_red(region)
-            print(f'The region {region} is {colored("is unsafe", "red")}') if debug else None
+            print(f'The region {region} is {colored("is unsafe", "red")}') if not silent else None
             return True
 
 
@@ -313,7 +313,7 @@ def check_safe(region, constraints, silent: bool = False, called=False, solver="
     if isinstance(region, My_Rectangle):
         region = region.region
 
-    print(f"checking safe {region} using {('dreal', 'z3')[solver == 'z3']} solver, current time is {datetime.datetime.now()}") if not silent else None
+    print(f"Checking safe {region} using {('dreal', 'z3')[solver == 'z3']} solver, current time is {datetime.datetime.now()}") if not silent else None
 
     if solver == "z3":  ## avoiding collision name
         del delta
@@ -349,8 +349,8 @@ def check_safe(region, constraints, silent: bool = False, called=False, solver="
             if debug:
                 print(f"globals()[param] {globals()[param]}")
                 print(f"region[{j}] {region[j]}")
-            s.add(globals()[param] >= region[j][0])
-            s.add(globals()[param] <= region[j][1])
+            s.add(globals()[param] > region[j][0])
+            s.add(globals()[param] < region[j][1])
             j = j + 1
 
         ## Adding properties to z3 solver
@@ -373,7 +373,7 @@ def check_safe(region, constraints, silent: bool = False, called=False, solver="
             return False
         ## Else there is no example of falsification, hence all sat, hence safe, hence green
         else:
-            print(f"The region {region} is " + colored("is safe", "green")) if debug else None
+            print(f"The region {region} is " + colored("is safe", "green")) if  not silent else None
             space.add_green(region)
             return True
 
@@ -386,10 +386,10 @@ def check_safe(region, constraints, silent: bool = False, called=False, solver="
                 print(f"globals()[param] {globals()[param]}")
                 print(f"region[{j}] {region[j]}")
             if j == 0:
-                f_sat = logical_and(globals()[param] >= region[j][0], globals()[param] <= region[j][1])
+                f_sat = logical_and(globals()[param] > region[j][0], globals()[param] < region[j][1])
             else:
-                f_sat = logical_and(f_sat, globals()[param] >= region[j][0])
-                f_sat = logical_and(f_sat, globals()[param] <= region[j][1])
+                f_sat = logical_and(f_sat, globals()[param] > region[j][0])
+                f_sat = logical_and(f_sat, globals()[param] < region[j][1])
             j = j + 1
 
         ## Adding properties to solver
@@ -402,7 +402,7 @@ def check_safe(region, constraints, silent: bool = False, called=False, solver="
 
         space.time_smt = space.time_smt + time() - b
         if result is None:
-            print(f"The region {region} is " + colored("is safe", "green")) if debug else None
+            print(f"The region {region} is " + colored("is safe", "green")) if  not silent else None
             space.add_green(region)
             return True
         else:
@@ -648,6 +648,8 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                         gui(False, (2 ** (-(globals()["init_recursion_depth"] - recursion_depth))) / (coverage - globals()["init_coverage"]))
                 else:
                     gui(False, (get_rectangle_volume(region) / space.get_volume()) / (coverage - globals()["init_coverage"]))
+
+        print(colored(f"Current coverage is {space.get_coverage()}, current time is {datetime.datetime.now()}", "blue")) if not silent else None
 
         ## End if recursion depth was 0 (now -1)
         if recursion_depth == -1:

@@ -95,26 +95,35 @@ mhmh_run_in_parallel = True
 del spam
 
 
-def load_functions(path, factorise=False, debug=False):
+def load_functions(path, factorise=False, debug=False, source="any"):
     """ Loads rational functions from a file (path)
 
     Args
         path (Path or string): path to file
         factorise (bool): flag whether to factorise rational functions
         debug (bool): if True extensive print will be used
+        source (string): which model checker result to load - "prism", "storm", if anything else, first we try to load storm, then prism is used
     """
     try:
+        if source == "prism":
+            raise FileNotFoundError()
         functions = pickle_load(os.path.join(storm_results, path))
         print(colored(f"Loaded function file: {path}.p using Storm file", "blue"))
     except FileNotFoundError:
         try:
+            if source == "prism":
+                raise FileNotFoundError()
             functions = get_f(os.path.join(storm_results, path + ".txt"), "storm", factorize=False)
             print(colored(f"Loaded function file: {path}.txt using Storm file", "blue"))
         except FileNotFoundError:
             try:
+                if source == "storm":
+                    raise FileNotFoundError()
                 functions = pickle_load(os.path.join(prism_results, path))
                 print(colored(f"Loaded function file: {path}.p using PRISM file", "blue"))
             except FileNotFoundError:
+                if source == "storm":
+                    raise FileNotFoundError()
                 functions = get_f(os.path.join(prism_results, path + ".txt"), "prism", factorize=True)
                 print(colored(f"Loaded function file: {path}.txt using PRISM file", "blue"))
 
@@ -221,8 +230,8 @@ def repeat_sampling(space, constraints, sample_size, boundaries=None, silent=Fal
     return avrg_time, sampling
 
 
-def repeat_refine(text, parameters, parameter_domains, constraints, timeout, silent, debug, alg=4, solver="z3",
-                  sample_size=False, sample_guided=False, repetitions=repetitions, where=None, parallel=True):
+def repeat_refine(text, parameters, parameter_domains, constraints, timeout=0, single_call_timeout=0, silent=True, debug=False, alg=4,
+                  solver="z3", sample_size=False, sample_guided=False, repetitions=repetitions, where=None, parallel=True):
     """ Runs space refinement for multiple times
 
     Args
@@ -241,7 +250,7 @@ def repeat_refine(text, parameters, parameter_domains, constraints, timeout, sil
         parallel (bool): flag whether to run in parallel mode
     """
     print(colored(f"Refining, {text}", "green"))
-    print("max_depth", max_depth, "coverage", coverage, "epsilon", epsilon, "alg", colored(alg, "green"), "solver", colored(solver, "green"), "current time is: ", datetime.now())
+    print(f"max_depth: {max_depth}, coverage: {coverage}, epsilon: {epsilon}, alg: {colored(alg, 'green')}, {'solver:' + colored(solver, 'green') + ', ' if alg<5 else ''}current time is: {datetime.now()}")
 
     avrg_time, avrg_check_time, avrg_smt_time = 0, 0, 0
 
@@ -257,24 +266,25 @@ def repeat_refine(text, parameters, parameter_domains, constraints, timeout, sil
         if parallel:
             try:
                 spam = check_deeper_parallel(space, constraints, max_depth, epsilon=epsilon, coverage=coverage,
-                                             silent=silent, version=alg, sample_size=sample_size, where=where,
+                                             silent=silent, version=alg, sample_size=sample_size, where=where if run == 0 else None,
                                              sample_guided=sample_guided,  debug=debug, save=False, solver=solver,
-                                             delta=0.01, gui=False, show_space=show_space, iterative=False,
-                                             parallel=parallel, timeout=timeout)
+                                             delta=0.01, gui=False, show_space=show_space if run == 0 else False, iterative=False,
+                                             parallel=parallel, timeout=timeout, single_call_timeout=single_call_timeout)
+                print("coverage reached", spam.get_coverage()) if not silent else None
             except NotImplementedError as err:
                 print(colored("skipping this, not implemented", "blue"))
                 print(err)
         else:
             spam = check_deeper(space, constraints, max_depth, epsilon=epsilon, coverage=coverage,
-                                silent=silent, version=alg, sample_size=sample_size, debug=debug, save=False, where=where,
-                                solver=solver, delta=0.01, gui=False, show_space=show_space, iterative=False, timeout=timeout)
-        print("coverage reached", spam.get_coverage()) if not silent else None
+                                silent=silent, version=alg, sample_size=sample_size, debug=debug, save=False, where=where if run == 0 else None,
+                                solver=solver, delta=0.01, gui=False, show_space=show_space if run == 0 else False, iterative=False, timeout=timeout)
+            print("coverage reached", spam.get_coverage()) if not silent else None
         if debug:
             print("refined space", spam.nice_print())
 
         sys.stdout.write(f"{run + 1}/{repetitions} ({round_sig(space.time_last_refinement)} s), ")
 
-        if avrg_time/(run + 1) > timeout:
+        if avrg_time/(run + 1) > timeout > 0:
             print(colored(f"Timeout reached,  run number {run+1} with time {space.time_last_refinement}", "red"))
             avrg_time = 99999999999999999
             break
@@ -325,7 +335,7 @@ def repeat_mhmh(text, parameters, parameter_domains, data, functions, sample_siz
 
         sys.stdout.write(f"{run + 1}/{repetitions}, ({round_sig(mh_result.time_it_took + space.time_refinement)} s) ")
 
-        if avrg_time/(run + 1) > mhmh_timeout:
+        if avrg_time/(run + 1) > mhmh_timeout > 0:
             print(colored(f"Timeout reached,  run number {run+1} with time {mh_result.time_it_took + space.time_refinement}, MH {mh_result.time_it_took}, refinement{space.time_refinement}", "red"))
             avrg_time = 99999999999999999
             break
@@ -445,10 +455,7 @@ if __name__ == '__main__':
                     print(type(data_set[0]))
 
                 ## COMPUTE INTERVALS
-                if shallow:
-                    n_samples = [100]
-                else:
-                    n_samples = [100, 1500, 3500]
+                n_samples = [100, 1500, 3500]
 
                 i = 0
                 intervals = []
@@ -595,7 +602,7 @@ if __name__ == '__main__':
 
     ## Semisynchronous models
     for multiparam in [False, True]:                                                ## [False, True]
-        for population_size in [2, 3, 4, 5, 10, 15]:                                ## [2, 3, 4, 5, 10, 15]
+        for population_size in [2, 3, 5, 10, 15]:                                ## [2, 3, 4, 5, 10, 15]
             for data_index, data_dir_subfolder in enumerate(["data", "data_1"]):    ## ["data", "data_1"]
                 ## SKIP Semisynchronous models
                 if not run_semisyn:
@@ -661,7 +668,7 @@ if __name__ == '__main__':
 
                 ## COMPUTE INTERVALS
                 if shallow:
-                    n_samples = [3500]
+                    n_samples = [100]
                 else:
                     n_samples = [100, 1500, 3500]  ## [100, 1500, 3500]
 

@@ -107,3 +107,10 @@ if __name__ == '__main__':
                             recursion_depth=max_depth, epsilon=epsilon, coverage=coverage, version=2, solver="dreal",
                             gui=mhmh_gui, where=mhmh_where, is_probability=True, repetitions=repetitions, parallel=cores)
                 # time.sleep(2)
+                # repeat_mhmh(text, parameters, parameter_domains, data=data_set, functions=functions,
+                #             sample_size=n_samples, mh_sampling_iterations=mhmh_iterations, eps=0, silent=silent,
+                #             debug=debug, bins=mhmh_bins, metadata=mhmh_metadata, constraints=constraints,
+                #             recursion_depth=max_depth, epsilon=epsilon, coverage=coverage, version=5, solver="dreal",
+                #             gui=mhmh_gui, where=mhmh_where, is_probability=True, repetitions=repetitions,
+                #             parallel=cores)
+                # time.sleep(2)
