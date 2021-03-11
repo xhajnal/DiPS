@@ -339,17 +339,17 @@ def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverag
                     print(f"Selecting biggest rectangles method with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
                     refined_rectangles = list(pool.map(private_check_deeper_parallel_sampled, rectangles_to_be_refined))
                 elif version == 3:
-                    print(f"Selecting biggest rectangles method with passing examples with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
+                    print(colored(f"Selecting biggest rectangles method with sampling and passing examples with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not silent else None
                     raise NotImplementedError("So far only alg 2 are implemented for parallel runs.")
                     refined_rectangles = list(pool.map(private_check_deeper_checking_parallel_sampled, rectangles_to_be_refined))
                     # raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
                 elif version == 4:
-                    print(f"Selecting biggest rectangles method with passing examples and counterexamples with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
+                    print(colored(f"Selecting biggest rectangles method with sampling and passing examples and counterexamples with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not silent else None
                     raise NotImplementedError("So far only alg 2 are implemented for parallel runs.")
                     refined_rectangles = list(pool.map(private_check_deeper_checking_both_parallel_sampled, rectangles_to_be_refined))
                     # raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
                 elif version == 5:
-                    print(f"Selecting biggest rectangles method with interval arithmetics") if not silent else None
+                    print(colored(f"Selecting biggest rectangles method with sampling and interval arithmetics", "green")) if not silent else None
                     refined_rectangles = list(pool.map(private_check_deeper_interval_parallel_sampled, rectangles_to_be_refined))
 
             # Parse refined rectangles and update space
@@ -372,20 +372,20 @@ def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverag
             ## PARALLEL REFINEMENT
             with multiprocessing.Pool(pool_size) as pool:
                 if version == 2:
-                    print(f"Selecting biggest rectangles method with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
+                    print(colored(f"Selecting biggest rectangles method with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not silent else None
                     refined_rectangles = list(pool.map(private_check_deeper_parallel, rectangles_to_be_refined))
                 elif version == 3:
-                    print(f"Selecting biggest rectangles method with passing examples with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
+                    print(colored(f"Selecting biggest rectangles method with passing examples with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not silent else None
                     raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
                     refined_rectangles = list(pool.map(private_check_deeper_checking_parallel, rectangles_to_be_refined))
                     # raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
                 elif version == 4:
-                    print(f"Selecting biggest rectangles method with passing examples and counterexamples with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
+                    print(colored(f"Selecting biggest rectangles method with passing examples and counterexamples with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not silent else None
                     raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
                     refined_rectangles = list(pool.map(private_check_deeper_checking_both_parallel, rectangles_to_be_refined))
                     # raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
                 elif version == 5:
-                    print(f"Selecting biggest rectangles method with interval arithmetics") if not silent else None
+                    print(colored(f"Selecting biggest rectangles method with interval arithmetics", "green")) if not silent else None
                     refined_rectangles = list(pool.map(private_check_deeper_interval_parallel, rectangles_to_be_refined))
                     ## TODO check how to alter progress when using Pool
 
@@ -517,7 +517,7 @@ def check_unsafe_parallel(region, constraints, silent=False, solver="z3", delta=
 
         ## If there is no example of satisfaction, hence all unsat, hence unsafe, hence red
         if check == unsat:
-            print(f'The region {region} is {colored("is unsafe", "red")}') if not silent else None
+            print(f'The region {region} is {colored("unsafe", "red")}') if not silent else None
             return True
         elif check == unknown:
             return False
@@ -558,7 +558,7 @@ def check_unsafe_parallel(region, constraints, silent=False, solver="z3", delta=
             print(f"Counterexample of unsafety: {result}") if debug else None
             return result
         else:
-            print(f'The region {region} is {colored("is unsafe", "red")}') if not silent else None
+            print(f'The region {region} is {colored("unsafe", "red")}') if not silent else None
             return True
 
 
@@ -597,6 +597,7 @@ def check_safe_parallel(region, constraints, silent=False, solver="z3", delta=0.
         s = Solver()
 
         if timeout > 0:
+            print("single SMT call timeout", timeout)
             s.set("timeout", timeout)
 
         ## Adding regional restrictions to solver (hyperrectangle boundaries)
@@ -699,6 +700,7 @@ def private_check_deeper_parallel(region, constraints=None, solver=None, delta=N
     if single_call_timeout is None:
         single_call_timeout = glob_single_call_timeout
 
+    # print("single_call_timeout", single_call_timeout) if not silent else None
     if check_unsafe_parallel(region, constraints, silent, solver=solver, delta=delta, debug=debug, timeout=single_call_timeout) is True:
         return False
     elif check_safe_parallel(region, constraints, silent, solver=solver, delta=delta, debug=debug, timeout=single_call_timeout) is True:
@@ -711,7 +713,7 @@ def private_check_deeper_parallel(region, constraints=None, solver=None, delta=N
     return rectangle_low, rectangle_high, None, None
 
 
-def private_check_deeper_parallel_sampled(region, constraints=None, solver=None, delta=None, silent=None, debug=None, single_call_timeout=0):
+def private_check_deeper_parallel_sampled(region, constraints=None, solver=None, delta=None, silent=None, debug=None, single_call_timeout=None):
     """ Refining the parameter space into safe and unsafe regions
 
     Args:
@@ -733,18 +735,23 @@ def private_check_deeper_parallel_sampled(region, constraints=None, solver=None,
         silent = glob_silent
     if debug is None:
         debug = glob_debug
+    if single_call_timeout is None:
+        single_call_timeout = glob_single_call_timeout
 
     print("region", region) if debug else None
+    # print("single_call_timeout", single_call_timeout) if not silent else None
     # print("glob_sample_size", glob_sample_size)
     sat_list, unsat_list = sample_region(region, glob_parameters, constraints, sample_size=glob_sample_size, boundaries=region,
                                          compress=True, silent=True, save=False, debug=debug, progress=False,
                                          quantitative=False, parallel=False, save_memory=False, stop_on_unknown=True)
     if sat_list == [] or unsat_list == []:  ## all unsat or all sat
         if unsat_list:  ## some unsat samples
+            print(f"Skipping check_safe {region} as some sat unsat samples found") if not silent else None
             if check_unsafe_parallel(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
                 return False
 
         if sat_list:  ## some sat samples
+            print(f"Skipping check_unsafe {region} as some sat unsat samples found") if not silent else None
             if check_safe_parallel(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
                 return True
     else:

@@ -247,7 +247,7 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
         ## If there is no example of satisfaction, hence all unsat, hence unsafe, hence red
         space.time_smt = space.time_smt + time() - b
         if check == unsat:
-            print(f'The region {region} is {colored("is unsafe", "red")}') if not silent else None
+            print(f'The region {region} is {colored("unsafe", "red")}') if not silent else None
             space.add_red(region)
             return True
         elif check == unknown:
@@ -287,7 +287,7 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
             return result
         else:
             space.add_red(region)
-            print(f'The region {region} is {colored("is unsafe", "red")}') if not silent else None
+            print(f'The region {region} is {colored("unsafe", "red")}') if not silent else None
             return True
 
 
