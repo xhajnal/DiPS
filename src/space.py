@@ -272,6 +272,15 @@ class RefinedSpace:
             legend_objects.append(plt.scatter([], [], facecolor='white', edgecolor='blue', label="true_point"))
             legend_labels.append("true point")
 
+        if not self.sat_samples:
+            sat_samples = False
+        if not self.unsat_samples:
+            unsat_samples = False
+
+        if not self.is_refined():
+            green = False
+            red = False
+
         if len(self.region) == 1 or len(self.region) == 2:
             # colored(globals()["default_region"], self.region)
 

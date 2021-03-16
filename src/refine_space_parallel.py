@@ -11,6 +11,9 @@ from termcolor import colored
 from timeout_decorator import timeout_decorator
 from z3 import Real, Int, Bool, BitVec, Solver, set_param, Z3Exception, unsat, unknown, Not, Or, sat
 
+from pebble import ProcessPool
+from concurrent.futures import TimeoutError
+
 ## My imports
 import refine_space
 from common.convert import decouple_constraints, constraints_to_ineq
@@ -88,6 +91,9 @@ def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverag
     max_max_recursion = 12
     # if recursion_depth > max_max_recursion:
     #     recursion_depth = max_max_recursion
+
+    ## INTERNAL SETTINGS AND VARIABLES
+    times_it_timed_out = 0
 
     if parallel is True:
         pool_size = multiprocessing.cpu_count() - 1
@@ -334,76 +340,231 @@ def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverag
             import warnings
             warnings.filterwarnings("ignore")
 
-            with multiprocessing.Pool(pool_size) as pool:
-                if version == 2:
-                    print(f"Selecting biggest rectangles method with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
-                    refined_rectangles = list(pool.map(private_check_deeper_parallel_sampled, rectangles_to_be_refined))
-                elif version == 3:
-                    print(f"Selecting biggest rectangles method with passing examples with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
-                    raise NotImplementedError("So far only alg 2 are implemented for parallel runs.")
-                    refined_rectangles = list(pool.map(private_check_deeper_checking_parallel_sampled, rectangles_to_be_refined))
-                    # raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
-                elif version == 4:
-                    print(f"Selecting biggest rectangles method with passing examples and counterexamples with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
-                    raise NotImplementedError("So far only alg 2 are implemented for parallel runs.")
-                    refined_rectangles = list(pool.map(private_check_deeper_checking_both_parallel_sampled, rectangles_to_be_refined))
-                    # raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
-                elif version == 5:
-                    print(f"Selecting biggest rectangles method with interval arithmetics") if not silent else None
-                    refined_rectangles = list(pool.map(private_check_deeper_interval_parallel_sampled, rectangles_to_be_refined))
+            # rectangles_to_be_refined = [rectangles_to_be_refined[0]]
+            print(colored(f"rectangles_to_be_refined before, {rectangles_to_be_refined}", "cyan")) if not silent else None
+            # print(pool_size)
+            if single_call_timeout:
+                with ProcessPool(max_workers=pool_size) as pool:
+                    if version == 2:
+                        print(colored(f"Selecting biggest rectangles method with sampling and {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not silent else None
+                        future = pool.map(private_check_deeper_parallel_sampled, rectangles_to_be_refined, timeout=single_call_timeout)
+                        refined_rectangles = future.result()
+                    elif version == 3:
+                        print(colored(f"Selecting biggest rectangles method with sampling and passing examples with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not silent else None
+                        raise NotImplementedError("So far only alg 2 are implemented for parallel runs.")
+                        refined_rectangles = list(pool.map(private_check_deeper_checking_parallel_sampled, rectangles_to_be_refined))
+                    elif version == 4:
+                        print(colored(f"Selecting biggest rectangles method with sampling and passing examples and counterexamples with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not silent else None
+                        raise NotImplementedError("So far only alg 2 are implemented for parallel runs.")
+                        refined_rectangles = list(pool.map(private_check_deeper_checking_both_parallel_sampled, rectangles_to_be_refined))
+                    elif version == 5:
+                        print(colored(f"Selecting biggest rectangles method with sampling and interval arithmetics", "green")) if not silent else None
+                        future = pool.map(private_check_deeper_interval_parallel_sampled, rectangles_to_be_refined, timeout=single_call_timeout)
+                        refined_rectangles = future.result()
 
-            # Parse refined rectangles and update space
-            for index, item in enumerate(refined_rectangles):
-                white = rectangles_to_be_refined[index]
-                space.remove_white(white)
-                if item is True:
-                    space.add_green(white)
-                elif item is False:
-                    space.add_red(white)
-                else:
-                    for rectangle in item:
-                        print("rectangle", rectangle) if debug else None
-                        if version == 2 or version == 5:
-                            space.add_white(My_Rectangle(rectangle, is_white=True, model=(None, None)))
+                ## Tackling future.result()
+                index = 0
+                while True:
+                    print(colored(f"index: {index}", "cyan")) if not silent else None
+                    try:
+                        item = next(refined_rectangles)
+                        print(colored(f"rectangles_to_be_refined, {rectangles_to_be_refined}", "cyan")) if not silent else None
+                        print(colored(f"rectangles_to_be_refined[{index}], {rectangles_to_be_refined[index]}", "cyan")) if not silent else None
+                        white = rectangles_to_be_refined[index]
+                        # white = item[0]
+                        # if item[0] != white:
+                        #     raise Exception(f"Marking different rectangles, {item[0]}, {white}")
+                        # item = item[1]
+                        # print(colored(f"Hello Johny! {white}", "cyan"))
+                        try:
+                            space.remove_white(white)
+                        except LookupError as look_up_error:
+                            print(colored(look_up_error, "red")) if not silent else None
+                            continue
+                        if item is True:
+                            space.add_green(white)
+                        elif item is False:
+                            space.add_red(white)
                         else:
-                            space.add_white(
-                                My_Rectangle(rectangle[0], is_white=True, model=(rectangle[1][0], rectangle[1][1])))
-        else:
-            ## PARALLEL REFINEMENT
-            with multiprocessing.Pool(pool_size) as pool:
-                if version == 2:
-                    print(f"Selecting biggest rectangles method with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
-                    refined_rectangles = list(pool.map(private_check_deeper_parallel, rectangles_to_be_refined))
-                elif version == 3:
-                    print(f"Selecting biggest rectangles method with passing examples with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
-                    raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
-                    refined_rectangles = list(pool.map(private_check_deeper_checking_parallel, rectangles_to_be_refined))
-                    # raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
-                elif version == 4:
-                    print(f"Selecting biggest rectangles method with passing examples and counterexamples with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
-                    raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
-                    refined_rectangles = list(pool.map(private_check_deeper_checking_both_parallel, rectangles_to_be_refined))
-                    # raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
-                elif version == 5:
-                    print(f"Selecting biggest rectangles method with interval arithmetics") if not silent else None
-                    refined_rectangles = list(pool.map(private_check_deeper_interval_parallel, rectangles_to_be_refined))
-                    ## TODO check how to alter progress when using Pool
+                            print(f"rectangle {white} is unknown, we split it into {item}") if not silent else None
+                            for rectangle in item:
+                                if version == 2 or version == 5:
+                                    space.add_white(My_Rectangle(rectangle, is_white=True, model=(None, None)))
+                                    print(space.get_flat_white()) if debug else None
+                                else:
+                                    raise NotImplementedError("So far only alg 2 are implemented for parallel runs.")
+                                    space.add_white(My_Rectangle(rectangle[0], is_white=True, model=(rectangle[1][0], rectangle[1][1])))
+                        # index += 1
+                    except StopIteration:
+                        break
+                    except TimeoutError as error:
+                        times_it_timed_out += 1
+                        print(colored(f"rectangles_to_be_refined, {rectangles_to_be_refined}", "cyan")) if not silent else None
+                        print(colored(f"rectangles_to_be_refined[{index}], {rectangles_to_be_refined[index]}", "cyan")) if not silent else None
+                        white = rectangles_to_be_refined[index]
+                        ## TODO dunno why this happens, sometimes index is not updated and tries to remove already processed rectangle
+                        ## Split rectangle
+                        # print(colored(f"Hello Dolly! {white}", "red"))
+                        # space.remove_white(white)
+                        try:
+                            space.remove_white(white)
+                        except LookupError as look_up_error:
+                            print(colored(look_up_error, "red")) if not silent else None
+                            continue
+                        ## TODO here, sampling can be done again to promote splitting
+                        rectangle_low, rectangle_high, dimension_index, threshold = split_by_longest_dimension(white)
+                        print(colored(f"Refine of {white} took longer than {error.args[1]} seconds, we split it into {rectangle_low}, {rectangle_high}", "magenta")) if not silent else None
+                        space.add_white(rectangle_low)
+                        space.add_white(rectangle_high)
+                        print(space.get_flat_white()) if debug else None
+                        # space.add_white(My_Rectangle(rectangle_low, is_white=True, model=(None, None)))
+                        # space.add_white(My_Rectangle(rectangle_high, is_white=True, model=(None, None)))
+                    finally:
+                        index += 1
+            else:
+                with multiprocessing.Pool(pool_size) as pool:
+                    if version == 2:
+                        print(colored(f"Selecting biggest rectangles method with sampling and {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not silent else None
+                        refined_rectangles = list(pool.map(private_check_deeper_parallel_sampled, rectangles_to_be_refined))
+                    elif version == 3:
+                        print(colored(f"Selecting biggest rectangles method with sampling and passing examples with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not silent else None
+                        raise NotImplementedError("So far only alg 2 are implemented for parallel runs.")
+                        refined_rectangles = list(pool.map(private_check_deeper_checking_parallel_sampled, rectangles_to_be_refined))
+                    elif version == 4:
+                        print(colored(f"Selecting biggest rectangles method with sampling and passing examples and counterexamples with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not silent else None
+                        raise NotImplementedError("So far only alg 2 are implemented for parallel runs.")
+                        refined_rectangles = list(pool.map(private_check_deeper_checking_both_parallel_sampled, rectangles_to_be_refined))
+                    elif version == 5:
+                        print(colored(f"Selecting biggest rectangles method with sampling and interval arithmetics", "green")) if not silent else None
+                        refined_rectangles = list(pool.map(private_check_deeper_interval_parallel_sampled, rectangles_to_be_refined))
 
-            # Parse refined rectangles and update space
-            for index, item in enumerate(refined_rectangles):
-                white = rectangles_to_be_refined[index]
-                space.remove_white(white)
-                if item is True:
-                    space.add_green(white)
-                elif item is False:
-                    space.add_red(white)
-                else:
-                    if item[2] is not None:
-                        space.add_white(My_Rectangle(item[0], is_white=True, model=item[2]))
-                        space.add_white(My_Rectangle(item[1], is_white=True, model=item[3]))
+                # Parse refined rectangles and update space
+                for index, item in enumerate(refined_rectangles):
+                    white = rectangles_to_be_refined[index]
+                    space.remove_white(white)
+                    if item is True:
+                        space.add_green(white)
+                    elif item is False:
+                        space.add_red(white)
                     else:
-                        space.add_white(item[0])
-                        space.add_white(item[1])
+                        for rectangle in item:
+                            print("rectangle", rectangle) if debug else None
+                            if version == 2 or version == 5:
+                                space.add_white(My_Rectangle(rectangle, is_white=True, model=(None, None)))
+                            else:
+                                space.add_white(
+                                    My_Rectangle(rectangle[0], is_white=True, model=(rectangle[1][0], rectangle[1][1])))
+        else:
+            ## PARALLEL REFINEMENT (without sampling)
+            if single_call_timeout:
+                with ProcessPool(max_workers=pool_size) as pool:
+                    if version == 2:
+                        print(colored(f"Selecting biggest rectangles method with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not silent else None
+                        future = pool.map(private_check_deeper_parallel, rectangles_to_be_refined, timeout=single_call_timeout)
+                        refined_rectangles = future.result()
+                    elif version == 3:
+                        print(colored(f"Selecting biggest rectangles method with passing examples with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not silent else None
+                        raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
+                        future = pool.map(private_check_deeper_checking_parallel, rectangles_to_be_refined, timeout=single_call_timeout)
+                        refined_rectangles = future.result()
+                    elif version == 4:
+                        print(colored(f"Selecting biggest rectangles method with passing examples and counterexamples with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not silent else None
+                        raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
+                        future = pool.map(private_check_deeper_checking_parallel, rectangles_to_be_refined, timeout=single_call_timeout)
+                        refined_rectangles = future.result()
+                    elif version == 5:
+                        print(colored(f"Selecting biggest rectangles method with interval arithmetics", "green")) if not silent else None
+                        future = pool.map(private_check_deeper_interval_parallel, rectangles_to_be_refined, timeout=single_call_timeout)
+                        refined_rectangles = future.result()
+                        ## TODO check how to alter progress when using Pool
+
+                ## Tackling future.result()
+                index = 0
+                while True:
+                    print(colored(f"index: {index}", "cyan")) if not silent else None
+                    try:
+                        item = next(refined_rectangles)
+                        print(colored(f"rectangles_to_be_refined, {rectangles_to_be_refined}", "cyan")) if not silent else None
+                        print(colored(f"rectangles_to_be_refined[{index}], {rectangles_to_be_refined[index]}", "cyan")) if not silent else None
+                        white = rectangles_to_be_refined[index]
+                        # white = item[0]
+                        # if item[0] != white:
+                        #     raise Exception(f"Marking different rectangles, {item[0]}, {white}")
+                        # item = item[1]
+                        # print(colored(f"Hello Johny! {white}", "cyan"))
+                        try:
+                            space.remove_white(white)
+                        except LookupError as look_up_error:
+                            print(colored(look_up_error, "red")) if not silent else None
+                            continue
+                        if item is True:
+                            space.add_green(white)
+                        elif item is False:
+                            space.add_red(white)
+                        else:
+                            print(f"rectangle {white} is unknown, we split it into {item}") if not silent else None
+                            if item[2] is not None:
+                                space.add_white(My_Rectangle(item[0], is_white=True, model=item[2]))
+                                space.add_white(My_Rectangle(item[1], is_white=True, model=item[3]))
+                            else:
+                                space.add_white(item[0])
+                                space.add_white(item[1])
+                    except StopIteration:
+                        break
+                    except TimeoutError as error:
+                        times_it_timed_out += 1
+                        print(colored(f"rectangles_to_be_refined, {rectangles_to_be_refined}", "cyan")) if not silent else None
+                        print(colored(f"rectangles_to_be_refined[{index}], {rectangles_to_be_refined[index]}", "cyan")) if not silent else None
+                        white = rectangles_to_be_refined[index]
+                        ## TODO dunno why this happens, sometimes index is not updated and tries to remove already processed rectangle
+                        ## Split rectangle
+                        try:
+                            space.remove_white(white)
+                        except LookupError as look_up_error:
+                            print(colored(look_up_error, "red")) if not silent else None
+                            continue
+                        ## TODO here, sampling can be done again to promote splitting
+                        rectangle_low, rectangle_high, dimension_index, threshold = split_by_longest_dimension(white)
+                        print(colored(
+                            f"Refine of {white} took longer than {error.args[1]} seconds, we split it into {rectangle_low}, {rectangle_high}", "magenta")) if not silent else None
+                        space.add_white(rectangle_low)
+                        space.add_white(rectangle_high)
+                        print(space.get_flat_white()) if debug else None
+                    finally:
+                        index += 1
+            else:
+                with multiprocessing.Pool(pool_size) as pool:
+                    if version == 2:
+                        print(colored(f"Selecting biggest rectangles method with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not silent else None
+                        refined_rectangles = list(pool.map(private_check_deeper_parallel, rectangles_to_be_refined))
+                    elif version == 3:
+                        print(colored(f"Selecting biggest rectangles method with passing examples with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not silent else None
+                        raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
+                        refined_rectangles = list(pool.map(private_check_deeper_checking_parallel, rectangles_to_be_refined))
+                    elif version == 4:
+                        print(colored(f"Selecting biggest rectangles method with passing examples and counterexamples with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not silent else None
+                        raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
+                        refined_rectangles = list(pool.map(private_check_deeper_checking_both_parallel, rectangles_to_be_refined))
+                    elif version == 5:
+                        print(colored(f"Selecting biggest rectangles method with interval arithmetics", "green")) if not silent else None
+                        refined_rectangles = list(pool.map(private_check_deeper_interval_parallel, rectangles_to_be_refined))
+                        ## TODO check how to alter progress when using Pool
+
+                # Parse refined rectangles and update space
+                for index, item in enumerate(refined_rectangles):
+                    white = rectangles_to_be_refined[index]
+                    space.remove_white(white)
+                    if item is True:
+                        space.add_green(white)
+                    elif item is False:
+                        space.add_red(white)
+                    else:
+                        if item[2] is not None:
+                            space.add_white(My_Rectangle(item[0], is_white=True, model=item[2]))
+                            space.add_white(My_Rectangle(item[1], is_white=True, model=item[3]))
+                        else:
+                            space.add_white(item[0])
+                            space.add_white(item[1])
 
         print(colored(f"Current coverage is {space.get_coverage()}, current time is {datetime.datetime.now()}", "blue")) if not silent else None
         print(space.nice_print()) if debug else None
@@ -416,7 +577,6 @@ def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverag
     space.refinement_took(time() - start_time)
 
     ## VISUALISATION
-
     space.title = f"using max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version}, {solver}"
     if not sample_size:
         ## If the visualisation of the space did not succeed space_shown = (None, error message)
@@ -436,6 +596,9 @@ def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverag
         else:
             space_shown = [False]
 
+    if single_call_timeout:
+        import sys
+        sys.stdout.write(colored(f"This refinement timed out {times_it_timed_out} times ", "yellow"))
     if not silent:
         print(colored(f"Result coverage is: {space.get_coverage()}", "blue"))
         print(colored(f"Parallel refinement took {round(space.time_last_refinement, 4)} seconds", "yellow"))
@@ -484,9 +647,9 @@ def check_unsafe_parallel(region, constraints, silent=False, solver="z3", delta=
         set_param(max_lines=1, max_width=1000000)
         s = Solver()
 
-        if timeout > 0:
-            # print("z3 single call timeout set to", timeout)
-            s.set("timeout", timeout)
+        # if timeout > 0:
+        #     print("z3 single call timeout set to", timeout)
+        #     s.set("timeout", timeout)
 
         ## Adding regional restrictions to solver (hyperrectangle boundaries)
         j = 0
@@ -500,7 +663,7 @@ def check_unsafe_parallel(region, constraints, silent=False, solver="z3", delta=
 
         ## Adding properties to solver
         for i in range(0, len(constraints)):
-            print(f"constraints[{i}] {constraints[i]}") if debug else None
+            # print(f"constraints[{i}] {constraints[i]}") if debug else None
             try:
                 s.add(eval(constraints[i]))
             except Z3Exception as z3_err:
@@ -508,16 +671,16 @@ def check_unsafe_parallel(region, constraints, silent=False, solver="z3", delta=
                 print(f"constraints[{i}] {constraints[i]}")
                 print(f"evaled constraints[{i}] {eval(constraints[i])}")
 
-        start_time = time()
+        # start_time = time()
         # timeout_decorator.timeout(timeout)
         check = s.check()
         # print(colored(f"This check unsafe took {time() - start_time} seconds", "yellow"))
-        if time()-start_time > timeout + 0.3:
-            print(colored(f"This check unsafe took {time() - start_time} seconds, which is {time()-start_time-timeout} seconds longer than timeout {timeout}, while the region is {check}", "red"))
+        # if time()-start_time > timeout + 0.3:
+        #     print(colored(f"This check unsafe took {time() - start_time} seconds, which is {time()-start_time-timeout} seconds longer than timeout {timeout}, while the region is {check}", "red"))
 
         ## If there is no example of satisfaction, hence all unsat, hence unsafe, hence red
         if check == unsat:
-            print(f'The region {region} is {colored("is unsafe", "red")}') if not silent else None
+            print(f'The region {region} is {colored("unsafe", "red")}') if not silent else None
             return True
         elif check == unknown:
             return False
@@ -547,18 +710,18 @@ def check_unsafe_parallel(region, constraints, silent=False, solver="z3", delta=
 
         ## Adding properties to dreal solver
         for i in range(0, len(constraints)):
-            print(f"constraints[{i}] {constraints[i]}") if debug else None
+            # print(f"constraints[{i}] {constraints[i]}") if debug else None
             f_sat = logical_and(f_sat, eval(constraints[i]))
 
-        if timeout > 0:
-            timeout_decorator.timeout(timeout)
+        # if timeout > 0:
+        #     timeout_decorator.timeout(timeout)
         result = CheckSatisfiability(f_sat, delta)
 
         if result is not None:
             print(f"Counterexample of unsafety: {result}") if debug else None
             return result
         else:
-            print(f'The region {region} is {colored("is unsafe", "red")}') if not silent else None
+            print(f'The region {region} is {colored("unsafe", "red")}') if not silent else None
             return True
 
 
@@ -596,8 +759,9 @@ def check_safe_parallel(region, constraints, silent=False, solver="z3", delta=0.
         ## Initialisation of z3 solver
         s = Solver()
 
-        if timeout > 0:
-            s.set("timeout", timeout)
+        # if timeout > 0:
+        #     print("single SMT call timeout", timeout)
+        #     s.set("timeout", timeout)
 
         ## Adding regional restrictions to solver (hyperrectangle boundaries)
         j = 0
@@ -618,7 +782,7 @@ def check_safe_parallel(region, constraints, silent=False, solver="z3", delta=0.
 
         # start_time = time()
 
-        timeout_decorator.timeout(timeout)
+        # timeout_decorator.timeout(timeout)
         check = s.check()
         # if time()-start_time > timeout + 0.3:
         #     print(colored(f"This check safe took {time() - start_time} seconds, which is {time()-start_time-timeout} seconds longer than timeout {timeout}, while the region is {check}", "red"))
@@ -699,6 +863,7 @@ def private_check_deeper_parallel(region, constraints=None, solver=None, delta=N
     if single_call_timeout is None:
         single_call_timeout = glob_single_call_timeout
 
+    # print("single_call_timeout", single_call_timeout) if not silent else None
     if check_unsafe_parallel(region, constraints, silent, solver=solver, delta=delta, debug=debug, timeout=single_call_timeout) is True:
         return False
     elif check_safe_parallel(region, constraints, silent, solver=solver, delta=delta, debug=debug, timeout=single_call_timeout) is True:
@@ -711,7 +876,7 @@ def private_check_deeper_parallel(region, constraints=None, solver=None, delta=N
     return rectangle_low, rectangle_high, None, None
 
 
-def private_check_deeper_parallel_sampled(region, constraints=None, solver=None, delta=None, silent=None, debug=None, single_call_timeout=0):
+def private_check_deeper_parallel_sampled(region, constraints=None, solver=None, delta=None, silent=None, debug=None, single_call_timeout=None):
     """ Refining the parameter space into safe and unsafe regions
 
     Args:
@@ -733,18 +898,23 @@ def private_check_deeper_parallel_sampled(region, constraints=None, solver=None,
         silent = glob_silent
     if debug is None:
         debug = glob_debug
+    if single_call_timeout is None:
+        single_call_timeout = glob_single_call_timeout
 
     print("region", region) if debug else None
+    # print("single_call_timeout", single_call_timeout) if not silent else None
     # print("glob_sample_size", glob_sample_size)
     sat_list, unsat_list = sample_region(region, glob_parameters, constraints, sample_size=glob_sample_size, boundaries=region,
                                          compress=True, silent=True, save=False, debug=debug, progress=False,
                                          quantitative=False, parallel=False, save_memory=False, stop_on_unknown=True)
     if sat_list == [] or unsat_list == []:  ## all unsat or all sat
         if unsat_list:  ## some unsat samples
+            print(f"Skipping check_safe {region} as some sat unsat samples found") if not silent else None
             if check_unsafe_parallel(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
                 return False
 
         if sat_list:  ## some sat samples
+            print(f"Skipping check_unsafe {region} as some sat unsat samples found") if not silent else None
             if check_safe_parallel(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
                 return True
     else:
@@ -901,7 +1071,7 @@ def private_check_deeper_checking_both_parallel(region, constraints=None, model=
     return rectangle_low, rectangle_high, model_low, model_high
 
 
-def private_check_deeper_interval_parallel(region, functions=None, intervals=None, silent=None, debug=None, single_call_timeout=0):
+def private_check_deeper_interval_parallel(region, functions=None, intervals=None, silent=None, debug=None):
     """ Refining the parameter space into safe and unsafe regions
 
     Args:
@@ -933,7 +1103,7 @@ def private_check_deeper_interval_parallel(region, functions=None, intervals=Non
     return rectangle_low, rectangle_high, None, None
 
 
-def private_check_deeper_interval_parallel_sampled(region, functions=None, intervals=None, silent=None, debug=None, single_call_timeout=0):
+def private_check_deeper_interval_parallel_sampled(region, functions=None, intervals=None, silent=None, debug=None):
     """ Refining the parameter space into safe and unsafe regions
 
     Args:

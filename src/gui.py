@@ -3,7 +3,6 @@ import os
 import time
 import webbrowser
 from platform import system
-import socket
 from time import time, localtime, strftime
 from collections.abc import Iterable
 from copy import deepcopy
@@ -29,6 +28,7 @@ from common.document_wrapper import show_message
 from common.files import pickle_dump, pickle_load
 from common.my_z3 import is_this_z3_function, translate_z3_function, is_this_exponential_function
 from metropolis_hastings import HastingsResults
+from refine_space_parallel import check_deeper_parallel
 
 error_occurred = None
 matplotlib.use("TKAgg")
@@ -262,7 +262,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.24"  ## Version of the gui
+        self.version = "1.25"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -280,8 +280,9 @@ class Gui(Tk):
         self.coverage = ""  ## Coverage threshold
         self.epsilon = ""  ## Rectangle size threshold
         # self.alg = ""  ## Refinement alg. number
-        self.presampled_refinement = BooleanVar()  ## Refinement flag
-        self.iterative_refinement = BooleanVar()  ## Refinement flag
+        self.presampled_refinement = BooleanVar()  ## Refinement flag (presample space)
+        self.sampling_guided_refinement = BooleanVar()  ## Refinement flag (guide refinement with sampling)
+        self.iterative_refinement = BooleanVar()  ## Refinement flag (refine check constraints independently in an iterative way) #Depricated
         # self.solver = ""  ## SMT solver - z3 or dreal
         self.delta = 0.01  ## dreal setting
         self.refinement_timeout = 0  ## timeout for refinement (0 is no timeout)
@@ -645,7 +646,7 @@ class Gui(Tk):
 
         self.interval_method_entry = ttk.Combobox(frame_left, values=('CLT', 'Rule of three', 'Agresti-Coull', 'Wilson', 'Clopper_Pearson', 'Jeffreys', 'broadest'))
         self.interval_method_entry.grid(row=6, column=1)
-        self.interval_method_entry.current(1)
+        self.interval_method_entry.current(0)
 
         Button(frame_left, text='Compute intervals', command=self.compute_data_intervals).grid(row=7, column=0, sticky=W, padx=4, pady=4)
         Button(frame_left, text='Open intervals file', command=self.load_data_intervals).grid(row=7, column=1, sticky=W, padx=4, pady=4)
@@ -835,11 +836,23 @@ class Gui(Tk):
 
         label68 = Label(frame_left, text="Timeout: ", anchor=W, justify=LEFT)
         label68.grid(row=6, column=3, padx=0)
-        createToolTip(label68, text='Timeout in seconds')
+        createToolTip(label68, text='Timeout in seconds. Set 0 for no timeout.')
 
-        presampled_refinement_checkbutton = Checkbutton(frame_left, text="Use presampled refinement", variable=self.presampled_refinement)
-        presampled_refinement_checkbutton.grid(row=7, column=3, columnspan=2, padx=0)
+        label69 = Label(frame_left, text="Single Call Timeout: ", anchor=W, justify=LEFT)
+        label69.grid(row=7, column=3, padx=0)
+        createToolTip(label69, text='Timeout of a single (rectangle) refine call in seconds. Set 0 for no timeout.')
+
+        label610 = Label(frame_left, text="Number of cores to use: ", anchor=W, justify=LEFT)
+        label610.grid(row=8, column=3, padx=0)
+        createToolTip(label610, text='Number of processes running in parallel, set 1 for sequential.')
+
+        presampled_refinement_checkbutton = Checkbutton(frame_left, text=" Use presampled refinement", variable=self.presampled_refinement)
+        presampled_refinement_checkbutton.grid(row=9, column=3, columnspan=2, padx=0)
         createToolTip(presampled_refinement_checkbutton, text="Uses sampling before first refinement for creating region candidates to refine.")
+
+        sampling_guided_refinement_checkbutton = Checkbutton(frame_left, text=" Use sampling guided refinement", variable=self.sampling_guided_refinement)
+        sampling_guided_refinement_checkbutton.grid(row=10, column=3, columnspan=2, padx=0)
+        createToolTip(sampling_guided_refinement_checkbutton, text="Before a rectangle is verified, sampling is used to help check satisfiability.")
 
         # iterative_refinement_checkbutton = Checkbutton(frame_left, text="Use iterative refinement (TBD)", variable=self.iterative_refinement)
         # iterative_refinement_checkbutton.grid(row=8, column=3, padx=0)
@@ -851,6 +864,8 @@ class Gui(Tk):
         self.solver_entry = ttk.Combobox(frame_left, values=('z3', 'dreal'))
         self.delta_entry = Entry(frame_left)
         self.refinement_timeout_entry = Entry(frame_left)
+        self.refinement_single_call_timeout_entry = Entry(frame_left)
+        self.refinement_cores_entry = Entry(frame_left)
 
         self.max_dept_entry.grid(row=1, column=4)
         self.coverage_entry.grid(row=2, column=4)
@@ -859,6 +874,8 @@ class Gui(Tk):
         self.solver_entry.grid(row=4, column=4)
         self.delta_entry.grid(row=5, column=4)
         self.refinement_timeout_entry.grid(row=6, column=4)
+        self.refinement_single_call_timeout_entry.grid(row=7, column=4)
+        self.refinement_cores_entry.grid(row=8, column=4)
 
         self.max_dept_entry.insert(END, '5')
         self.coverage_entry.insert(END, '0.95')
@@ -867,26 +884,28 @@ class Gui(Tk):
         self.solver_entry.current(0)
         self.delta_entry.insert(END, '0.01')
         self.refinement_timeout_entry.insert(END, '3600')
+        self.refinement_single_call_timeout_entry.insert(END, '30')
+        self.refinement_cores_entry.insert(END, '1')
 
         exact_refine_button = Button(frame_left, text='DiPS refine', command=self.refine_space)
-        exact_refine_button.grid(row=8, column=3, columnspan=2, pady=4, padx=0)
+        exact_refine_button.grid(row=11, column=3, columnspan=2, pady=4, padx=0)
         createToolTip(exact_refine_button, text="Run refinement with SMT solver (z3 / dreal) or interval arithmetic.")
 
         prism_refine_button = Button(frame_left, text='PRISM refine', command=self.external_refine_PRISM)
-        prism_refine_button.grid(row=9, column=3, columnspan=1, pady=4, padx=0)
+        prism_refine_button.grid(row=12, column=3, columnspan=1, pady=4, padx=0)
         createToolTip(prism_refine_button, text="Run approximate refinement using sampling by PRISM.")
 
         storm_refine_button = Button(frame_left, text='Storm refine', command=self.external_refine_Storm)
-        storm_refine_button.grid(row=9, column=4, columnspan=1, pady=4, padx=0)
+        storm_refine_button.grid(row=12, column=4, columnspan=1, pady=4, padx=0)
         createToolTip(storm_refine_button, text="Run parameter lifting, refinement method for models with multi-affine parametrisations, by Storm.")
 
-        ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=10, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
+        ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=13, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
 
-        Label(frame_left, text="Textual representation of space", anchor=CENTER, justify=CENTER, padx=10).grid(row=11, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
+        Label(frame_left, text="Textual representation of space", anchor=CENTER, justify=CENTER, padx=10).grid(row=14, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
         self.space_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_height() * 0.8/19), state=DISABLED)
-        self.space_text.grid(row=13, column=0, columnspan=9, rowspan=2, sticky=W, padx=10)
-        Button(frame_left, text='Extend / Collapse text', command=self.collapse_space_text).grid(row=15, column=3, sticky=S, padx=0, pady=(10, 10))
-        Button(frame_left, text='Export text', command=self.export_space_text).grid(row=15, column=4, sticky=S, padx=0, pady=(10, 10))
+        self.space_text.grid(row=15, column=0, columnspan=9, rowspan=2, sticky=W, padx=10)
+        Button(frame_left, text='Extend / Collapse text', command=self.collapse_space_text).grid(row=16, column=3, sticky=S, padx=0, pady=(10, 10))
+        Button(frame_left, text='Export text', command=self.export_space_text).grid(row=16, column=4, sticky=S, padx=0, pady=(10, 10))
 
         frame_right = Frame(page6)
         # frame_right.grid_propagate(0)
@@ -2240,7 +2259,8 @@ class Gui(Tk):
         self.show_space(False, False, False, clear=True, warnings=warning)
 
     def show_space(self, show_refinement, show_samples, show_true_point, clear=False, show_all=False,
-                   prefer_unsafe=False, quantitative=False, title="", warnings=True):
+                   prefer_unsafe=False, quantitative=False, title="", warnings=True, is_parallel_refinement=False,
+                   is_presampled=False, is_mhmh=False, is_sampling_guided=False):
         """ Visualises the space in the plot.
 
         Args:
@@ -2253,6 +2273,10 @@ class Gui(Tk):
             quantitative (bool): if True show far is the point from satisfying / not satisfying the constraints
             title (string): adding title to plot
             warnings (bool): if False will not show any warnings
+            is_parallel_refinement (int):  number of cores used for refinement
+            is_presampled (bool): if True it will mark the refinement as presampled
+            is_mhmh (bool): if True it will mark the refinement as MHMH, used MH to presample/precut space
+            is_sampling_guided (bool): flag whether refinement was sampling-guided
         """
         try:
             self.cursor_toggle_busy(True)
@@ -2266,7 +2290,9 @@ class Gui(Tk):
                                                    where=[self.page6_figure, self.page6_a], show_all=show_all,
                                                    prefer_unsafe=prefer_unsafe, quantitative=quantitative, title=title,
                                                    hide_legend=self.hide_legend_refinement.get(), is_parallel_sampling=True,
-                                                   hide_title=self.hide_title_refinement.get())
+                                                   hide_title=self.hide_title_refinement.get(),
+                                                   is_sampling_guided=is_sampling_guided, is_presampled=is_presampled,
+                                                   is_parallel_refinement=is_parallel_refinement, is_mhmh=is_mhmh)
                     ## If no plot provided
                     if figure is None:
                         if warnings:
@@ -3687,7 +3713,7 @@ class Gui(Tk):
         if self.show_quantitative:
             self.clear_space()
 
-        self.show_space(show_refinement=False, show_samples=True, show_true_point=self.show_true_point, prefer_unsafe=self.show_red_in_multidim_refinement.get())
+        self.show_space(show_refinement=True, show_samples=True, show_true_point=self.show_true_point, prefer_unsafe=self.show_red_in_multidim_refinement.get())
 
         self.show_quantitative = False
 
@@ -4035,24 +4061,56 @@ class Gui(Tk):
             #                         self.coverage, silent=self.silent.get(), version=int(self.alg.get()), sample_size=False,
             #                         debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
             #                         solver=str(self.solver.get()), delta=self.delta, gui=self.update_progress_bar)
-            if str(self.solver_entry.get()) == "z3" and self.z3_constraints:
-                assert isinstance(self.z3_constraints, list)
-                spam = check_deeper(self.space, self.z3_constraints, self.max_depth, self.epsilon, self.coverage,
-                                    silent=self.silent.get(), version=int(self.alg_entry.get()),
-                                    sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
-                                    where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
-                                    delta=self.delta, gui=self.update_progress_bar if self.show_progress else False,
-                                    show_space=False, iterative=self.iterative_refinement.get(),
-                                    timeout=int(float(self.refinement_timeout_entry.get())))
+            if int(self.refinement_cores_entry.get()) > 1:
+                if str(self.solver_entry.get()) == "z3" and self.z3_constraints:
+                    assert isinstance(self.z3_constraints, list)
+                    spam = check_deeper_parallel(self.space, self.z3_constraints, self.max_depth, self.epsilon,
+                                                 self.coverage, silent=self.silent.get(), version=int(self.alg_entry.get()),
+                                                 sample_size=self.presampled_refinement.get(), debug=self.debug.get(),
+                                                 sample_guided=self.sampling_guided_refinement.get(), save=False,
+                                                 where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
+                                                 delta=self.delta, gui=self.update_progress_bar if self.show_progress else False,
+                                                 show_space=False, iterative=self.iterative_refinement.get(),
+                                                 timeout=int(float(self.refinement_timeout_entry.get())),
+                                                 single_call_timeout=float(self.refinement_single_call_timeout_entry.get()),
+                                                 parallel=int(self.refinement_cores_entry.get()))
+                else:
+                    assert isinstance(self.constraints, list)
+                    spam = check_deeper_parallel(self.space, self.constraints, self.max_depth, self.epsilon,
+                                                 self.coverage, silent=self.silent.get(), version=int(self.alg_entry.get()),
+                                                 sample_size=self.presampled_refinement.get(), debug=self.debug.get(),
+                                                 sample_guided=self.sampling_guided_refinement.get(), save=False,
+                                                 where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
+                                                 delta=self.delta, gui=self.update_progress_bar if self.show_progress else False,
+                                                 show_space=False, iterative=self.iterative_refinement.get(),
+                                                 timeout=int(float(self.refinement_timeout_entry.get())),
+                                                 single_call_timeout=float(self.refinement_single_call_timeout_entry.get()),
+                                                 parallel=int(self.refinement_cores_entry.get()))
             else:
-                assert isinstance(self.constraints, list)
-                spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
-                                    silent=self.silent.get(), version=int(self.alg_entry.get()),
-                                    sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
-                                    where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
-                                    delta=self.delta, gui=self.update_progress_bar if self.show_progress else False,
-                                    show_space=False, iterative=self.iterative_refinement.get(),
-                                    timeout=int(float(self.refinement_timeout_entry.get())))
+                if float(self.refinement_single_call_timeout_entry.get()) > 0:
+                    messagebox.showwarning("Refinement settings", "Single call timeout for sequential refinement not implemented")
+                    return
+                if self.sampling_guided_refinement.get():
+                    messagebox.showwarning("Refinement settings", "Sampling guided version is not implemented for sequential version.")
+                    return
+                if str(self.solver_entry.get()) == "z3" and self.z3_constraints:
+                    assert isinstance(self.z3_constraints, list)
+                    spam = check_deeper(self.space, self.z3_constraints, self.max_depth, self.epsilon, self.coverage,
+                                        silent=self.silent.get(), version=int(self.alg_entry.get()),
+                                        sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
+                                        where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
+                                        delta=self.delta, gui=self.update_progress_bar if self.show_progress else False,
+                                        show_space=False, iterative=self.iterative_refinement.get(),
+                                        timeout=int(float(self.refinement_timeout_entry.get())),)
+                else:
+                    assert isinstance(self.constraints, list)
+                    spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
+                                        silent=self.silent.get(), version=int(self.alg_entry.get()),
+                                        sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
+                                        where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
+                                        delta=self.delta, gui=self.update_progress_bar if self.show_progress else False,
+                                        show_space=False, iterative=self.iterative_refinement.get(),
+                                        timeout=int(float(self.refinement_timeout_entry.get())))
         finally:
             try:
                 self.cursor_toggle_busy(False)
@@ -4073,7 +4131,9 @@ class Gui(Tk):
             self.space = spam
             self.show_space(show_refinement=True, show_samples=self.show_samples, show_true_point=self.show_true_point,
                             prefer_unsafe=self.show_red_in_multidim_refinement.get(), show_all=show_all,
-                            warnings=not(no_max_depth and self.space.get_coverage() < self.coverage))
+                            warnings=not(no_max_depth and self.space.get_coverage() < self.coverage),
+                            is_sampling_guided=self.sampling_guided_refinement.get(),
+                            is_parallel_refinement=int(self.refinement_cores_entry.get()) > 1)
             self.page6_figure.tight_layout()  ## By huypn
             self.page6_figure.canvas.draw()
             self.page6_figure.canvas.flush_events()
@@ -4094,7 +4154,11 @@ class Gui(Tk):
         self.space_changed = False
 
         ## Autosave
-        self.save_space(os.path.join(self.tmp_dir, "space.p"))
+        try:
+            self.save_space(os.path.join(self.tmp_dir, "space.p"))
+        except ValueError as err:
+            print(f"Space could not be loaded, {str(err)}")
+            messagebox.showwarning("Space could not be saved.", str(err))
 
         if no_max_depth and self.space.get_coverage() < self.coverage:
             self.refine_space()
