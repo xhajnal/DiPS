@@ -340,13 +340,14 @@ def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverag
             import warnings
             warnings.filterwarnings("ignore")
 
+                        print(f"Selecting biggest rectangles method with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
             # rectangles_to_be_refined = [rectangles_to_be_refined[0]]
             print(colored(f"rectangles_to_be_refined before, {rectangles_to_be_refined}", "cyan")) if not silent else None
             # print(pool_size)
             if single_call_timeout:
                 with ProcessPool(max_workers=pool_size) as pool:
                     if version == 2:
-                        print(colored(f"Selecting biggest rectangles method with sampling and {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not silent else None
+                        print(f"Selecting biggest rectangles method with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
                         future = pool.map(private_check_deeper_parallel_sampled, rectangles_to_be_refined, timeout=single_call_timeout)
                         refined_rectangles = future.result()
                     elif version == 3:
