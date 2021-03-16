@@ -250,7 +250,7 @@ def repeat_refine(text, parameters, parameter_domains, constraints, timeout=0, s
         parallel (bool): flag whether to run in parallel mode
     """
     print(colored(f"Refining, {text}", "green"))
-    print(f"max_depth: {max_depth}, coverage: {coverage}, epsilon: {epsilon}, alg: {colored(alg, 'green')}, {'solver:' + colored(solver, 'green') + ', ' if alg<5 else ''}current time is: {datetime.now()}")
+    print(f"max_depth: {max_depth}, coverage: {coverage}, epsilon: {epsilon}, alg: {colored(alg, 'green')}, {'solver: ' + colored(solver, 'green') + ', ' if alg<5 else ''}{'with ' + colored(str(single_call_timeout), 'green')+ 's' if single_call_timeout>0 else 'without'} single SMT call timeout, current time is: {datetime.now()}")
 
     avrg_time, avrg_check_time, avrg_smt_time = 0, 0, 0
 
@@ -285,6 +285,7 @@ def repeat_refine(text, parameters, parameter_domains, constraints, timeout=0, s
         sys.stdout.write(f"{run + 1}/{repetitions} ({round_sig(space.time_last_refinement)} s), ")
 
         if avrg_time/(run + 1) > timeout > 0:
+            print()
             print(colored(f"Timeout reached,  run number {run+1} with time {space.time_last_refinement}", "red"))
             avrg_time = 99999999999999999
             break
@@ -296,6 +297,7 @@ def repeat_refine(text, parameters, parameter_domains, constraints, timeout=0, s
         except:
             pass
 
+    print()
     avrg_time = avrg_time/repetitions
     if repetitions > 1:
         print(colored(f"Average time of {repetitions} runs is {round_sig(avrg_time)}", "yellow"))
@@ -316,39 +318,52 @@ def repeat_refine(text, parameters, parameter_domains, constraints, timeout=0, s
 
 def repeat_mhmh(text, parameters, parameter_domains, data, functions, sample_size, mh_sampling_iterations, eps, silent,
                 debug, bins, metadata, constraints, recursion_depth, epsilon, coverage, version, solver, gui, where,
-                is_probability, repetitions=repetitions, parallel=mhmh_run_in_parallel):
+                is_probability, repetitions=repetitions, parallel=mhmh_run_in_parallel, theta_init=False):
 
     ## TODO add info on what is running
     print(colored(f"{text}", "green"))
     print("max_depth", max_depth, "coverage", coverage, "epsilon", epsilon, "alg", colored(version, "green"), "solver", colored(solver, "green"), "current time is: ", datetime.now())
 
-    avrg_time = 0
+    avrg_whole_time, avrg_mh_time, avrg_refine_time = 0, 0, 0
     for run in range(repetitions):
+        start_time = time()
         space, mh_result = initialise_mhmh(parameters, parameter_domains, functions=functions,
                                            constraints=constraints, data=data, sample_size=sample_size,
-                                           mh_sampling_iterations=mh_sampling_iterations,
+                                           mh_sampling_iterations=mh_sampling_iterations, theta_init=theta_init,
                                            eps=eps, is_probability=is_probability, where=where, bins=bins,
                                            mh_timeout=mhmh_timeout, silent=silent, debug=debug,
                                            metadata=metadata, recursion_depth=recursion_depth,
                                            epsilon=epsilon, coverage=coverage, version=version,
                                            solver=solver, gui=gui, parallel=parallel, ref_timeout=refine_timeout)
+        end_time = time() - start_time
 
-        sys.stdout.write(f"{run + 1}/{repetitions}, ({round_sig(mh_result.time_it_took + space.time_refinement)} s) ")
+        sys.stdout.write(f"{run + 1}/{repetitions}, ({round_sig(end_time)} s of {round_sig(mh_result.time_it_took)} s MH, {round_sig(space.time_refinement)} s refine) ")
 
-        if avrg_time/(run + 1) > mhmh_timeout > 0:
-            print(colored(f"Timeout reached,  run number {run+1} with time {mh_result.time_it_took + space.time_refinement}, MH {mh_result.time_it_took}, refinement{space.time_refinement}", "red"))
-            avrg_time = 99999999999999999
+        if avrg_whole_time/(run + 1) > mhmh_timeout > 0:
+            print()
+            print(colored(f"Timeout reached,  run number {run+1} with time {end_time}, MH {mh_result.time_it_took}, refinement{space.time_refinement}", "red"))
+            avrg_whole_time = 99999999999999999
             break
 
-        avrg_time += mh_result.time_it_took + space.time_refinement
+        avrg_mh_time += mh_result.time_it_took
+        avrg_refine_time += space.time_refinement
+        avrg_whole_time += end_time
 
-    avrg_time = avrg_time/repetitions
+    print()
+    avrg_mh_time = avrg_mh_time / repetitions
+    avrg_refine_time = avrg_refine_time / repetitions
+    avrg_whole_time = avrg_whole_time/repetitions
+
     if repetitions > 1:
-        print(colored(f"Average time of {repetitions} runs is {round_sig(avrg_time)}", "yellow"))
+        print(colored(f"Average time of {repetitions} runs is {round_sig(avrg_whole_time)}, while MH took {round_sig(avrg_mh_time)} and refine {round_sig(avrg_refine_time)}", "yellow"))
+        print(colored(f"{round_sig(avrg_mh_time)} / {round_sig(avrg_refine_time)} / {round_sig(avrg_whole_time)}", "yellow"))
     else:
-        print(colored(f"MHMH took {round_sig(avrg_time)}", "yellow"))
+        print(colored(f"MHMH took {round_sig(avrg_whole_time)}", "yellow"))
 
-    return avrg_time, space, mh_result
+    try:
+        return (avrg_whole_time, avrg_mh_time, avrg_refine_time), space, mh_result
+    except:
+        return avrg_whole_time
 
 
 if __name__ == '__main__':

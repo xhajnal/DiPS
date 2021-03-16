@@ -235,7 +235,7 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
 
         ## Adding properties to solver
         for i in range(0, len(constraints)):
-            print(f"constraints[{i}] {constraints[i]}") if debug else None
+            # print(f"constraints[{i}] {constraints[i]}") if debug else None
             try:
                 s.add(eval(constraints[i]))
             except Z3Exception as z3_err:
@@ -247,7 +247,7 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
         ## If there is no example of satisfaction, hence all unsat, hence unsafe, hence red
         space.time_smt = space.time_smt + time() - b
         if check == unsat:
-            print(f'The region {region} is {colored("is unsafe", "red")}') if not silent else None
+            print(f'The region {region} is {colored("unsafe", "red")}') if not silent else None
             space.add_red(region)
             return True
         elif check == unknown:
@@ -276,7 +276,7 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
 
         ## Adding properties to dreal solver
         for i in range(0, len(constraints)):
-            print(f"constraints[{i}] {constraints[i]}") if debug else None
+            # print(f"constraints[{i}] {constraints[i]}") if debug else None
             f_sat = logical_and(f_sat, eval(constraints[i]))
 
         result = CheckSatisfiability(f_sat, delta)
@@ -287,7 +287,7 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
             return result
         else:
             space.add_red(region)
-            print(f'The region {region} is {colored("is unsafe", "red")}') if not silent else None
+            print(f'The region {region} is {colored("unsafe", "red")}') if not silent else None
             return True
 
 

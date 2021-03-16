@@ -40,6 +40,7 @@ globals()['factorise'] = True
 timeout = 3600
 single_call_timeout = 30
 
+show_space = False
 ## INTERVALS SETTINGS
 C = 0.95
 
@@ -47,7 +48,12 @@ precision = 4
 repetitions = 20
 sample_guided = False
 
+## END OF SETTINGS
 del spam
+if show_space:
+    where = False
+else:
+    where = None
 
 if __name__ == '__main__':
     ## LOAD FUNCTIONS
@@ -106,3 +112,4 @@ if __name__ == '__main__':
                                      single_call_timeout=single_call_timeout, debug=debug, alg=5, solver="z3",
                                      sample_size=False, sample_guided=sample_guided, repetitions=repetitions, where=None,
                                      parallel=cores)
+                    print()

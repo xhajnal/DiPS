@@ -951,7 +951,7 @@ class RefinedSpace:
                     ## Drop the whole item
                     self.rectangles_unknown.pop(volume)
                 else:
-                    print("Could not remove white area ", white)
+                    print("Could not remove white area", white)
                     return False
             else:
                 ## Else remove the item from the list
@@ -962,11 +962,12 @@ class RefinedSpace:
                         del self.rectangles_unknown[volume][index]
                         found = True
                 if not found:
-                    raise Exception(f"White {white} not found!")
+                    raise LookupError(f"White {white} not found!")
                 del found
-        except Exception as ex:
+        except LookupError as ex:
             print(ex)
-            print("Could not remove white area ", white)
+            print("Could not remove white area", white)
+            raise ex
             return False
         return True
 

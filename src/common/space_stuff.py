@@ -66,7 +66,11 @@ def get_rectangle_volume(rectangle):
     if not rectangle:
         raise Exception("Empty rectangle has no volume")
     for interval in rectangle:
-        intervals.append(Fraction(str(interval[1])) - Fraction(str(interval[0])))
+        try:
+            intervals.append(Fraction(str(interval[1])) - Fraction(str(interval[0])))
+        except Exception as err:
+            print(interval)
+            raise err
 
     ## Python 3.8+
     product = reduce(operator.mul, intervals, 1)
