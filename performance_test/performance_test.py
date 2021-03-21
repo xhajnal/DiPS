@@ -17,6 +17,7 @@ from mc import call_storm, call_prism_files
 from mc_informed import general_create_data_informed_properties
 from metropolis_hastings import init_mh, HastingsResults
 from mhmh import initialise_mhmh
+from refine_space_parallel_asyn import check_deeper_async
 from space import RefinedSpace
 from optimize import *
 from common.config import load_config
@@ -51,7 +52,7 @@ run_mhmh = False
 ## GLOBAL SETTINGS
 model_checker = "storm"  ## choose from "prism", "storm", "both"
 precision = 4  ## number of decimal points to show
-repetitions = 5  ## number of runs for each setting
+repetitions = 20  ## number of runs for each setting
 
 global debug
 globals()['debug'] = False
@@ -231,7 +232,7 @@ def repeat_sampling(space, constraints, sample_size, boundaries=None, silent=Fal
 
 
 def repeat_refine(text, parameters, parameter_domains, constraints, timeout=0, single_call_timeout=0, silent=True, debug=False, alg=4,
-                  solver="z3", sample_size=False, sample_guided=False, repetitions=repetitions, where=None, parallel=True):
+                  solver="z3", sample_size=False, sample_guided=False, repetitions=repetitions, where=None, parallel=True, is_async=False):
     """ Runs space refinement for multiple times
 
     Args
@@ -248,6 +249,7 @@ def repeat_refine(text, parameters, parameter_domains, constraints, timeout=0, s
         sample_guided (bool): flag to run sampling-guided refinement
         repetitions (Int): number of runs per setting
         parallel (bool): flag whether to run in parallel mode
+        is_async (bool): flag whether to run asynchronous calls when in parallel mode instead of map
     """
     print(colored(f"Refining, {text}", "green"))
     print(f"max_depth: {max_depth}, coverage: {coverage}, epsilon: {epsilon}, alg: {colored(alg, 'green')}, {'solver: ' + colored(solver, 'green') + ', ' if alg<5 else ''}{'with ' + colored(str(single_call_timeout), 'green')+ 's' if single_call_timeout>0 else 'without'} single SMT call timeout, current time is: {datetime.now()}")
@@ -265,11 +267,18 @@ def repeat_refine(text, parameters, parameter_domains, constraints, timeout=0, s
         space = RefinedSpace(parameter_domains, parameters)
         if parallel:
             try:
-                spam = check_deeper_parallel(space, constraints, max_depth, epsilon=epsilon, coverage=coverage,
-                                             silent=silent, version=alg, sample_size=sample_size, where=where if run == 0 else None,
-                                             sample_guided=sample_guided,  debug=debug, save=False, solver=solver,
-                                             delta=0.01, gui=False, show_space=show_space if run == 0 else False, iterative=False,
-                                             parallel=parallel, timeout=timeout, single_call_timeout=single_call_timeout)
+                if is_async:
+                    spam = check_deeper_async(space, constraints, max_depth, epsilon=epsilon, coverage=coverage,
+                                              silent=silent, version=alg, sample_size=sample_size, where=where if run == 0 else None,
+                                              sample_guided=sample_guided,  debug=debug, save=False, solver=solver,
+                                              delta=0.01, gui=False, show_space=show_space if run == 0 else False, iterative=False,
+                                              parallel=parallel, timeout=timeout, single_call_timeout=single_call_timeout)
+                else:
+                    spam = check_deeper_parallel(space, constraints, max_depth, epsilon=epsilon, coverage=coverage,
+                                                 silent=silent, version=alg, sample_size=sample_size, where=where if run == 0 else None,
+                                                 sample_guided=sample_guided,  debug=debug, save=False, solver=solver,
+                                                 delta=0.01, gui=False, show_space=show_space if run == 0 else False, iterative=False,
+                                                 parallel=parallel, timeout=timeout, single_call_timeout=single_call_timeout)
                 print("coverage reached", spam.get_coverage()) if not silent else None
             except NotImplementedError as err:
                 print(colored("skipping this, not implemented", "blue"))
@@ -286,7 +295,7 @@ def repeat_refine(text, parameters, parameter_domains, constraints, timeout=0, s
 
         if avrg_time/(run + 1) > timeout > 0:
             print()
-            print(colored(f"Timeout reached,  run number {run+1} with time {space.time_last_refinement}", "red"))
+            print(colored(f"Timeout reached, run number {run+1} with time {space.time_last_refinement}", "red"))
             avrg_time = 99999999999999999
             break
 

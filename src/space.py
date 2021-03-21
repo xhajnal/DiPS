@@ -721,6 +721,7 @@ class RefinedSpace:
 
     def get_flat_white(self):
         """ Returns white space as a flat list"""
+        ## TODO SORT THIS BY SIZE
         if isinstance(self.rectangles_unknown, list):
             return self.rectangles_unknown
         rectangles_unknown = []
@@ -893,6 +894,9 @@ class RefinedSpace:
         Args:
             white (rectangle or My_rectangle): a rectangle to be add to white space
         """
+        if white is None:
+            raise Exception("trying to add None rectangle")
+
         volume = get_rectangle_volume(white)
         if not isinstance(white, My_Rectangle):
             white = My_Rectangle(white, is_white=True)
