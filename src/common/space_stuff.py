@@ -131,6 +131,58 @@ def split_by_all_dimensions(region):
     return rectangles
 
 
+def split_by_samples(region, sat_list, unsat_list, sample_size, debug=False):
+    """ Splits given rectangle into smaller ones such as rectangles contain only sat or unsat samples
+        exception is type III, when rectangular hulls of sat and unsat samples are equal,
+        we split by all dimensions in halves
+
+        type I: rectangular hulls have no Intersections
+        type II: one of the rectangular hull is a true subspace
+        type III: hulls are equal (sat and unsat points are "well mixed")
+
+    Args:
+        region:  (list of intervals) defining the (hyper)rectangle
+        sat_list: (list of points) list of sat points within the region
+        unsat_list: (list of points) list of unsat points within the region
+        sample_size: (int) number of samples per dimension
+        debug (bool): if True extensive print will be used
+
+    :return: (list of rectangles) rectangle to which the region was split into
+    """
+
+    rectangle_of_sats = rectangular_hull(sat_list)
+    print("rectangle_of_sats", rectangle_of_sats) if debug else None
+    rectangle_of_sats = expand_rectangle(rectangle_of_sats, region, [sample_size] * len(region))
+    print("expanded rectangle_of_sats", rectangle_of_sats) if debug else None
+    rectangle_of_unsats = rectangular_hull(unsat_list)
+    print("rectangle_of_unsats", rectangle_of_unsats) if debug else None
+    rectangle_of_unsats = expand_rectangle(rectangle_of_unsats, region, [sample_size] * len(region))
+    print("expanded rectangle_of_unsats", rectangle_of_unsats) if debug else None
+
+    ## TODO this can be improved by second splitting of the smaller rectangle
+    if rectangle_of_unsats == rectangle_of_sats:
+        regions = split_by_all_dimensions(region)
+        if len(regions) == 1:
+            print(f"Type III: region: {region}: \n sat samples: {sat_list}, \n unsat samples: {unsat_list} \n {rectangle_of_sats}, {rectangle_of_unsats}")
+    elif is_in(rectangle_of_sats, rectangle_of_unsats):
+        regions = refine_by(rectangle_of_unsats, rectangle_of_sats, debug=False)
+        if len(regions) == 1:
+            print(f"Type II: region: {region}: \n sat samples: {sat_list}, \n unsat samples: {unsat_list} \n {rectangle_of_sats}, {rectangle_of_unsats}")
+    elif is_in(rectangle_of_unsats, rectangle_of_sats):
+        regions = refine_by(rectangle_of_sats, rectangle_of_unsats, debug=False)
+        if len(regions) == 1:
+            print(f"Type II: {rectangle_of_sats}, {rectangle_of_unsats}")
+    else:
+        regions = [rectangle_of_sats, rectangle_of_unsats]
+        if len(regions) == 1:
+            print(f"Type I: {rectangle_of_sats}, {rectangle_of_unsats}")
+
+        ## TODO this can happen when e.g. all sat are on left and all unsat on right side
+        # raise NotImplementedError(f'Splitting for this "weird" sampling result not implemented so far with region {region}, rectangle of sat points {rectangle_of_sats}, rectangle of unsat points {rectangle_of_unsats}')
+    print(f"By sampling we split the region into regions: {regions}") if debug else None
+    return regions
+
+
 def expand_rectangle(rectangle, region, sample_sizes):
     """ Expands the rectangle half of the size of sampling size respecting boundaries """
     for index, dimension in enumerate(rectangle):

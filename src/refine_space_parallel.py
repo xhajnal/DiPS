@@ -19,7 +19,7 @@ import refine_space
 from common.convert import decouple_constraints, constraints_to_ineq
 from common.solver_parser import pass_models_to_sons
 from common.space_stuff import is_in, refine_by, split_by_longest_dimension, rectangular_hull, expand_rectangle, \
-    split_by_all_dimensions
+    split_by_all_dimensions, split_by_samples
 from load import find_param
 from rectangle import My_Rectangle
 from refine_space import private_presample
@@ -417,11 +417,24 @@ def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverag
                         except LookupError as look_up_error:
                             print(colored(look_up_error, "red")) if not silent else None
                             continue
-                        ## TODO here, sampling can be done again to promote splitting
-                        rectangle_low, rectangle_high, dimension_index, threshold = split_by_longest_dimension(white)
-                        print(colored(f"Refine of {white} took longer than {error.args[1]} seconds, we split it into {rectangle_low}, {rectangle_high}", "magenta")) if not silent else None
-                        space.add_white(rectangle_low)
-                        space.add_white(rectangle_high)
+                        sat_list, unsat_list = sample_region(region, glob_parameters, constraints,
+                                                             sample_size=glob_sample_size, boundaries=region,
+                                                             compress=True, silent=True, save=False, debug=debug,
+                                                             progress=False,
+                                                             quantitative=False, parallel=False, save_memory=False,
+                                                             stop_on_unknown=True)
+                        if sat_list == [] or unsat_list == []:
+                            rectangles = split_by_samples(region, sat_list, unsat_list, glob_sample_size, debug=debug)
+                            print(colored(
+                                f"Refine of {white} took longer than {error.args[1]} seconds, we split it into {rectangles} by resampling.", "magenta")) if not silent else None
+                            for rectangle in rectangles:
+                                space.add_white(rectangle)
+                        else:
+                            rectangle_low, rectangle_high, dimension_index, threshold = split_by_longest_dimension(white)
+                            print(colored(f"Refine of {white} took longer than {error.args[1]} seconds, we split it into {rectangle_low}, {rectangle_high} by splitting by the longest dimension.", "magenta")) if not silent else None
+                            space.add_white(rectangle_low)
+                            space.add_white(rectangle_high)
+
                         print(space.get_flat_white()) if debug else None
                         # space.add_white(My_Rectangle(rectangle_low, is_white=True, model=(None, None)))
                         # space.add_white(My_Rectangle(rectangle_high, is_white=True, model=(None, None)))
@@ -482,7 +495,6 @@ def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverag
                         print(colored(f"Selecting biggest rectangles method with interval arithmetics", "green")) if not silent else None
                         future = pool.map(private_check_deeper_interval_parallel, rectangles_to_be_refined, timeout=single_call_timeout)
                         refined_rectangles = future.result()
-                        ## TODO check how to alter progress when using Pool
 
                 ## Tackling future.result()
                 index = 0
@@ -529,7 +541,6 @@ def check_deeper_parallel(region, constraints, recursion_depth, epsilon, coverag
                         except LookupError as look_up_error:
                             print(colored(look_up_error, "red")) if not silent else None
                             continue
-                        ## TODO here, sampling can be done again to promote splitting
                         rectangle_low, rectangle_high, dimension_index, threshold = split_by_longest_dimension(white)
                         print(colored(
                             f"Refine of {white} took longer than {error.args[1]} seconds, we split it into {rectangle_low}, {rectangle_high}", "magenta")) if not silent else None
@@ -730,6 +741,7 @@ def check_unsafe_parallel(region, constraints, silent=False, solver="z3", delta=
             print(f'The region {region} is {colored("unsafe", "red")}') if not silent else None
             return True
 
+
 def check_safe_parallel(region, constraints, silent=False, solver="z3", delta=0.001, debug=False, timeout=0):
     """ Check if the given region is safe or not using z3 or dreal.
 
@@ -875,7 +887,7 @@ def private_check_deeper_parallel(region, constraints=None, solver=None, delta=N
         return True
 
     ## Find index of maximum dimension to be split
-    print(f'The region {region} is {colored("is unknown", "yellow")}') if not silent else None
+    print(f'The region {region} is {colored("unknown", "yellow")}') if not silent else None
     rectangle_low, rectangle_high, index, threshold = split_by_longest_dimension(region)
 
     return rectangle_low, rectangle_high, None, None
@@ -906,7 +918,6 @@ def private_check_deeper_parallel_sampled(region, constraints=None, solver=None,
     # if single_call_timeout is None:
     #     single_call_timeout = glob_single_call_timeout
 
-
     print("region", region) if debug else None
     # print("single_call_timeout", single_call_timeout) if not silent else None
     # print("glob_sample_size", glob_sample_size)
@@ -924,38 +935,7 @@ def private_check_deeper_parallel_sampled(region, constraints=None, solver=None,
             if check_safe_parallel(region, constraints, silent, solver=solver, delta=delta, debug=debug) is True:
                 return True
     else:
-        print("region", region) if debug else None
-        print("sat_list", sat_list) if debug else None
-        print("unsat_list", unsat_list) if debug else None
-        rectangle_of_sats = rectangular_hull(sat_list)
-        print("rectangle_of_sats", rectangle_of_sats) if debug else None
-        rectangle_of_sats = expand_rectangle(rectangle_of_sats, region, [glob_sample_size]*len(region))
-        print("expanded rectangle_of_sats", rectangle_of_sats) if debug else None
-        rectangle_of_unsats = rectangular_hull(unsat_list)
-        print("rectangle_of_unsats", rectangle_of_unsats) if debug else None
-        rectangle_of_unsats = expand_rectangle(rectangle_of_unsats, region, [glob_sample_size]*len(region))
-        print("expanded rectangle_of_unsats", rectangle_of_unsats) if debug else None
-        ## TODO this can be improved by second splitting of the smaller rectangle
-        if rectangle_of_unsats == rectangle_of_sats:
-            regions = split_by_all_dimensions(region)
-            if len(regions) == 1:
-                print(f"here 0: region: {region}: \n sat samples: {sat_list}, \n unsat samples: {unsat_list} \n {rectangle_of_sats}, {rectangle_of_unsats}")
-        elif is_in(rectangle_of_sats, rectangle_of_unsats):
-            regions = refine_by(rectangle_of_unsats, rectangle_of_sats, debug=False)
-            if len(regions) == 1:
-                print(f"here 1: region: {region}: \n sat samples: {sat_list}, \n unsat samples: {unsat_list} \n {rectangle_of_sats}, {rectangle_of_unsats}")
-        elif is_in(rectangle_of_unsats, rectangle_of_sats):
-            regions = refine_by(rectangle_of_sats, rectangle_of_unsats, debug=False)
-            if len(regions) == 1:
-                print(f"here 2: {rectangle_of_sats}, {rectangle_of_unsats}")
-        else:
-            regions = [rectangle_of_sats, rectangle_of_unsats]
-            if len(regions) == 1:
-                print(f"here 3: {rectangle_of_sats}, {rectangle_of_unsats}")
-            ## TODO this can happen when e.g. all sat are on left and all unsat on right side
-            # raise NotImplementedError(f'Splitting for this "weird" sampling result not implemented so far with region {region}, rectangle of sat points {rectangle_of_sats}, rectangle of unsat points {rectangle_of_unsats}')
-        print(f"By sampling we split the region into regions: {regions}") if debug else None
-        return regions
+        return split_by_samples(region, sat_list, unsat_list, glob_sample_size, debug=debug)
 
     ## Find index of maximum dimension to be split
     rectangle_low, rectangle_high, index, threshold = split_by_longest_dimension(region)
@@ -966,7 +946,7 @@ def private_check_deeper_parallel_sampled(region, constraints=None, solver=None,
     return [rectangle_low, rectangle_high]
 
 
-def private_check_deeper_checking_parallel(region, constraints=None, model=None, solver=None, delta=None, silent=None, debug=None, single_call_timeout=0):
+def private_check_deeper_checking_parallel(region, constraints=None, model=None, solver=None, delta=None, silent=None, debug=None, single_call_timeout=None):
     """ WE SUGGEST USING METHOD PASSING BOTH, EXAMPLE AND COUNTEREXAMPLE
         Refining the parameter space into safe and unsafe regions with passing examples,
 
@@ -1015,7 +995,7 @@ def private_check_deeper_checking_parallel(region, constraints=None, model=None,
     return rectangle_low, rectangle_high, model_low, model_high
 
 
-def private_check_deeper_checking_both_parallel(region, constraints=None, model=None, solver=None, delta=None, silent=None, debug=None, single_call_timeout=0):
+def private_check_deeper_checking_both_parallel(region, constraints=None, model=None, solver=None, delta=None, silent=None, debug=None, single_call_timeout=None):
     """ Refining the parameter space into safe and unsafe regions
 
     Args:
@@ -1086,7 +1066,6 @@ def private_check_deeper_interval_parallel(region, functions=None, intervals=Non
         intervals (list of pairs/ sympy.Intervals): array of interval to constrain constraints
         silent (bool): if silent printed output is set to minimum
         debug (bool): if True extensive print will be used
-        single_call_timeout (int): timeout of a single SMT/interval arithmetics call in seconds (set 0 for no timeout)
     """
     if functions is None:
         functions = glob_functions
@@ -1118,7 +1097,6 @@ def private_check_deeper_interval_parallel_sampled(region, functions=None, inter
         intervals (list of pairs/ sympy.Intervals): array of interval to constrain constraints
         silent (bool): if silent printed output is set to minimum
         debug (bool): if True extensive print will be used
-        single_call_timeout (int): timeout of a single SMT/interval arithmetics call in seconds (set 0 for no timeout)
     """
     if functions is None:
         functions = glob_functions
@@ -1144,40 +1122,7 @@ def private_check_deeper_interval_parallel_sampled(region, functions=None, inter
             if check_interval_in_parallel(region, functions, intervals, silent=silent, debug=debug) is True:
                 return True
     else:
-        print("region", region) if debug else None
-        print("sat_list", sat_list) if debug else None
-        print("unsat_list", unsat_list) if debug else None
-        rectangle_of_sats = rectangular_hull(sat_list)
-        print("rectangle_of_sats", rectangle_of_sats) if debug else None
-        rectangle_of_sats = expand_rectangle(rectangle_of_sats, region, [glob_sample_size] * len(region))
-        print("expanded rectangle_of_sats", rectangle_of_sats) if debug else None
-        rectangle_of_unsats = rectangular_hull(unsat_list)
-        print("rectangle_of_unsats", rectangle_of_unsats) if debug else None
-        rectangle_of_unsats = expand_rectangle(rectangle_of_unsats, region, [glob_sample_size] * len(region))
-        print("expanded rectangle_of_unsats", rectangle_of_unsats) if debug else None
-        ## TODO this can be improved by second splitting of the smaller rectangle
-        if rectangle_of_unsats == rectangle_of_sats:
-            regions = split_by_all_dimensions(region)
-            if len(regions) == 1:
-                print(
-                    f"here 0: region: {region}: \n sat samples: {sat_list}, \n unsat samples: {unsat_list} \n {rectangle_of_sats}, {rectangle_of_unsats}")
-        elif is_in(rectangle_of_sats, rectangle_of_unsats):
-            regions = refine_by(rectangle_of_unsats, rectangle_of_sats, debug=False)
-            if len(regions) == 1:
-                print(
-                    f"here 1: region: {region}: \n sat samples: {sat_list}, \n unsat samples: {unsat_list} \n {rectangle_of_sats}, {rectangle_of_unsats}")
-        elif is_in(rectangle_of_unsats, rectangle_of_sats):
-            regions = refine_by(rectangle_of_sats, rectangle_of_unsats, debug=False)
-            if len(regions) == 1:
-                print(f"here 2: {rectangle_of_sats}, {rectangle_of_unsats}")
-        else:
-            regions = [rectangle_of_sats, rectangle_of_unsats]
-            if len(regions) == 1:
-                print(f"here 3: {rectangle_of_sats}, {rectangle_of_unsats}")
-            ## TODO this can happen when e.g. all sat are on left and all unsat on right side
-            # raise NotImplementedError(f'Splitting for this "weird" sampling result not implemented so far with region {region}, rectangle of sat points {rectangle_of_sats}, rectangle of unsat points {rectangle_of_unsats}')
-        print(f"By sampling we split the region into regions: {regions}") if debug else None
-        return regions
+        return split_by_samples(region, sat_list, unsat_list, glob_sample_size, debug=debug)
 
     ## Find index of maximum dimension to be split
     rectangle_low, rectangle_high, index, threshold = split_by_longest_dimension(region)

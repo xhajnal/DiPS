@@ -618,16 +618,16 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
             ## Select version
 
             if version == 2:
-                print(f"Selecting biggest rectangles method with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
+                print(colored(f"Selecting biggest rectangles method with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not silent else None
                 result = private_check_deeper(item.region, constraints, solver=solver, delta=delta, silent=silent, debug=debug)
             elif version == 3:
-                print(f"Selecting biggest rectangles method with passing examples with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
+                print(colored(f"Selecting biggest rectangles method with passing examples with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not silent else None
                 result = private_check_deeper_checking(item.region, constraints, model=item.model, solver=solver, delta=delta, silent=silent, debug=debug)
             elif version == 4:
-                print(f"Selecting biggest rectangles method with passing examples and counterexamples with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
+                print(colored(f"Selecting biggest rectangles method with passing examples and counterexamples with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not silent else None
                 result = private_check_deeper_checking_both(item.region, constraints, model=item.model, solver=solver, delta=delta, silent=silent, debug=debug)
             elif version == 5:
-                print(f"Selecting biggest rectangles method with interval arithmetics") if not silent else None
+                print(colored(f"Selecting biggest rectangles method with interval arithmetics", "green")) if not silent else None
                 result = private_check_deeper_interval(item.region, egg[0], egg[1], silent=silent, debug=debug)
 
             ## Parse result
