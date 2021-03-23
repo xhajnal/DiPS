@@ -172,11 +172,11 @@ def compute_functions(model_file, property_file, output_path=False, parameter_do
         storm_output_path = os.path.join(storm_results, output_path)
 
     if not os.path.isdir(prism_output_path):
-        if os.path.splitext(prism_output_path)[1] != ".txt":
+        if Path(prism_output_path).suffix != ".txt":
             prism_output_path = os.path.splitext(prism_output_path)[0] + ".txt"
 
     if not os.path.isdir(storm_output_path):
-        if os.path.splitext(storm_output_path)[1] != ".txt":
+        if Path(storm_output_path).suffix != ".txt":
             storm_output_path = os.path.splitext(storm_output_path)[0] + ".txt"
 
     if model_checker == "prism" or model_checker == "both":

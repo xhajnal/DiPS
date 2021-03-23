@@ -82,7 +82,8 @@ except Exception as error:
 
 try:
     from mc_informed import general_create_data_informed_properties
-    from load import load_mc_result, find_param, load_data, find_param_old, parse_constraints, parse_functions, parse_params_from_model, parse_weights, parse_data_intervals
+    from load import load_mc_result, find_param, load_data, find_param_old, parse_constraints, parse_functions
+    from load import parse_params_from_model, parse_weights, parse_data_intervals, parse_data
     from common.mathematics import create_intervals, create_broadest_intervals
     import space
     from refine_space import check_deeper
@@ -1142,7 +1143,7 @@ class Gui(Tk):
             os.mkdir(os.path.join(self.figures_dir, "tmp"))
         except FileExistsError:
             pass
-        
+
         try:
             os.mkdir(os.path.join(self.refinement_results, "tmp"))
         except FileExistsError:
@@ -1660,7 +1661,7 @@ class Gui(Tk):
         else:
             ## Checking the valid type of the loaded file
             ## If loaded PRISM/Storm output instead, redirecting the load
-            if os.path.splitext(spam)[1] == ".txt":
+            if Path(spam).suffix == ".txt":
                 egg = parse_functions(spam)
                 if egg[0].startswith("PRISM"):
                     self.load_functions_file(file=spam, program="prism")
@@ -1675,9 +1676,9 @@ class Gui(Tk):
             self.z3_functions = ""
             self.mc_result_text.delete('1.0', END)
 
-            if os.path.splitext(self.functions_file.get())[1] == ".txt":
+            if Path(self.functions_file.get()).suffix == ".txt":
                 self.functions = parse_functions(self.functions_file.get())
-            elif os.path.splitext(self.functions_file.get())[1] == ".p":
+            elif Path(self.functions_file.get()).suffix == ".p":
                 self.functions = pickle_load(self.functions_file.get())
 
             ## Check whether functions not empty
@@ -1772,16 +1773,11 @@ class Gui(Tk):
             self.data_changed = True
             self.data_file.set(spam)
 
-            if ".p" in self.data_file.get():
-                self.data = pickle_load(self.data_file.get())
-            elif ".txt" in self.data_file.get():
-                self.data = parse_weights(self.data_file.get())
-            else:
-                self.data = load_data(self.data_file.get(), silent=self.silent.get(), debug=not self.silent.get())
-                if not self.data:
-                    messagebox.showerror("Loading data", f"Error, No data loaded.")
-                    self.status_set("Data not loaded properly.")
-                    return
+            self.data = load_data(self.data_file.get(), silent=self.silent.get(), debug=not self.silent.get())
+            if not self.data:
+                messagebox.showerror("Loading data", f"Error, No data loaded.")
+                self.status_set("Data not loaded properly.")
+                return
 
             ## Unfolds and shows data
             self.unfold_data()
@@ -1893,9 +1889,9 @@ class Gui(Tk):
             self.data_weights_changed = True
             self.data_weights_file.set(spam)
 
-            if os.path.splitext(self.data_weights_file.get())[1] == ".txt":
+            if Path(self.data_weights_file.get()).suffix == ".txt":
                 self.data_weights = parse_weights(self.data_weights_file.get())
-            elif os.path.splitext(self.data_weights_file.get())[1] == ".p":
+            elif Path(self.data_weights_file.get()).suffix == ".p":
                 self.data_weights = pickle_load(self.data_weights_file.get())
 
             weights = ""
@@ -2037,7 +2033,7 @@ class Gui(Tk):
             self.constraints_file.set(spam)
             self.z3_constraints = ""
 
-            if os.path.splitext(self.constraints_file.get())[1] == ".txt":
+            if Path(self.constraints_file.get()).suffix == ".txt":
                 if append:
                     self.constraints.extend(parse_constraints(self.constraints_file.get()))
                 else:

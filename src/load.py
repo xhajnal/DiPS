@@ -5,13 +5,13 @@ import copy
 import re
 from pathlib import Path
 from time import time
-
 from termcolor import colored
 from sympy import factor, Interval
 
 ## Importing my code
 from common.config import load_config
 from common.convert import parse_numbers, parse_interval_bounds
+from common.files import pickle_load
 from common.my_storm import parse_refinement_into_space, merge_refinements
 
 spam = load_config()
@@ -499,9 +499,8 @@ def to_variance(dic):
 ###########################
 ###       DATA HERE     ###
 ###########################
-## TODO rewrite this to be able to load pickled data
 def load_data(path, silent: bool = False, debug: bool = False):
-    """ Loads experimental data, returns as list "data"
+    """ Loads data, returns as list "data"
 
     Args:
         path (string): file name
@@ -509,37 +508,45 @@ def load_data(path, silent: bool = False, debug: bool = False):
         debug (bool): if debug extensive print will be used
 
     Returns:
-    data: dictionary N -> list of probabilities for respective property
+        data (list): of values for respective property
     """
     cwd = os.getcwd()
-    if not Path(path).is_absolute():
-        os.chdir(data_path)
+    try:
+        path = Path(path)
+        if not path.is_absolute():
+            os.chdir(data_path)
 
-    data = []
-    with open(path, "r") as file:
-        for line in file:
-            line = line[:-1]
-            if debug:
-                print("Unparsed line: ", line)
-            if "," not in line:
-                print(colored(f"Comma not in line {line}, skipping this line", "red"))
-                continue
-            correct_line = True
-            data = line.split(",")
-            if debug:
-                print("Parsed line: ", data)
+        if path.suffix == ".p":
+            data = pickle_load(path)
+        elif path.suffix == ".txt":
+            data = parse_data(path, silent=silent, debug=debug)
+        else:
+            data = []
+            with open(path, "r") as file:
+                for line in file:
+                    line = line[:-1]
+                    if debug:
+                        print("Unparsed line: ", line)
+                    if "," not in line:
+                        print(colored(f"Comma not in line {line}, skipping this line", "red"))
+                        continue
+                    correct_line = True
+                    data = line.split(",")
+                    if debug:
+                        print("Parsed line: ", data)
 
-            for value in range(len(data)):
-                try:
-                    assert isinstance(data, list)
-                    data[value] = float(data[value])
-                except ValueError:
-                    print(colored(f"Warning while parsing line number {value + 1}. Expected number, got {type(data[value])}. Skipping this line: {line}", "red"))
-                    correct_line = False
-                    break
-            if correct_line:
-                break
-    os.chdir(cwd)
+                    for value in range(len(data)):
+                        try:
+                            assert isinstance(data, list)
+                            data[value] = float(data[value])
+                        except ValueError:
+                            print(colored(f"Warning while parsing line number {value + 1}. Expected number, got {type(data[value])}. Skipping this line: {line}", "red"))
+                            correct_line = False
+                            break
+                    if correct_line:
+                        break
+    finally:
+        os.chdir(cwd)
     if data:
         return data
     else:
@@ -547,13 +554,13 @@ def load_data(path, silent: bool = False, debug: bool = False):
 
 
 def load_all_data(path):
-    """ loads all experimental data for respective property, returns as dictionary "data"
+    """ Loads all data (stored as dictionary) for respective property, returns as dictionary "data"
     
     Args:
         path (string): file name regex
     
     Returns:
-        D: dictionary N -> list of probabilities for respective property
+        D (dictionary): dictionary N -> list of probabilities for respective property
     """
     cwd = os.getcwd()
     if not Path(path).is_absolute():
@@ -597,14 +604,13 @@ def load_all_data(path):
 #######################
 ###   PARAMETERS    ###
 #######################
-
-
 def parse_params_from_model(file, silent: bool = False, debug=False):
     """ Parses the constants and parameters from a given prism file
 
     Args:
         file: ((path/string)) a prism model file to be parsed
         silent (bool): if silent command line output is set to minimum
+        debug (bool): if debug extensive print will be used
     """
     consts = []
     params = []
@@ -774,6 +780,9 @@ def find_param_older(expression, debug: bool = False):
     return set(parameters)
 
 
+###########################################################
+###      PARSERS - data structures saved in txt file    ###
+###########################################################
 def parse_constraints(file, silent=True, debug=False):
     """ Loads constraints from text file, returns as list of strings "constraints"
 
@@ -811,6 +820,20 @@ def parse_functions(file, silent=True, debug=False):
     return parse_constraints(file, silent, debug)
 
 
+def parse_data(file, silent=True, debug=False):
+    """ Loads data from text file, returns as list of strings "weights"
+
+    Args:
+        file (string/Path): file path to parse weights
+        silent (bool): if silent printed output is set to minimum
+        debug (bool): if debug extensive print will be used
+
+    Returns:
+    (list of string) weights
+    """
+    return parse_weights(file, silent=silent, debug=debug)
+
+
 def parse_weights(file, silent=True, debug=False):
     """ Loads weights from text file, returns as list of strings "weights"
 
@@ -834,16 +857,16 @@ def parse_data_intervals(file, silent=True, debug=False):
         debug (bool): if debug extensive print will be used
 
     Returns:
-    (list of Interval) intervals
+        lines (list of Interval): parsed intervals
     """
     ## TODO THIS IS MAYBE MORE GENERAL LOAD FUNCTION
     with open(file) as f:
         lines = f.readlines()
 
-    ## get rid of the last ","
+    ## Get rid of the last ","
     lines = list(map(lambda x: re.sub(r', *\n', '', x), lines))
 
-    ## single line csv or [item, item, item]
+    ## Single line csv or [item, item, item]
     if len(lines) == 1:
         ## Get the first line
         lines = lines[0]
