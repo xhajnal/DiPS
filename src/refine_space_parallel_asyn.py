@@ -126,7 +126,6 @@ def check_deeper_async(region, constraints, recursion_depth, epsilon, coverage, 
     globals()["flat_refinement"] = (recursion_depth == 0)
 
     ## If the given region is space
-    ## TODO correct this
     if isinstance(region, RefinedSpace):
         space = region
         globals()["space"] = space
@@ -138,10 +137,6 @@ def check_deeper_async(region, constraints, recursion_depth, epsilon, coverage, 
         globals()["parameters"] = space.params
         parameters = globals()["parameters"]
         print("parsed parameters: ", parameters) if not silent else None
-
-        ## TODO add possible check like this
-        # if not sorted(space.params) == sorted(parameters):
-        #     raise Exception("The set of parameters of the given space and properties does not correspond")
 
     ## If the region is just list of intervals - a space is to be created
     elif isinstance(region, list) or isinstance(region, tuple):
@@ -228,22 +223,26 @@ def check_deeper_async(region, constraints, recursion_depth, epsilon, coverage, 
 
     # NORMAL REFINEMENT - WITHOUT/AFTER PRESAMPLING
     ## Parsing version/algorithm
-    ## If using z3 initialise the parameters
+    ## Initialise the parameters
     if version <= 4:
         index = 0
-        for param in space.params:
-            if space.types[index] == "Real":
-                globals()[param] = Real(param)
-            elif space.types[index] == "Int":
-                globals()[param] = Int(param)
-            elif space.types[index] == "Bool":
-                globals()[param] = Bool(param)
-            elif space.types[index][0] == "BitVec":
-                globals()[param] = BitVec(param, space.types[index][1])
-            else:
-                print(colored(f"Type of parameter {param} which was set as {space.types[index]} does not correspond with any known type", "red"))
-                raise TypeError(f"Type of parameter {param} which was set as {space.types[index]} does not correspond with any known type")
-            index = index + 1
+        if solver == "z3":
+            for param in space.params:
+                if space.types[index] == "Real":
+                    globals()[param] = Real(param)
+                elif space.types[index] == "Int":
+                    globals()[param] = Int(param)
+                elif space.types[index] == "Bool":
+                    globals()[param] = Bool(param)
+                elif space.types[index][0] == "BitVec":
+                    globals()[param] = BitVec(param, space.types[index][1])
+                else:
+                    print(colored(f"Type of parameter {param} which was set as {space.types[index]} does not correspond with any known type", "red"))
+                    raise TypeError(f"Type of parameter {param} which was set as {space.types[index]} does not correspond with any known type")
+                index = index + 1
+        elif solver == "dreal":
+            for param in space.params:
+                globals()[param] = Variable(param)
 
     ## Converting constraints to inequalities
     elif version == 5:
@@ -429,7 +428,7 @@ def check_deeper_async(region, constraints, recursion_depth, epsilon, coverage, 
 
     if single_call_timeout:
         import sys
-        sys.stdout.write(colored(f"This refinement timed out {times_it_timed_out} times ", "yellow"))
+        sys.stdout.write(colored(f"\n This refinement timed out {times_it_timed_out} times ", "yellow"))
     if not silent:
         print(colored(f"Result coverage is: {space.get_coverage()}", "blue"))
         print(colored(f"Parallel refinement took {round(space.time_last_refinement, 4)} seconds", "yellow"))

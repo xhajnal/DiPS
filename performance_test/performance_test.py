@@ -4,6 +4,8 @@ import os
 from copy import copy
 from datetime import datetime
 from os.path import basename, isfile
+from pathlib import Path
+
 from sympy import factor
 from time import time
 
