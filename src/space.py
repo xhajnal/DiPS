@@ -807,6 +807,10 @@ class RefinedSpace:
         """ Returns proportion of nonwhite subspace (coverage) """
         volume = self.get_volume()
         coverage = (volume - self.get_white_volume()) / volume
+
+        if coverage == 0:
+            if self.rectangles_sat or self.rectangles_unsat:
+                return self.get_coverage_old(fract=fract)
         if fract:
             return coverage
         else:

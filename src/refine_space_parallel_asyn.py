@@ -1129,7 +1129,7 @@ class Worker(Process):
                 elif self.version == 5:
                     print(colored(f"Selecting biggest rectangles method with sampling and interval arithmetics",
                                   "green")) if not self.silent else None
-                    spam = private_check_deeper_interval_parallel(work, self.constraints, solver=self.solver, delta=self.delta, silent=self.silent, debug=self.debug)
+                    spam = private_check_deeper_interval_parallel(work, self.constraints, silent=self.silent, debug=self.debug)
 
             # Put result into out_queue
             print(f"refine result: {spam}") if self.debug else None
