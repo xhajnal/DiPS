@@ -84,7 +84,7 @@ try:
     from mc_informed import general_create_data_informed_properties
     from load import load_mc_result, find_param, load_data, find_param_old, parse_constraints, parse_functions
     from load import parse_params_from_model, parse_weights, parse_data_intervals, parse_data
-    from common.mathematics import create_intervals, create_broadest_intervals
+    from common.mathematics import create_proportions_interval
     import space
     from refine_space import check_deeper
     from mc import call_prism_files, call_storm
@@ -645,9 +645,9 @@ class Gui(Tk):
         label43.grid(row=6, column=0, padx=0)
         createToolTip(label43, text='Choose from interval method')
 
-        self.interval_method_entry = ttk.Combobox(frame_left, values=('CLT', 'Rule of three', 'Agresti-Coull', 'Wilson', 'Clopper_Pearson', 'Jeffreys', 'broadest'))
+        self.interval_method_entry = ttk.Combobox(frame_left, values=('CLT', 'Rule of three', 'Agresti-Coull', 'Wilson', 'Clopper_Pearson', 'Jeffreys'))
         self.interval_method_entry.grid(row=6, column=1)
-        self.interval_method_entry.current(0)
+        self.interval_method_entry.current(2)
 
         Button(frame_left, text='Compute intervals', command=self.compute_data_intervals).grid(row=7, column=0, sticky=W, padx=4, pady=4)
         Button(frame_left, text='Open intervals file', command=self.load_data_intervals).grid(row=7, column=1, sticky=W, padx=4, pady=4)
@@ -3607,13 +3607,8 @@ class Gui(Tk):
         assert isinstance(self.data, list)
 
         method = self.interval_method_entry.get()
-        ## ('CLT', 'Rule of three', 'Agresti-Coull', 'Wilson', 'Clopper_Pearson', 'Jeffreys', 'broadest')
-        if method == "CLT":
-            self.data_intervals = create_intervals(float(self.confidence_entry.get()), int(self.n_samples_entry.get()), self.data)
-        elif method == "broadest":
-            self.data_intervals = create_broadest_intervals(float(self.confidence_entry.get()), int(self.n_samples_entry.get()), self.data)
-        else:
-            raise NotImplementedError("We are sorry, this option is not implemented so far.")
+        ## ('CLT', 'Rule of three', 'Agresti-Coull', 'Wilson', 'Clopper_Pearson', 'Jeffreys')
+        self.data_intervals = [create_proportions_interval(float(self.confidence_entry.get()), int(self.n_samples_entry.get()), data_point, method) for data_point in self.data]
 
         intervals = ""
         if not self.silent.get():

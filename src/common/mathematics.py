@@ -170,8 +170,8 @@ def create_interval_NEW(confidence, samples=False, n_samples=False, sample_mean=
             return Interval(sample_mean - h, float('inf'))
 
 
-def create_broadest_interval(confidence, n_samples, data_point):
-    """ Returns broadest interval of probabilistic data_point +- margin
+def create_proportions_interval(confidence, n_samples, data_point, method):
+    """ Returns confidence interval of given point, n
         using 6 methods:
             3/N             - rule of three
             CLT             - Central Limit Theorem confidence intervals
@@ -185,11 +185,47 @@ def create_broadest_interval(confidence, n_samples, data_point):
         n_samples (int): number of samples to compute margin
         data_point (float): the value to be margined from interval [0,1]
     """
-    clt_margin = st.norm.ppf(1 - (1 - confidence) / 2) * math.sqrt(data_point * (1 - data_point) / n_samples)
-    clt = Interval(float(max(data_point - clt_margin, 0)), float(min(data_point + clt_margin, 1)))
+    if method.lower() == "clt" or method.lower == "wald":
+        clt_margin = st.norm.ppf(1 - (1 - confidence) / 2) * math.sqrt(data_point * (1 - data_point) / n_samples)
+        clt = float(max(data_point - clt_margin, 0)), float(min(data_point + clt_margin, 1))
+        return Interval(*clt)
+    elif "3" in method or "three" in method:
+        rule_of_three_margin = 3/n_samples
+        rule_of_three = Interval(float(max(data_point - rule_of_three_margin, 0)), float(min(data_point + rule_of_three_margin, 1)))
+        return rule_of_three
+    elif method.lower() == "ac" or "agresti" in method.lower():
+        AC = proportion_confint(round(data_point*n_samples), n_samples, alpha=1 - confidence, method="agresti_coull")
+        return Interval(*AC)
+    elif method.lower() == "wilson":
+        wilson = proportion_confint(round(data_point*n_samples), n_samples, alpha=1 - confidence, method="wilson")
+        return Interval(*wilson)
+    elif "clop" in method.lower() or "pear" in method.lower():
+        clopper_pearson = proportion_confint(round(data_point*n_samples), n_samples, alpha=1 - confidence, method="beta")
+        return Interval(*clopper_pearson)
+    elif "jef" in method.lower():
+        jeffreys = proportion_confint(round(data_point*n_samples), n_samples, alpha=1 - confidence, method="jeffreys")
+        return Interval(*jeffreys)
+    else:
+        raise Exception("Method mot found.")
 
-    rule_of_three_margin = 3/n_samples
-    rule_of_three = Interval(float(max(data_point - rule_of_three_margin, 0)), float(min(data_point + rule_of_three_margin, 1)))
+
+def create_broadest_interval(confidence, n_samples, data_point):
+    """ Returns broadest interval of probabilistic data_point +- margin
+        using 6 methods:
+            3/N             - rule of three
+            CLT             - Central Limit Theorem confidence intervals, Wald
+            AC              - Agresti-Coull method
+            wilson          - Wilson Score method
+            clopper_pearson - Clopper-Pearson interval based on Beta distribution
+            jeffreys        - Jeffreys Bayesian Interval
+
+    Args:
+        confidence (float): confidence level, C
+        n_samples (int): number of samples to compute margin
+        data_point (float): the value to be margined from interval [0,1]
+    """
+    clt = create_proportions_interval(confidence, n_samples, data_point, "CLT")
+    rule_of_three = create_proportions_interval(confidence, n_samples, data_point, "3")
 
     if clt.is_proper_subset(rule_of_three):
         print(f"clt {clt} in rule_of_three {rule_of_three}")
@@ -202,9 +238,7 @@ def create_broadest_interval(confidence, n_samples, data_point):
     else:
         raise Exception(f"Cannot make the biggest interval, rule of three {rule_of_three} is not in clt {clt} or vise-versa")
 
-    AC = proportion_confint(round(data_point*n_samples), n_samples, alpha=1 - confidence, method="agresti_coull")
-    AC_margin = max(data_point - AC[0], AC[1] - data_point)
-    AC = Interval(*AC)
+    AC = create_proportions_interval(confidence, n_samples, data_point, "AC")
 
     if AC.is_proper_subset(biggest):
         print(f"AC {AC} in the biggest interval so far {biggest}, skipping")
@@ -216,9 +250,7 @@ def create_broadest_interval(confidence, n_samples, data_point):
         raise Exception(
             f"Cannot make the biggest interval, AC {AC} is not in the biggest interval so far {biggest} or vise-versa")
 
-    wilson = proportion_confint(round(data_point*n_samples), n_samples, alpha=1 - confidence, method="wilson")
-    wilson_margin = max(data_point - wilson[0], wilson[1] - data_point)
-    wilson = Interval(*wilson)
+    wilson = create_proportions_interval(confidence, n_samples, data_point, "wilson")
 
     if wilson.is_proper_subset(biggest):
         print(f"wilson {wilson} in the biggest interval so far {biggest}, skipping")
@@ -230,9 +262,7 @@ def create_broadest_interval(confidence, n_samples, data_point):
         raise Exception(
             f"Cannot make the biggest interval, wilson {wilson} is not in the biggest interval so far {biggest} or vise-versa")
 
-    clopper_pearson = proportion_confint(round(data_point*n_samples), n_samples, alpha=1 - confidence, method="beta")
-    clopper_pearson_margin = max(data_point - clopper_pearson[0], clopper_pearson[1] - data_point)
-    clopper_pearson = Interval(*clopper_pearson)
+    clopper_pearson = create_proportions_interval(confidence, n_samples, data_point, "clop")
 
     if clopper_pearson.is_proper_subset(biggest):
         print(f"clopper_pearson {clopper_pearson} in the biggest interval so far {biggest}, skipping")
@@ -241,12 +271,9 @@ def create_broadest_interval(confidence, n_samples, data_point):
         biggest = clopper_pearson
         biggest_name = "Clopper-Pearson"
     else:
-        raise Exception(
-            f"Cannot make the biggest interval, clopper_pearson {clopper_pearson} is not in the biggest interval so far {biggest} or vise-versa")
+        raise Exception(f"Cannot make the biggest interval, clopper_pearson {clopper_pearson} is not in the biggest interval so far {biggest} or vise-versa")
 
-    jeffreys = proportion_confint(round(data_point*n_samples), n_samples, alpha=1 - confidence, method="jeffreys")
-    jeffreys_margin = max(data_point - jeffreys[0], jeffreys[1] - data_point)
-    jeffreys = Interval(*jeffreys)
+    jeffreys = create_proportions_interval(confidence, n_samples, data_point, "jef")
 
     if jeffreys.is_proper_subset(biggest):
         print(f"jeffreys {jeffreys} in the biggest interval so far {biggest}, skipping")
@@ -260,16 +287,6 @@ def create_broadest_interval(confidence, n_samples, data_point):
 
     print(f"Given point, {data_point} broadest interval is {biggest} using {biggest_name} method")
     return biggest
-
-    #
-    # names = ["rule_of_thee", "CLT", "AC", "wilson", "clopper_pearson", "jeffreys"]
-    # deltas = [rule_of_three_margin, clt_margin, AC_margin, wilson_margin, clopper_pearson_margin, jeffreys_margin]
-    #
-    # max_delta = max(deltas)
-    # index = deltas.index(max_delta)
-    #
-    # print(f"Given point, {data_point} Maximal margin is {max_delta} using {names[index]} method")
-    # return Interval(float(max(data_point - max_delta, 0)), float(min(data_point + max_delta, 1)))
 
 
 def create_interval(confidence, n_samples, data_point):
