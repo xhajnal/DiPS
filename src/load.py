@@ -123,8 +123,12 @@ def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False
                         param_intervals.append(list(map(eval, interval.split(":"))))  ## Parse PRISM param intervals
 
             # Parse times
-            if line.startswith("Time for"):
-                time_elapsed = time_elapsed + parse_numbers(line)[0]
+            if tool == "storm":
+                if line.startswith("  * wallclock time:"):
+                    time_elapsed = time_elapsed + parse_numbers(line)[0]
+            elif tool == "prism":
+                if "secs." in line or "seconds" in line:
+                    time_elapsed = time_elapsed + parse_numbers(line)[0]
 
             ## PRISM check if rewards
             if line.startswith('Parametric model checking: R'):
@@ -195,7 +199,9 @@ def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False
                             try:
                                 f.append(str(factor(line)))
                             except TypeError:
+
                                 print(f"Error while factorising polynomial f[{i + 1}], used not factorised instead")
+                                print(line)
                                 f.append(line)
                             finally:
                                 time_to_factorise = time_to_factorise + (time() - start_time)
@@ -617,7 +623,7 @@ def parse_params_from_model(file, silent: bool = False, debug=False):
     # print("file", file)
     with open(file, 'r') as input_file:
         for line in input_file:
-            if line.startswith("const"):
+            if re.compile(r"^\s*const").search(line) is not None:
                 if debug:
                     print(line[-1])
                 line = line.split(";")[0]
