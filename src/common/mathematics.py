@@ -176,14 +176,15 @@ def create_proportions_interval(confidence, n_samples, data_point, method):
             3/N             - rule of three
             CLT             - Central Limit Theorem confidence intervals
             AC              - Agresti-Coull method
-            wilson          - Wilson Score method
-            clopper_pearson - Clopper-Pearson interval based on Beta distribution
-            jeffreys        - Jeffreys Bayesian Interval
+            Wilson          - Wilson Score method
+            Clopper_pearson - Clopper-Pearson interval based on Beta distribution
+            Jeffreys        - Jeffreys Bayesian Interval
 
     Args:
         confidence (float): confidence level, C
         n_samples (int): number of samples to compute margin
         data_point (float): the value to be margined from interval [0,1]
+        method (string): method to compute the confidence intervals with 3/N, CLT, AC, Wilson, Clopper-Pearson, Jeffreys
     """
     if method.lower() == "clt" or method.lower == "wald":
         clt_margin = st.norm.ppf(1 - (1 - confidence) / 2) * math.sqrt(data_point * (1 - data_point) / n_samples)

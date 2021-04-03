@@ -7,7 +7,7 @@ from os.path import basename, isfile
 from pathlib import Path
 
 from sympy import factor
-from time import time
+from time import time, sleep
 
 from refine_space import check_deeper
 from refine_space_parallel import check_deeper_parallel
@@ -80,7 +80,7 @@ ref_sample_size = 21
 
 ## MH SETTINGS
 mh_bins = 11  ## number of bins per dimension
-iterations = spam["mh_iterations"]  # 500000
+iterations = 5000  # spam["mh_iterations"]  # 500000
 mh_timeout = spam["mh_timeout"]  # 3600
 mh_where = None  ## skip showing figures
 mh_gui = False  ## skip showing progress
@@ -197,7 +197,7 @@ def compute_functions(model_file, property_file, output_path=False, parameter_do
 
 
 def repeat_sampling(space, constraints, sample_size, boundaries=None, silent=False, save=False, debug=False,
-                    progress=False, quantitative=False, parallel=True, save_memory=False, repetitions=40):
+                    progress=False, quantitative=False, parallel=True, save_memory=False, repetitions=40, show_space=False):
     """ Runs space sampling
 
 
@@ -218,17 +218,18 @@ def repeat_sampling(space, constraints, sample_size, boundaries=None, silent=Fal
         sampling = space.grid_sample(constraints, sample_size, boundaries=boundaries, silent=silent, save=save,
                                      debug=debug, progress=progress, quantitative=quantitative, parallel=parallel,
                                      save_memory=save_memory)
-        if debug:
+        if debug or show_space:
             space.show(sat_samples=True, unsat_samples=True)
 
         avrg_time += space.time_last_sampling
+        sleep(1)
 
     avrg_time = avrg_time/repetitions
     if repetitions > 1:
         print(colored(f"Average time of {repetitions} runs is {round_sig(avrg_time)}", "yellow"))
 
     else:
-        print(colored(f"Refinement took {round_sig(avrg_time)}", "yellow"))
+        print(colored(f"Sampling took {round_sig(avrg_time)}", "yellow"))
 
     return avrg_time, sampling
 
@@ -286,6 +287,9 @@ def repeat_refine(text, parameters, parameter_domains, constraints, timeout=0, s
                 print(colored("skipping this, not implemented", "blue"))
                 print(err)
         else:
+            if is_async:
+                print(colored("Asynch sequential refinement not implemented", "blue"))
+                return
             spam = check_deeper(space, constraints, max_depth, epsilon=epsilon, coverage=coverage,
                                 silent=silent, version=alg, sample_size=sample_size, debug=debug, save=False, where=where if run == 0 else None,
                                 solver=solver, delta=0.01, gui=False, show_space=show_space if run == 0 else False, iterative=False, timeout=timeout)

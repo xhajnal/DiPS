@@ -30,6 +30,8 @@ debug = False
 silent = True
 factorise = True
 
+show_space = False
+
 ## SAMPLING SETTING
 grid_size = 25
 
@@ -37,9 +39,9 @@ grid_size = 25
 C = 0.95
 
 ## EXPERIMENT SETUP
-cores_list = [True, 12, 8, 4, 2, 1, False]  ## [True, 12, 8, 4, 2, 1, False]
+cores_list = [True, 12, 8, 4, 2, 1, False]  ## [True, 12, 8, 4, 2, 1, False] ## This is CPU depending setting
 precision = 4
-repetitions = 300
+repetitions = 30
 
 del spam
 
@@ -78,8 +80,8 @@ if __name__ == '__main__':
             print("parallel:", cores)
             space = RefinedSpace(parameter_domains, parameters)
             repeat_sampling(space, constraints, grid_size, silent=silent, save=False, debug=debug,
-                            quantitative=False, parallel=cores, repetitions=repetitions)
-
+                            quantitative=False, parallel=cores, repetitions=repetitions, show_space=show_space)
+    #
     ### KNUTH DIE
     ## LOAD FUNCTIONS
     functions = load_functions(f"Knuth/parametric_die_3_paramsBSCCs", debug=debug, source=model_checker)
@@ -110,4 +112,36 @@ if __name__ == '__main__':
         print("parallel:", cores)
         space = RefinedSpace(parameter_domains, parameters)
         repeat_sampling(space, constraints, grid_size, silent=silent, save=False, debug=debug,
-                        quantitative=False, parallel=cores, repetitions=repetitions)
+                        quantitative=False, parallel=cores, repetitions=repetitions, show_space=show_space)
+
+    ### BRP
+    ## LOAD FUNCTIONS
+    functions = load_functions(f"brp/brp_16-2", debug=debug, source=model_checker)
+
+    ## LOAD DATA
+    data_set = [0.5]
+
+    ## COMPUTE INTERVALS
+    n_samples = 100
+
+    ## SETUP PARAMETERS AND THEIR DOMAINS
+    consts, parameters = parse_params_from_model(os.path.join(model_path, "brp/brp_16-2.pm"), silent=True)
+
+    if debug:
+        print("parameters", parameters)
+    parameter_domains = []
+    for item in parameters:
+        parameter_domains.append([0, 1])
+    if debug:
+        print("parameter_domains", parameter_domains)
+
+    intervals = create_intervals(float(C), int(n_samples), data_set)
+    constraints = ineq_to_constraints(functions, intervals, decoupled=True)
+
+    # SAMPLE SPACE
+    print(colored(f"Sampling, dataset {data_set}, grid size {grid_size}, {n_samples} samples", "green"))
+    for cores in cores_list:
+        print("parallel:", cores)
+        space = RefinedSpace(parameter_domains, parameters)
+        repeat_sampling(space, constraints, grid_size, silent=silent, save=False, debug=debug,
+                        quantitative=False, parallel=cores, repetitions=repetitions, show_space=show_space)

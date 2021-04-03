@@ -3,7 +3,7 @@ import os
 from termcolor import colored
 from performance_test import repeat_sampling, load_functions, repeat_refine
 from common.convert import ineq_to_constraints
-from common.mathematics import create_intervals
+from common.mathematics import create_proportions_interval
 from load import load_data, parse_params_from_model
 from space import RefinedSpace
 from common.config import load_config
@@ -82,7 +82,7 @@ if __name__ == '__main__':
 
                 for n_samples in n_samples_list:
                     if population_size != 0:
-                        intervals = create_intervals(float(C), int(n_samples), data_set)
+                        intervals = [create_proportions_interval(float(C), int(n_samples), data_point, method="AC") for data_point in data_set]
                         constraints = ineq_to_constraints(functions, intervals, decoupled=True)
                     else:
                         parameters = ["p", "q"]
@@ -134,7 +134,7 @@ if __name__ == '__main__':
     if debug:
         print("parameter_domains", parameter_domains)
 
-    intervals = create_intervals(float(C), int(n_samples), data_set)
+    intervals = [create_proportions_interval(float(C), int(n_samples), data_point, method="AC") for data_point in data_set]
     constraints = ineq_to_constraints(functions, intervals, decoupled=True)
 
     ## REFINE SPACE
@@ -143,8 +143,7 @@ if __name__ == '__main__':
     for sample_guided in [False, True]:  ## [False, True]
         for is_async in [False, True]:  ## [False, True]
             for cores in cores_list:
-                print(
-                    f"parallel: {cores},{' async calls,' if is_async else ' map calls,'} sample guided: {sample_guided}, single call timeout: {single_call_timeout}")
+                print(f"parallel: {cores},{' async calls,' if is_async else ' map calls,'} sample guided: {sample_guided}, single call timeout: {single_call_timeout}")
                 text = f"dataset {data_set}, confidence level {C}, {n_samples} samples"
                 space = RefinedSpace(parameter_domains, parameters)
 
