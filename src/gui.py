@@ -263,7 +263,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.25"  ## Version of the gui
+        self.version = "1.25.1"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -464,18 +464,25 @@ class Gui(Tk):
         self.program.set("prism")
 
         ## Left (Model checking) Frame
-        Label(frame_left, text=f"Symbolic model checking.", anchor=W, justify=LEFT).grid(row=0, column=0, sticky=W, padx=4, pady=4)
+        Label(frame_left, text=f"Parametric model checking and refinement (Storm and PRISM).", anchor=W, justify=LEFT).grid(row=0, column=0, columnspan=2, sticky=W, padx=4, pady=4)
 
         Label(frame_left, text="Select the program: ", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, padx=4, pady=4)
         Radiobutton(frame_left, text="Prism", variable=self.program, value="prism").grid(row=1, column=1, sticky=W, pady=4)
         radio = Radiobutton(frame_left, text="Storm", variable=self.program, value="storm")
         radio.grid(row=1, column=2, sticky=W, pady=4)
-        createToolTip(radio, text='This option results in a command that would produce desired output. (If you installed Storm, open command line and insert the command. Then load output file.)')
+        createToolTip(radio, text='If you did not install Storm this option results in a command that would produce desired output. (You may use docker installation to open command line and insert the command. Then load output file in DiPS.)')
 
-        Button(frame_left, text='Run parametric model checking', command=self.synth_params).grid(row=3, column=0, sticky=W, padx=4, pady=4)
-        Button(frame_left, text='Open MC output file', command=self.load_functions_file).grid(row=3, column=1, sticky=W, pady=4)
+        run_pmc_button = Button(frame_left, text='Run parametric model checking', command=self.synth_params)
+        run_pmc_button.grid(row=3, column=0, sticky=W, padx=4, pady=4)
+        createToolTip(run_pmc_button, text='Runs parametric model checking of model and properties to obtain rational function using selected model checker - PRISM or Storm')
 
-        Button(frame_left, text='Open refinement output file', command=self.load_refinement_output_file).grid(row=3, column=3, sticky=W, pady=4)
+        open_pmc_file_button = Button(frame_left, text='Open MC output file', command=self.load_functions_file)
+        open_pmc_file_button.grid(row=3, column=1, sticky=W, pady=4)
+        createToolTip(open_pmc_file_button, text='Loads result of parametric model checking result file (of PRISM/Storm) to parse rational function.')
+
+        open_ref_file_button = Button(frame_left, text='Open refinement output file', command=self.load_refinement_output_file)
+        open_ref_file_button.grid(row=3, column=3, sticky=W, pady=4)
+        createToolTip(open_ref_file_button, text='Loads result of refinement result file (of PRISM/Storm) to create Refined space.')
 
         Label(frame_left, text=f"Loaded Prism/Storm output file:", anchor=W, justify=LEFT).grid(row=4, column=0, sticky=W, padx=4, pady=4)
         self.mc_result_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_width() / 2), state=DISABLED)
@@ -712,7 +719,7 @@ class Gui(Tk):
 
         ############################################ TAB SAMPLE AND REFINEMENT #########################################
         page6 = ttk.Frame(nb, name="refine")
-        nb.add(page6, text='Sample & Refine space')
+        nb.add(page6, text='Analyze space')
 
         # frame_left = Frame(page6, width=500, height=200)
         # frame_left.pack(side=LEFT, expand=False)
@@ -1529,7 +1536,7 @@ class Gui(Tk):
         if called_directly:
             if not skip_vis:
                 messagebox.showinfo(f"Loading {program} refinement results",
-                                    "Visualisation of refinement can be seen in Sample & Refine tab.")
+                                    "Visualisation of refinement can be seen in Analyze space tab.")
         else:
             messagebox.showinfo(f"Loading {program} refinement results",
                                 "Loaded refinement output can be seen in Synthesise functions tab.")
@@ -2133,10 +2140,10 @@ class Gui(Tk):
                 try:
                     self.space = pickle_load(self.space_file.get())
                 except Exception as err:
-                    self.space == ""
+                    self.space = ""
                     messagebox.showwarning("Loading space", f"Space could not be load: {err}")
 
-                if self.space == "":
+                if self.space == "" or self.space == []:
                     return
 
                 ## Back compatibility
@@ -2153,7 +2160,12 @@ class Gui(Tk):
                 else:
                     self.show_true_point = False
 
-                self.show_space(self.show_refinement, self.show_samples, self.show_true_point, show_all=True, prefer_unsafe=self.show_red_in_multidim_refinement.get(), quantitative=self.show_quantitative)
+                try:
+                    self.show_space(self.show_refinement, self.show_samples, self.show_true_point, show_all=True, prefer_unsafe=self.show_red_in_multidim_refinement.get(), quantitative=self.show_quantitative)
+                except AttributeError:
+                    self.space = ""
+                    messagebox.showwarning("Loading space", "Space file corrupted, could not load it.")
+                    return
                 ## Show the space as niceprint()
                 # self.print_space()
 
@@ -2988,6 +3000,11 @@ class Gui(Tk):
             elif self.program.get().lower() == "storm":
                 if output_file == ():
                     output_file = str(os.path.join(Path(self.storm_results), str(Path(self.model_file.get()).stem) + "_" + str(Path(property_file).stem)))
+
+                try:
+                    os.remove(output_file)
+                except FileNotFoundError:
+                    pass
 
                 if refinement:
                     call_storm(model_file=self.model_file.get(), params=self.parameters, param_intervals=self.parameter_domains,
@@ -4313,7 +4330,7 @@ class Gui(Tk):
     def refresh_space(self):
         """ Refreshes space. """
         if self.space:
-            if not askyesno("Sample & Refine", "Data of the space, its text representation, and the plot will be lost. Do you want to proceed?"):
+            if not askyesno("Analyze space", "Data of the space, its text representation, and the plot will be lost. Do you want to proceed?"):
                 return
         self.space_changed = False
         self.print_space(clear=True)
@@ -4362,7 +4379,7 @@ class Gui(Tk):
     def customize_refinement_results(self):
         """ Customizes refinement Plot"""
         if self.refinement_results:
-            if not askyesno("Sample & Refine", "Sample & Refinement plot will be lost. Do you want to proceed?"):
+            if not askyesno("Analyze space", "Sample & Refinement plot will be lost. Do you want to proceed?"):
                 return
 
         self.new_window = Toplevel(self)
@@ -4404,7 +4421,7 @@ class Gui(Tk):
     def refresh_mh(self):
         """ Refreshes MH results"""
         if self.mh_results:
-            if not askyesno("Sample & Refine", "Data and the plot of the Metropolis-Hastings will be lost. Do you want to proceed?"):
+            if not askyesno("Analyze space", "Data and the plot of the Metropolis-Hastings will be lost. Do you want to proceed?"):
                 return
         self.mh_results_changed = False
         self.mh_results = ""
