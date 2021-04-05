@@ -39,7 +39,7 @@ The tool was developed and optimised for Win10 and Ubuntu. The tool may not func
 
 ### 1. INSTALL DEPENDENCIES:
 
-* [Python](https://www.python.org/) 3.7
+* [Python](https://www.python.org/) 3.7 or 3.8
     * Windows - just python
     * Ubuntu/Debian - Python header files should also be installed, please use `sudo apt install python3-dev`
     * Fedora/CentOS - Python header files should also be installed, please use `sudo dnf install python3-devel`
