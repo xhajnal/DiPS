@@ -287,6 +287,9 @@ def repeat_refine(text, parameters, parameter_domains, constraints, timeout=0, s
                 print(colored("skipping this, not implemented", "blue"))
                 print(err)
         else:
+            if sample_guided:
+                print(colored("Sampling-guided sequential refinement not implemented", "blue"))
+                return
             if is_async:
                 print(colored("Asynch sequential refinement not implemented", "blue"))
                 return

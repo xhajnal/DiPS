@@ -8,7 +8,6 @@ from load import load_data, parse_params_from_model
 from space import RefinedSpace
 from common.config import load_config
 
-
 ## PATHS
 spam = load_config()
 data_dir = spam["data"]
@@ -29,17 +28,17 @@ debug = False
 silent = True
 factorise = True
 
+show_space = False
+
 ## REFINEMENT SETTING
 timeout = 3600
-single_call_timeout = 30  ## 30 or 0
-
-show_space = False
+single_call_timeout = 0  ## 30 or 0
 
 ## INTERVALS SETTINGS
 C = 0.95
 
 ## EXPERIMENT SETUP
-cores_list = [True, 8, 4, 2, 1, False]  ## [True, 8, 4, 2, 1, False]
+cores_list = [True, 8, 4, 2, 1, False]  ## [True, 8, 4, 2, 1, False]  ## This is CPU depending setting
 precision = 4
 repetitions = 20
 

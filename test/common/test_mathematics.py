@@ -86,8 +86,8 @@ class MyTestCase(unittest.TestCase):
 
     def test_create_interval(self):
         print(colored('Single interval computing', 'blue'))
-        self.assertEqual(round(create_interval(0.95, 60, 0.5).start, 15), round(Interval(0.365151535478501, 0.634848464521499).start, 15))
-        self.assertEqual(round(create_interval(0.95, 60, 0.5).end, 15), round(Interval(0.365151535478501, 0.634848464521499).end, 15))
+        self.assertEqual(round(create_interval_hsb(0.95, 60, 0.5).start, 15), round(Interval(0.365151535478501, 0.634848464521499).start, 15))
+        self.assertEqual(round(create_interval_hsb(0.95, 60, 0.5).end, 15), round(Interval(0.365151535478501, 0.634848464521499).end, 15))
 
     def test_create_interval_NEW(self):
         print(colored('Single interval computing NEW', 'blue'))

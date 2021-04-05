@@ -85,13 +85,13 @@ def create_intervals(confidence, n_samples, data):
     intervals = []
     if not isinstance(data, Iterable):
         assert isinstance(data, float)
-        return [create_interval(confidence, n_samples, data)]
+        return [create_interval_hsb(confidence, n_samples, data)]
     for data_point in data:
         try:
             assert isinstance(data_point, float)
         except AssertionError:
             data_point = float(data_point)
-        intervals.append(create_interval(confidence, n_samples, data_point))
+        intervals.append(create_interval_hsb(confidence, n_samples, data_point))
     return intervals
 
 
@@ -170,21 +170,21 @@ def create_interval_NEW(confidence, samples=False, n_samples=False, sample_mean=
             return Interval(sample_mean - h, float('inf'))
 
 
-def create_proportions_interval(confidence, n_samples, data_point, method):
+def create_proportions_interval(confidence, n_samples, data_point, method="AC"):
     """ Returns confidence interval of given point, n
         using 6 methods:
             3/N             - rule of three
             CLT             - Central Limit Theorem confidence intervals
-            AC              - Agresti-Coull method
+            AC              - Agresti-Coull method (default)
             Wilson          - Wilson Score method
             Clopper_pearson - Clopper-Pearson interval based on Beta distribution
             Jeffreys        - Jeffreys Bayesian Interval
 
     Args:
         confidence (float): confidence level, C
-        n_samples (int): number of samples to compute margin
+        n_samples (int): number of samples
         data_point (float): the value to be margined from interval [0,1]
-        method (string): method to compute the confidence intervals with 3/N, CLT, AC, Wilson, Clopper-Pearson, Jeffreys
+        method (string): method to compute the confidence intervals with 3/N, CLT, AC (default), Wilson, Clopper-Pearson, Jeffreys
     """
     if method.lower() == "clt" or method.lower == "wald":
         clt_margin = st.norm.ppf(1 - (1 - confidence) / 2) * math.sqrt(data_point * (1 - data_point) / n_samples)
@@ -290,7 +290,7 @@ def create_broadest_interval(confidence, n_samples, data_point):
     return biggest
 
 
-def create_interval(confidence, n_samples, data_point):
+def create_interval_hsb(confidence, n_samples, data_point):
     """ Returns interval of probabilistic data_point +- margin using margin function
 
     Args:
@@ -300,13 +300,12 @@ def create_interval(confidence, n_samples, data_point):
     """
     if n_samples == 0:
         return Interval(0, 1)
-    delta = margin(confidence, n_samples, data_point)
+    delta = margin_hsb(confidence, n_samples, data_point)
     return Interval(float(max(data_point - delta, 0)), float(min(data_point + delta, 1)))
 
 
-## TODO shortly describe this type of margin
-def margin(confidence: float, n_samples: int, data_point: float):
-    """ Estimates expected interval with respect to parameters
+def margin_hsb(confidence: float, n_samples: int, data_point: float):
+    """ Confidence intervals with CLT/Wald method with fixing term
 
     Args:
         confidence (float): confidence level, C
@@ -326,7 +325,7 @@ def margin(confidence: float, n_samples: int, data_point: float):
 
 
 def margin_experimental(confidence, n_samples, data_point):
-    """ Estimates expected interval with respect to parameters
+    """ Confidence intervals with CLT/Wald method with two fixing terms
     This margin was used to produce the visual outputs for hsb19
 
     Args:

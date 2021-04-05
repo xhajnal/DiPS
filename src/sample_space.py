@@ -29,7 +29,12 @@ global glob_constraints
 
 
 def check_sample(parameter_value, save_memory=False, silent=False):
-    """ Checks whether constraints are satisfied in the given point """
+    """ Checks whether constraints are satisfied in the given point
+    Args
+        parameter_value (list of numbers): parameter point in which check the constraints
+        save_memory (bool): if True only sat points are stored
+        silent (bool): if True printed output is set to minimum
+    """
     ## If sort constraint is not sat we simply skipp the point and not put it in the space.samples
     for param in range(len(glob_space.params)):
         locals()[glob_space.params[param]] = float(parameter_value[param])
