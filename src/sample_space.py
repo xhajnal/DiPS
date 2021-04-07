@@ -1,5 +1,4 @@
 import multiprocessing
-import warnings
 from copy import copy
 from functools import partial
 from time import time

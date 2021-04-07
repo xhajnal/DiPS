@@ -21,8 +21,8 @@ def nCr(n, k):
     return f(n) / f(k) / f(n - k)
 
 
-def catch_data_error(data, minimum, maximum):
-    """ Corrects all data value to be in range min,max
+def correct_data_values(data, minimum, maximum):
+    """ Corrects all data value to be in range [min,max]
 
     Args:
         data (dict or list): structure of data
@@ -42,35 +42,6 @@ def catch_data_error(data, minimum, maximum):
                 data[i] = minimum
             if data[i] > maximum:
                 data[i] = maximum
-
-
-def create_broadest_intervals(confidence, n_samples, data):
-    """ Returns broadest intervals of data_point +- margin
-        using 6 methods:
-            3/N             - rule of three
-            CLT             - Central Limit Theorem confidence intervals
-            AC              - Agresti-Coull method
-            wilson          - Wilson Score method
-            clopper_pearson - Clopper-Pearson interval based on Beta distribution
-            jeffreys        - Jeffreys Bayesian Interval
-
-    Args:
-        confidence (float): confidence level, C
-        n_samples (int): number of samples to compute margin
-        data (list of floats): values to be margined
-    """
-    print(data)
-    intervals = []
-    if not isinstance(data, Iterable):
-        assert isinstance(data, float)
-        return [create_broadest_interval(confidence, n_samples, data)]
-    for data_point in data:
-        try:
-            assert isinstance(data_point, float)
-        except AssertionError:
-            data_point = float(data_point)
-        intervals.append(create_broadest_interval(confidence, n_samples, data_point))
-    return intervals
 
 
 def create_intervals(confidence, n_samples, data):
@@ -174,18 +145,22 @@ def create_proportions_interval(confidence, n_samples, data_point, method="AC"):
     """ Returns confidence interval of given point, n
         using 6 methods:
             3/N             - rule of three
-            CLT             - Central Limit Theorem confidence intervals
+            CLT             - Central Limit Theorem confidence intervals / Wald method
             AC              - Agresti-Coull method (default)
             Wilson          - Wilson Score method
             Clopper_pearson - Clopper-Pearson interval based on Beta distribution
             Jeffreys        - Jeffreys Bayesian Interval
+        plus a backward compatibility for hsb19's CLT method with a correction term
 
     Args:
         confidence (float): confidence level, C
         n_samples (int): number of samples
         data_point (float): the value to be margined from interval [0,1]
-        method (string): method to compute the confidence intervals with 3/N, CLT, AC (default), Wilson, Clopper-Pearson, Jeffreys
+        method (string): method to compute the confidence intervals with 3/N, CLT, AC (default), Wilson, Clopper-Pearson, Jeffreys, hsb
     """
+    if data_point > 1 or data_point < 0:
+        raise Exception("create_proportions_interval cannot be used for value outside of range [0,1].")
+
     if method.lower() == "clt" or method.lower == "wald":
         clt_margin = st.norm.ppf(1 - (1 - confidence) / 2) * math.sqrt(data_point * (1 - data_point) / n_samples)
         clt = float(max(data_point - clt_margin, 0)), float(min(data_point + clt_margin, 1))
@@ -206,6 +181,8 @@ def create_proportions_interval(confidence, n_samples, data_point, method="AC"):
     elif "jef" in method.lower():
         jeffreys = proportion_confint(round(data_point*n_samples), n_samples, alpha=1 - confidence, method="jeffreys")
         return Interval(*jeffreys)
+    elif "hsb" in method.lower():
+        return create_interval_hsb(confidence, n_samples, data_point)
     else:
         raise Exception("Method mot found.")
 

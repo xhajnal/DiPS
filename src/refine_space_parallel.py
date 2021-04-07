@@ -8,7 +8,6 @@ import multiprocessing
 
 from mpmath import mpi
 from termcolor import colored
-from timeout_decorator import timeout_decorator
 from z3 import Real, Int, Bool, BitVec, Solver, set_param, Z3Exception, unsat, unknown, Not, Or, sat
 
 from pebble import ProcessPool
@@ -18,8 +17,7 @@ from concurrent.futures import TimeoutError
 import refine_space
 from common.convert import decouple_constraints, constraints_to_ineq
 from common.solver_parser import pass_models_to_sons
-from common.space_stuff import is_in, refine_by, split_by_longest_dimension, rectangular_hull, expand_rectangle, \
-    split_by_all_dimensions, split_by_samples
+from common.space_stuff import split_by_longest_dimension, split_by_samples
 from load import find_param
 from rectangle import My_Rectangle
 from refine_space import private_presample

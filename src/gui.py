@@ -652,7 +652,7 @@ class Gui(Tk):
         label43.grid(row=6, column=0, padx=0)
         createToolTip(label43, text='Choose from interval method')
 
-        self.interval_method_entry = ttk.Combobox(frame_left, values=('CLT', 'Rule of three', 'Agresti-Coull', 'Wilson', 'Clopper_Pearson', 'Jeffreys'))
+        self.interval_method_entry = ttk.Combobox(frame_left, values=('CLT', 'Rule of three', 'Agresti-Coull', 'Wilson', 'Clopper_Pearson', 'Jeffreys', 'hsb'))
         self.interval_method_entry.grid(row=6, column=1)
         self.interval_method_entry.current(2)
 

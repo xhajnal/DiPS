@@ -8,15 +8,17 @@ Prerequisities:
 
 
 0. (Optional) Use virtual enviroment for python 
-	0.1. Create a python virtual enviroment
-
-	0.2. make alias (use gedit or other text editor you prefer instead of sublime)
+	0.1 Install conda
+		https://docs.conda.io/en/latest/
+	0.2. Create a python virtual enviroment
+		conda create --name py38 python=3.8
+	0.3. make alias (use gedit or other text editor you prefer instead of sublime)
 		$ sublime ~/.bashrc
 
 		insert this line:
 		alias python38="conda activate py38"
 
-	0.3. activate env
+	0.4. activate env
 		python38
 
 1. switch gcc and g++ compiler to 6 (Storm recommended setting)
@@ -41,8 +43,6 @@ Prerequisities:
 	2.0 $ python38
 	2.1 related packages
 		$ sudo apt-get install build-essential git cmake libboost-all-dev libcln-dev libgmp-dev libginac-dev automake libglpk-dev libhwloc-dev libz3-dev libxerces-c-dev libeigen3-dev
-	2.2 obtain z3
-	2.3 obtain xerces-c
 
 
 3. Obtain carl (http://smtrat.github.io/carl/ubuntu_1404_lts.html) with configuration for Prophesy https://moves-rwth.github.io/prophesy/installation.html
@@ -51,34 +51,32 @@ Prerequisities:
 
 	## check you have master branch
 	$ git branch
-	## * master14
+	* master14
 
 	$ mkdir build
 	$ cd build/
 	$ cmake .. -DUSE_CLN_NUMBERS=ON -DUSE_GINAC=ON
-	$ make lib_carl
-
-	## use number of cores (int) instead of <cores>, eg. 4
-	$ make -j <cores>
-
-	## use number of cores (int) instead of <cores>, eg. 4
-	$ make test -j <cores>
+	$ make lib_carl 
+	$ make 
+	$ make test
 	$ make doc
 
 
 4. Obtain carl-parser master14 (https://github.com/ths-rwth/carl-parser)
+	4.1 obtain carl-parser prerequisities
+	$ sudo apt install maven
+	$ sudo apt install uuid-dev
+
 	$ git clone -b master14 https://github.com/ths-rwth/carl-parser.git
 	$ cd carl-parser
 	
 	## check you have stable branch
 	$ git branch
-	## check you have stable branch * master14
+	* master14
 
 	$ mkdir build && cd build
 	$ cmake ..
-
-	## use number of cores (int) instead of <cores>, eg. 4
-	$ make -j <cores>
+	$ make
 
 
 5. Obtain pycarl
@@ -89,12 +87,10 @@ Prerequisities:
 
 6. Finally, obtain Storm - compile (https://www.stormchecker.org/documentation/obtain-storm/dependencies.html)
 	6.1 obtain Storm prerequisities
-		Already done in step 1
+		Already done in step 2.
 
 	6.2 obtain Carl
-		Already done in step 2
-	PROBABLY ALREADY DONE in step 1.1
-	PROBABLY NOW OBSOLETE	
+		Already done in step 3
 
 	6.3 obtain Boost (https://github.com/boostorg/wiki/wiki/Getting-Started%3A-Overview)
 		# probably already done
@@ -110,7 +106,7 @@ Prerequisities:
 
 		## check you have stable branch
 		$ git branch
-		## * stable
+		* stable
 
 		$ mkdir build && cd build
 		$ cmake ..
@@ -119,18 +115,16 @@ Prerequisities:
 		$ make -j <cores>
 
 		$ sublime ~/.bashrc
-		# add this line
-		# export PATH=$PATH:$STORM_DIR/build/bin
+		# add this line, where you replace STORM_DIR with path to Storm
+		# export PATH=$PATH:STORM_DIR/build/bin
 		
 		$ make check
+		## reopen terminal or $source ~/.bashrc
 		$ storm --version
 		
-
-		USE STORM
-		time storm-pars --prism /home/matej/Git/DiPS/backup/hsb19/models/semisynchronous/2-param/2_semisynchronous.pm --prop 'P>0.0  [ F (a0=1)&(a1=0)&(b=1)]' --region '0.0<=p<=1.0,0.0<=q<=1.0' --refine 0.05
-
-		time storm-pars --prism /home/matej/Git/DiPS/backup/hsb19/models/semisynchronous/2-param/2_semisynchronous.pm --prop 'P>0.0  [ F (a0=1)&(a1=0)&(b=1)]' --region '0.0<=p<=1.0,0.0<=q<=1.0' --refine 0.05 --region:engine "validatingpl"
-		--region:engine "validatingpl"/
+		## USE STORM - (please correct the paths to models)
+		$ time storm-pars --prism /home/DiPS/models/examples/bee/semisynchronous_2_bees.pm --prop 'P>0.0  [ F (a0=1)&(a1=0)&(b=1)]' --region '0.0<=p<=1.0,0.0<=q<=1.0' --refine 0.05
+		$ time storm-pars --prism /home/DiPS/models/examples/bee/semisynchronous_2_bees.pm --prop 'P>0.0  [ F (a0=1)&(a1=0)&(b=1)]' --region '0.0<=p<=1.0,0.0<=q<=1.0' --refine 0.05 --region:engine "validatingpl" --region:engine "validatingpl"
 		
 
 7. (Optional) Obtain stormpy - (https://moves-rwth.github.io/stormpy/installation.html#installation)
@@ -139,7 +133,7 @@ Prerequisities:
 
 	## check you have master branch
 	$ git branch
-	## * master
+	* master
 
 	$ python setup.py test
 	$ python

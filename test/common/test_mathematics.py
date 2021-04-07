@@ -61,27 +61,27 @@ class MyTestCase(unittest.TestCase):
         print(colored('Catching subzero values in data', 'blue'))
         ## upper
         a = {2: [0, 3, 5]}
-        catch_data_error(a, 0, 4)
+        correct_data_values(a, 0, 4)
         self.assertEqual(a, {2: [0, 3, 4]})
 
         ## upper
         a = [0, 3, 5]
-        catch_data_error(a, 0, 4)
+        correct_data_values(a, 0, 4)
         self.assertEqual(a, [0, 3, 4])
 
         ## lower
         a = [-2, 3, 4]
-        catch_data_error(a, 0, 4)
+        correct_data_values(a, 0, 4)
         self.assertEqual(a, [0, 3, 4])
 
         ## both
         a = [-2, 3, 5]
-        catch_data_error(a, 0, 4)
+        correct_data_values(a, 0, 4)
         self.assertEqual(a, [0, 3, 4])
 
         ## none
         a = [0, 3, 4]
-        catch_data_error(a, 0, 4)
+        correct_data_values(a, 0, 4)
         self.assertEqual(a, [0, 3, 4])
 
     def test_create_interval(self):
