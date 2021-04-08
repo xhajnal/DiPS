@@ -2,36 +2,37 @@
 
 ## A Tool for Data-informed Parameter Synthesis for Discrete-Time Stochastic Processes from Multiple-Property Specifications
 
-DiPS is a tool for parameter synthesis for discrete time Markov chains (DTMCs) against multiple-property specifications provided in Probabilistic Computation Tree Logic (PCTL). 
-The probability of satisfaction of each property is constrained by intervals obtained from data. 
-For a single property, the existing parameter synthesis tools can compute a rational function over the chain’s parameters, which will evaluate exactly to the satisfaction probability for that single property in the given chain.
-DiPS first computes these rational functions for each among the multiple properties by invoking the existing parameter synthesis tools [PRISM](http://www.prismmodelchecker.org) and [Storm](http://www.stormchecker.org/). 
+DiPS is a tool for parameter estimation for discrete time Markov chains (DTMCs) against multiple-property specifications provided in Probabilistic Computation Tree Logic (PCTL). 
+The probability of satisfaction of each property is constrained by intervals computed from data. 
+For a single property, the existing parametric model checking tools can compute a rational function over the chain’s parameters, which will evaluate exactly to the satisfaction probability / reward value for a given single property and chain.
+DiPS first computes these rational functions for each among the multiple properties by invoking the existing tools for parametric model checking [PRISM](http://www.prismmodelchecker.org) and [Storm](http://www.stormchecker.org/). 
 
-Further, data measurements serve as an experimental estimation of the probability of satisfaction of PCTL formulae.
+Further, data measurements serve as an experimental estimation of the probability of satisfaction or reward value of PCTL formulae.
+We provide several methods for computation of confidence intervals for proportions using standard / CLT / Wald, Agresti-Coull, Clopper-Pearson, Jeffreys, Wilson,  or 3/N method [[1]](https://projecteuclid.org/journals/statistical-science/volume-16/issue-2/Interval-Estimation-for-a-Binomial-Proportion/10.1214/ss/1009213286.full).
 With intervals derived from the data, DiPS allows to further constrain the rational functions.
 
-Finally, by coupling the obtained rational functions and interval constraints, DiPS implements four distinct methods for exploring which parameters of the
+Finally, by coupling the obtained rational functions and data/constraints, DiPS implements four distinct methods for exploring which parameters of the
 chain are compliant with the data measurements:
 
- * space refinement - CEGAR like method splitting the parameter space. In each iteration, the result is provided by:
+ * Space refinement - CEGAR like method splitting the parameter space. In each iteration, the result is provided by:
     * SMT solver - [Z3](https://github.com/Z3Prover/z3) or [dreal](http://dreal.github.io/)
     * interval arithmetic - [scipy](https://www.scipy.org/)
-* space sampling - checking satisfaction of constraints in sampled points, 
-* optimisation - searching for least violating parameter point, 
-* Bayesian inference (Metropolis-Hastings) - searching for most probable parameter points.
+* Space sampling - checking satisfaction of constraints in sampled points, 
+* Optimisation - searching for a parameter point with least distance to the data, 
+* Bayesian inference (Metropolis-Hastings) - searching for most probable parameter points wrt. data.
 
 
 
 The tool was primarily designed to facilitate flexible and efficient parameter search for stochastic models in computational systems biology, where scarcely available data measurements (e.g. only at the steady-state) can be naturally encoded as multiple-property specifications.
-However, the tool is directly applicable to any search problem, where multiple functions over unknown real variables are constrained by real-valued intervals.
+However, the tool is directly applicable to any search problem, where multiple functions over unknown real variables are constrained by real-valued data.
 
 
 A scheme showing tool components and communication among them:
 ![Architecure of DiPS. Main GUI components in green, main functionality components in blue, and leveraged tools and libraries in red.](architecture.jpg)
 
 
-For more information, please read [How to use section](#HOW-TO-USE).
-Feel free to leave response either via issues or an email.
+For more information on how to use DiPS, please read [this section](#HOW-TO-USE).
+Feel free to leave response either via [issues](https://github.com/xhajnal/DiPS/issues/new) or an email.
 *****
 ## HOW TO INSTALL
 
@@ -55,7 +56,8 @@ The tool was developed and optimised for Win10 and Ubuntu. The tool may not func
 * [Storm](http://www.stormchecker.org/) (optional, advanced) 
 * [Prophesy](https://moves.rwth-aachen.de/research/tools/prophesy/) (optional, advanced)
 
-Are you having trouble with z3? Read `MyDiPS\README-z3.md`. Still having trouble? Please contact us.
+Are you having trouble with installing/running z3 or Storm? Read `MyDiPS\README-z3.md` or `MyDiPS\README-storm.txt` respectively. 
+Still having trouble? Please [contact us](https://github.com/xhajnal/DiPS/issues/new).
 
 ****
 ### 2. SETUP CONFIG (OPTIONAL)
@@ -108,10 +110,10 @@ Meta settings
 ## HOW TO RUN
 
 *****
-Now you can import the source code as a library or run the tool with GUI.
+Now you can invoke DiPS in console, import the source code, or run the tool with GUI.
 
-### Tool
-\- open command line in the main DiPS directory (on Win - please open it with admin privileges to ensure changing the PRISM setting does not fail on permission denied)
+### GUI
+\- open command line in the main DiPS directory (on Win - please open prompt with admin privileges to ensure changing the PRISM setting does not fail on permission denied)
 
 `>> cd src`
 
@@ -128,7 +130,7 @@ For fully functional GUI (all the features fully visible) please set the scale o
 *****
 For a brief summary, you can see our poster (CMSB 19), [cmsb_poster.pdf](https://github.com/xhajnal/DiPS/blob/master/cmsb_poster.pdf).
 
-To follow the main workflow of the tool using the graphical user interface, please see [tutorial.pdf](https://github.com/xhajnal/DiPS/blob/master/tutorial.pdf).
+To follow the main workflow of the tool and learn about each method using the graphical user interface, please see [tutorial.pdf](https://github.com/xhajnal/DiPS/blob/master/tutorial.pdf).
 
 For more information about the methods, please follow the tool paper (submitted) or previous HSB paper [[1]](#one) (if not reachable, please write us an email.)
 
