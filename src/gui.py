@@ -1010,7 +1010,7 @@ class Gui(Tk):
         # analysis_menu = Menu(main_menu, tearoff=0)
         # main_menu.add_cascade(label="Analysis", menu=analysis_menu)
         # analysis_menu.add_command(label="Synthesise parameters", command=self.synth_params)
-        # analysis_menu.add_command(label="Compute intervals", command=self.create_intervals)
+        # analysis_menu.add_command(label="Compute intervals", command=self.create_intervals_hsb)
         # analysis_menu.add_command(label="Sample space", command=self.sample_space)
         # analysis_menu.add_command(label="Refine space", command=self.refine_space)
 

@@ -448,7 +448,7 @@ class MyTestCase(unittest.TestCase):
         show_space = True
 
         ## NORMAL TEST
-        from common.mathematics import create_intervals
+        from common.mathematics import create_intervals_hsb
         from load import get_all_f
 
         agents_quantities = [2, 3, 5, 10]
@@ -461,17 +461,17 @@ class MyTestCase(unittest.TestCase):
         alpha, n_samples, max_depth, min_rect_size, N, algorithm, v_p, v_q = 0.95, 100, 10, 1e-05, 2, 4, 0.028502714675268215, 0.03259111103419188
 
         ## Z3
-        spacee = check_deeper([(0, 1), (0, 0.9)], ineq_to_constraints(f[N], create_intervals(alpha, n_samples, D3[("synchronous_", N, n_samples, v_p, v_q)])),
+        spacee = check_deeper([(0, 1), (0, 0.9)], ineq_to_constraints(f[N], create_intervals_hsb(alpha, n_samples, D3[("synchronous_", N, n_samples, v_p, v_q)])),
                               max_depth, min_rect_size, coverage_thresh, False, algorithm, show_space=show_space)
         ## Dreal
         solver = "dreal"
         delta = 0.001
-        spacee = check_deeper([(0, 1), (0, 0.9)], ineq_to_constraints(f[N], create_intervals(alpha, n_samples, D3[("synchronous_", N, n_samples, v_p, v_q)])),
+        spacee = check_deeper([(0, 1), (0, 0.9)], ineq_to_constraints(f[N], create_intervals_hsb(alpha, n_samples, D3[("synchronous_", N, n_samples, v_p, v_q)])),
                               max_depth, min_rect_size, coverage_thresh, False, algorithm, solver=solver, delta=delta, show_space=show_space)
 
         ## Interval algorithmic
         algorithm = 5
-        spacee = check_deeper([(0, 1), (0, 0.9)], ineq_to_constraints(f[N], create_intervals(alpha, n_samples, D3[("synchronous_", N, n_samples, v_p, v_q)])), max_depth, min_rect_size, coverage_thresh, False, algorithm, show_space=show_space)
+        spacee = check_deeper([(0, 1), (0, 0.9)], ineq_to_constraints(f[N], create_intervals_hsb(alpha, n_samples, D3[("synchronous_", N, n_samples, v_p, v_q)])), max_depth, min_rect_size, coverage_thresh, False, algorithm, show_space=show_space)
 
         ## UNCOMMENT FOLLOWING to run this test
         # check_deeper([(0, 4)], ineq_to_constraints(["x"], [Interval(0, 3)]), 5, 0, 0.95, silent=False, version=5, show_space=show_space)
@@ -479,13 +479,13 @@ class MyTestCase(unittest.TestCase):
         # check_deeper([(0, 0.5), (0, 0.5)], ineq_to_constraints(["x+y"], [Interval(0, 1)]), 5, 0, 0.95, silent=False, version=5, show_space=show_space)
 
         ## VERY VERY INTERESTING RESULT
-        # check_deeper([(0, 1), (0, 1)], ineq_to_constraints(f[2], create_intervals(0.95, 1500, [0.1, 0.3, 0.6])), 14, 0.01 ** 2, 0.997, False, 5, show_space=show_space)
+        # check_deeper([(0, 1), (0, 1)], ineq_to_constraints(f[2], create_intervals_hsb(0.95, 1500, [0.1, 0.3, 0.6])), 14, 0.01 ** 2, 0.997, False, 5, show_space=show_space)
 
         print(colored('End of two-param test', 'blue'))
 
     def test_refine_multi_param(self):
         print(colored("Multi-param refinement here", 'blue'))
-        from common.mathematics import create_intervals
+        from common.mathematics import create_intervals_hsb
         show_space = True
 
         ## MULTIPARAM TEST
@@ -504,7 +504,7 @@ class MyTestCase(unittest.TestCase):
 
         experiment = [0.33371428571428574, 0.16028571428571428, 0.22114285714285714, 0.17657142857142857, 0.08514285714285715, 0.019428571428571427, 0.0034285714285714284, 0.00028571428571428574, 0.0, 0.0, 0.0]
         n_samples = 3500
-        intervals = create_intervals(0.95, n_samples, experiment)
+        intervals = create_intervals_hsb(0.95, n_samples, experiment)
         replaced_f6 = f_multiparam[10][6].replace("p", "0.10400390625").replace("q1", "0.09326171875").replace("q2", "0.1064453125").replace("q3", "0.099609375").replace("q4", "0.072021484375")
         sys.setrecursionlimit(23000)
         start_time = time()
@@ -579,7 +579,7 @@ class MyTestCase(unittest.TestCase):
 
 if __name__ == "__main__":
     # from load import get_all_f, get_all_rewards
-    # from common.math import create_intervals
+    # from common.math import create_intervals_hsb
     # from load import load_all_data
     #
     # p = 0.0
@@ -627,7 +627,7 @@ if __name__ == "__main__":
     #
     # space = RefinedSpace([(0, 1), (0, 1), (0, 1), (0, 1), (0, 1)], ["p", "low", "high", "qmin", "qmax"],
     #                                ["Real", "Real", "Real", "Real", "Real"], [], [])
-    # check_deeper(space, ineq_to_constraints(f_low_high_low_syn[2],create_intervals(0.95, 1500, D[2])),10,10e-6,0.95,False,4, size_q=5, show_space=show_space)
+    # check_deeper(space, ineq_to_constraints(f_low_high_low_syn[2],create_intervals_hsb(0.95, 1500, D[2])),10,10e-6,0.95,False,4, size_q=5, show_space=show_space)
 
     unittest.main()
 

@@ -13,7 +13,7 @@ from refine_space import check_deeper
 from refine_space_parallel import check_deeper_parallel
 from common.convert import ineq_to_constraints, round_sig
 from common.files import pickle_load
-from common.mathematics import create_intervals
+from common.mathematics import create_intervals_hsb
 from load import load_data, get_f, parse_params_from_model
 from mc import call_storm, call_prism_files
 from mc_informed import general_create_data_informed_properties
@@ -493,7 +493,7 @@ if __name__ == '__main__':
                 i = 0
                 intervals = []
                 for i in range(len(n_samples)):
-                    intervals.append(create_intervals(float(C), int(n_samples[i]), data_set))
+                    intervals.append(create_intervals_hsb(float(C), int(n_samples[i]), data_set))
                     if debug:
                         print(f"Intervals, confidence level {C}, n_samples {n_samples[i]}: {intervals[i]}")
 
@@ -709,7 +709,7 @@ if __name__ == '__main__':
                 i = 0
                 intervals = []
                 for i in range(len(n_samples)):
-                    intervals.append(create_intervals(float(C), int(n_samples[i]), data_set))
+                    intervals.append(create_intervals_hsb(float(C), int(n_samples[i]), data_set))
                     if debug:
                         print(f"Intervals, confidence level {C}, n_samples {n_samples[i]}: {intervals[i]}")
 

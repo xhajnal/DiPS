@@ -8,7 +8,7 @@ import performance_test
 from mhmh import initialise_mhmh
 from performance_test import repeat_mhmh, load_functions
 from common.convert import ineq_to_constraints
-from common.mathematics import create_intervals
+from common.mathematics import create_intervals_hsb
 from load import load_data
 from space import RefinedSpace
 from common.config import load_config
@@ -70,7 +70,7 @@ if __name__ == '__main__':
         functions = load_functions(f"bee/semisynchronous_{population_size}_bees", debug=debug)
 
         ## LOAD DATA
-        data_set = load_data(os.path.join(data_dir, f"data/2-param/data_n={population_size}.csv"), debug=debug)
+        data_set = load_data(os.path.join(data_dir, f"bee/2-param/data_n={population_size}.csv"), debug=debug)
 
         ## COMPUTE INTERVALS
         n_samples_list = [100, 1500, 3500]
@@ -87,7 +87,7 @@ if __name__ == '__main__':
             print("parameter_domains", parameter_domains)
 
         for n_samples in n_samples_list:
-            intervals = create_intervals(float(C), int(n_samples), data_set)
+            intervals = create_intervals_hsb(float(C), int(n_samples), data_set)
             constraints = ineq_to_constraints(functions, intervals, decoupled=True)
 
             ## MHMH

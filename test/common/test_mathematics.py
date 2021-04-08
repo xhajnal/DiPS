@@ -113,9 +113,9 @@ class MyTestCase(unittest.TestCase):
 
     def test_create_intervals(self):
         print(colored('Multiple intervals computing', 'blue'))
-        self.assertEqual(round(create_intervals(0.95, 60, [0.5])[0].start, 15),
+        self.assertEqual(round(create_intervals_hsb(0.95, 60, [0.5])[0].start, 15),
                          round(Interval(0.365151535478501, 0.634848464521499).start, 15))
-        self.assertEqual(round(create_intervals(0.95, 60, [0.5])[0].end, 15),
+        self.assertEqual(round(create_intervals_hsb(0.95, 60, [0.5])[0].end, 15),
                          round(Interval(0.365151535478501, 0.634848464521499).end, 15))
         # TODO more data points
 

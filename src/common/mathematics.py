@@ -44,7 +44,7 @@ def correct_data_values(data, minimum, maximum):
                 data[i] = maximum
 
 
-def create_intervals(confidence, n_samples, data):
+def create_intervals_hsb(confidence, n_samples, data):
     """ Returns intervals of data_point +- margin
 
     Args:
