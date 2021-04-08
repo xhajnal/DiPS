@@ -18,7 +18,7 @@ del spam
 
 
 def general_create_data_informed_properties(prop_file, intervals, conj=False, output_file=False, silent: bool = False):
-    """ Creates data informed property file from regular "profile" and intervals
+    """ Creates data informed property file from regular "profile" and intervals.
     Args:
         prop_file (File/String):  regular prop file which contains lines in the form P=? (...)
         intervals (list of pairs of numbers): list of intervals to assign for the properties

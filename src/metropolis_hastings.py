@@ -46,7 +46,7 @@ def maximize_plot():
 
 
 class HastingsResults:
-    """ Class to represent Metropolis Hastings results"""
+    """ Class to represent Metropolis Hastings results. """
     def __init__(self, params, theta_init, accepted, rejected, observations_count: int, observations_samples_count: int,
                  mh_sampling_iterations: int, eps=0, sd=0.15, burn_in=0.25, pretitle="", title="", bins=20, last_iter=0,
                  timeout=0, time_it_took=0):
@@ -96,7 +96,7 @@ class HastingsResults:
         self.time_it_took = time_it_took
 
     def get_burn_in(self):
-        """ Returns fraction of the burned-in part"""
+        """ Returns fraction of the burned-in part. """
         if 0 < self.burn_in < 1:
             return self.burn_in
         elif len(self.accepted):
@@ -105,7 +105,7 @@ class HastingsResults:
             return None
 
     def merge_acc_and_rej(self):
-        """ Returns both, accepted and rejected samples, in a single list"""
+        """ Returns both, accepted and rejected samples, in a single list. """
         spam = np.empty([len(self.accepted) + len(self.rejected), len(self.params) + 1])
         acc_index = 0
         rej_index = 0
@@ -152,7 +152,7 @@ class HastingsResults:
         # return spam
 
     def keep_index(self, burn_in=False):
-        """ Translates burn-in into index which should be kept"""
+        """ Translates burn-in into index which should be kept. """
         if not burn_in:
             burn_in = self.burn_in
 
@@ -165,43 +165,43 @@ class HastingsResults:
         return keep_index, burn_in
 
     def get_not_burn_in(self):
-        """ Returns fraction of not burned-in part"""
+        """ Returns fraction of not burned-in part. """
         if self.get_burn_in() is not None:
             return 1 - self.get_burn_in()
         else:
             return None
 
     def get_all_accepted(self):
-        """ Returns the list of ALL accepted point"""
+        """ Returns the list of ALL accepted point. """
         return self.accepted
 
     def get_accepted(self):
-        """ Return the list of TRIMMED accepted points"""
+        """ Return the list of TRIMMED accepted points. """
         keep_index, burn_in = self.keep_index(self.burn_in)
         return self.accepted[keep_index:]
 
     def set_accepted(self, accepted):
-        """ Sets the accepted points"""
+        """ Sets the accepted points ."""
         self.accepted = accepted
 
     def set_rejected(self, rejected):
-        """ Sets rejected points"""
+        """ Sets rejected points. """
         self.rejected = rejected
 
     def set_burn_in(self, burn_in):
-        """ Sets burn-in period"""
+        """ Sets burn-in period. """
         self.burn_in = burn_in
 
     def set_bins(self, bins):
-        """ Sets bins, used in the plots"""
+        """ Sets bins, used in the plots. """
         self.bins = bins
 
     def get_acc_as_a_list(self):
-        """ Returns accepted points in a list"""
+        """ Returns accepted points in a list. """
         return self.accepted.tolist()
 
     def get_rej_as_a_list(self):
-        """ Returns rejected points in a list"""
+        """ Returns rejected points in a list. """
         return self.rejected.tolist()
 
     def show_mh_heatmap(self, where=False, bins=False, burn_in=None, as_scatter=False, debug=False):
@@ -372,7 +372,7 @@ class HastingsResults:
                 plt.show()
 
     def show_iterations(self, where=False):
-        """ Create Scatter plot showing accepted and rejected points in its given order
+        """ Create Scatter plot showing accepted and rejected points in its given order.
 
         Args:
            where (bool or callable): method to forward the figure
@@ -443,7 +443,7 @@ class HastingsResults:
             where(fig)
 
     def show_iterations_bokeh(self, where=False):
-        """ Create Scatter plot showing accepted and rejected points in its given order using bokeh
+        """ Create Scatter plot showing accepted and rejected points in its given order using bokeh.
 
         Args:
            where (bool or callable): method to forward the figure
@@ -490,7 +490,7 @@ class HastingsResults:
         show(gridplot(plots))  # open a browser
 
     def show_accepted(self, where=False):
-        """ Trace and histogram of accepted points
+        """ Trace and histogram of accepted points.
 
         Args:
            where (bool or callable): method to forward the figure
@@ -557,7 +557,7 @@ class HastingsResults:
             where(fig)
 
     def show_accepted_bokeh(self, where=False):
-        """ Trace and histogram of accepted points using bokeh
+        """ Trace and histogram of accepted points using bokeh.
         
         Args:
            where (bool or callable): unused in this method
@@ -640,7 +640,7 @@ class HastingsResults:
 
 ## Now unused
 def sample_functions(functions, data_means):
-    """ Will sample functions according to the pdf as given by the polynomials
+    """ Will sample functions according to the pdf as given by the polynomials.
 
     Args:
         functions TODO @Tanja
@@ -659,7 +659,7 @@ def sample_functions(functions, data_means):
 
 
 def get_truncated_normal(mean=0.0, sd=1.0, low=0.0, upp=10.0):
-    """ Returns truncated normal distribution
+    """ Returns truncated normal distribution.
 
     Args:
         mean (float): mean
@@ -673,7 +673,7 @@ def get_truncated_normal(mean=0.0, sd=1.0, low=0.0, upp=10.0):
 
 def transition_model(theta, parameter_intervals, sd=0.15):
     """" Defines how to walk around the parameter space, set a new point,
-        using normal distribution around the old point
+    using normal distribution around the old point.
 
     Args:
         theta (list): old parameter point
@@ -705,8 +705,8 @@ def transition_model(theta, parameter_intervals, sd=0.15):
 
 ## Now unused
 def prior(theta, parameter_intervals):
-    """ Very simple prior estimator only for MH as it checks if the parametrisation is inside of respective domain or not
-        This simulates uniform distribution
+    """ Very simple prior estimator only for MH as it checks if the parametrisation is inside of respective domain or not.
+        This simulates uniform distribution.
     Args:
         theta: (tuple): parameter point
         parameter_intervals (list of pairs): parameter domains, (min, max)
@@ -725,7 +725,7 @@ def prior(theta, parameter_intervals):
 
 
 def acceptance_rule(x_likelihood, x_new_likelihood, debug=False):
-    """ Decides whether to accept new point, x_new, or not, based on its likelihood
+    """ Decides whether to accept new point, x_new, or not, based on its likelihood.
 
     Args:
         x_likelihood: likelihood of the old parameter point
@@ -753,7 +753,7 @@ def acceptance_rule(x_likelihood, x_new_likelihood, debug=False):
 
 ## Now unused
 def acceptance_rule_naive(x_likelihood, x_new_likelihood, debug=False):
-    """ Decides whether to accept new point, x_new, or not, based on its likelihood
+    """ Decides whether to accept new point, x_new, or not, based on its likelihood.
 
     Args:
         x_likelihood: likelihood of the old parameter point
@@ -775,14 +775,14 @@ global glob_theta
 
 
 def eval_function(function):
-    """ Evaluates function in with global glob_param_names and glob_theta"""
+    """ Evaluates function in with global glob_param_names and glob_theta. """
     for index, param in enumerate(glob_theta):
         locals()[glob_param_names[index]] = glob_theta[index]
     return eval(function)
 
 
 def log_like_probability(point, data_point, sample_size, debug=False):
-    """ Log likelihood of probability function wrt. given data set
+    """ Log likelihood of probability function wrt. given data set.
 
      Args:
          point (float): value of function in the point
@@ -839,7 +839,7 @@ def log_like_probability(point, data_point, sample_size, debug=False):
 
 
 def manual_log_like_normal(params, theta, functions, data, sample_size, eps=0, is_probability=None, parallel=False, debug=False):
-    """ Log likelihood of functions in parameter point theta drawing the data, P(functions(theta)| data)
+    """ Log likelihood of functions in parameter point theta drawing the data, P(functions(theta)| data).
 
     Args:
         params (list of string): parameter names

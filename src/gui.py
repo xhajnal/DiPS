@@ -44,7 +44,7 @@ sys.path.append(workspace)
 
 
 def do_config():
-    """ Validates, set up config and creates directories from the config if not existing"""
+    """ Validates, set up config and creates directories from the config if not existing """
     config.read(os.path.join(workspace, "../config.ini"))
 
     for it in ["models", "properties", "data", "results", "tmp"]:
@@ -128,6 +128,12 @@ class ToolTip(object):
 
 ## copied from https://stackoverflow.com/questions/20399243/display-message-when-hovering-over-something-with-mouse-cursor-in-python/20399283
 def createToolTip(widget, text):
+    """ Creates a tooltip for a widget
+
+    Args:
+        widget (tk Object): widget to create the tooltip for
+        text (string): text of the tooltip
+    """
     tool_tip = ToolTip(widget)
 
     def enter(event):
@@ -301,6 +307,7 @@ class Gui(Tk):
         self.progress_time.set("0")
 
     def gui_init(self):
+        """ Initialisation procedure of GUI"""
         ## GUI INIT
         self.title('DiPS')
         self.iconphoto(True, PhotoImage(file=os.path.join(workspace, "../icon.png")))
@@ -892,7 +899,7 @@ class Gui(Tk):
         self.solver_entry.current(0)
         self.delta_entry.insert(END, '0.01')
         self.refinement_timeout_entry.insert(END, '3600')
-        self.refinement_single_call_timeout_entry.insert(END, '30')
+        self.refinement_single_call_timeout_entry.insert(END, '0')
         self.refinement_cores_entry.insert(END, '1')
 
         exact_refine_button = Button(frame_left, text='DiPS refine', command=self.refine_space)
@@ -940,8 +947,6 @@ class Gui(Tk):
         frame_right.rowconfigure(0, weight=1)
         frame_right.rowconfigure(4, weight=1)
         frame_right.rowconfigure(8, weight=1)
-
-
 
         ##################################################### UPPER PLOT ###############################################
         self.page6_plotframe = Frame(self.frame_center)
@@ -1163,7 +1168,7 @@ class Gui(Tk):
 
         Args:
             file (path/string): direct path to load the function file
-            ask (Bool): if False it will not ask questions
+            ask (bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -1202,9 +1207,10 @@ class Gui(Tk):
 
     def load_property(self, file=False, ask=True):
         """ Loads temporal properties from a text file.
+
         Args:
             file (path/string): direct path to load the function file
-            ask (Bool): if False it will not ask questions
+            ask (bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -1252,7 +1258,7 @@ class Gui(Tk):
         """ Loads Data informed property from temporal properties and data. Prints it.
         Args:
             file (path/string): direct path to load the function file
-            ask (Bool): if False it will not ask questions
+            ask (bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -1296,9 +1302,9 @@ class Gui(Tk):
 
         Args:
             file (path/string): direct path to load the function file
-            ask (Bool): if False it will not ask questions
+            ask (bool): if False it will not ask questions
             program (string): overrides the sel.program setting in ["prism", "storm"]
-            reset_param_and_intervals (Bool): if True the params will be reset
+            reset_param_and_intervals (bool): if True the params will be reset
         """
         if program is False:
             program = self.program.get()
@@ -1409,7 +1415,7 @@ class Gui(Tk):
         Args:
             file (path/string): direct path to load the output file
             program (string): overrides the self.program setting, in ["prism", "storm"]
-            reset_param_and_intervals (Bool): if True the params will be reset
+            reset_param_and_intervals (bool): if True the params will be reset
             called_directly (bool): if True it will say where is the visualisation, otherwise where is text
         """
         if program is False:
@@ -1630,9 +1636,10 @@ class Gui(Tk):
 
     def load_parsed_functions(self, file=False, ask=True):
         """ Loads parsed rational functions from a pickled file.
+
         Args:
             file (path/string): direct path to load the function file
-            ask (Bool): if False it will not ask questions
+            ask (bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -1752,9 +1759,10 @@ class Gui(Tk):
 
     def load_data(self, file=False, ask=True):
         """ Loads data from a file. Either pickled list or comma separated values in one line
+
         Args:
             file (path/string): direct path to load the data file
-            ask (Bool): if False it will not ask questions
+            ask (bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -1868,9 +1876,10 @@ class Gui(Tk):
 
     def load_data_weights(self, file=False, ask=True):
         """ Loads data weights from a given file
+
         Args:
             file (path/string): direct path to load the data weights file
-            ask (Bool): if False it will not ask questions
+            ask (bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -1925,9 +1934,10 @@ class Gui(Tk):
 
     def load_data_intervals(self, file=False, ask=True):
         """ Loads data intervals from a given file
+
         Args:
             file (path/string): direct path to load the data intervals file
-            ask (Bool): if False it will not ask questions
+            ask (bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -2006,10 +2016,11 @@ class Gui(Tk):
 
     def load_constraints(self, file=False, append=False, ask=True):
         """ Loads constraints from a pickled file.
+
         Args:
             file (path/string): direct path to load the constraint file
             append (bool): if True, loaded constraints are appended to previous
-            ask (Bool): if False it will not ask questions
+            ask (bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -2105,9 +2116,10 @@ class Gui(Tk):
 
     def load_space(self, file=False, ask=True):
         """ Loads space from a pickled file.
+
         Args:
             file (path/string): direct path to load the space file
-            ask (Bool): if False it will not ask questions
+            ask (bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -2186,11 +2198,11 @@ class Gui(Tk):
                     return
 
     def load_mh_results(self, file=False, ask=True):
-        """ loads Metropolis-Hastings results (accepted) and plots them
+        """ loads Metropolis-Hastings results (accepted points) and plots them
 
         Args:
             file (path/string): direct path to load the pickled file
-            ask (Bool): if False it will not ask questions
+            ask (bool): if False it will not ask questions
         """
 
         if file:
@@ -2259,11 +2271,12 @@ class Gui(Tk):
             # self.space_text.configure(state='disabled')
 
     def collapse_space_text(self):
+        """ Collapses space text to hide long enumerations of elements"""
         self.space_collapsed = not self.space_collapsed
         self.print_space()
 
     def clear_space(self, warning=True):
-        """ Will clear the space plot"""
+        """ Will clear the space plot """
         self.show_space(False, False, False, clear=True, warnings=warning)
 
     def show_space(self, show_refinement, show_samples, show_true_point, clear=False, show_all=False,
@@ -2283,7 +2296,7 @@ class Gui(Tk):
             warnings (bool): if False will not show any warnings
             is_parallel_refinement (int):  number of cores used for refinement
             is_presampled (bool): if True it will mark the refinement as presampled
-            is_mhmh (bool): if True it will mark the refinement as MHMH, used MH to presample/precut space
+            is_mhmh (bool): if True it will mark the refinement as MHMH, used MH to presampled/precut space
             is_sampling_guided (bool): flag whether refinement was sampling-guided
         """
         try:
@@ -2392,6 +2405,7 @@ class Gui(Tk):
 
     def save_model(self, file=False):
         """ Saves obtained model as a file.
+
         Args:
             file (bool or Path or string): file to save the model
         """
@@ -2679,8 +2693,7 @@ class Gui(Tk):
             self.status_set("Data saved.")
 
     def plot_data(self):
-        """ Plot data.
-        """
+        """ Plots the data. """
         print("Plotting the data ...")
 
         if not self.data:
@@ -2740,7 +2753,7 @@ class Gui(Tk):
             self.status_set("Data weights saved.")
 
     def discard_data_weights(self):
-        """ Deletes the data weights """
+        """ Clears the data weights """
         self.data_weights = []
         self.data_weights_text.delete('1.0', END)
         self.data_weights_file.set("")
@@ -2910,7 +2923,6 @@ class Gui(Tk):
 
         Args:
             refinement (bool): if True refine space using data-informed properties
-
         """
         if refinement:
             method = "Space partitioning"
@@ -3048,14 +3060,14 @@ class Gui(Tk):
         self.cursor_toggle_busy(False)
 
     def external_refine_PRISM(self):
-        """ Calls PRISM to refine space using data-informed properties"""
+        """ Calls PRISM to refine space using data-informed properties. """
         spam = self.program.get()
         self.program.set("prism")
         self.synth_params(refinement=True)
         self.program.set(spam)
 
     def external_refine_Storm(self):
-        """ Calls Storm to refine space using data-informed properties"""
+        """ Calls Storm to refine space using data-informed properties. """
         spam = self.program.get()
         self.program.set("storm")
         self.synth_params(refinement=True)
@@ -3481,7 +3493,6 @@ class Gui(Tk):
         """ Checks whether a change occurred and it is necessary to reload
 
         Args:
-        ------
             what (string): "model", "properties", "parsed_functions", "data"
             "data_intervals", or "constraints" choosing what to check
         """
@@ -3824,7 +3835,7 @@ class Gui(Tk):
         self.status_set("Space sampling finished.")
 
     def hastings(self):
-        """ Samples (Parameter) Space using Metropolis Hastings """
+        """ Samples (Parameter) Space using Metropolis Hastings. """
         print("Checking the inputs.")
         self.check_changes("functions")
         self.check_changes("data")
@@ -4174,7 +4185,7 @@ class Gui(Tk):
             self.status_set("Space refinement finished.")
 
     def edit_space(self):
-        """ Edits space values """
+        """ Edits space values. """
 
         if self.space == "":
             messagebox.showwarning("Edit space", "There is no space to be edit.")
@@ -4377,7 +4388,7 @@ class Gui(Tk):
             self.status_set("Textual representation of space saved.")
 
     def customize_refinement_results(self):
-        """ Customizes refinement Plot"""
+        """ Customizes refinement Plot. """
         if self.refinement_results:
             if not askyesno("Analyze space", "Sample & Refinement plot will be lost. Do you want to proceed?"):
                 return
@@ -4403,7 +4414,7 @@ class Gui(Tk):
         costumize_mh_results_button.wait_variable(self.button_pressed)
 
     def change_refinement_plot(self, fake_param=False):
-        """ Parses window changing for refinement plot"""
+        """ Parses window changing for refinement plot. """
         try:
             if self.space != "":
                 assert isinstance(self.space, space.RefinedSpace)
@@ -4419,7 +4430,7 @@ class Gui(Tk):
                 return
 
     def refresh_mh(self):
-        """ Refreshes MH results"""
+        """ Refreshes MH results. """
         if self.mh_results:
             if not askyesno("Analyze space", "Data and the plot of the Metropolis-Hastings will be lost. Do you want to proceed?"):
                 return
@@ -4433,7 +4444,7 @@ class Gui(Tk):
         self.status_set("MH results refreshed.")
 
     def customize_mh_results(self):
-        """ Customizes MH Plot"""
+        """ Customizes MH Plot. """
         if isinstance(self.mh_results, HastingsResults):
             if not askyesno("Metropolis-Hastings", "Metropolis-Hastings plot will be lost. Do you want to proceed?"):
                 return
@@ -4471,7 +4482,7 @@ class Gui(Tk):
         costumize_mh_results_button.wait_variable(self.button_pressed)
 
     def change_MH_Plot(self):
-        """ Parses window changing MH Plot"""
+        """ Parses window changing MH Plot. """
         try:
             bins = int(self.mh_grid_size_entry.get())
             burn_in = float(self.burn_in_entry_2.get())
@@ -4506,7 +4517,7 @@ class Gui(Tk):
                 return
 
     def show_mh_iterations(self):
-        """ Create Scatter plot showing accepted and rejected points in its given order """
+        """ Create Scatter plot showing accepted and rejected points in its given order. """
         if self.mh_results == "":
             return
         else:
@@ -4516,7 +4527,7 @@ class Gui(Tk):
             # self.mh_results.show_iterations(where=self.draw_plot_window)
 
     def show_mh_acc_points(self):
-        """ Shows trace and histogram of accepted points """
+        """ Shows trace and histogram of accepted points. """
         if self.mh_results == "":
             return
         else:
@@ -4529,7 +4540,7 @@ class Gui(Tk):
             #     self.mh_results.show_accepted_bokeh()
 
     def export_acc_points(self, file=False):
-        """ Exports accepted points of metropolis Hastings
+        """ Exports accepted points of metropolis Hastings.
 
         Args:
             file (string or False):  file to export accepted points of MH
@@ -4606,7 +4617,7 @@ class Gui(Tk):
 
     ## GUI MENU FUNCTIONS
     def edit_config(self):
-        """ Opens config file in editor """
+        """ Opens config file in editor. """
         print("Editing config ...")
         if "wind" in system().lower():
             os.startfile(f'{os.path.join(workspace, "../config.ini")}')
@@ -4616,18 +4627,18 @@ class Gui(Tk):
         self.status_set("Config file saved.")
 
     def show_help(self):
-        """ Shows GUI help """
+        """ Shows GUI help. """
         print("Showing help ...")
         webbrowser.open_new("https://github.com/xhajnal/DiPS#dips-data-informed-parameter-synthesiser")
 
     def check_updates(self):
-        """ Shows latest releases """
+        """ Shows latest releases. """
         print("Checking for updates ...")
         self.status_set("Checking for updates ...")
         webbrowser.open_new("https://github.com/xhajnal/DiPS/releases")
 
     def print_about(self):
-        """ Shows GUI about """
+        """ Shows GUI about. """
         print("Printing about ...")
         top2 = Toplevel(self)
         top2.title("About")
@@ -4642,18 +4653,18 @@ class Gui(Tk):
 
     ## STATUS BAR FUNCTIONS
     def status_set(self, text, *args):
-        """ Inner function to update status bar """
+        """ Inner function to update status bar. """
         self.status.config(text=text.format(args))
         self.status.update_idletasks()
 
     def status_clear(self):
-        """ Inner function to update status bar """
+        """ Inner function to update status bar. """
         self.status.config(text="")
         self.status.update_idletasks()
 
     ## INNER TKINTER SETTINGS
     def cursor_toggle_busy(self, busy=True):
-        """ Inner function to update cursor """
+        """ Inner function to update cursor. """
         if busy:
             ## System dependent cursor setting
             if "wind" in system().lower():
@@ -4665,7 +4676,7 @@ class Gui(Tk):
         self.update()
 
     def report_callback_exception(self, exc, val, tb):
-        """ Inner function, Exception handling """
+        """ Inner function, Exception handling. """
         import traceback
         print("Exception in Tkinter callback", file=sys.stderr)
         sys.last_type = exc
@@ -4679,7 +4690,7 @@ class Gui(Tk):
 
     ## INNER FUNCTIONS
     def draw_plot_window(self, figure, axes=False):
-        """ Method to create a new window with a figure inside
+        """ Method to create a new window with a figure inside.
 
         Args:
             figure (figure): a figure to draw into the new window
@@ -4706,7 +4717,7 @@ class Gui(Tk):
         # self.update()
 
     def create_window_to_load_param_point(self, parameters, opt=False):
-        """ Creates a window a functionality to load values of parameters
+        """ Creates a window a functionality to load values of parameters.
 
         Args:
             parameters (list): list of param names
@@ -4748,7 +4759,7 @@ class Gui(Tk):
         load_true_point_button.wait_variable(self.button_pressed)
 
     def load_param_intervals_from_window(self):
-        """ Inner function to parse the param intervals from created window """
+        """ Inner function to parse the param intervals from created window. """
         region = []
         assert isinstance(self.parameter_domains, list)
 
@@ -4771,7 +4782,7 @@ class Gui(Tk):
                 print("Space: ", self.space)
 
     def load_param_point_from_window(self):
-        """ Inner function to parse the param values from created window """
+        """ Inner function to parse the param values from created window. """
         self.parameter_point = []
         assert isinstance(self.parameter_point_entries, list)
         assert all(list(map(lambda x: isinstance(x, Entry), self.parameter_point_entries)))
@@ -4783,7 +4794,7 @@ class Gui(Tk):
         self.button_pressed.set(True)
 
     def reinitialise_plot(self, set_onclick=False):
-        """ Inner function, reinitialising the page3 plot """
+        """ Inner function, reinitialising the page3 plot. """
         ## REINITIALISING THE PLOT
         ## This is not in one try catch block because I want all of them to be tried
         try:
@@ -4815,7 +4826,7 @@ class Gui(Tk):
         self.update()
 
     def initialise_plot3(self, what=False):
-        """ Plots the what (figure) into where (Tkinter object - Window/Frame/....) """
+        """ Plots the what (figure) into where (Tkinter object - Window/Frame/....). """
         ## Old
         # try:
         #     self.page3_canvas.get_tk_widget().destroy()
@@ -4835,7 +4846,7 @@ class Gui(Tk):
         self.page3_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
 
     def update_progress_bar(self, change_to=False, change_by=False, set_time=False, timeout=False):
-        """ Updates progress bar
+        """ Updates progress bar.
 
         Args:
             change_to (number): value to set the progress:  change_to %
@@ -4857,13 +4868,13 @@ class Gui(Tk):
             return
 
     def ask_quit(self):
-        """ x button handler """
+        """ x button handler. """
         if messagebox.askokcancel("Quit", "Do you want to quit the application?"):
             self.destroy()
             self.quit()
 
     def autoload(self, yes=False):
-        """ loads tmp files """
+        """ Loads tmp files. """
         if yes:
             self.update()
             return
@@ -4883,9 +4894,8 @@ class Gui(Tk):
             self.load_mh_results(file=os.path.join(self.tmp_dir, "mh_results.p"))
             self.load_data_informed_properties(file=os.path.join(self.tmp_dir, "data_informed_properties.pctl"))
 
-
     def set_lower_figure(self, clear=False):
-        """ Configures lower figure on tab 6 (MH results) """
+        """ Configures lower figure on tab 6 (MH results). """
         ##################################################### LOWER PLOT ###############################################
         if clear:
             self.page6_plotframe2.destroy()

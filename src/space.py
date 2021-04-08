@@ -232,7 +232,7 @@ class RefinedSpace:
              true_point=True, save=False, where=False, show_all=True, prefer_unsafe=None, is_parallel_sampling=False,
              is_parallel_refinement=False, is_presampled=False, is_mhmh=False, is_sampling_guided=False,
              hide_legend=False, hide_title=False):
-        """ Visualises the space
+        """ Visualises the space.
 
         Args:
             title (string):  title of the figure
@@ -249,7 +249,7 @@ class RefinedSpace:
             is_parallel_sampling (int): number of cores used for sampling
             is_parallel_refinement (int):  number of cores used for refinement
             is_presampled (bool): if True it will mark the refinement as presampled
-            is_mhmh (bool): if True it will mark the refinement as MHMH, used MH to presample/precut space
+            is_mhmh (bool): if True it will mark the refinement as MHMH, used MH to presampled/precut space
             is_sampling_guided (bool): flag whether refinement was sampling-guided
             hide_legend (bool): if True no legend will be shown
             hide_title (bool): if True no title will be shown (useful in the case of large picture, when tight layout fails)
@@ -700,27 +700,27 @@ class RefinedSpace:
                     plt.show()
 
     def get_region(self):
-        """ Returns whole domain """
+        """ Returns whole domain. """
         return self.region
 
     def get_params(self):
-        """ Returns parameters """
+        """ Returns parameters. """
         return self.params
 
     def get_green(self):
-        """ Returns green (hyper)rectangles """
+        """ Returns green (hyper)rectangles. """
         return self.rectangles_sat
 
     def get_red(self):
-        """ Returns red (hyper)rectangles """
+        """ Returns red (hyper)rectangles. """
         return self.rectangles_unsat
 
     def get_white(self):
-        """ Returns white space as dictionary """
+        """ Returns white space as dictionary. """
         return self.rectangles_unknown
 
     def get_flat_white(self):
-        """ Returns white space as a flat list"""
+        """ Returns white space as a flat list. """
         ## TODO SORT THIS BY SIZE
         if isinstance(self.rectangles_unknown, list):
             return self.rectangles_unknown
@@ -734,18 +734,18 @@ class RefinedSpace:
         # return [item for sublist in self.rectangles_unknown.values() for item in sublist]
 
     def get_nonwhite(self):
-        """ Returns nonwhite (hyper)rectangles """
+        """ Returns nonwhite (hyper)rectangles. """
         return self.rectangles_sat + self.rectangles_unsat
 
     def get_volume(self):
-        """ Returns the volume of the space """
+        """ Returns the volume of the space. """
         intervals = []
         for interval in self.region:
             intervals.append(interval[1] - interval[0])
         return prod(intervals)
 
     def get_green_volume(self):
-        """ Returns volume of green subspace """
+        """ Returns volume of green subspace. """
         cumulative_volume = 0
 
         ## If there is no hyperrectangle in the sat space
@@ -757,7 +757,7 @@ class RefinedSpace:
         return cumulative_volume
 
     def get_red_volume(self):
-        """ Returns volume of red subspace """
+        """ Returns volume of red subspace. """
         cumulative_volume = 0
 
         ## If there is no hyperrectangle in the unsat space
@@ -769,7 +769,7 @@ class RefinedSpace:
         return cumulative_volume
 
     def get_white_volume(self):
-        """ Returns volume of white subspace """
+        """ Returns volume of white subspace. """
         if not self.get_flat_white():
             return 0
         else:
@@ -783,11 +783,11 @@ class RefinedSpace:
             return volume
 
     def get_nonwhite_volume(self):
-        """ Returns volume of nonwhite subspace """
+        """ Returns volume of nonwhite subspace. """
         return self.get_green_volume() + self.get_red_volume()
 
     def get_coverage_old(self, fract=False):
-        """ Returns proportion of nonwhite subspace (coverage) """
+        """ Returns proportion of nonwhite subspace (coverage). """
         # print("self.get_nonwhite_volume()", self.get_nonwhite_volume())
         # print("self.get_volume()", self.get_volume())
         coverage = self.get_nonwhite_volume() / self.get_volume()
@@ -804,7 +804,7 @@ class RefinedSpace:
         #     return self.get_nonwhite_volume() / self.get_volume()
 
     def get_coverage(self, fract=False):
-        """ Returns proportion of nonwhite subspace (coverage) """
+        """ Returns proportion of nonwhite subspace (coverage). """
         volume = self.get_volume()
         coverage = (volume - self.get_white_volume()) / volume
 
@@ -817,27 +817,27 @@ class RefinedSpace:
             return float(coverage)
 
     def get_sat_samples(self):
-        """ Returns green (sat) samples """
+        """ Returns green (sat) samples. """
         return self.sat_samples
 
     def get_unsat_samples(self):
-        """ Returns red (unsat) samples """
+        """ Returns red (unsat) samples. """
         return self.unsat_samples
 
     def get_all_samples(self):
-        """ Returns all (sat and unsat) samples """
+        """ Returns all (sat and unsat) samples. """
         return self.sat_samples + self.unsat_samples
 
     def get_true_point(self):
-        """ Returns the true point """
+        """ Returns the true point. """
         return self.true_point
 
     def is_refined(self):
-        """ Answers whether the space is refined, refinement was run"""
+        """ Answers whether the space is refined, refinement was run. """
         return bool((self.get_flat_white() != [self.region]) or self.rectangles_sat or self.rectangles_unsat)
 
     def is_sampled(self):
-        """ Answers whether the space is sampled, sampling was run"""
+        """ Answers whether the space is sampled, sampling was run."""
         return bool(self.sat_samples or self.unsat_samples)
 
     # ## TODO maybe implement this later
@@ -848,7 +848,7 @@ class RefinedSpace:
     #             DO THE TRICK, harder than I though
 
     def set_region(self, region):
-        """ Changes the region of space"""
+        """ Changes the region of space. """
         # for index, item in enumerate(region):
         #     try:
         #         if region[index] != self.region[index]:
@@ -873,27 +873,27 @@ class RefinedSpace:
             self.region = region
 
     def add_green(self, green):
-        """ Adds green (hyper)rectangle """
+        """ Adds green (hyper)rectangle. """
         self.rectangles_sat.append(green)
         self.rectangles_sat_to_show.append(green)
 
     def extend_green(self, greens):
-        """ Adds green (hyper)rectangles """
+        """ Adds green (hyper)rectangles. """
         self.rectangles_sat.extend(greens)
         self.rectangles_sat_to_show.extend(greens)
 
     def add_red(self, red):
-        """ Adds red (hyper)rectangle """
+        """ Adds red (hyper)rectangle. """
         self.rectangles_unsat.append(red)
         self.rectangles_unsat_to_show.append(red)
 
     def extend_red(self, reds):
-        """ Adds red (hyper)rectangles """
+        """ Adds red (hyper)rectangles. """
         self.rectangles_unsat.extend(reds)
         self.rectangles_unsat_to_show.extend(reds)
 
     def add_white(self, white):
-        """ Adds white (hyper)rectangle
+        """ Adds white (hyper)rectangle.
 
         Args:
             white (rectangle or My_rectangle): a rectangle to be add to white space
@@ -911,7 +911,7 @@ class RefinedSpace:
             self.rectangles_unknown[volume] = [white]
 
     def add_sat_samples(self, sat_samples):
-        """ Adds sat samples
+        """ Adds sat samples.
 
         Args:
             sat_samples (list): of sat points
@@ -920,7 +920,7 @@ class RefinedSpace:
         self.sat_samples.extend(sat_samples)
 
     def add_unsat_samples(self, unsat_samples):
-        """ Adds unsat samples
+        """ Adds unsat samples.
 
         Args:
             unsat_samples (list): of unsat points
@@ -929,7 +929,7 @@ class RefinedSpace:
         self.unsat_samples.extend(unsat_samples)
 
     def add_degree_samples(self, samples):
-        """ Adds samples and their sat degree (distance from not satisfying the constraints)
+        """ Adds samples and their sat degree (distance from not satisfying the constraints).
 
         Args:
             samples (dict): of samples to sat degree
@@ -937,7 +937,7 @@ class RefinedSpace:
         self.dist_samples.update(samples)
 
     def remove_green(self, green):
-        """ Removes green (hyper)rectangle """
+        """ Removes green (hyper)rectangle. """
         self.rectangles_sat.remove(green)
         try:
             self.rectangles_sat_to_show.remove(green)
@@ -945,7 +945,7 @@ class RefinedSpace:
             pass
 
     def remove_red(self, red):
-        """ Removes red (hyper)rectangle """
+        """ Removes red (hyper)rectangle. """
         self.rectangles_unsat.remove(red)
         try:
             self.rectangles_unsat_to_show.remove(red)
@@ -953,7 +953,7 @@ class RefinedSpace:
             pass
 
     def remove_white(self, white):
-        """ Removes white (hyper)rectangle
+        """ Removes white (hyper)rectangle.
 
         Args:
             white (rectangle or My_rectangle): a rectangle to be removed from white space
@@ -989,15 +989,15 @@ class RefinedSpace:
         return True
 
     def count_green_rectangles(self):
-        """ Returns number of green hyper rectangles"""
+        """ Returns number of green hyper rectangles. """
         return len(self.rectangles_sat)
 
     def count_red_rectangles(self):
-        """ Returns number of red hyper rectangles"""
+        """ Returns number of red hyper rectangles. """
         return len(self.rectangles_unsat)
 
     def count_white_rectangles(self):
-        """ Returns number of white hyper rectangles"""
+        """ Returns number of white hyper rectangles. """
         if isinstance(self.rectangles_unknown, list):
             return len(self.rectangles_unknown)
         count = 0
@@ -1006,16 +1006,16 @@ class RefinedSpace:
         return count
 
     def count_sat_samples(self):
-        """ Returns number of sat samples"""
+        """ Returns number of sat samples. """
         return len(self.sat_samples)
 
     def count_unsat_samples(self):
-        """ Returns number of unsat samples"""
+        """ Returns number of unsat samples. """
         return len(self.unsat_samples)
 
     ## TODO generalise so that the code is not copied
     def show_green(self, show_all=True):
-        """ Adds green (hyper)rectangles to be visualised
+        """ Adds green (hyper)rectangles to be visualised.
 
         Args:
             show_all (bool): if all, not only newly added rectangles are shown
@@ -1038,7 +1038,7 @@ class RefinedSpace:
         return PatchCollection(rectangles_sat, facecolor='g', alpha=0.5)
 
     def show_red(self, show_all=True):
-        """ Adds red (hyper)rectangles to be visualised
+        """ Adds red (hyper)rectangles to be visualised.
 
         Args:
             show_all (bool): if all, not only newly added rectangles are shown
@@ -1062,7 +1062,7 @@ class RefinedSpace:
 
     def grid_sample(self, constraints, sample_size, boundaries=None, silent=False, save=False, debug=False,
                     progress=False, quantitative=False, parallel=True, save_memory=False):
-        """ Executes grid sampling
+        """ Executes grid sampling.
 
         Args:
             constraints  (list of strings): array of properties
@@ -1088,7 +1088,7 @@ class RefinedSpace:
 
     ## TODO DEPRECATED NOT USED NOW, plot.scatter used instead
     def show_samples(self, which):
-        """ Visualises samples in 2D"""
+        """ Visualises samples in 2D. """
         if not (self.sat_samples or self.unsat_samples):
             return None
 
@@ -1125,7 +1125,7 @@ class RefinedSpace:
                 return PatchCollection(samples, facecolor='r', alpha=0.5)
 
     def nice_print(self, full_print=False):
-        """ Returns the class in a human readable format
+        """ Returns the class in a human readable format.
 
         Args:
             full_print (bool): if True not truncated print is used
@@ -1167,7 +1167,7 @@ class RefinedSpace:
         return text
 
     def sampling_took(self, time):
-        """ Manages the time the sampling took
+        """ Manages the time the sampling took.
 
         Args:
             time (number): adds the time of the last sampling
@@ -1176,7 +1176,7 @@ class RefinedSpace:
         self.time_sampling = self.time_sampling + self.time_last_sampling
 
     def refinement_took(self, time):
-        """ Manages the time the refinement took
+        """ Manages the time the refinement took.
 
         Args:
             time (number): adds the time of the last refinement
@@ -1185,7 +1185,7 @@ class RefinedSpace:
         self.time_refinement = self.time_refinement + self.time_last_refinement
 
     def update(self):
-        """ Make backwards compatible """
+        """ Provides backwards compatibility. """
         if isinstance(self.rectangles_unknown, list):
             rectangles = {}
             for rectangle in self.rectangles_unknown:

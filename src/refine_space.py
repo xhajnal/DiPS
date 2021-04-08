@@ -146,6 +146,7 @@ except NameError:
 
 
 def are_param_types_assigned():
+    """ Verifies that all params types are assigned. """
     try:
         for param in globals()["parameters"]:
             spam = globals()[param]
@@ -157,6 +158,11 @@ def are_param_types_assigned():
 
 
 def assign_param_types(solver):
+    """ Assigns parameter types to parameters.
+
+    Args:
+        solver (string): solver "z3" or "dreal"
+    """
     for param in globals()["parameters"]:
         if solver == "z3":
             globals()[param] = Real(param)

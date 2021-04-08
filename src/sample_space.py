@@ -28,8 +28,9 @@ global glob_constraints
 
 
 def check_sample(parameter_value, save_memory=False, silent=False):
-    """ Checks whether constraints are satisfied in the given point
-    Args
+    """ Checks whether constraints are satisfied in the given point.
+
+    Args:
         parameter_value (list of numbers): parameter point in which check the constraints
         save_memory (bool): if True only sat points are stored
         silent (bool): if True printed output is set to minimum
@@ -78,13 +79,17 @@ def check_sample(parameter_value, save_memory=False, silent=False):
         return sat_list
 
 
-def sample_sat_degree(parameter_value):
-    """ Computes satisfaction degree of constraints in the given point """
+def sample_sat_degree(parameters_values):
+    """ Computes satisfaction degree of constraints in the given point.
+
+     Args:
+         parameters_values (list of numbers): parametrisation - values of respective parameter stored as a list
+     """
     for param in range(len(glob_space.params)):
-        locals()[glob_space.params[param]] = float(parameter_value[param])
+        locals()[glob_space.params[param]] = float(parameters_values[param])
         if glob_debug:
             print("type(locals()[space.params[param]])", type(locals()[glob_space.params[param]]))
-            print(f"locals()[space.params[param]] = {glob_space.params[param]} = {float(parameter_value[param])}")
+            print(f"locals()[space.params[param]] = {glob_space.params[param]} = {float(parameters_values[param])}")
 
     distance_list = []
 
@@ -111,12 +116,12 @@ def sample_sat_degree(parameter_value):
 
 def sample_space(space, constraints, sample_size, boundaries=False, compress=False, silent=True, save=False, debug: bool = False,
                  progress=False, quantitative=False, parallel=True, save_memory=False, stop_on_unknown=False):
-    """ Samples the space in **sample_size** samples in each dimension and saves if the point is in respective interval
+    """ Samples the space in **sample_size** samples in each dimension and saves if the point is in respective interval.
 
     Args:
         space: (space.RefinedSpace): space
-        constraints  (list of strings): array of properties
-        sample_size (int): number of samples in dimension
+        constraints  (list of strings): list of constraints
+        sample_size (int): number of samples per dimension
         boundaries (list of intervals): subspace to sample, False for default region of space
         compress (bool): if True, only a conjunction of the values (prop in the interval) is used
         silent (bool): if silent printed output is set to minimum
@@ -125,9 +130,8 @@ def sample_space(space, constraints, sample_size, boundaries=False, compress=Fal
         debug (bool): if True extensive print will be used
         progress (Tkinter element): progress bar
         quantitative (bool): if True return how far is the point from satisfying / not satisfying the constraints
-        parallel (Bool): flag to run this in parallel mode
-        save_memory (Bool): if True saves only sat samples
-
+        parallel (bool): flag to run this in parallel mode
+        save_memory (bool): if True saves only sat samples
     """
     start_time = time()
     global glob_space
@@ -294,12 +298,12 @@ def sample_space(space, constraints, sample_size, boundaries=False, compress=Fal
 
 def sample_region(region, params, constraints, sample_size, boundaries=False, compress=False, silent=True, save=False,
                   debug=False, progress=False, quantitative=False, parallel=True, save_memory=False, stop_on_unknown=False):
-    """ Samples the space in **sample_size** samples in each dimension and saves if the point is in respective interval
+    """ Samples the space in **sample_size** samples in each dimension and saves if the point is in respective interval.
 
     Args:
         region: (Rectangle): region to be sampled
         params: (list of strings): parameters
-        constraints  (list of strings): array of properties
+        constraints  (list of strings): list of constraints
         sample_size (int): number of samples in dimension
         boundaries (list of intervals): subspace to sample, False for default region of space
         compress (bool): if True, only a conjunction of the values (prop in the interval) is used
@@ -309,9 +313,8 @@ def sample_region(region, params, constraints, sample_size, boundaries=False, co
         debug (bool): if True extensive print will be used
         progress (Tkinter element): progress bar
         quantitative (bool): if True return how far is the point from satisfying / not satisfying the constraints
-        parallel (Bool): flag to run this in parallel mode
-        save_memory (Bool): if True saves only sat samples
-
+        parallel (bool): flag to run this in parallel mode
+        save_memory (bool): if True saves only sat samples
     """
     start_time = time()
     global glob_space

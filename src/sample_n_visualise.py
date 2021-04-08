@@ -18,7 +18,7 @@ wraper = DocumentWrapper(width=60)
 
 
 def bar_err_plot(data, intervals=None, titles=""):
-    """ Creates bar plot (with errors)
+    """ Creates bar plot (with errors).
 
     Args:
         data (list of floats): values to barplot
@@ -56,10 +56,10 @@ def bar_err_plot(data, intervals=None, titles=""):
 
 
 def get_param_values(parameters, sample_size, intervals=False, debug: bool = False):
-    """ Creates linearly sampled parameter space from the given parameter intervals and number of samples
+    """ Creates linearly sampled parameter space from the given parameter intervals and number of samples.
 
     Args:
-        parameters (list): of parameters to sample
+        parameters (list string): parameter names to be sampled
         sample_size (int): sample size in each parameter
         intervals (list of tuples or False): if False (0,1) interval is used
         debug (bool): if debug extensive output is provided
@@ -84,7 +84,7 @@ def get_param_values(parameters, sample_size, intervals=False, debug: bool = Fal
 
 
 def eval_and_show(functions, parameter_value, parameters=False, data=False, data_intervals=False, cumulative=False, debug: bool = False, where=False):
-    """ Creates bar plot of evaluation of given functions for given point in parameter space
+    """ Creates bar plot of evaluation of given functions for given point in parameter space.
 
     Args:
         functions (list of strings): list of rational functions
@@ -218,7 +218,7 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
 
 
 def sample_dictionary_funs(dictionary, sample_size, keys=None, debug: bool = False):
-    """ Returns a dictionary of function values for sampled parametrisations
+    """ Returns a dictionary of function values for sampled parametrisations.
 
     Args:
         dictionary: dictionary of list of functions
@@ -248,7 +248,7 @@ def sample_dictionary_funs(dictionary, sample_size, keys=None, debug: bool = Fal
 
 
 def sample_list_funs(functions, sample_size, parameters=False, intervals=False, silent: bool = False, debug: bool = False):
-    """ Returns a list of function values for sampled parametrisations
+    """ Returns a list of function values for sampled parametrisations.
 
     Args:
         functions: (list of functions) to be sampled
@@ -389,15 +389,13 @@ def sample_list_funs(functions, sample_size, parameters=False, intervals=False, 
 
 ## SOURCE: https://stackoverflow.com/questions/21352580/matplotlib-plotting-numerous-disconnected-line-segments-with-different-colors
 def visualise_by_param(hyper_rectangles, colour='g', title="", where=False):
-    """
-    Visualises domain intervals of each dimension in a plot.
+    """ Visualises domain intervals of each dimension in a plot.
 
     Args:
         hyper_rectangles (list of (hyper)rectangles)
         colour (string): colour of the lines in the figure
         title (string): title used for the figure
         where (tuple/list): output matplotlib sources to output created figure
-
     """
     from sympy import Interval
 
@@ -445,7 +443,7 @@ def visualise_by_param(hyper_rectangles, colour='g', title="", where=False):
 
 
 def heatmap(function, region, sampling_sizes, posttitle="", where=False, parameters=False, verbose=False):
-    """ Creates 2D heatmap plot of sampled points of given function
+    """ Creates 2D heatmap plot of sampled points of given function.
 
     Args:
         function (string): function to be analysed
@@ -532,8 +530,7 @@ def heatmap(function, region, sampling_sizes, posttitle="", where=False, paramet
 
 
 def visualise_sampled_by_param(hyper_rectangles, sample_size):
-    """
-    Visualises sampled hyperspace by connecting the values in each dimension.
+    """ Visualises sampled hyperspace by connecting the values in each dimension.
 
     Args:
         hyper_rectangles (list of hyperrectangles):

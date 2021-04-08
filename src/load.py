@@ -324,9 +324,9 @@ def load_all_functions(path, tool, factorize=True, agents_quantities=False, rewa
         tool (string): a tool of which is the output from (PRISM/STORM)
 
     Returns:
-    (f,reward), where
-    f: dictionary N -> list of rational functions for each property
-    rewards: dictionary N -> list of rational functions for each reward
+        (f,reward), where
+        f: dictionary N -> list of rational functions for each property
+        rewards: dictionary N -> list of rational functions for each reward
     """
 
     ## Setting the current directory
@@ -617,6 +617,8 @@ def parse_params_from_model(file, silent: bool = False, debug=False):
         file: ((path/string)) a prism model file to be parsed
         silent (bool): if silent command line output is set to minimum
         debug (bool): if debug extensive print will be used
+    Returns:
+        tuple (list of constants, list of parameters)
     """
     consts = []
     params = []
@@ -798,7 +800,7 @@ def parse_constraints(file, silent=True, debug=False):
         debug (bool): if debug extensive print will be used
 
     Returns:
-    constraints: (list of string) constraints
+        (list of strings): constraints
     """
     with open(file) as f:
         constraints = []
@@ -821,7 +823,7 @@ def parse_functions(file, silent=True, debug=False):
         debug (bool): if debug extensive print will be used
 
     Returns:
-    (list of string) functions
+        (list of strings): functions
     """
     return parse_constraints(file, silent, debug)
 
@@ -835,7 +837,7 @@ def parse_data(file, silent=True, debug=False):
         debug (bool): if debug extensive print will be used
 
     Returns:
-    (list of string) weights
+        (list of strings): weights
     """
     return parse_weights(file, silent=silent, debug=debug)
 
@@ -849,7 +851,7 @@ def parse_weights(file, silent=True, debug=False):
         debug (bool): if debug extensive print will be used
 
     Returns:
-    (list of string) weights
+        (list of strings): weights
     """
     return [float(x) for x in parse_constraints(file, silent, debug)]
 
@@ -863,7 +865,7 @@ def parse_data_intervals(file, silent=True, debug=False):
         debug (bool): if debug extensive print will be used
 
     Returns:
-        lines (list of Interval): parsed intervals
+        (list of Interval): parsed intervals
     """
     ## TODO THIS IS MAYBE MORE GENERAL LOAD FUNCTION
     with open(file) as f:
