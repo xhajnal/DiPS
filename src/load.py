@@ -12,7 +12,7 @@ from sympy import factor, Interval
 from common.config import load_config
 from common.convert import parse_numbers, parse_interval_bounds
 from common.files import pickle_load
-from common.my_storm import parse_refinement_into_space, merge_refinements
+from common.my_storm import parse_2D_refinement_into_space, merge_2D_refinements
 
 spam = load_config()
 data_path = spam["data"]
@@ -288,9 +288,15 @@ def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False
         if tool.lower() == "storm":
             if len(params) == 2:
                 if merge_results:
-                    spaces = merge_refinements(spaces, params, param_intervals)
+                    spaces = merge_2D_refinements(spaces, params, param_intervals)
                 else:
-                    spaces = [parse_refinement_into_space(space, params, param_intervals) for space in spaces]
+                    spaces = [parse_2D_refinement_into_space(space, params, param_intervals) for space in spaces]
+            else:
+                if merge_results:
+                    spaces = merge_multidim_refinements(spaces, params, param_intervals)
+                else:
+                    spaces = [parse_multidim_refinement_into_space(space, params, param_intervals) for space in spaces]
+
         return spaces, "refinement", params, param_intervals, time_elapsed
     else:
         return f, rewards

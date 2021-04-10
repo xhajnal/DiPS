@@ -1,4 +1,4 @@
-def cut_space(refinement, params, param_intervals):
+def estimate_dimensions_width_2D(refinement, params, param_intervals):
     """ Counts number of horizontal and vertical pieces of 2D visualised Storm refinement
 
     Args:
@@ -33,7 +33,7 @@ def cut_space(refinement, params, param_intervals):
     return horizontal_pieces, vertical_pieces
 
 
-def parse_refinement_into_space(refinement, params, param_intervals):
+def parse_2D_refinement_into_space(refinement, params, param_intervals):
     """ Converts 2D visualised Storm refinement into true rectangles
 
     Args:
@@ -44,7 +44,7 @@ def parse_refinement_into_space(refinement, params, param_intervals):
     Returns:
         triple [safe, unsafe, unknown rectangles]
     """
-    horizontal_pieces, vertical_pieces = cut_space(refinement, params, param_intervals)
+    horizontal_pieces, vertical_pieces = estimate_dimensions_width_2D(refinement, params, param_intervals)
 
     safe_rectangles = []
     unsafe_rectangles = []
@@ -65,7 +65,21 @@ def parse_refinement_into_space(refinement, params, param_intervals):
     return [safe_rectangles, unsafe_rectangles, unknown_rectangles]
 
 
-def merge_refinements(refinements, params, param_intervals):
+def parse_multidim_refinement_into_space(refinement, params, param_intervals):
+    """ Converts multidimensional Storm refinement into true rectangles
+
+    Args:
+        refinement (list of strings): array of rectangles represented by a "Allsat"
+        params (list of strings): list of parameter names
+        param_intervals (list of tuples): domains of each parameter
+
+    Returns:
+        triple [safe, unsafe, unknown rectangles]
+    """
+    raise NotImplementedError()
+
+
+def merge_2D_refinements(refinements, params, param_intervals):
     """ Merges several 2D visualised Storm refinements with conjunction
      The refinements have to share parameters, their order and domains.
 
@@ -77,7 +91,7 @@ def merge_refinements(refinements, params, param_intervals):
     Returns:
         triple [safe, unsafe, unknown rectangles]
      """
-    horizontal_pieces, vertical_pieces = cut_space(refinements[0], params, param_intervals)
+    horizontal_pieces, vertical_pieces = estimate_dimensions_width_2D(refinements[0], params, param_intervals)
 
     safe_rectangles = []
     unsafe_rectangles = []
@@ -107,3 +121,18 @@ def merge_refinements(refinements, params, param_intervals):
                 unknown_rectangles.append([h_item, v_item])
 
     return [safe_rectangles, unsafe_rectangles, unknown_rectangles]
+
+
+def merge_multidim_refinements(refinements, params, param_intervals):
+    """ Merges several multidimensional Storm refinements with conjunction
+     The refinements have to share parameters, their order and domains.
+
+    Args:
+        refinements (list of list of strings): list of array of rectangles represented by
+        params (list of strings): list of parameter names
+        param_intervals (list of tuples): domains of each parameter
+
+    Returns:
+        triple [safe, unsafe, unknown rectangles]
+     """
+    raise NotImplementedError()
