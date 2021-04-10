@@ -30,7 +30,7 @@ However, the tool is directly applicable to any search problem, where multiple f
 A scheme showing tool components and communication among them:
 ![Architecure of DiPS. Main GUI components in green, main functionality components in blue, and leveraged tools and libraries in red.](architecture.jpg)
 
-
+Main GUI components, 6 tabs, in green, main functionality components in blue, and leveraged tools and libraries in red.
 For more information on how to use DiPS, please read [this section](#HOW-TO-USE).
 Feel free to leave response either via [issues](https://github.com/xhajnal/DiPS/issues/new) or an email.
 *****
