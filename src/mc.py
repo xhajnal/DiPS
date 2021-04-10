@@ -33,7 +33,7 @@ if "prism" not in os.environ["PATH"]:
 
 
 def set_java_heap_win(size):
-    """  Changing the java heap size for the PRISM on Windows
+    """  Changing the java heap size for the PRISM on Windows.
 
     Args:
         size (string): sets maximum memory, see https://www.prismmodelchecker.org/manual/ConfiguringPRISM/OtherOptions
@@ -242,7 +242,7 @@ def call_prism(args, seq=False, silent: bool = False, model_path=model_path, pro
 def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq=False, no_prob_checks=False, memory="",
                      model_path=model_path, properties_path=properties_path, property_file=False,
                      output_path=prism_results, gui=False, silent=False, coverage=0.95):
-    """  Calls prism for each file matching the prefix
+    """  Calls prism for each file matching the prefix.
 
     Args:
         model_prefix (string): file prefix to be matched
@@ -448,7 +448,7 @@ def call_prism_files(model_prefix, agents_quantities, param_intervals=False, seq
 
 ## TODO rewrite this without the paths, just files
 def call_storm(model_file, params, param_intervals, property_file, storm_output_file=False, time=False, coverage=0.95, silent=False):
-    """  Prints calls for storm model checking.
+    """  Prints calls for Storm model checking.
 
     Args:
         model_file (string or Path): model file path

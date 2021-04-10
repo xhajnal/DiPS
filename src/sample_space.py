@@ -1,5 +1,6 @@
 import multiprocessing
 from copy import copy
+from functools import partial
 from time import time
 from typing import Iterable
 
@@ -26,8 +27,14 @@ global glob_compress
 global glob_constraints
 
 
-def check_sample(parameter_value, save_memory=False):
-    """ Checks whether constraints are satisfied in the given point """
+def check_sample(parameter_value, save_memory=False, silent=False):
+    """ Checks whether constraints are satisfied in the given point.
+
+    Args:
+        parameter_value (list of numbers): parameter point in which check the constraints
+        save_memory (bool): if True only sat points are stored
+        silent (bool): if True printed output is set to minimum
+    """
     ## If sort constraint is not sat we simply skipp the point and not put it in the space.samples
     for param in range(len(glob_space.params)):
         locals()[glob_space.params[param]] = float(parameter_value[param])
@@ -45,9 +52,10 @@ def check_sample(parameter_value, save_memory=False):
         try:
             is_sat = eval(constraint)
         except Exception as err:
-            print(colored(f"An error occurred while evaluating parameter point {parameter_value} and constraint number {constraint_index +1}", "red"))
-            print(colored(f"   {err}", "red"))
-            print(colored("   skipping this point", "red"))
+            if not silent:
+                print(colored(f"An error occurred while evaluating parameter point {parameter_value} and constraint number {constraint_index +1}", "red"))
+                print(colored(f"   {err}", "red"))
+                print(colored("   skipping this point", "red"))
             if glob_compress:
                 return None
             else:
@@ -71,13 +79,17 @@ def check_sample(parameter_value, save_memory=False):
         return sat_list
 
 
-def sample_sat_degree(parameter_value):
-    """ Computes satisfaction degree of constraints in the given point """
+def sample_sat_degree(parameters_values):
+    """ Computes satisfaction degree of constraints in the given point.
+
+     Args:
+         parameters_values (list of numbers): parametrisation - values of respective parameter stored as a list
+     """
     for param in range(len(glob_space.params)):
-        locals()[glob_space.params[param]] = float(parameter_value[param])
+        locals()[glob_space.params[param]] = float(parameters_values[param])
         if glob_debug:
             print("type(locals()[space.params[param]])", type(locals()[glob_space.params[param]]))
-            print(f"locals()[space.params[param]] = {glob_space.params[param]} = {float(parameter_value[param])}")
+            print(f"locals()[space.params[param]] = {glob_space.params[param]} = {float(parameters_values[param])}")
 
     distance_list = []
 
@@ -104,12 +116,12 @@ def sample_sat_degree(parameter_value):
 
 def sample_space(space, constraints, sample_size, boundaries=False, compress=False, silent=True, save=False, debug: bool = False,
                  progress=False, quantitative=False, parallel=True, save_memory=False, stop_on_unknown=False):
-    """ Samples the space in **sample_size** samples in each dimension and saves if the point is in respective interval
+    """ Samples the space in **sample_size** samples in each dimension and saves if the point is in respective interval.
 
     Args:
         space: (space.RefinedSpace): space
-        constraints  (list of strings): array of properties
-        sample_size (int): number of samples in dimension
+        constraints  (list of strings): list of constraints
+        sample_size (int): number of samples per dimension
         boundaries (list of intervals): subspace to sample, False for default region of space
         compress (bool): if True, only a conjunction of the values (prop in the interval) is used
         silent (bool): if silent printed output is set to minimum
@@ -118,9 +130,8 @@ def sample_space(space, constraints, sample_size, boundaries=False, compress=Fal
         debug (bool): if True extensive print will be used
         progress (Tkinter element): progress bar
         quantitative (bool): if True return how far is the point from satisfying / not satisfying the constraints
-        parallel (Bool): flag to run this in parallel mode
-        save_memory (Bool): if True saves only sat samples
-
+        parallel (bool): flag to run this in parallel mode
+        save_memory (bool): if True saves only sat samples
     """
     start_time = time()
     global glob_space
@@ -129,6 +140,8 @@ def sample_space(space, constraints, sample_size, boundaries=False, compress=Fal
     global glob_constraints
 
     assert isinstance(space, RefinedSpace)
+    # print(debug)
+    # print(silent)
     if debug:
         silent = False
 
@@ -191,7 +204,8 @@ def sample_space(space, constraints, sample_size, boundaries=False, compress=Fal
             raise NotImplementedError("this optimisation is not implemented so far, please use option stop_on_unknown=False")
             current = None
             with multiprocessing.Pool(pool_size) as p:
-                results = [p.apply_async(check_sample, item).get() for item in parameter_values]
+                check_samplee = partial(check_sample, silent=silent)
+                results = [p.apply_async(check_samplee, item).get() for item in parameter_values]
 
             print(results)
             return results
@@ -215,7 +229,8 @@ def sample_space(space, constraints, sample_size, boundaries=False, compress=Fal
             # return current
         else:
             with multiprocessing.Pool(pool_size) as p:
-                sat_list = list(p.map(check_sample, parameter_values))
+                check_samplee = partial(check_sample, silent=silent)
+                sat_list = list(p.map(check_samplee, parameter_values))
                 ## TODO check how to alter progress when using Pool
 
         ## TODO this can be optimised by putting two lists separately
@@ -250,7 +265,7 @@ def sample_space(space, constraints, sample_size, boundaries=False, compress=Fal
     elif not quantitative:
         ## Sequential sampling
         for index, item in enumerate(parameter_values):
-            check_sample(item, save_memory)
+            check_sample(item, save_memory, silent=silent)
             if progress:
                 progress(index / len(parameter_values))
         space = glob_space
@@ -283,12 +298,12 @@ def sample_space(space, constraints, sample_size, boundaries=False, compress=Fal
 
 def sample_region(region, params, constraints, sample_size, boundaries=False, compress=False, silent=True, save=False,
                   debug=False, progress=False, quantitative=False, parallel=True, save_memory=False, stop_on_unknown=False):
-    """ Samples the space in **sample_size** samples in each dimension and saves if the point is in respective interval
+    """ Samples the space in **sample_size** samples in each dimension and saves if the point is in respective interval.
 
     Args:
         region: (Rectangle): region to be sampled
         params: (list of strings): parameters
-        constraints  (list of strings): array of properties
+        constraints  (list of strings): list of constraints
         sample_size (int): number of samples in dimension
         boundaries (list of intervals): subspace to sample, False for default region of space
         compress (bool): if True, only a conjunction of the values (prop in the interval) is used
@@ -298,9 +313,8 @@ def sample_region(region, params, constraints, sample_size, boundaries=False, co
         debug (bool): if True extensive print will be used
         progress (Tkinter element): progress bar
         quantitative (bool): if True return how far is the point from satisfying / not satisfying the constraints
-        parallel (Bool): flag to run this in parallel mode
-        save_memory (Bool): if True saves only sat samples
-
+        parallel (bool): flag to run this in parallel mode
+        save_memory (bool): if True saves only sat samples
     """
     start_time = time()
     global glob_space
@@ -373,7 +387,8 @@ def sample_region(region, params, constraints, sample_size, boundaries=False, co
             raise NotImplementedError("this optimisation is not implemented so far, please use option stop_on_unknown=False")
             current = None
             with multiprocessing.Pool(pool_size) as p:
-                results = [p.apply_async(check_sample, item).get() for item in parameter_values]
+                check_samplee = partial(check_sample, silent=silent)
+                results = [p.apply_async(check_samplee, item).get() for item in parameter_values]
 
             print(results)
             return results
@@ -408,13 +423,15 @@ def sample_region(region, params, constraints, sample_size, boundaries=False, co
         ## Sequential sampling
         sat_list, unsat_list = [], []
         for index, item in enumerate(parameter_values):
-            spam = check_sample(item, save_memory)
+            spam = check_sample(item, save_memory, silent=silent)
             if spam is True:
                 sat_list.append(item)
             elif spam is False:
                 unsat_list.append(item)
             else:
-                raise Exception(f"Checking {parameter_values} resulted in unexpected value: {spam}")
+                pass
+                # warnings.filterwarnings("ignore")
+                # raise Warning(f"Checking {parameter_values} resulted in unexpected value: {spam}")
             if progress:
                 progress(index / len(parameter_values))
     else:

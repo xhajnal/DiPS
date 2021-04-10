@@ -146,6 +146,7 @@ except NameError:
 
 
 def are_param_types_assigned():
+    """ Verifies that all params types are assigned. """
     try:
         for param in globals()["parameters"]:
             spam = globals()[param]
@@ -157,6 +158,11 @@ def are_param_types_assigned():
 
 
 def assign_param_types(solver):
+    """ Assigns parameter types to parameters.
+
+    Args:
+        solver (string): solver "z3" or "dreal"
+    """
     for param in globals()["parameters"]:
         if solver == "z3":
             globals()[param] = Real(param)
@@ -235,7 +241,7 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
 
         ## Adding properties to solver
         for i in range(0, len(constraints)):
-            print(f"constraints[{i}] {constraints[i]}") if debug else None
+            # print(f"constraints[{i}] {constraints[i]}") if debug else None
             try:
                 s.add(eval(constraints[i]))
             except Z3Exception as z3_err:
@@ -276,7 +282,7 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
 
         ## Adding properties to dreal solver
         for i in range(0, len(constraints)):
-            print(f"constraints[{i}] {constraints[i]}") if debug else None
+            # print(f"constraints[{i}] {constraints[i]}") if debug else None
             f_sat = logical_and(f_sat, eval(constraints[i]))
 
         result = CheckSatisfiability(f_sat, delta)
@@ -467,7 +473,6 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
     globals()["flat_refinement"] = (recursion_depth == 0)
 
     ## If the given region is space
-    ## TODO correct this
     if isinstance(region, RefinedSpace):
         space = region
         globals()["space"] = space
@@ -479,10 +484,6 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
         globals()["parameters"] = space.params
         parameters = globals()["parameters"]
         print("parsed parameters: ", parameters) if not silent else None
-
-        ## TODO add possible check like this
-        # if not sorted(space.params) == sorted(parameters):
-        #     raise Exception("The set of parameters of the given space and properties does not correspond")
 
     ## If the region is just list of intervals - a space is to be created
     elif isinstance(region, list) or isinstance(region, tuple):
@@ -618,16 +619,16 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
             ## Select version
 
             if version == 2:
-                print(f"Selecting biggest rectangles method with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
+                print(colored(f"Selecting biggest rectangles method with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not silent else None
                 result = private_check_deeper(item.region, constraints, solver=solver, delta=delta, silent=silent, debug=debug)
             elif version == 3:
-                print(f"Selecting biggest rectangles method with passing examples with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
+                print(colored(f"Selecting biggest rectangles method with passing examples with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not silent else None
                 result = private_check_deeper_checking(item.region, constraints, model=item.model, solver=solver, delta=delta, silent=silent, debug=debug)
             elif version == 4:
-                print(f"Selecting biggest rectangles method with passing examples and counterexamples with {('dreal', 'z3')[solver == 'z3']} solver") if not silent else None
+                print(colored(f"Selecting biggest rectangles method with passing examples and counterexamples with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not silent else None
                 result = private_check_deeper_checking_both(item.region, constraints, model=item.model, solver=solver, delta=delta, silent=silent, debug=debug)
             elif version == 5:
-                print(f"Selecting biggest rectangles method with interval arithmetics") if not silent else None
+                print(colored(f"Selecting biggest rectangles method with interval arithmetics", "green")) if not silent else None
                 result = private_check_deeper_interval(item.region, egg[0], egg[1], silent=silent, debug=debug)
 
             ## Parse result

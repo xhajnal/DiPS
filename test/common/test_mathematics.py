@@ -61,33 +61,33 @@ class MyTestCase(unittest.TestCase):
         print(colored('Catching subzero values in data', 'blue'))
         ## upper
         a = {2: [0, 3, 5]}
-        catch_data_error(a, 0, 4)
+        correct_data_values(a, 0, 4)
         self.assertEqual(a, {2: [0, 3, 4]})
 
         ## upper
         a = [0, 3, 5]
-        catch_data_error(a, 0, 4)
+        correct_data_values(a, 0, 4)
         self.assertEqual(a, [0, 3, 4])
 
         ## lower
         a = [-2, 3, 4]
-        catch_data_error(a, 0, 4)
+        correct_data_values(a, 0, 4)
         self.assertEqual(a, [0, 3, 4])
 
         ## both
         a = [-2, 3, 5]
-        catch_data_error(a, 0, 4)
+        correct_data_values(a, 0, 4)
         self.assertEqual(a, [0, 3, 4])
 
         ## none
         a = [0, 3, 4]
-        catch_data_error(a, 0, 4)
+        correct_data_values(a, 0, 4)
         self.assertEqual(a, [0, 3, 4])
 
     def test_create_interval(self):
         print(colored('Single interval computing', 'blue'))
-        self.assertEqual(round(create_interval(0.95, 60, 0.5).start, 15), round(Interval(0.365151535478501, 0.634848464521499).start, 15))
-        self.assertEqual(round(create_interval(0.95, 60, 0.5).end, 15), round(Interval(0.365151535478501, 0.634848464521499).end, 15))
+        self.assertEqual(round(create_interval_hsb(0.95, 60, 0.5).start, 15), round(Interval(0.365151535478501, 0.634848464521499).start, 15))
+        self.assertEqual(round(create_interval_hsb(0.95, 60, 0.5).end, 15), round(Interval(0.365151535478501, 0.634848464521499).end, 15))
 
     def test_create_interval_NEW(self):
         print(colored('Single interval computing NEW', 'blue'))
@@ -113,9 +113,9 @@ class MyTestCase(unittest.TestCase):
 
     def test_create_intervals(self):
         print(colored('Multiple intervals computing', 'blue'))
-        self.assertEqual(round(create_intervals(0.95, 60, [0.5])[0].start, 15),
+        self.assertEqual(round(create_intervals_hsb(0.95, 60, [0.5])[0].start, 15),
                          round(Interval(0.365151535478501, 0.634848464521499).start, 15))
-        self.assertEqual(round(create_intervals(0.95, 60, [0.5])[0].end, 15),
+        self.assertEqual(round(create_intervals_hsb(0.95, 60, [0.5])[0].end, 15),
                          round(Interval(0.365151535478501, 0.634848464521499).end, 15))
         # TODO more data points
 

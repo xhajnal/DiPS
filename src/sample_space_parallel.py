@@ -1,15 +1,14 @@
 import multiprocessing
-from copy import copy
 from time import time
 import numpy as np
 from termcolor import colored
 
 ## Importing my code
-from common.convert import normalise_constraint, split_constraints
+# from common.convert import normalise_constraint, split_constraints
 from common.mathematics import create_matrix, cartesian_product
 from common.my_z3 import is_this_z3_function, translate_z3_function
 from common.config import load_config
-from space import RefinedSpace
+# from space import RefinedSpace
 
 spam = load_config()
 results_dir = spam["results"]
@@ -25,7 +24,7 @@ global glob_constraints
 
 
 def check_sample(parameter_value, save_memory=False):
-    """ Checks whether constraints are satisfied in the given point """
+    """ Checks whether constraints are satisfied in the given point. """
     ## If sort constraint is not sat we simply skipp the point and not put it in the space.samples
     for param in range(len(glob_params)):
         locals()[glob_params[param]] = float(parameter_value[param])
@@ -61,19 +60,17 @@ def check_sample(parameter_value, save_memory=False):
 
 def sample_space(boundaries, constraints, sample_size, compress_sample=False, compress_region=False, silent=True,
                  debug: bool = False, parallel=10):
-    """ Samples the space in **sample_size** samples in each dimension and saves if the point is in respective interval
+    """ Samples the space in **sample_size** samples in each dimension and saves if the point is in respective interval.
 
     Args:
-        constraints  (list of strings): array of properties
+        constraints  (list of strings): list of constraints
         sample_size (int): number of samples in dimension
         boundaries (list of intervals): subspace to sample, False for default region of space
         compress_sample (bool): if True, only a conjunction of the values (prop in the interval) is used for a sample
         compress_region (bool): if True, only qualitative information (safe, unsafe, neither) about region is returned
         silent (bool): if silent printed output is set to minimum
         debug (bool): if True extensive print will be used
-        debug (bool): if True extensive print will be used
-        parallel (Bool): flag to run this in parallel mode
-
+        parallel (bool): flag to run this in parallel mode
     """
     start_time = time()
     global glob_params

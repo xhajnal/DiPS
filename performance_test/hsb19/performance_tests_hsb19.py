@@ -9,7 +9,7 @@ from common.convert import ineq_to_constraints
 from common.files import pickle_dump, pickle_load
 from refine_space import check_deeper
 from load import get_f
-from common.mathematics import create_intervals
+from common.mathematics import create_intervals_hsb
 
 
 cwd = os.getcwd()
@@ -128,7 +128,7 @@ for alpha in alphas:
                                     for run in range(0, sample_size):
                                         start_time = time.time()
                                         ##      check_deeper(      region,                    constraints,                                                                                      recursion_depth, epsilon,   coverage,    silent,version, sample_size=False, debug=False, save=False, title="", where=False, show_space=True, solver="z3", delta=0.001, gui=False)
-                                        space = check_deeper([(0, 1), (0, 1)], ineq_to_constraints(functions[population_size], create_intervals(alpha, n_samples, D3[("synchronous_", population_size, n_samples, v_p, v_q)])), depth, epsilon, coverage_thresh, True, method)
+                                        space = check_deeper([(0, 1), (0, 1)], ineq_to_constraints(functions[population_size], create_intervals_hsb(alpha, n_samples, D3[("synchronous_", population_size, n_samples, v_p, v_q)])), depth, epsilon, coverage_thresh, True, method)
                                         time_foo = round(time.time() - start_time, 2)
                                         runs.append(time_foo)
 

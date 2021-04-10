@@ -1,4 +1,13 @@
 def cut_space(refinement, params, param_intervals):
+    """ Counts number of horizontal and vertical pieces of 2D visualised Storm refinement
+
+    Args:
+        refinement (list of strings): array of rectangles represented by a symbol "S" (safe), "-" unsafe(), and " " (unknown)
+        params (list of strings): list of parameter names
+        param_intervals (list of tuples): domains of each parameter
+    Return:
+        tuples (number of horizontal pieces, number of vertical pieces)
+    """
     # Get number of pieces in each dimension
     vertical_pieces_count = len(refinement)
     horizontal_pieces_count = len(refinement[0])
@@ -25,6 +34,16 @@ def cut_space(refinement, params, param_intervals):
 
 
 def parse_refinement_into_space(refinement, params, param_intervals):
+    """ Converts 2D visualised Storm refinement into true rectangles
+
+    Args:
+        refinement (list of strings): array of rectangles represented by a symbol "S" (safe), "-" unsafe(), and " " (unknown)
+        params (list of strings): list of parameter names
+        param_intervals (list of tuples): domains of each parameter
+
+    Returns:
+        triple [safe, unsafe, unknown rectangles]
+    """
     horizontal_pieces, vertical_pieces = cut_space(refinement, params, param_intervals)
 
     safe_rectangles = []
@@ -47,6 +66,17 @@ def parse_refinement_into_space(refinement, params, param_intervals):
 
 
 def merge_refinements(refinements, params, param_intervals):
+    """ Merges several 2D visualised Storm refinements with conjunction
+     The refinements have to share parameters, their order and domains.
+
+    Args:
+        refinements (list of list of strings): list of array of rectangles represented by a symbol "S" (safe), "-" unsafe(), and " " (unknown)
+        params (list of strings): list of parameter names
+        param_intervals (list of tuples): domains of each parameter
+
+    Returns:
+        triple [safe, unsafe, unknown rectangles]
+     """
     horizontal_pieces, vertical_pieces = cut_space(refinements[0], params, param_intervals)
 
     safe_rectangles = []

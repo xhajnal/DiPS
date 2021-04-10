@@ -166,3 +166,7 @@ all_bees/*
 *.cmd
 /performance_test/results/
 /performance_test/tmp/
+
+performance_test/my_mutiprocessing.py
+
+performance_test/my_test_pebble.py

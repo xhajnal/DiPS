@@ -3,7 +3,6 @@ import os
 import time
 import webbrowser
 from platform import system
-import socket
 from time import time, localtime, strftime
 from collections.abc import Iterable
 from copy import deepcopy
@@ -29,6 +28,7 @@ from common.document_wrapper import show_message
 from common.files import pickle_dump, pickle_load
 from common.my_z3 import is_this_z3_function, translate_z3_function, is_this_exponential_function
 from metropolis_hastings import HastingsResults
+from refine_space_parallel import check_deeper_parallel
 
 error_occurred = None
 matplotlib.use("TKAgg")
@@ -44,7 +44,7 @@ sys.path.append(workspace)
 
 
 def do_config():
-    """ Validates, set up config and creates directories from the config if not existing"""
+    """ Validates, set up config and creates directories from the config if not existing """
     config.read(os.path.join(workspace, "../config.ini"))
 
     for it in ["models", "properties", "data", "results", "tmp"]:
@@ -82,8 +82,9 @@ except Exception as error:
 
 try:
     from mc_informed import general_create_data_informed_properties
-    from load import load_mc_result, find_param, load_data, find_param_old, parse_constraints, parse_functions, parse_params_from_model, parse_weights, parse_data_intervals
-    from common.mathematics import create_intervals, create_broadest_intervals
+    from load import load_mc_result, find_param, load_data, find_param_old, parse_constraints, parse_functions
+    from load import parse_params_from_model, parse_weights, parse_data_intervals, parse_data
+    from common.mathematics import create_proportions_interval
     import space
     from refine_space import check_deeper
     from mc import call_prism_files, call_storm
@@ -127,6 +128,12 @@ class ToolTip(object):
 
 ## copied from https://stackoverflow.com/questions/20399243/display-message-when-hovering-over-something-with-mouse-cursor-in-python/20399283
 def createToolTip(widget, text):
+    """ Creates a tooltip for a widget
+
+    Args:
+        widget (tk Object): widget to create the tooltip for
+        text (string): text of the tooltip
+    """
     tool_tip = ToolTip(widget)
 
     def enter(event):
@@ -262,7 +269,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.24"  ## Version of the gui
+        self.version = "1.25.1"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -280,8 +287,9 @@ class Gui(Tk):
         self.coverage = ""  ## Coverage threshold
         self.epsilon = ""  ## Rectangle size threshold
         # self.alg = ""  ## Refinement alg. number
-        self.presampled_refinement = BooleanVar()  ## Refinement flag
-        self.iterative_refinement = BooleanVar()  ## Refinement flag
+        self.presampled_refinement = BooleanVar()  ## Refinement flag (presample space)
+        self.sampling_guided_refinement = BooleanVar()  ## Refinement flag (guide refinement with sampling)
+        self.iterative_refinement = BooleanVar()  ## Refinement flag (refine check constraints independently in an iterative way) #Depricated
         # self.solver = ""  ## SMT solver - z3 or dreal
         self.delta = 0.01  ## dreal setting
         self.refinement_timeout = 0  ## timeout for refinement (0 is no timeout)
@@ -299,6 +307,7 @@ class Gui(Tk):
         self.progress_time.set("0")
 
     def gui_init(self):
+        """ Initialisation procedure of GUI"""
         ## GUI INIT
         self.title('DiPS')
         self.iconphoto(True, PhotoImage(file=os.path.join(workspace, "../icon.png")))
@@ -462,18 +471,25 @@ class Gui(Tk):
         self.program.set("prism")
 
         ## Left (Model checking) Frame
-        Label(frame_left, text=f"Symbolic model checking.", anchor=W, justify=LEFT).grid(row=0, column=0, sticky=W, padx=4, pady=4)
+        Label(frame_left, text=f"Parametric model checking and refinement (Storm and PRISM).", anchor=W, justify=LEFT).grid(row=0, column=0, columnspan=2, sticky=W, padx=4, pady=4)
 
         Label(frame_left, text="Select the program: ", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, padx=4, pady=4)
         Radiobutton(frame_left, text="Prism", variable=self.program, value="prism").grid(row=1, column=1, sticky=W, pady=4)
         radio = Radiobutton(frame_left, text="Storm", variable=self.program, value="storm")
         radio.grid(row=1, column=2, sticky=W, pady=4)
-        createToolTip(radio, text='This option results in a command that would produce desired output. (If you installed Storm, open command line and insert the command. Then load output file.)')
+        createToolTip(radio, text='If you did not install Storm this option results in a command that would produce desired output. (You may use docker installation to open command line and insert the command. Then load output file in DiPS.)')
 
-        Button(frame_left, text='Run parametric model checking', command=self.synth_params).grid(row=3, column=0, sticky=W, padx=4, pady=4)
-        Button(frame_left, text='Open MC output file', command=self.load_functions_file).grid(row=3, column=1, sticky=W, pady=4)
+        run_pmc_button = Button(frame_left, text='Run parametric model checking', command=self.synth_params)
+        run_pmc_button.grid(row=3, column=0, sticky=W, padx=4, pady=4)
+        createToolTip(run_pmc_button, text='Runs parametric model checking of model and properties to obtain rational function using selected model checker - PRISM or Storm')
 
-        Button(frame_left, text='Open refinement output file', command=self.load_refinement_output_file).grid(row=3, column=3, sticky=W, pady=4)
+        open_pmc_file_button = Button(frame_left, text='Open MC output file', command=self.load_functions_file)
+        open_pmc_file_button.grid(row=3, column=1, sticky=W, pady=4)
+        createToolTip(open_pmc_file_button, text='Loads result of parametric model checking result file (of PRISM/Storm) to parse rational function.')
+
+        open_ref_file_button = Button(frame_left, text='Open refinement output file', command=self.load_refinement_output_file)
+        open_ref_file_button.grid(row=3, column=3, sticky=W, pady=4)
+        createToolTip(open_ref_file_button, text='Loads result of refinement result file (of PRISM/Storm) to create Refined space.')
 
         Label(frame_left, text=f"Loaded Prism/Storm output file:", anchor=W, justify=LEFT).grid(row=4, column=0, sticky=W, padx=4, pady=4)
         self.mc_result_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_width() / 2), state=DISABLED)
@@ -643,9 +659,9 @@ class Gui(Tk):
         label43.grid(row=6, column=0, padx=0)
         createToolTip(label43, text='Choose from interval method')
 
-        self.interval_method_entry = ttk.Combobox(frame_left, values=('CLT', 'Rule of three', 'Agresti-Coull', 'Wilson', 'Clopper_Pearson', 'Jeffreys', 'broadest'))
+        self.interval_method_entry = ttk.Combobox(frame_left, values=('CLT', 'Rule of three', 'Agresti-Coull', 'Wilson', 'Clopper_Pearson', 'Jeffreys', 'hsb'))
         self.interval_method_entry.grid(row=6, column=1)
-        self.interval_method_entry.current(1)
+        self.interval_method_entry.current(2)
 
         Button(frame_left, text='Compute intervals', command=self.compute_data_intervals).grid(row=7, column=0, sticky=W, padx=4, pady=4)
         Button(frame_left, text='Open intervals file', command=self.load_data_intervals).grid(row=7, column=1, sticky=W, padx=4, pady=4)
@@ -710,7 +726,7 @@ class Gui(Tk):
 
         ############################################ TAB SAMPLE AND REFINEMENT #########################################
         page6 = ttk.Frame(nb, name="refine")
-        nb.add(page6, text='Sample & Refine space')
+        nb.add(page6, text='Analyze space')
 
         # frame_left = Frame(page6, width=500, height=200)
         # frame_left.pack(side=LEFT, expand=False)
@@ -835,11 +851,23 @@ class Gui(Tk):
 
         label68 = Label(frame_left, text="Timeout: ", anchor=W, justify=LEFT)
         label68.grid(row=6, column=3, padx=0)
-        createToolTip(label68, text='Timeout in seconds')
+        createToolTip(label68, text='Timeout in seconds. Set 0 for no timeout.')
 
-        presampled_refinement_checkbutton = Checkbutton(frame_left, text="Use presampled refinement", variable=self.presampled_refinement)
-        presampled_refinement_checkbutton.grid(row=7, column=3, columnspan=2, padx=0)
+        label69 = Label(frame_left, text="Single Call Timeout: ", anchor=W, justify=LEFT)
+        label69.grid(row=7, column=3, padx=0)
+        createToolTip(label69, text='Timeout of a single (rectangle) refine call in seconds. Set 0 for no timeout.')
+
+        label610 = Label(frame_left, text="Number of cores to use: ", anchor=W, justify=LEFT)
+        label610.grid(row=8, column=3, padx=0)
+        createToolTip(label610, text='Number of processes running in parallel, set 1 for sequential.')
+
+        presampled_refinement_checkbutton = Checkbutton(frame_left, text=" Use presampled refinement", variable=self.presampled_refinement)
+        presampled_refinement_checkbutton.grid(row=9, column=3, columnspan=2, padx=0)
         createToolTip(presampled_refinement_checkbutton, text="Uses sampling before first refinement for creating region candidates to refine.")
+
+        sampling_guided_refinement_checkbutton = Checkbutton(frame_left, text=" Use sampling guided refinement", variable=self.sampling_guided_refinement)
+        sampling_guided_refinement_checkbutton.grid(row=10, column=3, columnspan=2, padx=0)
+        createToolTip(sampling_guided_refinement_checkbutton, text="Before a rectangle is verified, sampling is used to help check satisfiability.")
 
         # iterative_refinement_checkbutton = Checkbutton(frame_left, text="Use iterative refinement (TBD)", variable=self.iterative_refinement)
         # iterative_refinement_checkbutton.grid(row=8, column=3, padx=0)
@@ -851,6 +879,8 @@ class Gui(Tk):
         self.solver_entry = ttk.Combobox(frame_left, values=('z3', 'dreal'))
         self.delta_entry = Entry(frame_left)
         self.refinement_timeout_entry = Entry(frame_left)
+        self.refinement_single_call_timeout_entry = Entry(frame_left)
+        self.refinement_cores_entry = Entry(frame_left)
 
         self.max_dept_entry.grid(row=1, column=4)
         self.coverage_entry.grid(row=2, column=4)
@@ -859,6 +889,8 @@ class Gui(Tk):
         self.solver_entry.grid(row=4, column=4)
         self.delta_entry.grid(row=5, column=4)
         self.refinement_timeout_entry.grid(row=6, column=4)
+        self.refinement_single_call_timeout_entry.grid(row=7, column=4)
+        self.refinement_cores_entry.grid(row=8, column=4)
 
         self.max_dept_entry.insert(END, '5')
         self.coverage_entry.insert(END, '0.95')
@@ -867,26 +899,28 @@ class Gui(Tk):
         self.solver_entry.current(0)
         self.delta_entry.insert(END, '0.01')
         self.refinement_timeout_entry.insert(END, '3600')
+        self.refinement_single_call_timeout_entry.insert(END, '0')
+        self.refinement_cores_entry.insert(END, '1')
 
         exact_refine_button = Button(frame_left, text='DiPS refine', command=self.refine_space)
-        exact_refine_button.grid(row=8, column=3, columnspan=2, pady=4, padx=0)
+        exact_refine_button.grid(row=11, column=3, columnspan=2, pady=4, padx=0)
         createToolTip(exact_refine_button, text="Run refinement with SMT solver (z3 / dreal) or interval arithmetic.")
 
         prism_refine_button = Button(frame_left, text='PRISM refine', command=self.external_refine_PRISM)
-        prism_refine_button.grid(row=9, column=3, columnspan=1, pady=4, padx=0)
+        prism_refine_button.grid(row=12, column=3, columnspan=1, pady=4, padx=0)
         createToolTip(prism_refine_button, text="Run approximate refinement using sampling by PRISM.")
 
         storm_refine_button = Button(frame_left, text='Storm refine', command=self.external_refine_Storm)
-        storm_refine_button.grid(row=9, column=4, columnspan=1, pady=4, padx=0)
+        storm_refine_button.grid(row=12, column=4, columnspan=1, pady=4, padx=0)
         createToolTip(storm_refine_button, text="Run parameter lifting, refinement method for models with multi-affine parametrisations, by Storm.")
 
-        ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=10, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
+        ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=13, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
 
-        Label(frame_left, text="Textual representation of space", anchor=CENTER, justify=CENTER, padx=10).grid(row=11, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
+        Label(frame_left, text="Textual representation of space", anchor=CENTER, justify=CENTER, padx=10).grid(row=14, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
         self.space_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_height() * 0.8/19), state=DISABLED)
-        self.space_text.grid(row=13, column=0, columnspan=9, rowspan=2, sticky=W, padx=10)
-        Button(frame_left, text='Extend / Collapse text', command=self.collapse_space_text).grid(row=15, column=3, sticky=S, padx=0, pady=(10, 10))
-        Button(frame_left, text='Export text', command=self.export_space_text).grid(row=15, column=4, sticky=S, padx=0, pady=(10, 10))
+        self.space_text.grid(row=15, column=0, columnspan=9, rowspan=2, sticky=W, padx=10)
+        Button(frame_left, text='Extend / Collapse text', command=self.collapse_space_text).grid(row=16, column=3, sticky=S, padx=0, pady=(10, 10))
+        Button(frame_left, text='Export text', command=self.export_space_text).grid(row=16, column=4, sticky=S, padx=0, pady=(10, 10))
 
         frame_right = Frame(page6)
         # frame_right.grid_propagate(0)
@@ -913,8 +947,6 @@ class Gui(Tk):
         frame_right.rowconfigure(0, weight=1)
         frame_right.rowconfigure(4, weight=1)
         frame_right.rowconfigure(8, weight=1)
-
-
 
         ##################################################### UPPER PLOT ###############################################
         self.page6_plotframe = Frame(self.frame_center)
@@ -978,7 +1010,7 @@ class Gui(Tk):
         # analysis_menu = Menu(main_menu, tearoff=0)
         # main_menu.add_cascade(label="Analysis", menu=analysis_menu)
         # analysis_menu.add_command(label="Synthesise parameters", command=self.synth_params)
-        # analysis_menu.add_command(label="Compute intervals", command=self.create_intervals)
+        # analysis_menu.add_command(label="Compute intervals", command=self.create_intervals_hsb)
         # analysis_menu.add_command(label="Sample space", command=self.sample_space)
         # analysis_menu.add_command(label="Refine space", command=self.refine_space)
 
@@ -1123,7 +1155,7 @@ class Gui(Tk):
             os.mkdir(os.path.join(self.figures_dir, "tmp"))
         except FileExistsError:
             pass
-        
+
         try:
             os.mkdir(os.path.join(self.refinement_results, "tmp"))
         except FileExistsError:
@@ -1136,7 +1168,7 @@ class Gui(Tk):
 
         Args:
             file (path/string): direct path to load the function file
-            ask (Bool): if False it will not ask questions
+            ask (bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -1175,9 +1207,10 @@ class Gui(Tk):
 
     def load_property(self, file=False, ask=True):
         """ Loads temporal properties from a text file.
+
         Args:
             file (path/string): direct path to load the function file
-            ask (Bool): if False it will not ask questions
+            ask (bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -1225,7 +1258,7 @@ class Gui(Tk):
         """ Loads Data informed property from temporal properties and data. Prints it.
         Args:
             file (path/string): direct path to load the function file
-            ask (Bool): if False it will not ask questions
+            ask (bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -1269,9 +1302,9 @@ class Gui(Tk):
 
         Args:
             file (path/string): direct path to load the function file
-            ask (Bool): if False it will not ask questions
+            ask (bool): if False it will not ask questions
             program (string): overrides the sel.program setting in ["prism", "storm"]
-            reset_param_and_intervals (Bool): if True the params will be reset
+            reset_param_and_intervals (bool): if True the params will be reset
         """
         if program is False:
             program = self.program.get()
@@ -1382,7 +1415,7 @@ class Gui(Tk):
         Args:
             file (path/string): direct path to load the output file
             program (string): overrides the self.program setting, in ["prism", "storm"]
-            reset_param_and_intervals (Bool): if True the params will be reset
+            reset_param_and_intervals (bool): if True the params will be reset
             called_directly (bool): if True it will say where is the visualisation, otherwise where is text
         """
         if program is False:
@@ -1509,7 +1542,7 @@ class Gui(Tk):
         if called_directly:
             if not skip_vis:
                 messagebox.showinfo(f"Loading {program} refinement results",
-                                    "Visualisation of refinement can be seen in Sample & Refine tab.")
+                                    "Visualisation of refinement can be seen in Analyze space tab.")
         else:
             messagebox.showinfo(f"Loading {program} refinement results",
                                 "Loaded refinement output can be seen in Synthesise functions tab.")
@@ -1603,9 +1636,10 @@ class Gui(Tk):
 
     def load_parsed_functions(self, file=False, ask=True):
         """ Loads parsed rational functions from a pickled file.
+
         Args:
             file (path/string): direct path to load the function file
-            ask (Bool): if False it will not ask questions
+            ask (bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -1641,7 +1675,7 @@ class Gui(Tk):
         else:
             ## Checking the valid type of the loaded file
             ## If loaded PRISM/Storm output instead, redirecting the load
-            if os.path.splitext(spam)[1] == ".txt":
+            if Path(spam).suffix == ".txt":
                 egg = parse_functions(spam)
                 if egg[0].startswith("PRISM"):
                     self.load_functions_file(file=spam, program="prism")
@@ -1656,9 +1690,9 @@ class Gui(Tk):
             self.z3_functions = ""
             self.mc_result_text.delete('1.0', END)
 
-            if os.path.splitext(self.functions_file.get())[1] == ".txt":
+            if Path(self.functions_file.get()).suffix == ".txt":
                 self.functions = parse_functions(self.functions_file.get())
-            elif os.path.splitext(self.functions_file.get())[1] == ".p":
+            elif Path(self.functions_file.get()).suffix == ".p":
                 self.functions = pickle_load(self.functions_file.get())
 
             ## Check whether functions not empty
@@ -1725,9 +1759,10 @@ class Gui(Tk):
 
     def load_data(self, file=False, ask=True):
         """ Loads data from a file. Either pickled list or comma separated values in one line
+
         Args:
             file (path/string): direct path to load the data file
-            ask (Bool): if False it will not ask questions
+            ask (bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -1753,16 +1788,11 @@ class Gui(Tk):
             self.data_changed = True
             self.data_file.set(spam)
 
-            if ".p" in self.data_file.get():
-                self.data = pickle_load(self.data_file.get())
-            elif ".txt" in self.data_file.get():
-                self.data = parse_weights(self.data_file.get())
-            else:
-                self.data = load_data(self.data_file.get(), silent=self.silent.get(), debug=not self.silent.get())
-                if not self.data:
-                    messagebox.showerror("Loading data", f"Error, No data loaded.")
-                    self.status_set("Data not loaded properly.")
-                    return
+            self.data = load_data(self.data_file.get(), silent=self.silent.get(), debug=not self.silent.get())
+            if not self.data:
+                messagebox.showerror("Loading data", f"Error, No data loaded.")
+                self.status_set("Data not loaded properly.")
+                return
 
             ## Unfolds and shows data
             self.unfold_data()
@@ -1846,9 +1876,10 @@ class Gui(Tk):
 
     def load_data_weights(self, file=False, ask=True):
         """ Loads data weights from a given file
+
         Args:
             file (path/string): direct path to load the data weights file
-            ask (Bool): if False it will not ask questions
+            ask (bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -1874,9 +1905,9 @@ class Gui(Tk):
             self.data_weights_changed = True
             self.data_weights_file.set(spam)
 
-            if os.path.splitext(self.data_weights_file.get())[1] == ".txt":
+            if Path(self.data_weights_file.get()).suffix == ".txt":
                 self.data_weights = parse_weights(self.data_weights_file.get())
-            elif os.path.splitext(self.data_weights_file.get())[1] == ".p":
+            elif Path(self.data_weights_file.get()).suffix == ".p":
                 self.data_weights = pickle_load(self.data_weights_file.get())
 
             weights = ""
@@ -1903,9 +1934,10 @@ class Gui(Tk):
 
     def load_data_intervals(self, file=False, ask=True):
         """ Loads data intervals from a given file
+
         Args:
             file (path/string): direct path to load the data intervals file
-            ask (Bool): if False it will not ask questions
+            ask (bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -1984,10 +2016,11 @@ class Gui(Tk):
 
     def load_constraints(self, file=False, append=False, ask=True):
         """ Loads constraints from a pickled file.
+
         Args:
             file (path/string): direct path to load the constraint file
             append (bool): if True, loaded constraints are appended to previous
-            ask (Bool): if False it will not ask questions
+            ask (bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -2018,7 +2051,7 @@ class Gui(Tk):
             self.constraints_file.set(spam)
             self.z3_constraints = ""
 
-            if os.path.splitext(self.constraints_file.get())[1] == ".txt":
+            if Path(self.constraints_file.get()).suffix == ".txt":
                 if append:
                     self.constraints.extend(parse_constraints(self.constraints_file.get()))
                 else:
@@ -2083,9 +2116,10 @@ class Gui(Tk):
 
     def load_space(self, file=False, ask=True):
         """ Loads space from a pickled file.
+
         Args:
             file (path/string): direct path to load the space file
-            ask (Bool): if False it will not ask questions
+            ask (bool): if False it will not ask questions
         """
         if file:
             if not os.path.isfile(file):
@@ -2118,10 +2152,10 @@ class Gui(Tk):
                 try:
                     self.space = pickle_load(self.space_file.get())
                 except Exception as err:
-                    self.space == ""
+                    self.space = ""
                     messagebox.showwarning("Loading space", f"Space could not be load: {err}")
 
-                if self.space == "":
+                if self.space == "" or self.space == []:
                     return
 
                 ## Back compatibility
@@ -2138,7 +2172,12 @@ class Gui(Tk):
                 else:
                     self.show_true_point = False
 
-                self.show_space(self.show_refinement, self.show_samples, self.show_true_point, show_all=True, prefer_unsafe=self.show_red_in_multidim_refinement.get(), quantitative=self.show_quantitative)
+                try:
+                    self.show_space(self.show_refinement, self.show_samples, self.show_true_point, show_all=True, prefer_unsafe=self.show_red_in_multidim_refinement.get(), quantitative=self.show_quantitative)
+                except AttributeError:
+                    self.space = ""
+                    messagebox.showwarning("Loading space", "Space file corrupted, could not load it.")
+                    return
                 ## Show the space as niceprint()
                 # self.print_space()
 
@@ -2159,11 +2198,11 @@ class Gui(Tk):
                     return
 
     def load_mh_results(self, file=False, ask=True):
-        """ loads Metropolis-Hastings results (accepted) and plots them
+        """ loads Metropolis-Hastings results (accepted points) and plots them
 
         Args:
             file (path/string): direct path to load the pickled file
-            ask (Bool): if False it will not ask questions
+            ask (bool): if False it will not ask questions
         """
 
         if file:
@@ -2232,15 +2271,17 @@ class Gui(Tk):
             # self.space_text.configure(state='disabled')
 
     def collapse_space_text(self):
+        """ Collapses space text to hide long enumerations of elements"""
         self.space_collapsed = not self.space_collapsed
         self.print_space()
 
     def clear_space(self, warning=True):
-        """ Will clear the space plot"""
+        """ Will clear the space plot """
         self.show_space(False, False, False, clear=True, warnings=warning)
 
     def show_space(self, show_refinement, show_samples, show_true_point, clear=False, show_all=False,
-                   prefer_unsafe=False, quantitative=False, title="", warnings=True):
+                   prefer_unsafe=False, quantitative=False, title="", warnings=True, is_parallel_refinement=False,
+                   is_presampled=False, is_mhmh=False, is_sampling_guided=False):
         """ Visualises the space in the plot.
 
         Args:
@@ -2253,6 +2294,10 @@ class Gui(Tk):
             quantitative (bool): if True show far is the point from satisfying / not satisfying the constraints
             title (string): adding title to plot
             warnings (bool): if False will not show any warnings
+            is_parallel_refinement (int):  number of cores used for refinement
+            is_presampled (bool): if True it will mark the refinement as presampled
+            is_mhmh (bool): if True it will mark the refinement as MHMH, used MH to presampled/precut space
+            is_sampling_guided (bool): flag whether refinement was sampling-guided
         """
         try:
             self.cursor_toggle_busy(True)
@@ -2266,7 +2311,9 @@ class Gui(Tk):
                                                    where=[self.page6_figure, self.page6_a], show_all=show_all,
                                                    prefer_unsafe=prefer_unsafe, quantitative=quantitative, title=title,
                                                    hide_legend=self.hide_legend_refinement.get(), is_parallel_sampling=True,
-                                                   hide_title=self.hide_title_refinement.get())
+                                                   hide_title=self.hide_title_refinement.get(),
+                                                   is_sampling_guided=is_sampling_guided, is_presampled=is_presampled,
+                                                   is_parallel_refinement=is_parallel_refinement, is_mhmh=is_mhmh)
                     ## If no plot provided
                     if figure is None:
                         if warnings:
@@ -2358,6 +2405,7 @@ class Gui(Tk):
 
     def save_model(self, file=False):
         """ Saves obtained model as a file.
+
         Args:
             file (bool or Path or string): file to save the model
         """
@@ -2645,8 +2693,7 @@ class Gui(Tk):
             self.status_set("Data saved.")
 
     def plot_data(self):
-        """ Plot data.
-        """
+        """ Plots the data. """
         print("Plotting the data ...")
 
         if not self.data:
@@ -2706,7 +2753,7 @@ class Gui(Tk):
             self.status_set("Data weights saved.")
 
     def discard_data_weights(self):
-        """ Deletes the data weights """
+        """ Clears the data weights """
         self.data_weights = []
         self.data_weights_text.delete('1.0', END)
         self.data_weights_file.set("")
@@ -2876,7 +2923,6 @@ class Gui(Tk):
 
         Args:
             refinement (bool): if True refine space using data-informed properties
-
         """
         if refinement:
             method = "Space partitioning"
@@ -2967,6 +3013,11 @@ class Gui(Tk):
                 if output_file == ():
                     output_file = str(os.path.join(Path(self.storm_results), str(Path(self.model_file.get()).stem) + "_" + str(Path(property_file).stem)))
 
+                try:
+                    os.remove(output_file)
+                except FileNotFoundError:
+                    pass
+
                 if refinement:
                     call_storm(model_file=self.model_file.get(), params=self.parameters, param_intervals=self.parameter_domains,
                                property_file=property_file, storm_output_file=output_file, coverage=self.coverage, time=True,
@@ -3009,14 +3060,14 @@ class Gui(Tk):
         self.cursor_toggle_busy(False)
 
     def external_refine_PRISM(self):
-        """ Calls PRISM to refine space using data-informed properties"""
+        """ Calls PRISM to refine space using data-informed properties. """
         spam = self.program.get()
         self.program.set("prism")
         self.synth_params(refinement=True)
         self.program.set(spam)
 
     def external_refine_Storm(self):
-        """ Calls Storm to refine space using data-informed properties"""
+        """ Calls Storm to refine space using data-informed properties. """
         spam = self.program.get()
         self.program.set("storm")
         self.synth_params(refinement=True)
@@ -3442,7 +3493,6 @@ class Gui(Tk):
         """ Checks whether a change occurred and it is necessary to reload
 
         Args:
-        ------
             what (string): "model", "properties", "parsed_functions", "data"
             "data_intervals", or "constraints" choosing what to check
         """
@@ -3585,13 +3635,8 @@ class Gui(Tk):
         assert isinstance(self.data, list)
 
         method = self.interval_method_entry.get()
-        ## ('CLT', 'Rule of three', 'Agresti-Coull', 'Wilson', 'Clopper_Pearson', 'Jeffreys', 'broadest')
-        if method == "CLT":
-            self.data_intervals = create_intervals(float(self.confidence_entry.get()), int(self.n_samples_entry.get()), self.data)
-        elif method == "broadest":
-            self.data_intervals = create_broadest_intervals(float(self.confidence_entry.get()), int(self.n_samples_entry.get()), self.data)
-        else:
-            raise NotImplementedError("We are sorry, this option is not implemented so far.")
+        ## ('CLT', 'Rule of three', 'Agresti-Coull', 'Wilson', 'Clopper_Pearson', 'Jeffreys')
+        self.data_intervals = [create_proportions_interval(float(self.confidence_entry.get()), int(self.n_samples_entry.get()), data_point, method) for data_point in self.data]
 
         intervals = ""
         if not self.silent.get():
@@ -3687,7 +3732,7 @@ class Gui(Tk):
         if self.show_quantitative:
             self.clear_space()
 
-        self.show_space(show_refinement=False, show_samples=True, show_true_point=self.show_true_point, prefer_unsafe=self.show_red_in_multidim_refinement.get())
+        self.show_space(show_refinement=True, show_samples=True, show_true_point=self.show_true_point, prefer_unsafe=self.show_red_in_multidim_refinement.get())
 
         self.show_quantitative = False
 
@@ -3790,7 +3835,7 @@ class Gui(Tk):
         self.status_set("Space sampling finished.")
 
     def hastings(self):
-        """ Samples (Parameter) Space using Metropolis Hastings """
+        """ Samples (Parameter) Space using Metropolis Hastings. """
         print("Checking the inputs.")
         self.check_changes("functions")
         self.check_changes("data")
@@ -4035,24 +4080,56 @@ class Gui(Tk):
             #                         self.coverage, silent=self.silent.get(), version=int(self.alg.get()), sample_size=False,
             #                         debug=self.debug.get(), save=False, where=[self.page6_figure, self.page6_a],
             #                         solver=str(self.solver.get()), delta=self.delta, gui=self.update_progress_bar)
-            if str(self.solver_entry.get()) == "z3" and self.z3_constraints:
-                assert isinstance(self.z3_constraints, list)
-                spam = check_deeper(self.space, self.z3_constraints, self.max_depth, self.epsilon, self.coverage,
-                                    silent=self.silent.get(), version=int(self.alg_entry.get()),
-                                    sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
-                                    where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
-                                    delta=self.delta, gui=self.update_progress_bar if self.show_progress else False,
-                                    show_space=False, iterative=self.iterative_refinement.get(),
-                                    timeout=int(float(self.refinement_timeout_entry.get())))
+            if int(self.refinement_cores_entry.get()) > 1:
+                if str(self.solver_entry.get()) == "z3" and self.z3_constraints:
+                    assert isinstance(self.z3_constraints, list)
+                    spam = check_deeper_parallel(self.space, self.z3_constraints, self.max_depth, self.epsilon,
+                                                 self.coverage, silent=self.silent.get(), version=int(self.alg_entry.get()),
+                                                 sample_size=self.presampled_refinement.get(), debug=self.debug.get(),
+                                                 sample_guided=self.sampling_guided_refinement.get(), save=False,
+                                                 where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
+                                                 delta=self.delta, gui=self.update_progress_bar if self.show_progress else False,
+                                                 show_space=False, iterative=self.iterative_refinement.get(),
+                                                 timeout=int(float(self.refinement_timeout_entry.get())),
+                                                 single_call_timeout=float(self.refinement_single_call_timeout_entry.get()),
+                                                 parallel=int(self.refinement_cores_entry.get()))
+                else:
+                    assert isinstance(self.constraints, list)
+                    spam = check_deeper_parallel(self.space, self.constraints, self.max_depth, self.epsilon,
+                                                 self.coverage, silent=self.silent.get(), version=int(self.alg_entry.get()),
+                                                 sample_size=self.presampled_refinement.get(), debug=self.debug.get(),
+                                                 sample_guided=self.sampling_guided_refinement.get(), save=False,
+                                                 where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
+                                                 delta=self.delta, gui=self.update_progress_bar if self.show_progress else False,
+                                                 show_space=False, iterative=self.iterative_refinement.get(),
+                                                 timeout=int(float(self.refinement_timeout_entry.get())),
+                                                 single_call_timeout=float(self.refinement_single_call_timeout_entry.get()),
+                                                 parallel=int(self.refinement_cores_entry.get()))
             else:
-                assert isinstance(self.constraints, list)
-                spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
-                                    silent=self.silent.get(), version=int(self.alg_entry.get()),
-                                    sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
-                                    where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
-                                    delta=self.delta, gui=self.update_progress_bar if self.show_progress else False,
-                                    show_space=False, iterative=self.iterative_refinement.get(),
-                                    timeout=int(float(self.refinement_timeout_entry.get())))
+                if float(self.refinement_single_call_timeout_entry.get()) > 0:
+                    messagebox.showwarning("Refinement settings", "Single call timeout for sequential refinement not implemented")
+                    return
+                if self.sampling_guided_refinement.get():
+                    messagebox.showwarning("Refinement settings", "Sampling guided version is not implemented for sequential version.")
+                    return
+                if str(self.solver_entry.get()) == "z3" and self.z3_constraints:
+                    assert isinstance(self.z3_constraints, list)
+                    spam = check_deeper(self.space, self.z3_constraints, self.max_depth, self.epsilon, self.coverage,
+                                        silent=self.silent.get(), version=int(self.alg_entry.get()),
+                                        sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
+                                        where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
+                                        delta=self.delta, gui=self.update_progress_bar if self.show_progress else False,
+                                        show_space=False, iterative=self.iterative_refinement.get(),
+                                        timeout=int(float(self.refinement_timeout_entry.get())),)
+                else:
+                    assert isinstance(self.constraints, list)
+                    spam = check_deeper(self.space, self.constraints, self.max_depth, self.epsilon, self.coverage,
+                                        silent=self.silent.get(), version=int(self.alg_entry.get()),
+                                        sample_size=self.presampled_refinement.get(), debug=self.debug.get(), save=False,
+                                        where=[self.page6_figure, self.page6_a], solver=str(self.solver_entry.get()),
+                                        delta=self.delta, gui=self.update_progress_bar if self.show_progress else False,
+                                        show_space=False, iterative=self.iterative_refinement.get(),
+                                        timeout=int(float(self.refinement_timeout_entry.get())))
         finally:
             try:
                 self.cursor_toggle_busy(False)
@@ -4073,7 +4150,9 @@ class Gui(Tk):
             self.space = spam
             self.show_space(show_refinement=True, show_samples=self.show_samples, show_true_point=self.show_true_point,
                             prefer_unsafe=self.show_red_in_multidim_refinement.get(), show_all=show_all,
-                            warnings=not(no_max_depth and self.space.get_coverage() < self.coverage))
+                            warnings=not(no_max_depth and self.space.get_coverage() < self.coverage),
+                            is_sampling_guided=self.sampling_guided_refinement.get(),
+                            is_parallel_refinement=int(self.refinement_cores_entry.get()) > 1)
             self.page6_figure.tight_layout()  ## By huypn
             self.page6_figure.canvas.draw()
             self.page6_figure.canvas.flush_events()
@@ -4094,7 +4173,11 @@ class Gui(Tk):
         self.space_changed = False
 
         ## Autosave
-        self.save_space(os.path.join(self.tmp_dir, "space.p"))
+        try:
+            self.save_space(os.path.join(self.tmp_dir, "space.p"))
+        except ValueError as err:
+            print(f"Space could not be loaded, {str(err)}")
+            messagebox.showwarning("Space could not be saved.", str(err))
 
         if no_max_depth and self.space.get_coverage() < self.coverage:
             self.refine_space()
@@ -4102,7 +4185,7 @@ class Gui(Tk):
             self.status_set("Space refinement finished.")
 
     def edit_space(self):
-        """ Edits space values """
+        """ Edits space values. """
 
         if self.space == "":
             messagebox.showwarning("Edit space", "There is no space to be edit.")
@@ -4258,7 +4341,7 @@ class Gui(Tk):
     def refresh_space(self):
         """ Refreshes space. """
         if self.space:
-            if not askyesno("Sample & Refine", "Data of the space, its text representation, and the plot will be lost. Do you want to proceed?"):
+            if not askyesno("Analyze space", "Data of the space, its text representation, and the plot will be lost. Do you want to proceed?"):
                 return
         self.space_changed = False
         self.print_space(clear=True)
@@ -4305,9 +4388,9 @@ class Gui(Tk):
             self.status_set("Textual representation of space saved.")
 
     def customize_refinement_results(self):
-        """ Customizes refinement Plot"""
+        """ Customizes refinement Plot. """
         if self.refinement_results:
-            if not askyesno("Sample & Refine", "Sample & Refinement plot will be lost. Do you want to proceed?"):
+            if not askyesno("Analyze space", "Sample & Refinement plot will be lost. Do you want to proceed?"):
                 return
 
         self.new_window = Toplevel(self)
@@ -4331,7 +4414,7 @@ class Gui(Tk):
         costumize_mh_results_button.wait_variable(self.button_pressed)
 
     def change_refinement_plot(self, fake_param=False):
-        """ Parses window changing for refinement plot"""
+        """ Parses window changing for refinement plot. """
         try:
             if self.space != "":
                 assert isinstance(self.space, space.RefinedSpace)
@@ -4347,9 +4430,9 @@ class Gui(Tk):
                 return
 
     def refresh_mh(self):
-        """ Refreshes MH results"""
+        """ Refreshes MH results. """
         if self.mh_results:
-            if not askyesno("Sample & Refine", "Data and the plot of the Metropolis-Hastings will be lost. Do you want to proceed?"):
+            if not askyesno("Analyze space", "Data and the plot of the Metropolis-Hastings will be lost. Do you want to proceed?"):
                 return
         self.mh_results_changed = False
         self.mh_results = ""
@@ -4361,7 +4444,7 @@ class Gui(Tk):
         self.status_set("MH results refreshed.")
 
     def customize_mh_results(self):
-        """ Customizes MH Plot"""
+        """ Customizes MH Plot. """
         if isinstance(self.mh_results, HastingsResults):
             if not askyesno("Metropolis-Hastings", "Metropolis-Hastings plot will be lost. Do you want to proceed?"):
                 return
@@ -4399,7 +4482,7 @@ class Gui(Tk):
         costumize_mh_results_button.wait_variable(self.button_pressed)
 
     def change_MH_Plot(self):
-        """ Parses window changing MH Plot"""
+        """ Parses window changing MH Plot. """
         try:
             bins = int(self.mh_grid_size_entry.get())
             burn_in = float(self.burn_in_entry_2.get())
@@ -4434,7 +4517,7 @@ class Gui(Tk):
                 return
 
     def show_mh_iterations(self):
-        """ Create Scatter plot showing accepted and rejected points in its given order """
+        """ Create Scatter plot showing accepted and rejected points in its given order. """
         if self.mh_results == "":
             return
         else:
@@ -4444,7 +4527,7 @@ class Gui(Tk):
             # self.mh_results.show_iterations(where=self.draw_plot_window)
 
     def show_mh_acc_points(self):
-        """ Shows trace and histogram of accepted points """
+        """ Shows trace and histogram of accepted points. """
         if self.mh_results == "":
             return
         else:
@@ -4457,7 +4540,7 @@ class Gui(Tk):
             #     self.mh_results.show_accepted_bokeh()
 
     def export_acc_points(self, file=False):
-        """ Exports accepted points of metropolis Hastings
+        """ Exports accepted points of metropolis Hastings.
 
         Args:
             file (string or False):  file to export accepted points of MH
@@ -4534,7 +4617,7 @@ class Gui(Tk):
 
     ## GUI MENU FUNCTIONS
     def edit_config(self):
-        """ Opens config file in editor """
+        """ Opens config file in editor. """
         print("Editing config ...")
         if "wind" in system().lower():
             os.startfile(f'{os.path.join(workspace, "../config.ini")}')
@@ -4544,18 +4627,18 @@ class Gui(Tk):
         self.status_set("Config file saved.")
 
     def show_help(self):
-        """ Shows GUI help """
+        """ Shows GUI help. """
         print("Showing help ...")
         webbrowser.open_new("https://github.com/xhajnal/DiPS#dips-data-informed-parameter-synthesiser")
 
     def check_updates(self):
-        """ Shows latest releases """
+        """ Shows latest releases. """
         print("Checking for updates ...")
         self.status_set("Checking for updates ...")
         webbrowser.open_new("https://github.com/xhajnal/DiPS/releases")
 
     def print_about(self):
-        """ Shows GUI about """
+        """ Shows GUI about. """
         print("Printing about ...")
         top2 = Toplevel(self)
         top2.title("About")
@@ -4570,18 +4653,18 @@ class Gui(Tk):
 
     ## STATUS BAR FUNCTIONS
     def status_set(self, text, *args):
-        """ Inner function to update status bar """
+        """ Inner function to update status bar. """
         self.status.config(text=text.format(args))
         self.status.update_idletasks()
 
     def status_clear(self):
-        """ Inner function to update status bar """
+        """ Inner function to update status bar. """
         self.status.config(text="")
         self.status.update_idletasks()
 
     ## INNER TKINTER SETTINGS
     def cursor_toggle_busy(self, busy=True):
-        """ Inner function to update cursor """
+        """ Inner function to update cursor. """
         if busy:
             ## System dependent cursor setting
             if "wind" in system().lower():
@@ -4593,7 +4676,7 @@ class Gui(Tk):
         self.update()
 
     def report_callback_exception(self, exc, val, tb):
-        """ Inner function, Exception handling """
+        """ Inner function, Exception handling. """
         import traceback
         print("Exception in Tkinter callback", file=sys.stderr)
         sys.last_type = exc
@@ -4607,7 +4690,7 @@ class Gui(Tk):
 
     ## INNER FUNCTIONS
     def draw_plot_window(self, figure, axes=False):
-        """ Method to create a new window with a figure inside
+        """ Method to create a new window with a figure inside.
 
         Args:
             figure (figure): a figure to draw into the new window
@@ -4634,7 +4717,7 @@ class Gui(Tk):
         # self.update()
 
     def create_window_to_load_param_point(self, parameters, opt=False):
-        """ Creates a window a functionality to load values of parameters
+        """ Creates a window a functionality to load values of parameters.
 
         Args:
             parameters (list): list of param names
@@ -4676,7 +4759,7 @@ class Gui(Tk):
         load_true_point_button.wait_variable(self.button_pressed)
 
     def load_param_intervals_from_window(self):
-        """ Inner function to parse the param intervals from created window """
+        """ Inner function to parse the param intervals from created window. """
         region = []
         assert isinstance(self.parameter_domains, list)
 
@@ -4699,7 +4782,7 @@ class Gui(Tk):
                 print("Space: ", self.space)
 
     def load_param_point_from_window(self):
-        """ Inner function to parse the param values from created window """
+        """ Inner function to parse the param values from created window. """
         self.parameter_point = []
         assert isinstance(self.parameter_point_entries, list)
         assert all(list(map(lambda x: isinstance(x, Entry), self.parameter_point_entries)))
@@ -4711,7 +4794,7 @@ class Gui(Tk):
         self.button_pressed.set(True)
 
     def reinitialise_plot(self, set_onclick=False):
-        """ Inner function, reinitialising the page3 plot """
+        """ Inner function, reinitialising the page3 plot. """
         ## REINITIALISING THE PLOT
         ## This is not in one try catch block because I want all of them to be tried
         try:
@@ -4743,7 +4826,7 @@ class Gui(Tk):
         self.update()
 
     def initialise_plot3(self, what=False):
-        """ Plots the what (figure) into where (Tkinter object - Window/Frame/....) """
+        """ Plots the what (figure) into where (Tkinter object - Window/Frame/....). """
         ## Old
         # try:
         #     self.page3_canvas.get_tk_widget().destroy()
@@ -4763,7 +4846,7 @@ class Gui(Tk):
         self.page3_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
 
     def update_progress_bar(self, change_to=False, change_by=False, set_time=False, timeout=False):
-        """ Updates progress bar
+        """ Updates progress bar.
 
         Args:
             change_to (number): value to set the progress:  change_to %
@@ -4785,13 +4868,13 @@ class Gui(Tk):
             return
 
     def ask_quit(self):
-        """ x button handler """
+        """ x button handler. """
         if messagebox.askokcancel("Quit", "Do you want to quit the application?"):
             self.destroy()
             self.quit()
 
     def autoload(self, yes=False):
-        """ loads tmp files """
+        """ Loads tmp files. """
         if yes:
             self.update()
             return
@@ -4811,9 +4894,8 @@ class Gui(Tk):
             self.load_mh_results(file=os.path.join(self.tmp_dir, "mh_results.p"))
             self.load_data_informed_properties(file=os.path.join(self.tmp_dir, "data_informed_properties.pctl"))
 
-
     def set_lower_figure(self, clear=False):
-        """ Configures lower figure on tab 6 (MH results) """
+        """ Configures lower figure on tab 6 (MH results). """
         ##################################################### LOWER PLOT ###############################################
         if clear:
             self.page6_plotframe2.destroy()

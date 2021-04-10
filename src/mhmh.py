@@ -7,7 +7,7 @@ from termcolor import colored
 
 ## My imports
 from common.convert import ineq_to_constraints, round_sig
-from common.mathematics import create_intervals
+from common.mathematics import create_intervals_hsb
 from refine_space import check_deeper
 from refine_space_parallel import check_deeper_parallel
 from common.config import load_config
@@ -308,7 +308,7 @@ if __name__ == '__main__':
 
     ## TEST 2 - comment following tests to run this one
     data = [0.04, 0.02, 0.94]
-    intervals = create_intervals(float(0.95), int(100), data)
+    intervals = create_intervals_hsb(float(0.95), int(100), data)
     constraints = ineq_to_constraints(f, intervals, decoupled=True)
 
     timeout = 3600

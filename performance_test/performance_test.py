@@ -4,19 +4,22 @@ import os
 from copy import copy
 from datetime import datetime
 from os.path import basename, isfile
+from pathlib import Path
+
 from sympy import factor
-from time import time
+from time import time, sleep
 
 from refine_space import check_deeper
 from refine_space_parallel import check_deeper_parallel
 from common.convert import ineq_to_constraints, round_sig
 from common.files import pickle_load
-from common.mathematics import create_intervals
+from common.mathematics import create_intervals_hsb
 from load import load_data, get_f, parse_params_from_model
 from mc import call_storm, call_prism_files
 from mc_informed import general_create_data_informed_properties
 from metropolis_hastings import init_mh, HastingsResults
 from mhmh import initialise_mhmh
+from refine_space_parallel_asyn import check_deeper_async
 from space import RefinedSpace
 from optimize import *
 from common.config import load_config
@@ -51,7 +54,7 @@ run_mhmh = False
 ## GLOBAL SETTINGS
 model_checker = "storm"  ## choose from "prism", "storm", "both"
 precision = 4  ## number of decimal points to show
-repetitions = 5  ## number of runs for each setting
+repetitions = 20  ## number of runs for each setting
 
 global debug
 globals()['debug'] = False
@@ -77,7 +80,7 @@ ref_sample_size = 21
 
 ## MH SETTINGS
 mh_bins = 11  ## number of bins per dimension
-iterations = spam["mh_iterations"]  # 500000
+iterations = 5000  # spam["mh_iterations"]  # 500000
 mh_timeout = spam["mh_timeout"]  # 3600
 mh_where = None  ## skip showing figures
 mh_gui = False  ## skip showing progress
@@ -171,11 +174,11 @@ def compute_functions(model_file, property_file, output_path=False, parameter_do
         storm_output_path = os.path.join(storm_results, output_path)
 
     if not os.path.isdir(prism_output_path):
-        if os.path.splitext(prism_output_path)[1] != ".txt":
+        if Path(prism_output_path).suffix != ".txt":
             prism_output_path = os.path.splitext(prism_output_path)[0] + ".txt"
 
     if not os.path.isdir(storm_output_path):
-        if os.path.splitext(storm_output_path)[1] != ".txt":
+        if Path(storm_output_path).suffix != ".txt":
             storm_output_path = os.path.splitext(storm_output_path)[0] + ".txt"
 
     if model_checker == "prism" or model_checker == "both":
@@ -194,7 +197,7 @@ def compute_functions(model_file, property_file, output_path=False, parameter_do
 
 
 def repeat_sampling(space, constraints, sample_size, boundaries=None, silent=False, save=False, debug=False,
-                    progress=False, quantitative=False, parallel=True, save_memory=False, repetitions=40):
+                    progress=False, quantitative=False, parallel=True, save_memory=False, repetitions=40, show_space=False):
     """ Runs space sampling
 
 
@@ -215,23 +218,24 @@ def repeat_sampling(space, constraints, sample_size, boundaries=None, silent=Fal
         sampling = space.grid_sample(constraints, sample_size, boundaries=boundaries, silent=silent, save=save,
                                      debug=debug, progress=progress, quantitative=quantitative, parallel=parallel,
                                      save_memory=save_memory)
-        if debug:
+        if debug or show_space:
             space.show(sat_samples=True, unsat_samples=True)
 
         avrg_time += space.time_last_sampling
+        sleep(1)
 
     avrg_time = avrg_time/repetitions
     if repetitions > 1:
         print(colored(f"Average time of {repetitions} runs is {round_sig(avrg_time)}", "yellow"))
 
     else:
-        print(colored(f"Refinement took {round_sig(avrg_time)}", "yellow"))
+        print(colored(f"Sampling took {round_sig(avrg_time)}", "yellow"))
 
     return avrg_time, sampling
 
 
 def repeat_refine(text, parameters, parameter_domains, constraints, timeout=0, single_call_timeout=0, silent=True, debug=False, alg=4,
-                  solver="z3", sample_size=False, sample_guided=False, repetitions=repetitions, where=None, parallel=True):
+                  solver="z3", sample_size=False, sample_guided=False, repetitions=repetitions, where=None, parallel=True, is_async=False):
     """ Runs space refinement for multiple times
 
     Args
@@ -248,9 +252,11 @@ def repeat_refine(text, parameters, parameter_domains, constraints, timeout=0, s
         sample_guided (bool): flag to run sampling-guided refinement
         repetitions (Int): number of runs per setting
         parallel (bool): flag whether to run in parallel mode
+        is_async (bool): flag whether to run asynchronous calls when in parallel mode instead of map
     """
     print(colored(f"Refining, {text}", "green"))
     print(f"max_depth: {max_depth}, coverage: {coverage}, epsilon: {epsilon}, alg: {colored(alg, 'green')}, {'solver: ' + colored(solver, 'green') + ', ' if alg<5 else ''}{'with ' + str(single_call_timeout)+ 's' if single_call_timeout>0 else 'without'} single SMT call timeout, current time is: {datetime.now()}")
+    print(f"max_depth: {max_depth}, coverage: {coverage}, epsilon: {epsilon}, alg: {colored(alg, 'green')}, {'solver: ' + colored(solver, 'green') + ', ' if alg<5 else ''}{'with ' + colored(str(single_call_timeout), 'green')+ 's' if single_call_timeout>0 else 'without'} single SMT call timeout, current time is: {datetime.now()}")
 
     avrg_time, avrg_check_time, avrg_smt_time = 0, 0, 0
 
@@ -265,16 +271,29 @@ def repeat_refine(text, parameters, parameter_domains, constraints, timeout=0, s
         space = RefinedSpace(parameter_domains, parameters)
         if parallel:
             try:
-                spam = check_deeper_parallel(space, constraints, max_depth, epsilon=epsilon, coverage=coverage,
-                                             silent=silent, version=alg, sample_size=sample_size, where=where if run == 0 else None,
-                                             sample_guided=sample_guided,  debug=debug, save=False, solver=solver,
-                                             delta=0.01, gui=False, show_space=show_space if run == 0 else False, iterative=False,
-                                             parallel=parallel, timeout=timeout, single_call_timeout=single_call_timeout)
+                if is_async:
+                    spam = check_deeper_async(space, constraints, max_depth, epsilon=epsilon, coverage=coverage,
+                                              silent=silent, version=alg, sample_size=sample_size, where=where if run == 0 else None,
+                                              sample_guided=sample_guided,  debug=debug, save=False, solver=solver,
+                                              delta=0.01, gui=False, show_space=show_space if run == 0 else False, iterative=False,
+                                              parallel=parallel, timeout=timeout, single_call_timeout=single_call_timeout)
+                else:
+                    spam = check_deeper_parallel(space, constraints, max_depth, epsilon=epsilon, coverage=coverage,
+                                                 silent=silent, version=alg, sample_size=sample_size, where=where if run == 0 else None,
+                                                 sample_guided=sample_guided,  debug=debug, save=False, solver=solver,
+                                                 delta=0.01, gui=False, show_space=show_space if run == 0 else False, iterative=False,
+                                                 parallel=parallel, timeout=timeout, single_call_timeout=single_call_timeout)
                 print("coverage reached", spam.get_coverage()) if not silent else None
             except NotImplementedError as err:
                 print(colored("skipping this, not implemented", "blue"))
                 print(err)
         else:
+            if sample_guided:
+                print(colored("Sampling-guided sequential refinement not implemented", "blue"))
+                return
+            if is_async:
+                print(colored("Asynch sequential refinement not implemented", "blue"))
+                return
             spam = check_deeper(space, constraints, max_depth, epsilon=epsilon, coverage=coverage,
                                 silent=silent, version=alg, sample_size=sample_size, debug=debug, save=False, where=where if run == 0 else None,
                                 solver=solver, delta=0.01, gui=False, show_space=show_space if run == 0 else False, iterative=False, timeout=timeout)
@@ -285,7 +304,8 @@ def repeat_refine(text, parameters, parameter_domains, constraints, timeout=0, s
         sys.stdout.write(f"{run + 1}/{repetitions} ({round_sig(space.time_last_refinement)} s), ")
 
         if avrg_time/(run + 1) > timeout > 0:
-            print(colored(f"Timeout reached,  run number {run+1} with time {space.time_last_refinement}", "red"))
+            print()
+            print(colored(f"Timeout reached, run number {run+1} with time {space.time_last_refinement}", "red"))
             avrg_time = 99999999999999999
             break
 
@@ -296,6 +316,7 @@ def repeat_refine(text, parameters, parameter_domains, constraints, timeout=0, s
         except:
             pass
 
+    print()
     avrg_time = avrg_time/repetitions
     if repetitions > 1:
         print(colored(f"Average time of {repetitions} runs is {round_sig(avrg_time)}", "yellow"))
@@ -338,6 +359,7 @@ def repeat_mhmh(text, parameters, parameter_domains, data, functions, sample_siz
         sys.stdout.write(f"{run + 1}/{repetitions}, ({round_sig(end_time)} s of {round_sig(mh_result.time_it_took)} s MH, {round_sig(space.time_refinement)} s refine) ")
 
         if avrg_whole_time/(run + 1) > mhmh_timeout > 0:
+            print()
             print(colored(f"Timeout reached,  run number {run+1} with time {end_time}, MH {mh_result.time_it_took}, refinement{space.time_refinement}", "red"))
             avrg_whole_time = 99999999999999999
             break
@@ -346,6 +368,8 @@ def repeat_mhmh(text, parameters, parameter_domains, data, functions, sample_siz
         avrg_refine_time += space.time_refinement
         avrg_whole_time += end_time
 
+
+    print()
     avrg_mh_time = avrg_mh_time / repetitions
     avrg_refine_time = avrg_refine_time / repetitions
     avrg_whole_time = avrg_whole_time/repetitions
@@ -471,7 +495,7 @@ if __name__ == '__main__':
                 i = 0
                 intervals = []
                 for i in range(len(n_samples)):
-                    intervals.append(create_intervals(float(C), int(n_samples[i]), data_set))
+                    intervals.append(create_intervals_hsb(float(C), int(n_samples[i]), data_set))
                     if debug:
                         print(f"Intervals, confidence level {C}, n_samples {n_samples[i]}: {intervals[i]}")
 
@@ -687,7 +711,7 @@ if __name__ == '__main__':
                 i = 0
                 intervals = []
                 for i in range(len(n_samples)):
-                    intervals.append(create_intervals(float(C), int(n_samples[i]), data_set))
+                    intervals.append(create_intervals_hsb(float(C), int(n_samples[i]), data_set))
                     if debug:
                         print(f"Intervals, confidence level {C}, n_samples {n_samples[i]}: {intervals[i]}")
 
