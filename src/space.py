@@ -586,22 +586,19 @@ class RefinedSpace:
             ## Refinement multidim plotting
             if red or green:
                 if where:  ## Return the plot
-                    if not prefer_unsafe:
-                        if self.rectangles_sat:  ## If any rectangles to be visualised
-                            fig = where[0]
-                            ax = where[1]
-                            ax.clear()
-                            ## TODO check why this is before plotting
-                            plt.autoscale()
-                            ax.autoscale()
-                            title = self.wrapper.wrap(f"Refinement,\n Domains of respective parameter of safe subspace.\nparam names: {self.params}\nparam types: {self.types}\nboundaries: {self.region}\nachieved coverage: {self.get_coverage()}.\nLast refinement took {socket.gethostname()} {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole time.")
-                            fig, ax = visualise_by_param(self.rectangles_sat, title=title, where=[fig, ax])
-                            if true_point:
-                                self.show_true_point(where=[fig, ax], is_inside_of_show=True, hide_legend=hide_legend)
-                            return fig, ax
-                        else:
-                            return None, "While refining multidimensional space no green area found, no reasonable plot to be shown."
-                    else:
+                    if not self.rectangles_unsat or (self.rectangles_sat and not prefer_unsafe):
+                        fig = where[0]
+                        ax = where[1]
+                        ax.clear()
+                        ## TODO check why this is before plotting
+                        plt.autoscale()
+                        ax.autoscale()
+                        title = self.wrapper.wrap(f"Refinement,\n Domains of respective parameter of safe subspace.\nparam names: {self.params}\nparam types: {self.types}\nboundaries: {self.region}\nachieved coverage: {self.get_coverage()}.\nLast refinement took {socket.gethostname()} {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole time.")
+                        fig, ax = visualise_by_param(self.rectangles_sat, title=title, where=[fig, ax])
+                        if true_point:
+                            self.show_true_point(where=[fig, ax], is_inside_of_show=True, hide_legend=hide_legend)
+                        return fig, ax
+                    elif not self.rectangles_sat or (self.rectangles_unsat and prefer_unsafe):
                         if self.rectangles_unsat:  ## If any rectangles to be visualised
                             fig = where[0]
                             ax = where[1]
@@ -614,8 +611,8 @@ class RefinedSpace:
                             if true_point:
                                 self.show_true_point(where=[fig, ax], is_inside_of_show=True, hide_legend=hide_legend)
                             return fig, ax
-                        else:
-                            return None, "While refining multidimensional space no red area found, no reasonable plot to be shown."
+                    else:
+                        return None, "While refining multidimensional space no red or green area found, no reasonable plot to be shown."
                 else:
                     if not prefer_unsafe:
                         if self.rectangles_sat:

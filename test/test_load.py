@@ -1,6 +1,6 @@
 import unittest
 
-from common.files import pickle_load
+from common.model_stuff import parse_params_from_model, find_param, find_param_old
 from src.load import *
 cwd = os.getcwd()
 test = cwd

@@ -4,7 +4,8 @@ from termcolor import colored
 from performance_test import repeat_sampling, load_functions, repeat_refine
 from common.convert import ineq_to_constraints
 from common.mathematics import create_proportions_interval, create_intervals_hsb
-from load import load_data, parse_params_from_model
+from load import load_data
+from common.model_stuff import parse_params_from_model
 from space import RefinedSpace
 from common.config import load_config
 

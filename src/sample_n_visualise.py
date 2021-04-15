@@ -10,7 +10,7 @@ from termcolor import colored
 ## Importing my code
 from common.convert import to_sympy_intervals
 from common.my_z3 import is_this_z3_function, translate_z3_function
-from load import find_param
+from common.model_stuff import find_param
 from common.document_wrapper import DocumentWrapper
 from common.mathematics import cartesian_product
 

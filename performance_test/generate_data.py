@@ -9,7 +9,7 @@ from termcolor import colored
 
 from common.convert import parse_numbers
 from mc import call_prism
-from load import find_param, parse_params_from_model
+from common.model_stuff import parse_params_from_model, find_param
 from common.config import load_config
 
 spam = load_config()
@@ -109,14 +109,25 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
                 sim_length = 2 * population_size
             elif "asyn" in model_type and not sim_length:
                 sim_length = 4 * population_size
-            if input_folder is False:
+
+            if input_folder is not False:
+                model_path = input_folder
+            model = os.path.join(model_path, (model_type + "_" + str(population_size) + ".pm"))
+            if not os.path.isfile(model):
+                model = os.path.join(model_path, (str(population_size) + "_" + model_type + ".pm"))
+            if not os.path.isfile(model):
                 model = os.path.join(model_path, (model_type + "_" + str(population_size) + ".pm"))
-                if not os.path.isfile(model):
-                    model = os.path.join(model_path, (str(population_size) + "_" + model_type + ".pm"))
-            else:
-                model = os.path.join(input_folder, (model_type + str(population_size) + ".pm"))
-                if not os.path.isfile(model):
-                    model = os.path.join(input_folder, (str(population_size) + "_" + model_type + ".pm"))
+            if not os.path.isfile(model):
+                model = os.path.join(model_path, (str(population_size) + "_bees_" + model_type + ".pm"))
+            if not os.path.isfile(model):
+                model = os.path.join(model_path, (model_type + "_" + str(population_size) + "_bees.pm"))
+            if not os.path.isfile(model):
+                model = os.path.join(model_path, (str(population_size) + "bees_" + model_type + ".pm"))
+            if not os.path.isfile(model):
+                model = os.path.join(model_path, (model_type + "_" + str(population_size) + "bees.pm"))
+            if not os.path.isfile(model):
+                raise Exception("Model file not found")
+
             # A bad way how to deal with model without N
             if isinstance(population_size, str):
                 population_size = 0

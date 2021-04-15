@@ -82,8 +82,9 @@ except Exception as error:
 
 try:
     from mc_informed import general_create_data_informed_properties
-    from load import load_mc_result, find_param, load_data, find_param_old, parse_constraints, parse_functions
-    from load import parse_params_from_model, parse_weights, parse_data_intervals, parse_data
+    from load import load_mc_result, load_data, parse_constraints, parse_functions
+    from load import parse_weights, parse_data_intervals, parse_data
+    from common.model_stuff import parse_params_from_model, find_param, find_param_old
     from common.mathematics import create_proportions_interval
     import space
     from refine_space import check_deeper
@@ -269,7 +270,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.25.1"  ## Version of the gui
+        self.version = "1.25.2"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -1507,6 +1508,9 @@ class Gui(Tk):
                         self.space.time_refinement = self.space.time_refinement + time_elapsed
 
                         self.clear_space()
+                        self.show_refinement = True
+                        self.show_refinement = False
+                        self.show_true_point = False
                         self.show_space(show_refinement=True, show_samples=False, show_true_point=False,
                                         prefer_unsafe=self.show_red_in_multidim_refinement.get(),
                                         title=f"Approximate refinement, achieved_coverage:{round(self.space.get_coverage(), 3)}, solver: {program}")
@@ -1517,15 +1521,18 @@ class Gui(Tk):
                         pass
 
                 elif program == "storm":
-                    if len(self.parameters) != 2:
-                        raise NotImplementedError("The results are loaded, but merging of interval bound-wise results of Storm refinement implemented only for two parameters so far.")
+                    # if len(self.parameters) != 2:
+                    #     raise NotImplementedError("The results are loaded, but merging of interval bound-wise results of Storm refinement implemented only for two parameters so far.")
                     self.space = space.RefinedSpace(self.parameter_domains, self.parameters, rectangles_sat=spam[0], rectangles_unsat=spam[1], rectangles_unknown=spam[2])
 
                     self.space.time_last_refinement = time_elapsed
                     self.space.time_refinement = self.space.time_refinement + time_elapsed
                     self.clear_space()
-                    self.show_space(show_refinement=True, show_samples=False, show_true_point=False,
-                                    prefer_unsafe=self.show_red_in_multidim_refinement.get(),
+
+                    self.show_refinement = True
+                    self.show_refinement = False
+                    self.show_true_point = False
+                    self.show_space(show_refinement=True, show_samples=False, show_true_point=False, prefer_unsafe=self.show_red_in_multidim_refinement.get(),
                                     title=f"Parameter lifting, achieved_coverage:{round(self.space.get_coverage(), 3)}, solver: {program}")
                     self.page6_figure.tight_layout()  ## By huypn
                     self.page6_figure.canvas.draw()
@@ -3732,6 +3739,8 @@ class Gui(Tk):
         if self.show_quantitative:
             self.clear_space()
 
+        self.show_refinement = True
+        self.show_samples = True
         self.show_space(show_refinement=True, show_samples=True, show_true_point=self.show_true_point, prefer_unsafe=self.show_red_in_multidim_refinement.get())
 
         self.show_quantitative = False

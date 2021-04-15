@@ -6,6 +6,7 @@ from typing import Iterable
 
 import numpy as np
 from mpmath import mpi
+from sympy import Intersection, Interval, EmptySet, FiniteSet
 
 from common.mathematics import cartesian_product
 from rectangle import My_Rectangle
@@ -47,9 +48,58 @@ def is_in(region1, region2):
         return False
 
     for dimension in range(len(region1)):
-        if mpi(region1[dimension]) not in mpi(region2[dimension]):
+        try:
+            if mpi(region1[dimension]) not in mpi(region2[dimension]):
+                return False
+        except Exception as err:
+            print("region1[dimension]", region1[dimension])
+            print("region2[dimension]", region2[dimension])
+            raise err
+    return True
+
+
+def has_intersection(region1, region2):
+    """ Returns True if the region1 has an intersection with region2, returns False otherwise
+
+    Args:
+        region1 (list of pairs): (hyper)space defined by the regions
+        region2 (list of pairs): (hyper)space defined by the regions
+    """
+    if len(region1) is not len(region2):
+        print("The intervals does not have the same size")
+        return False
+
+    for dimension in range(len(region1)):
+        spam = max(0, min(region1[dimension][1], region2[dimension][1]) - max(region1[dimension][0], region2[dimension][0]))
+        if spam == 0:
             return False
     return True
+
+
+def get_intersection(region1, region2):
+    """ Returns intersection of region1 and region2, returns False when there is no intersection
+
+    Args:
+        region1 (list of pairs): (hyper)space defined by the regions
+        region2 (list of pairs): (hyper)space defined by the regions
+    """
+    if len(region1) is not len(region2):
+        print("The intervals does not have the same size")
+        return False
+    spam = []
+    for dimension in range(len(region1)):
+        high = min(region1[dimension][1], region2[dimension][1])
+        low = max(region1[dimension][0], region2[dimension][0])
+        if high-low <= 0:
+            return False
+        else:
+            spam.append([low, high])
+        # egg = Intersection(Interval(*region1[dimension]), Interval(*region2[dimension]))
+        # if egg == EmptySet or isinstance(egg, FiniteSet):
+        #     return False
+        # else:
+        #     spam.append([egg.start, egg.end])
+    return spam
 
 
 def get_rectangle_volume(rectangle):
@@ -147,7 +197,8 @@ def split_by_samples(region, sat_list, unsat_list, sample_size, debug=False):
         sample_size: (int) number of samples per dimension
         debug (bool): if True extensive print will be used
 
-    :return: (list of rectangles) rectangle to which the region was split into
+    Returns:
+         (list of rectangles) rectangle to which the region was split into
     """
 
     rectangle_of_sats = rectangular_hull(sat_list)
@@ -199,6 +250,7 @@ def expand_rectangle(rectangle, region, sample_sizes):
 
 def refine_by(region1, region2, debug=False):
     """ Returns the first (hyper)space refined/spliced by the second (hyperspace) into orthogonal subspaces
+        region2 has to be inside of the region1
 
     Args:
         region1 (list of pairs): (hyper)space defined by the regions

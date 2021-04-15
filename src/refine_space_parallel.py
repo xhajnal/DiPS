@@ -18,7 +18,7 @@ import refine_space
 from common.convert import decouple_constraints, constraints_to_ineq
 from common.solver_parser import pass_models_to_sons
 from common.space_stuff import split_by_longest_dimension, split_by_samples
-from load import find_param
+from common.model_stuff import find_param
 from rectangle import My_Rectangle
 from refine_space import private_presample
 from sample_space import sample_region

@@ -10,7 +10,7 @@ import psutil
 from termcolor import colored
 
 ## Importing my code
-from load import parse_params_from_model
+from common.model_stuff import parse_params_from_model
 from common.files import write_to_file
 from common.config import load_config
 

@@ -25,16 +25,72 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(is_in([(0, 2), (1, 3)], [(0, 1), (1, 4)]), False)
         self.assertEqual(is_in([(0, 2), (1, 3)], [(0, 2), (1, 2)]), False)
 
+    def test_has_intersection(self):
+        print(colored("Checking two hyperrectangles have intersection", 'blue'))
+        self.assertEqual(has_intersection([(1, 4)], [(1, 4)]), True)
+        self.assertEqual(has_intersection([(1, 4)], [(0, 5)]), True)
+        self.assertEqual(has_intersection([(1, 4)], [(0, 3)]), True)
+        self.assertEqual(has_intersection([(1, 4)], [(2, 5)]), True)
+        self.assertEqual(has_intersection([(1, 4)], [(5, 6)]), False)
+        self.assertEqual(has_intersection([(5, 6)], [(1, 4)]), False)
+
+        self.assertEqual(has_intersection([(0, 2), (1, 3)], [(0, 2), (1, 3)]), True)
+        self.assertEqual(has_intersection([(0, 2), (1, 3)], [(0, 3), (1, 4)]), True)
+        self.assertEqual(has_intersection([(0, 2), (1, 3)], [(0, 1), (1, 4)]), True)
+        self.assertEqual(has_intersection([(0, 2), (1, 3)], [(0, 2), (1, 2)]), True)
+
+        self.assertEqual(has_intersection([(0, 2), (1, 3)], [(2, 4), (4, 8)]), False)
+        self.assertEqual(has_intersection([(0, 2), (1, 3)], [(1, 4), (4, 8)]), False)
+
+    def test_get_intersection(self):
+        print(colored("Checking two hyperrectangles have intersection", 'blue'))
+        self.assertEqual(get_intersection([(1, 4)], [(1, 4)]), [[1, 4]])
+        self.assertEqual(get_intersection([(1, 4)], [(0, 5)]), [[1, 4]])
+        self.assertEqual(get_intersection([(1, 4)], [(0, 3)]), [[1, 3]])
+        self.assertEqual(get_intersection([(1, 4)], [(2, 5)]), [[2, 4]])
+        self.assertEqual(get_intersection([(1, 4)], [(5, 6)]), False)
+        self.assertEqual(get_intersection([(5, 6)], [(1, 4)]), False)
+
+        self.assertEqual(get_intersection([(0, 2), (1, 3)], [(0, 2), (1, 3)]), [[0, 2], [1, 3]])
+        self.assertEqual(get_intersection([(0, 2), (1, 3)], [(0, 3), (1, 4)]), [[0, 2], [1, 3]])
+        self.assertEqual(get_intersection([(0, 2), (1, 3)], [(0, 1), (1, 4)]), [[0, 1], [1, 3]])
+        self.assertEqual(get_intersection([(0, 2), (1, 3)], [(0, 2), (1, 2)]), [[0, 2], [1, 2]])
+
+        self.assertEqual(get_intersection([(0, 2), (1, 3)], [(2, 4), (4, 8)]), False)
+        self.assertEqual(get_intersection([(0, 2), (1, 3)], [(1, 4), (4, 8)]), False)
+
     def test_get_rectangle_volume(self):
         print(colored("get_rectangle_volume tests", 'blue'))
         self.assertEqual(get_rectangle_volume([[0.0, 0]]), 0)
         self.assertEqual(get_rectangle_volume([[0.0, 0.5]]), Fraction(1, 2))
         self.assertEqual(get_rectangle_volume([[0.0, 0.2], [0, 0.2]]), Fraction(4, 100))
         self.assertEqual(get_rectangle_volume([[0.7, 0.8], [8.7, 8.8]]), Fraction(1, 100))
+        self.assertEqual(get_rectangle_volume([[0, 0.25], [0, 0.25], [0.5, 0.75]]), Fraction(1, 64))
 
     def test_expand_rectangle(self):
         print(colored("Checking expanding rectangle withing sampling", 'blue'))
         self.assertEqual(expand_rectangle([[0.75, 0.75], [1.0, 1.0]], [[0.5, 0.75], [0.5, 1]], [2, 2]), [[0.625, 0.75], [0.75, 1.0]])
+
+    def test_refine_by(self):
+        print(colored("Checking spliced hyperrectangle by a second one ", 'blue'))
+        with self.assertRaises(Exception) as context:
+            refine_by([[0, 2]], [[1, 3]])
+        self.assertTrue("is not within" in str(context.exception))
+
+        ## same 1D rectangle
+        self.assertEqual(refine_by([[0, 2]], [[0, 2]]), [[[0, 2]]])
+        ## 1D first half
+        self.assertEqual(refine_by([[0, 2]], [[1, 2]]), [[[0, 1]], [[1, 2]]])
+        ## 1D in the middle
+        self.assertEqual(refine_by([[0, 3]], [[1, 2]]), [[[0, 1]], [[2, 3]], [[1, 2]]])
+
+        ## same 2D rectangle
+        self.assertEqual(refine_by([[0, 2], [1, 3]], [[0, 2], [1, 3]]), [[[0, 2], [1, 3]]])
+        ## left bottom corner 2D rectangle
+        self.assertEqual(refine_by([[0, 2], [1, 3]], [[0, 1], [1, 2]]), [[[1, 2], [1, 3]], [[0, 1], [2, 3]], [[0, 1], [1, 2]]])
+        ## in the middle
+
+        # TODO more tests
 
     def test_split_by_longest_dimension(self):
         print(colored("Checking rectangle splicing into two by the longest dimension", 'blue'))
@@ -55,10 +111,6 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(split_by_all_dimensions([[3, 4]]), [[[3, 3.5]], [[3.5, 4]]])
         self.assertEqual(split_by_all_dimensions([[3, 4], [5, 6]]), [[[3, 3.5], [5, 5.5]], [[3, 3.5], [5.5, 6]], [[3.5, 4], [5, 5.5]], [[3.5, 4], [5.5, 6]]])
         self.assertEqual(split_by_all_dimensions([[3, 4], [5, 6], [7, 8]]), [[[3, 3.5], [5, 5.5], [7, 7.5]], [[3, 3.5], [5, 5.5], [7.5, 8]], [[3, 3.5], [5.5, 6], [7, 7.5]], [[3, 3.5], [5.5, 6], [7.5, 8]], [[3.5, 4], [5, 5.5], [7, 7.5]], [[3.5, 4], [5, 5.5], [7.5, 8]], [[3.5, 4], [5.5, 6], [7, 7.5]], [[3.5, 4], [5.5, 6], [7.5, 8]]])
-
-    def test_refine_by(self):
-        print(colored("Checking spliced hyperrectangle by a second one ", 'blue'))
-        # TODO
 
     def test_refine_into_rectangles(self):
         print(colored("Checking Refining of the sampled space into hyperrectangles such that rectangle is all sat or all unsat", 'blue'))

@@ -10,7 +10,7 @@ from mpmath import mpi
 
 ## Importing my code
 from common.solver_parser import pass_models_to_sons
-from load import find_param
+from common.model_stuff import find_param
 from rectangle import My_Rectangle
 from sample_space import sample_space as sample
 from space import RefinedSpace

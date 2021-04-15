@@ -14,7 +14,8 @@ from refine_space_parallel import check_deeper_parallel
 from common.convert import ineq_to_constraints, round_sig
 from common.files import pickle_load
 from common.mathematics import create_intervals_hsb
-from load import load_data, get_f, parse_params_from_model
+from load import load_data, get_f
+from common.model_stuff import parse_params_from_model
 from mc import call_storm, call_prism_files
 from mc_informed import general_create_data_informed_properties
 from metropolis_hastings import init_mh, HastingsResults
@@ -255,7 +256,6 @@ def repeat_refine(text, parameters, parameter_domains, constraints, timeout=0, s
         is_async (bool): flag whether to run asynchronous calls when in parallel mode instead of map
     """
     print(colored(f"Refining, {text}", "green"))
-    print(f"max_depth: {max_depth}, coverage: {coverage}, epsilon: {epsilon}, alg: {colored(alg, 'green')}, {'solver: ' + colored(solver, 'green') + ', ' if alg<5 else ''}{'with ' + str(single_call_timeout)+ 's' if single_call_timeout>0 else 'without'} single SMT call timeout, current time is: {datetime.now()}")
     print(f"max_depth: {max_depth}, coverage: {coverage}, epsilon: {epsilon}, alg: {colored(alg, 'green')}, {'solver: ' + colored(solver, 'green') + ', ' if alg<5 else ''}{'with ' + colored(str(single_call_timeout), 'green')+ 's' if single_call_timeout>0 else 'without'} single SMT call timeout, current time is: {datetime.now()}")
 
     avrg_time, avrg_check_time, avrg_smt_time = 0, 0, 0
