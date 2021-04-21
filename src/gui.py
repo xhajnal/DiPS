@@ -270,7 +270,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.25.2"  ## Version of the gui
+        self.version = "1.25.3"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -487,10 +487,6 @@ class Gui(Tk):
         open_pmc_file_button = Button(frame_left, text='Open MC output file', command=self.load_functions_file)
         open_pmc_file_button.grid(row=3, column=1, sticky=W, pady=4)
         createToolTip(open_pmc_file_button, text='Loads result of parametric model checking result file (of PRISM/Storm) to parse rational function.')
-
-        open_ref_file_button = Button(frame_left, text='Open refinement output file', command=self.load_refinement_output_file)
-        open_ref_file_button.grid(row=3, column=3, sticky=W, pady=4)
-        createToolTip(open_ref_file_button, text='Loads result of refinement result file (of PRISM/Storm) to create Refined space.')
 
         Label(frame_left, text=f"Loaded Prism/Storm output file:", anchor=W, justify=LEFT).grid(row=4, column=0, sticky=W, padx=4, pady=4)
         self.mc_result_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_width() / 2), state=DISABLED)
@@ -931,23 +927,33 @@ class Gui(Tk):
 
         Button(frame_right, text='Set True point', command=self.set_true_point).grid(row=0, column=0, padx=(4, 4), pady=7)
         Button(frame_right, text='Open space', command=self.load_space).grid(row=1, column=0, padx=(4, 4), pady=7)
-        Button(frame_right, text='Save space', command=self.save_space).grid(row=2, column=0, padx=(4, 4), pady=7)
-        Button(frame_right, text='Delete space', command=self.refresh_space).grid(row=3, column=0, padx=(4, 4), pady=7)
-        Button(frame_right, text='Customize Plot', command=self.customize_refinement_results).grid(row=4, column=0, padx=(4, 4), pady=7)
 
-        Button(frame_right, text='Load MH Results', command=self.load_mh_results).grid(row=5, column=0, padx=(4, 4), pady=7)
-        Button(frame_right, text='Save MH Results', command=self.save_mh_results).grid(row=6, column=0, padx=(4, 4), pady=7)
-        Button(frame_right, text='Delete MH Results', command=self.refresh_mh).grid(row=7, column=0, padx=(4, 4), pady=7)
+        open_ref_file_button = Button(frame_right, text='Open PRISM refinement result', command=self.load_prism_refinement_output_file)
+        open_ref_file_button.grid(row=2, column=0, padx=(4, 4), pady=7)
+        createToolTip(open_ref_file_button, text='Loads result of refinement result file of PRISM to create Refined space.')
 
-        Button(frame_right, text='Customize Plots', command=self.customize_mh_results).grid(row=8, column=0, padx=(4, 4), pady=0)
-        Button(frame_right, text='Show MH iterations', command=self.show_mh_iterations).grid(row=9, column=0, padx=(4, 4), pady=0)
-        Button(frame_right, text='Show Acc points', command=self.show_mh_acc_points).grid(row=10, column=0, padx=(4, 4), pady=0)
-        Button(frame_right, text='Export Acc points', command=self.export_acc_points).grid(row=11, column=0, padx=(4, 4), pady=0)
+        open_ref_file_button = Button(frame_right, text='Open Storm refinement result', command=self.load_storm_refinement_output_file)
+        open_ref_file_button.grid(row=3, column=0, padx=(4, 4), pady=7)
+        createToolTip(open_ref_file_button, text='Loads result of refinement result file Storm to create Refined space.')
+
+        Button(frame_right, text='Save space', command=self.save_space).grid(row=4, column=0, padx=(4, 4), pady=7)
+        Button(frame_right, text='Delete space', command=self.refresh_space).grid(row=5, column=0, padx=(4, 4), pady=7)
+        Button(frame_right, text='Customize Plot', command=self.customize_refinement_results).grid(row=6, column=0, padx=(4, 4), pady=7)
+
+        Button(frame_right, text='Load MH Results', command=self.load_mh_results).grid(row=7, column=0, padx=(4, 4), pady=7)
+        Button(frame_right, text='Save MH Results', command=self.save_mh_results).grid(row=8, column=0, padx=(4, 4), pady=7)
+        Button(frame_right, text='Delete MH Results', command=self.refresh_mh).grid(row=9, column=0, padx=(4, 4), pady=7)
+
+        Button(frame_right, text='Customize Plots', command=self.customize_mh_results).grid(row=10, column=0, padx=(4, 4), pady=0)
+        Button(frame_right, text='Show MH iterations', command=self.show_mh_iterations).grid(row=11, column=0, padx=(4, 4), pady=0)
+        Button(frame_right, text='Show Acc points', command=self.show_mh_acc_points).grid(row=12, column=0, padx=(4, 4), pady=0)
+        Button(frame_right, text='Export Acc points', command=self.export_acc_points).grid(row=13, column=0, padx=(4, 4), pady=0)
 
         frame_right.columnconfigure(0, weight=1)
         frame_right.rowconfigure(0, weight=1)
-        frame_right.rowconfigure(4, weight=1)
-        frame_right.rowconfigure(8, weight=1)
+        frame_right.rowconfigure(6, weight=1)
+        frame_right.rowconfigure(7, weight=1)
+        frame_right.rowconfigure(10, weight=1)
 
         ##################################################### UPPER PLOT ###############################################
         self.page6_plotframe = Frame(self.frame_center)
@@ -1410,6 +1416,29 @@ class Gui(Tk):
             # if not file:
             #   self.save_functions(os.path.join(self.tmp_dir, f"functions_{program}"))
 
+    def load_prism_refinement_output_file(self, file=False, reset_param_and_intervals=True, called_directly=True):
+        """ Loads model refinement output text file of PRISM/STORM
+
+                Args:
+                    file (path/string): direct path to load the output file
+                    reset_param_and_intervals (bool): if True the params will be reset
+                    called_directly (bool): if True it will say where is the visualisation, otherwise where is text
+                """
+        self.load_refinement_output_file(file=file, program="prism", reset_param_and_intervals=reset_param_and_intervals,
+                                         called_directly=called_directly)
+
+    def load_storm_refinement_output_file(self, file=False, reset_param_and_intervals=True, called_directly=True):
+        """ Loads model refinement output text file of PRISM/STORM
+
+                Args:
+                    file (path/string): direct path to load the output file
+                    reset_param_and_intervals (bool): if True the params will be reset
+                    called_directly (bool): if True it will say where is the visualisation, otherwise where is text
+                """
+        self.load_refinement_output_file(file=file, program="storm",
+                                         reset_param_and_intervals=reset_param_and_intervals,
+                                         called_directly=called_directly)
+
     def load_refinement_output_file(self, file=False, program=False, reset_param_and_intervals=True, called_directly=True):
         """ Loads model refinement output text file of PRISM/STORM
 
@@ -1450,11 +1479,11 @@ class Gui(Tk):
 
         self.mc_result_file.set(file)
 
-        ## Print mc result into TextBox
-        self.mc_result_text.configure(state='normal')
-        self.mc_result_text.delete('1.0', END)
-        with open(self.mc_result_file.get(), 'r') as f:
-            self.mc_result_text.insert('1.0', f.read())
+        # ## Print mc result into TextBox
+        # self.mc_result_text.configure(state='normal')
+        # self.mc_result_text.delete('1.0', END)
+        # with open(self.mc_result_file.get(), 'r') as f:
+        #     self.mc_result_text.insert('1.0', f.read())
 
         self.status_set("Refinement results loaded.")
 
@@ -1545,14 +1574,17 @@ class Gui(Tk):
             except TclError:
                 return
 
+        ## Autosave
+        self.save_space(os.path.join(self.tmp_dir, "space.p"))
+
         self.status_set("Refinement results parsed and loaded.")
-        if called_directly:
-            if not skip_vis:
-                messagebox.showinfo(f"Loading {program} refinement results",
-                                    "Visualisation of refinement can be seen in Analyze space tab.")
-        else:
-            messagebox.showinfo(f"Loading {program} refinement results",
-                                "Loaded refinement output can be seen in Synthesise functions tab.")
+        # if called_directly:
+        #     if not skip_vis:
+        #         messagebox.showinfo(f"Loading {program} refinement results",
+        #                             "Visualisation of refinement can be seen in Analyze space tab.")
+        # else:
+        #     messagebox.showinfo(f"Loading {program} refinement results",
+        #                         "Loaded refinement output can be seen in Synthesise functions tab.")
 
     def store_z3_functions(self):
         """ Stores a copy of functions as a self.z3_functions """
