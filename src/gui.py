@@ -270,7 +270,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.25.3"  ## Version of the gui
+        self.version = "1.25.4"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -2380,6 +2380,11 @@ class Gui(Tk):
     def set_true_point(self):
         """ Sets the true point of the space """
 
+        try:
+            self.new_window.destroy()
+        except:
+            pass
+
         if self.space == "":
             print("No space loaded. Cannot set the true_point.")
             messagebox.showwarning("Edit True point", "Load space first.")
@@ -2388,7 +2393,11 @@ class Gui(Tk):
             # print(self.space.nice_print())
             assert isinstance(self.space, space.RefinedSpace)
             if self.space.true_point:
-                self.space.true_point_object.remove()
+                try:
+                    self.space.true_point_object.remove()
+                except ValueError:
+                    print(colored("Could not remove true point", "red"))
+                    pass
             self.parameter_domains = self.space.region
             self.create_window_to_load_param_point(parameters=self.space.params, opt=True)
             self.space.true_point = self.parameter_point
