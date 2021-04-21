@@ -1,3 +1,4 @@
+import copy
 import pickle
 import os
 import time
@@ -270,7 +271,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.25.4"  ## Version of the gui
+        self.version = "1.25.5"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -2925,7 +2926,11 @@ class Gui(Tk):
         if not self.silent.get():
             print("Saving space as a file:", save_space_file)
 
-        self.save_file(self.space, save_space_file)
+        assert isinstance(self.space, space.RefinedSpace)
+        spacee = copy.copy(self.space)
+        spacee.rectangles_unknown = spacee.get_flat_white()
+        self.save_file(spacee, save_space_file)
+        del spacee
 
         if not file:
             self.space_file.set(save_space_file)
