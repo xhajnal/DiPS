@@ -1,4 +1,4 @@
-// Knuth's model of a fair die using three coins
+// Knuth's model of a die using three coins
 // author Tatjana Petrov
 dtmc
 

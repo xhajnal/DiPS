@@ -92,6 +92,74 @@ class MyTestCase(unittest.TestCase):
 
         # TODO more tests
 
+    def test_merge_rectangles(self):
+        ### 1D
+        ## 2 intervals
+        self.assertEqual(merge_rectangles([[[0, 5]], [[5, 9]]]), [[[0, 9]]])
+        self.assertEqual(merge_rectangles(sorted([[[5, 9]], [[0, 5]]])), [[[0, 9]]])
+        self.assertEqual(merge_rectangles([[[0, 5]], [[6, 9]]]), [[[0, 5]], [[6, 9]]])
+        ## 3 intervals
+        # All fit
+        self.assertEqual(merge_rectangles([[[0, 5]], [[5, 9]], [[9, 11]]]), [[[0, 11]]])
+        # First 2 fit
+        self.assertEqual(merge_rectangles([[[0, 5]], [[5, 9]], [[10, 11]]]), [[[0, 9]], [[10, 11]]])
+        # Second 2 fit
+        self.assertEqual(merge_rectangles([[[0, 5]], [[6, 9]], [[9, 11]]]), [[[0, 5]], [[6, 11]]])
+        # None Fit
+        self.assertEqual(merge_rectangles([[[0, 5]], [[6, 8]], [[9, 11]]]), [[[0, 5]], [[6, 8]], [[9, 11]]])
+
+        ## 2D
+        ## 2 rectangles
+        # fits by the first dimension
+        self.assertEqual(merge_rectangles([[[0, 5], [1, 8]], [[5, 9], [1, 8]]]), [[[0, 9], [1, 8]]])
+        # fits by the second dimension
+        self.assertEqual(merge_rectangles([[[1, 8], [0, 5]], [[1, 8], [5, 9]]]), [[[1, 8], [0, 9]]])
+
+        ## 3 rectangles
+        # All fit
+        self.assertEqual(merge_rectangles([[[0, 5], [1, 8]], [[5, 9], [1, 8]], [[9, 11], [1, 8]]]), [[[0, 11], [1, 8]]])
+        # First 2 fit
+        self.assertEqual(merge_rectangles([[[0, 5], [1, 8]], [[5, 9], [1, 8]], [[10, 11], [1, 8]]]), [[[0, 9], [1, 8]], [[10, 11], [1, 8]]])
+        # Second 2 fit
+        self.assertEqual(merge_rectangles([[[0, 4], [1, 8]], [[5, 9], [1, 8]], [[9, 11], [1, 8]]]), [[[0, 4], [1, 8]], [[5, 11], [1, 8]]])
+        # None Fit
+        self.assertEqual(merge_rectangles([[[0, 4], [1, 8]], [[5, 9], [1, 8]], [[10, 11], [1, 8]]]), [[[0, 4], [1, 8]], [[5, 9], [1, 8]], [[10, 11], [1, 8]]])
+
+        ## second dimension problem in all 3 rectangles
+        self.assertEqual(merge_rectangles([[[0, 5], [1, 99]], [[5, 9], [1, 88]], [[9, 11], [1, 8]]]), [[[0, 5], [1, 99]], [[5, 9], [1, 88]], [[9, 11], [1, 8]]])
+        self.assertEqual(merge_rectangles([[[0, 5], [1, 99]], [[5, 9], [1, 88]], [[10, 11], [1, 8]]]), [[[0, 5], [1, 99]], [[5, 9], [1, 88]], [[10, 11], [1, 8]]])
+        self.assertEqual(merge_rectangles([[[0, 4], [1, 99]], [[5, 9], [1, 88]], [[9, 11], [1, 8]]]), [[[0, 4], [1, 99]], [[5, 9], [1, 88]], [[9, 11], [1, 8]]])
+        self.assertEqual(merge_rectangles([[[0, 4], [1, 99]], [[5, 9], [1, 88]], [[10, 11], [1, 8]]]), [[[0, 4], [1, 99]], [[5, 9], [1, 88]], [[10, 11], [1, 8]]])
+
+        ## second dimension problem first rectangle
+        self.assertEqual(merge_rectangles([[[0, 5], [1, 99]], [[5, 9], [1, 8]], [[9, 11], [1, 8]]]), [[[0, 5], [1, 99]], [[5, 11], [1, 8]]])
+        self.assertEqual(merge_rectangles([[[0, 5], [1, 99]], [[5, 9], [1, 8]], [[10, 11], [1, 8]]]), [[[0, 5], [1, 99]], [[5, 9], [1, 8]], [[10, 11], [1, 8]]])
+
+    def test_merge_pair_of_rectangles(self):
+        ## 1D
+        print(merge_pair_of_rectangles([[0, 5]], [[5, 9]], dimension=0))
+        self.assertEqual(merge_pair_of_rectangles([[0, 5]], [[5, 9]], dimension=0), [[0, 9]])
+        self.assertEqual(merge_pair_of_rectangles([[5, 9]], [[0, 5]], dimension=0), [[0, 9]])
+
+        with self.assertRaises(Exception) as context:
+            print(merge_pair_of_rectangles([[0, 5]], [[6, 9]], dimension=0))
+            self.assertEqual(merge_pair_of_rectangles([[0, 5]], [[5, 9]], dimension=0), 9)
+        self.assertTrue('cannot be merged' in str(context.exception))
+
+        ## 2D
+        with self.assertRaises(Exception) as context:
+            merge_pair_of_rectangles([[0, 5]], [[5, 9], [1, 9]], dimension=0)
+        self.assertTrue('have different number of dimensions' in str(context.exception))
+
+        print(merge_pair_of_rectangles([[0, 5], [1, 8]], [[5, 9], [1, 8]], dimension=0))
+        self.assertEqual(merge_pair_of_rectangles([[0, 5], [1, 8]], [[5, 9], [1, 8]], dimension=0), [[0, 9], [1, 8]])
+
+        self.assertEqual(merge_pair_of_rectangles([[1, 8], [0, 5]], [[1, 8], [5, 9]], dimension=1), [[1, 8], [0, 9]])
+
+        with self.assertRaises(Exception) as context:
+            self.assertEqual(merge_pair_of_rectangles([[0, 5], [1, 8]], [[5, 9], [1, 9]], dimension=0), [[0, 9], [1, 8]])
+        self.assertTrue('cannot be merged' in str(context.exception))
+
     def test_split_by_longest_dimension(self):
         print(colored("Checking rectangle splicing into two by the longest dimension", 'blue'))
         self.assertEqual(split_by_longest_dimension([[3, 4]])[:2], [[[3, 3.5]], [[3.5, 4]]])

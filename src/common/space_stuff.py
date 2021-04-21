@@ -292,6 +292,92 @@ def refine_by(region1, region2, debug=False):
     return regions
 
 
+def merge_rectangles(rectangles):
+    """ Merges adjacent rectangles (of safe, unsafe, or unknown space)
+        works only on a sorted list
+
+    Args:
+        rectangles (list of rectangles): rectangles to me merged
+
+    Return:
+        (list of rectangles): merged rectangles
+    """
+    if len(rectangles) == 0:
+        return rectangles
+
+    dimension = len(rectangles[0])
+
+    new_rectangles = []
+    rectangle_to_add = None
+
+    for index, rectangle in enumerate(rectangles):
+        if rectangle_to_add is None:
+            rectangle_to_add = rectangle
+        for another_index, another_rectangle in enumerate(rectangles[index+1:]):
+            not_fitting_dimensions = 0
+            not_fitting_dimension = 0
+            for dim in range(dimension):
+                if rectangle[dim] == another_rectangle[dim]:
+                    pass
+                else:
+                    not_fitting_dimension = dim
+                    not_fitting_dimensions = not_fitting_dimensions + 1
+            if not_fitting_dimensions == 1:
+                try:
+                    rectangle_to_add = merge_pair_of_rectangles(rectangle_to_add, another_rectangle, not_fitting_dimension)
+                    try:
+                        del rectangles[another_index]
+                    except ValueError:
+                        pass
+                except SpaceNotFitting:
+                    pass
+
+        new_rectangles.append(rectangle_to_add)
+        rectangle_to_add = None
+
+    return sorted(new_rectangles)
+
+
+class SpaceNotFitting(Exception):
+    pass
+
+
+def merge_pair_of_rectangles(rectangle1, rectangle2, dimension):
+    """ Merges adjacent rectangles (of safe, unsafe, or unknown space)
+            works best on a sorted list
+
+    Args:
+        rectangle1 (list of pairs): rectangle to me merged
+        rectangle2 (list of pairs): rectangle to me merged
+        dimension (int): by which merge the rectangles
+
+    Return:
+        (list of pairs): merged rectangle
+    """
+
+    ## TESTS, can be skipped
+    dimensions = len(rectangle1)
+
+    if dimensions != len(rectangle2):
+        raise SpaceNotFitting(f"Rectangles {rectangle1} and {rectangle2} have different number of dimensions, cannot be merged")
+
+    for dim in range(dimensions):
+        if dim == dimension:
+            pass
+        elif rectangle1[dim] != rectangle2[dim]:
+            raise SpaceNotFitting(f"Rectangles {rectangle1} and {rectangle2} cannot be merged as they does not share other dimensions")
+
+    ## FUNCTIONALITY
+    if rectangle1[dimension][1] == rectangle2[dimension][0]:
+        rectangle1[dimension][1] = rectangle2[dimension][1]
+        return rectangle1
+    elif rectangle1[dimension][0] == rectangle2[dimension][1]:
+        rectangle2[dimension][1] = rectangle1[dimension][1]
+        return rectangle2
+    else:
+        raise SpaceNotFitting(f"Rectangles {rectangle1} and {rectangle2} cannot be merged by dimension number {dimension + 1}")
+
+
 def refine_into_rectangles(sampled_space, silent=True):
     """ Refines the sampled space into hyperrectangles such that rectangle is all sat or all unsat
 
@@ -429,3 +515,9 @@ def find_max_rectangle(sampled_space, starting_point, silent=True):
         return result
     else:
         print(f"Sorry, {dimensions} dimensions TBD")
+
+
+# if __name__ == '__main__':
+#     print(merge_rectangles([[[0, 5]], [[5, 9]]]))
+#     print(merge_pair_of_rectangles([[0, 5]], [[5, 9]], dimension=0))
+
