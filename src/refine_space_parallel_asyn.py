@@ -321,7 +321,10 @@ def check_deeper_async(region, constraints, recursion_depth, epsilon, coverage, 
             inq.put(x)
             helpq.put("t")
         # print("about to create workers")
-        workers = [Worker(str(name), inq, helpq, outq, constraints, version, solver, delta, silent, debug, sample_guided) for name in range(parallel)]
+        if version == 5:
+            workers = [Worker(str(name), inq, helpq, outq, [glob_functions, glob_intervals], version, solver, delta, silent, debug, sample_guided) for name in range(parallel)]
+        else:
+            workers = [Worker(str(name), inq, helpq, outq, constraints, version, solver, delta, silent, debug, sample_guided) for name in range(parallel)]
         # print("about to create workers")
         for worker in workers:
             worker.start()
@@ -470,11 +473,11 @@ def parse_result(space, result, sample_guided, version, debug):
         else:
             # print("parsing result of not sample-guided result")
             if item[2] is not None:
-                #print(colored(f"{item[0]}, {item[1]}", "red"))
+                # print(colored(f"{item[0]}, {item[1]}", "red"))
                 space.add_white(My_Rectangle(item[0], is_white=True, model=item[2]))
                 space.add_white(My_Rectangle(item[1], is_white=True, model=item[3]))
             else:
-                #print(colored(f"{item[0]}, {item[1]}", "red"))
+                # print(colored(f"{item[0]}, {item[1]}", "red"))
                 space.add_white(item[0])
                 space.add_white(item[1])
             return space
@@ -1062,11 +1065,17 @@ def check_interval_out_parallel(region, constraints, intervals, silent=False, de
             interval = mpi(float(intervals[index][0]), float(intervals[index][1]))
 
         ## If there exists an intersection (neither of these interval is greater in all points)
-        if not (prop_eval > interval or prop_eval < interval):
-            print(f"property {constraints.index(prop) + 1} ϵ {eval(prop)}, which is not outside of interval {interval}") if debug else None
-        else:
-            print(f'property {constraints.index(prop) + 1} ϵ {eval(prop)} {colored(" is unsafe", "red")}') if debug else None
-            return True
+        try:
+            if not (prop_eval > interval or prop_eval < interval):
+                print(f"property {constraints.index(prop) + 1} ϵ {eval(prop)}, which is not outside of interval {interval}") if debug else None
+            else:
+                print(f'property {constraints.index(prop) + 1} ϵ {eval(prop)} {colored(" is unsafe", "red")}') if debug else None
+                return True
+        except TypeError as err:
+            print(err)
+            print(prop_eval)
+            print(interval)
+            raise err
 
     return False
 
@@ -1081,7 +1090,11 @@ class Worker(Process):
         self.in_queue = in_queue
         self.help_queue = help_queue
         self.out_queue = out_queue
-        self.constraints = constraints
+        if version == 5:
+            self.functions = constraints[0]
+            self.intervals = constraints[1]
+        else:
+            self.constraints = constraints
         self.version = version
         self.solver = solver
         self.delta = delta
@@ -1111,13 +1124,13 @@ class Worker(Process):
                     spam = private_check_deeper_checking_both_parallel_sampled(work, self.constraints, solver=self.solver, delta=self.delta, silent=self.silent, debug=self.debug)
                 elif self.version == 5:
                     print(colored(f"Selecting biggest rectangles method with sampling and interval arithmetics", "green")) if not self.silent else None
-                    spam = private_check_deeper_interval_parallel_sampled(work, self.constraints, solver=self.solver, delta=self.delta, silent=self.silent, debug=self.debug)
+                    spam = private_check_deeper_interval_parallel_sampled(work, self.functions, self.intervals, silent=self.silent, debug=self.debug)
             else:
                 if self.version == 2:
                     print(f"Selecting biggest rectangles method with {('dreal', 'z3')[solver == 'z3']} solver") if not self.silent else None
                     spam = private_check_deeper_parallel(work, self.constraints, solver=self.solver, delta=self.delta, silent=self.silent, debug=self.debug)
                 elif self.version == 3:
-                    print(colored( f"Selecting biggest rectangles method with sampling and passing examples with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not self.silent else None
+                    print(colored(f"Selecting biggest rectangles method with sampling and passing examples with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not self.silent else None
                     raise NotImplementedError("So far only alg 2 are implemented for parallel runs.")
                     spam = private_check_deeper_checking_parallel(work, self.constraints, solver=self.solver, delta=self.delta, silent=self.silent, debug=self.debug)
                 elif self.version == 4:
@@ -1129,7 +1142,7 @@ class Worker(Process):
                 elif self.version == 5:
                     print(colored(f"Selecting biggest rectangles method with sampling and interval arithmetics",
                                   "green")) if not self.silent else None
-                    spam = private_check_deeper_interval_parallel(work, self.constraints, silent=self.silent, debug=self.debug)
+                    spam = private_check_deeper_interval_parallel(work, self.functions, self.intervals, silent=self.silent, debug=self.debug)
 
             # Put result into out_queue
             print(f"refine result: {spam}") if self.debug else None
