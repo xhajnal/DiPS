@@ -9,6 +9,8 @@ from common.model_stuff import parse_params_from_model
 from space import RefinedSpace
 from common.config import load_config
 
+### SETTINGS
+
 ## PATHS
 spam = load_config()
 data_dir = spam["data"]
@@ -22,31 +24,45 @@ tmp = spam["tmp"]
 
 model_checker = "storm"  # "either"
 
-## PATHS
-sys.setrecursionlimit(4000000)
-
+## GENERAL SETTINGS
+# set True for debug mode
 debug = False
+# set False for command line print
 silent = True
-factorise = True
-
+# set True to show visualisation
 show_space = False
 
 ## REFINEMENT SETTING
+# Refinement timeout (in seconds)
 timeout = 3600
-single_call_timeout = 0  ## 30 or 0
-default_alg = 2
+
+# List of settings of sampling-guided refinement to run
+sample_guided_list = [False, True]  ## [False, True]
+# List of whether to use asynchronous calls refinement to run
+async_list = [False]  ## [False]
 
 ## INTERVALS SETTINGS
-n_samples_list = [100, 3500]
+# Number of samples
+n_samples_list = [3500, 100]
+# Confidence level
 C = 0.95
 
 ## EXPERIMENT SETUP
+# List of cores to Use, True for core_count -1, positive int for number of cores, False for sequential method, and "False4" for using running with alg4 instead of default alg
 cores_list = [True, 8, 4, 2, 1, False, "False4"]  ## [True, 8, 4, 2, 1, False]  ## This is CPU depending setting
+# Number of significant numbers in results (time it took)
 precision = 4
+# Number of refinements per individual setting
 repetitions = 20
 
-# sample_guided = True  ## Set True to run sampling-guided version, False for map version
-# is_async = False  ## Set True to run asynchronous version, False for map version
+# Setting of each of the models, sizes, properties, etc. is within the section of the respective models
+
+## INTERNAL SETTINGS - Experimental - please do not touch this part
+sys.setrecursionlimit(4000000)
+default_alg = 2
+factorise = True
+# single refinement call timeout
+single_call_timeout = 0  ## 30 or 0
 
 ## END OF SETTINGS
 del spam
@@ -57,10 +73,14 @@ else:
 
 if __name__ == '__main__':
     for n_samples in n_samples_list:
-        for multiparam in [True]:  ## [False, True]
-            for population_size in [4]:  ## [2, 3, 5, 10]
-                for is_async in [True]:  ## [False, True]
-                    for sample_guided in [True]:  ## [False, True]
+
+        ### BEE MODELS
+        # 2-param vs. multi-parametric - False for 2-param, True for #params = #bees
+        for multiparam in [False, True]:  ## [False, True]
+            # Number of bees
+            for population_size in [2, 3, 4, 5, 10]:  ## [2, 3, 5, 10]
+                for is_async in async_list:
+                    for sample_guided in sample_guided_list:
                         if multiparam and population_size == 2:
                             print(colored("Skipping 2 bees multiparam as this model is equivalent to 2-param model", "red"))
                             continue
@@ -84,9 +104,6 @@ if __name__ == '__main__':
                                 data_set = load_data(os.path.join(data_dir, f"bee/multiparam/data_n={population_size}.csv"), debug=debug)
                             else:
                                 data_set = load_data(os.path.join(data_dir, f"bee/2-param/data_n={population_size}.csv"), debug=debug)
-
-                        ## COMPUTE INTERVALS
-                        n_samples_list = [n_samples]  # [100, 1500, 3500]
 
                         ## SETUP PARAMETERS AND THEIR DOMAINS
                         if multiparam:
@@ -151,8 +168,10 @@ if __name__ == '__main__':
                             print()
 
         ### Knuth die
-        ## LOAD FUNCTIONS
+        # Number of parameters 1,2, or 3 - this pics different model versions
         for param_count in [1, 2, 3]:
+
+            ## LOAD FUNCTIONS
             functions = load_functions(f"Knuth/parametric_die_{param_count}_param_BSCCs", debug=debug, source=model_checker)
 
             ## LOAD DATA
@@ -185,8 +204,8 @@ if __name__ == '__main__':
             constraints = ineq_to_constraints(functions, intervals, decoupled=True)
 
             ## REFINE SPACE
-            for sample_guided in [False, True]:  ## [False, True]
-                for is_async in [True]:  ## [False, True]
+            for is_async in async_list:
+                for sample_guided in sample_guided_list:
                     for cores in cores_list:
                         if cores == "False4":
                             alg = 4
@@ -216,7 +235,8 @@ if __name__ == '__main__':
                                              parallel=cores, is_async=is_async)
                         print()
 
-        ### bounded retransmission protocol (brp model)
+        ### Bounded Retransmission Protocol (brp model)
+        # Model version, first number is N, number of chunks, second number is MAX, maximum number of retransmissions
         for version in ["3-2", "16-2"]:
             ## LOAD FUNCTIONS
             functions = load_functions(f"brp/brp_{version}", debug=debug, source=model_checker)
@@ -243,8 +263,8 @@ if __name__ == '__main__':
             constraints = ineq_to_constraints(functions, intervals, decoupled=True)
 
             ## REFINE SPACE
-            for sample_guided in [False, True]:  ## [False, True]
-                for is_async in [True]:  ## [False, True]
+            for is_async in async_list:
+                for sample_guided in sample_guided_list:
                     for cores in cores_list:
                         if cores == "False4":
                             alg = 4
