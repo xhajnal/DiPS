@@ -261,14 +261,36 @@ def generate_data(model_types, n_samples, populations, dimension_sample_size,
 if __name__ == '__main__':
     import numpy as np
 
-    # ### Knuth Die
-    # ## Settings
-    # model = "Knuth/parametric_die.pm"
-    # prism_parameter_values = "p=0.1"
-    # n_samples = 1000
-    # silent = True
-    # sim_length = 100
-    #
+    ### Honeybee
+    model_types = ["semisynchronous"]
+    populations = [2, 3, 4, 5, 10, 15]
+    # populations = [3]
+    n_samples = [3500]
+    # n_samples = [5, 4]
+    dimension_sample_size = 1
+    silent = True
+    debug = False
+
+    ## TODO uncomment following lines to rerun
+    for model_type in model_types:
+        ## MULTIPARAM
+        param_space = np.array([[0.81], [0.92], [0.92], [0.92]])
+        population = 4
+        multiparam = "multiparam"
+        Experiments_multiparam, Data_multiparam = generate_experiments_and_data([f"{multiparam}_{model_type}"], n_samples, [population], dimension_sample_size, input_folder=os.path.join(model_path, "bee"), modular_param_space=param_space, silent=silent)
+        print(Data_multiparam)
+
+    raise Exception()
+
+    ### Knuth Die
+    ## Settings
+    model = "Knuth/parametric_die.pm"
+    prism_parameter_values = "p=0.1"
+    n_samples = 1000
+    silent = True
+    sim_length = 100
+
+    ## TODO uncomment following lines to rerun
     # path_file = "brokolica.txt"
     # values = {}
     # for i in range(n_samples):
@@ -290,18 +312,19 @@ if __name__ == '__main__':
     #             values[value] = values[value] + 1
     # print(values)
     # os.remove(os.path.join(os.getcwd(), "results/prism_results", path_file))
-    # data = [6, 11, 68, 8, 97, 810]
-    # data = [item / n_samples for item in data]
-    # print("data", data)
-    #
-    # ### Knuth Die with 3params, author Tatjana Petrov
-    # ## Settings
-    # model = "Knuth/parametric_die_3_params.pm"
-    # prism_parameter_values = "p1=0.4,p2=0.7,p3=0.5"
-    # n_samples = 1000
-    # silent = True
-    # sim_length = 100
-    #
+    data = [6, 11, 68, 8, 97, 810]
+    data = [item / n_samples for item in data]
+    print("data", data)
+
+    ### Knuth Die with 3params, author Tatjana Petrov
+    ## Settings
+    model = "Knuth/parametric_die_3_params.pm"
+    prism_parameter_values = "p1=0.4,p2=0.7,p3=0.5"
+    n_samples = 1000
+    silent = True
+    sim_length = 100
+
+    ## TODO uncomment following lines to rerun
     # path_file = "zemiak.txt"
     # values = {}
     # for i in range(n_samples):
@@ -391,7 +414,6 @@ if __name__ == '__main__':
     plt.show()
     print("data", data)
 
-
     ### Zeroconf
     ## Settings
     model = "zeroconf/zeroconf-10.pm"
@@ -400,27 +422,28 @@ if __name__ == '__main__':
     silent = True
     sim_length = 10000000
 
-    path_file = "krupica.txt"
-    values = {}
-    for i in range(n_samples):
-        # print(f"calling: \n {model} -const {prism_parameter_values} -simpath {str(sim_length)} {path_file}")
-        call_prism(f"{model} -const {prism_parameter_values} -simpath {str(sim_length)} {path_file}",
-                   silent=silent, prism_output_path=os.path.join(os.getcwd(), "results/prism_results"))
-        with open(os.path.join(os.getcwd(), "results/prism_results", path_file)) as file:
-            lines = file.readlines()
-            # print(lines)
-            last_line = lines[-1]
-            # print()
-            # print("last_line", last_line)
-            value = parse_numbers(last_line)[-1]
-            # print()
-            # print("value", value)
-            if value not in values.keys():
-                values[value] = 1
-            else:
-                values[value] = values[value] + 1
-    print(values)
-    os.remove(os.path.join(os.getcwd(), "results/prism_results", path_file))
+    ## TODO uncomment following lines to rerun
+    # path_file = "krupica.txt"
+    # values = {}
+    # for i in range(n_samples):
+    #     # print(f"calling: \n {model} -const {prism_parameter_values} -simpath {str(sim_length)} {path_file}")
+    #     call_prism(f"{model} -const {prism_parameter_values} -simpath {str(sim_length)} {path_file}",
+    #                silent=silent, prism_output_path=os.path.join(os.getcwd(), "results/prism_results"))
+    #     with open(os.path.join(os.getcwd(), "results/prism_results", path_file)) as file:
+    #         lines = file.readlines()
+    #         # print(lines)
+    #         last_line = lines[-1]
+    #         # print()
+    #         # print("last_line", last_line)
+    #         value = parse_numbers(last_line)[-1]
+    #         # print()
+    #         # print("value", value)
+    #         if value not in values.keys():
+    #             values[value] = 1
+    #         else:
+    #             values[value] = values[value] + 1
+    # print(values)
+    # os.remove(os.path.join(os.getcwd(), "results/prism_results", path_file))
     data = [684, 316]
     data = [item/n_samples for item in data]
     print("data", data)
@@ -435,57 +458,58 @@ if __name__ == '__main__':
     silent = True
     debug = False
 
-    for model_type in model_types:
-        for multiparam in ["2-param", "multiparam"]:
-            for population in populations:
-                ## 2-PARAM
-                if multiparam == "2-param":
-                    ## Data sets
-                    two_param_data_sets = [np.array([[0.81], [0.92]]), np.array([[0.53], [0.13]])]
-                    for param_space in two_param_data_sets:
-                        print(colored(f"model_type {model_type}, # of params {multiparam}, population size {population}, parameter space {param_space}", "blue"))
-                        Experiments_two_param, Data_two_param = generate_experiments_and_data(model_types, n_samples, [population], dimension_sample_size, input_folder=os.path.join(model_path, model_type, multiparam), modular_param_space=param_space, silent=silent)
-                        if debug:
-                            print(Experiments_two_param)
-                        print(Data_two_param)
-
-                ## MULTIPARAM
-                elif multiparam == "multiparam":
-                    ## Data set 1
-                    if population == 2:
-                        param_space = np.array([[0.19], [0.76]])
-                    if population == 3:
-                        param_space = np.array([[0.19], [0.76], [0.76]])
-                    elif population == 4:
-                        param_space = np.array([[0.19], [0], [0.76], [0.76]])
-                    elif population == 5:
-                        param_space = np.array([[0.19], [0], [0.76], [0.76], [0.76]])
-                    elif population == 10:
-                        param_space = np.array([[0.19], [0], [0], [0], [0], [0.76], [0.76], [0.76], [0.76], [0.76], [0.76]])
-                    elif population == 15:
-                        param_space = np.array([[0.19], [0], [0], [0], [0], [0], [0], [0.76], [0.76], [0.76], [0.76], [0.76], [0.76], [0.76], [0.76], [0.76]])
-                    print(colored(f"model_type {model_type}, # of params {multiparam}, population size {population}, parameter space {param_space}", "blue"))
-                    Experiments_multiparam, Data_multiparam = generate_experiments_and_data([f"{multiparam}_{model_type}"], n_samples, [population], dimension_sample_size, input_folder=os.path.join(model_path, model_type, multiparam), modular_param_space=param_space, silent=silent)
-                    if debug:
-                        print(Experiments_multiparam)
-                    print(Data_multiparam)
-
-                    ## Data set 2
-                    if population == 2:
-                        param_space = np.array([[0.19], [0.86]])
-                    if population == 3:
-                        param_space = np.array([[0.19], [0.86], [0.86]])
-                    elif population == 4:
-                        param_space = np.array([[0.19], [0], [0.86], [0.86]])
-                    elif population == 5:
-                        param_space = np.array([[0.19], [0], [0.86], [0.86], [0.86]])
-                    elif population == 10:
-                        param_space = np.array([[0.19], [0], [0], [0], [0], [0.86], [0.86], [0.86], [0.86], [0.86], [0.86]])
-                    elif population == 15:
-                        param_space = np.array([[0.19], [0], [0], [0], [0], [0], [0], [0.86], [0.86], [0.86], [0.86], [0.86], [0.86], [0.86], [0.86], [0.86]])
-                    print(colored(f"model_type {model_type}, # of params {multiparam}, population size {population}, parameter space {param_space}", "blue"))
-                    Experiments_multiparam, Data_multiparam = generate_experiments_and_data([f"{multiparam}_{model_type}"], n_samples, [population], dimension_sample_size, input_folder=os.path.join(model_path, model_type, multiparam), modular_param_space=param_space, silent=silent)
-                    if debug:
-                        print(Experiments_multiparam)
-                    print(Data_multiparam)
+    ## TODO uncomment following lines to rerun
+    # for model_type in model_types:
+    #     for multiparam in ["2-param", "multiparam"]:
+    #         for population in populations:
+    #             ## 2-PARAM
+    #             if multiparam == "2-param":
+    #                 ## Data sets
+    #                 two_param_data_sets = [np.array([[0.81], [0.92]]), np.array([[0.53], [0.13]])]
+    #                 for param_space in two_param_data_sets:
+    #                     print(colored(f"model_type {model_type}, # of params {multiparam}, population size {population}, parameter space {param_space}", "blue"))
+    #                     Experiments_two_param, Data_two_param = generate_experiments_and_data(model_types, n_samples, [population], dimension_sample_size, input_folder=os.path.join(model_path, model_type, multiparam), modular_param_space=param_space, silent=silent)
+    #                     if debug:
+    #                         print(Experiments_two_param)
+    #                     print(Data_two_param)
+    #
+    #             ## MULTIPARAM
+    #             elif multiparam == "multiparam":
+    #                 ## Data set 1
+    #                 if population == 2:
+    #                     param_space = np.array([[0.19], [0.76]])
+    #                 if population == 3:
+    #                     param_space = np.array([[0.19], [0.76], [0.76]])
+    #                 elif population == 4:
+    #                     param_space = np.array([[0.19], [0], [0.76], [0.76]])
+    #                 elif population == 5:
+    #                     param_space = np.array([[0.19], [0], [0.76], [0.76], [0.76]])
+    #                 elif population == 10:
+    #                     param_space = np.array([[0.19], [0], [0], [0], [0], [0.76], [0.76], [0.76], [0.76], [0.76], [0.76]])
+    #                 elif population == 15:
+    #                     param_space = np.array([[0.19], [0], [0], [0], [0], [0], [0], [0.76], [0.76], [0.76], [0.76], [0.76], [0.76], [0.76], [0.76], [0.76]])
+    #                 print(colored(f"model_type {model_type}, # of params {multiparam}, population size {population}, parameter space {param_space}", "blue"))
+    #                 Experiments_multiparam, Data_multiparam = generate_experiments_and_data([f"{multiparam}_{model_type}"], n_samples, [population], dimension_sample_size, input_folder=os.path.join(model_path, model_type, multiparam), modular_param_space=param_space, silent=silent)
+    #                 if debug:
+    #                     print(Experiments_multiparam)
+    #                 print(Data_multiparam)
+    #
+    #                 ## Data set 2
+    #                 if population == 2:
+    #                     param_space = np.array([[0.19], [0.86]])
+    #                 if population == 3:
+    #                     param_space = np.array([[0.19], [0.86], [0.86]])
+    #                 elif population == 4:
+    #                     param_space = np.array([[0.19], [0], [0.86], [0.86]])
+    #                 elif population == 5:
+    #                     param_space = np.array([[0.19], [0], [0.86], [0.86], [0.86]])
+    #                 elif population == 10:
+    #                     param_space = np.array([[0.19], [0], [0], [0], [0], [0.86], [0.86], [0.86], [0.86], [0.86], [0.86]])
+    #                 elif population == 15:
+    #                     param_space = np.array([[0.19], [0], [0], [0], [0], [0], [0], [0.86], [0.86], [0.86], [0.86], [0.86], [0.86], [0.86], [0.86], [0.86]])
+    #                 print(colored(f"model_type {model_type}, # of params {multiparam}, population size {population}, parameter space {param_space}", "blue"))
+    #                 Experiments_multiparam, Data_multiparam = generate_experiments_and_data([f"{multiparam}_{model_type}"], n_samples, [population], dimension_sample_size, input_folder=os.path.join(model_path, model_type, multiparam), modular_param_space=param_space, silent=silent)
+    #                 if debug:
+    #                     print(Experiments_multiparam)
+    #                 print(Data_multiparam)
 

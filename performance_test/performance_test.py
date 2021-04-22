@@ -245,6 +245,7 @@ def repeat_refine(text, parameters, parameter_domains, constraints, timeout=0, s
         parameter_domains (list of pairs): list of intervals to be used for respective parameter
         constraints  (list of strings): array of properties
         timeout (int): timeout in seconds (set 0 for no timeout)
+        single_call_timeout (int): timeout of a single solver call in seconds
         silent (bool): if silent printed output is set to minimum
         debug (bool): if True extensive print will be used
         alg (Int): version of the algorithm to be used
@@ -252,9 +253,13 @@ def repeat_refine(text, parameters, parameter_domains, constraints, timeout=0, s
         sample_size (Int or bool): number of samples in dimension used for presampling, False for no presampling
         sample_guided (bool): flag to run sampling-guided refinement
         repetitions (Int): number of runs per setting
+        where (False or None): where to show result, None - does not show result, False - creates a new plot
         parallel (bool): flag whether to run in parallel mode
         is_async (bool): flag whether to run asynchronous calls when in parallel mode instead of map
     """
+    if alg is None:
+        return
+
     print(colored(f"Refining, {text}", "green"))
     print(f"max_depth: {max_depth}, coverage: {coverage}, epsilon: {epsilon}, alg: {colored(alg, 'green')}, {'solver: ' + colored(solver, 'green') + ', ' if alg<5 else ''}{'with ' + colored(str(single_call_timeout), 'green')+ 's' if single_call_timeout>0 else 'without'} single SMT call timeout, current time is: {datetime.now()}")
 
