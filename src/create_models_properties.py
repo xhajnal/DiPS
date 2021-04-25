@@ -7,7 +7,7 @@ from common.state_gen import gen_semisync_statespace
 
 spam = load_config()
 model_path = spam["models"]
-properties_path = spam["properties"]
+properties_path = spam["models"]
 del spam
 
 ########################################################################################################################
@@ -1477,9 +1477,9 @@ def create_bee_multiparam_synchronous_model(file, population_size):
                         file.write(f" + ")
                 file.write(f";\n")
 
-        # Selfloops in BSCCs
+        # Self-loops in BSCCs
         file.write(f"\n")
-        file.write(f"       // selfloops in BSCCs\n")
+        file.write(f"       // self-loops in BSCCs\n")
         file.write(f"       []   b=1 -> 1:(b'=1);\n")
         file.write(f"\n")
 
@@ -1530,7 +1530,10 @@ def create_bee_multiparam_semisynchronous_model(file, population_size):
     """
     if ".pm" not in file:
         file = file + ".pm"
-    filename = os.path.join(model_path, file)
+    if os.path.isabs(file):
+        filename = file
+    else:
+        filename = os.path.join(model_path, file)
     print(filename)
 
     with open(filename, "w") as file:
@@ -1711,9 +1714,9 @@ def create_bee_multiparam_semisynchronous_model(file, population_size):
                 else:
                     file.write(f"+")
 
-        # Selfloops in BSCCs
+        # Self-loops in BSCCs
         file.write(f"\n")
-        file.write(f"       // selfloops in BSCCs\n")
+        file.write(f"       // self-loops in BSCCs\n")
         file.write(f"       []   b=1 -> 1:(b'=1);\n")
         file.write(f"\n")
 
@@ -1753,15 +1756,22 @@ def create_bee_multiparam_semisynchronous_model(file, population_size):
 ########################################################################################################################
 
 
-def create_properties(population_size):
+def create_properties(population_size, file=""):
     """ Creates property file of reaching respective BSCC of the model of *population_size* agents as prop_<population_size>.pctl file.
     For more information see the HSB19 paper.
 
     Args:
         population_size (int):  agent quantity
+        file (str or Path): filename with extension
     """
+    if os.path.isabs(file):
+        filename = file
+    else:
+        if file == "":
+            filename = os.path.join(properties_path, f"prop_{population_size}.pctl")
+        else:
+            filename = os.path.join(properties_path, file)
 
-    filename = properties_path / Path(f"prop_{population_size}.pctl")
     print(filename)
     with open(filename, "w") as file:
         for i in range(1, population_size + 2):
@@ -1794,7 +1804,7 @@ if __name__ == '__main__':
         # create_synchronous_model(f"bee/synchronous_{population}_bees", population)
         create_semisynchronous_model(f"bee/semisynchronous_{population}_bees", population)
         # create_asynchronous_model(f"bee/asynchronous_{population}_bees", population)
-    for population in [2, 3, 4]:
+    for population in [3, 4]:
         # create_multiparam_synchronous_model(f"bee/multiparam_synchronous_{population}_bees", population)
         create_multiparam_semisynchronous_model(f"bee/multiparam_semisynchronous_{population}_bees", population)
         # create_multiparam_asynchronous_model(f"bee/multiparam_asynchronous_{population}_bees", population)
@@ -1806,5 +1816,5 @@ if __name__ == '__main__':
         pass
 
     for population in [2, 3, 4, 5, 10, 15]:
-        create_properties(population)
+        create_properties(population, os.path.join(model_path, f"bee/prop_{population}_bees.pctl"))
     print("Done")
