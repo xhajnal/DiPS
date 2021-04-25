@@ -1,7 +1,7 @@
-dtmc 
+// Honeybee mass stinging model. A population of bees a_1, ..., a_n defending the hive decide to sting or not.// Published in Hajnal et al., Data-informed parameter synthesis for population Markov chains, HSB 2019// Semisynchronous semantics, 2-paramsdtmc 
  
-const double p;
-const double q;
+const double p;  //probability to sting at initial condition
+const double q;  //probability to sting after sensing the alarm pheromone
 
 module two_param_agents_10
        // ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt

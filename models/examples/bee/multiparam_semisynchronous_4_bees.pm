@@ -1,6 +1,8 @@
+// Honeybee mass stinging model. A population of bees a_1, ..., a_n defending the hive decide to sting or not.
+// Semisynchronous semantics, multiparametric// Published in Hajnal et al., Data-informed parameter synthesis for population Markov chains, HSB 2019 
 dtmc 
  
-const double p;
+const double p;  //probability to sting at initial condition
 const double q1;
 const double q2;
 const double q3;
@@ -60,5 +62,3 @@ rewards "mean_cubed"
        a0 = 1 & a1 = 1 & a2 = 1 & a3 = 0:27;
        a0 = 1 & a1 = 1 & a2 = 1 & a3 = 1:64;
 endrewards 
-
-

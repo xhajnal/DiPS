@@ -55,9 +55,12 @@ def create_synchronous_model(file, population_size):
         # print(first_attempt)
 
         # start here
+        file.write(f"// Honeybee mass stinging model. A population of bees a_1, ..., a_n defending the hive decide to sting or not.\n")
+        file.write(f"// Synchronous semantics, 2-params")
+        file.write(f"// Published in Hajnal et al., Data-informed parameter synthesis for population Markov chains, HSB 2019 \n")
         file.write(f"dtmc \n \n")
-        file.write(f"const double p;\n")
-        file.write(f"const double q;\n")
+        file.write(f"const double p;  //probability to sting at initial condition\n")
+        file.write(f"const double q;  //probability to sting after sensing the alarm pheromone\n")
         file.write(f"\n")
 
         # module here
@@ -224,9 +227,12 @@ def create_semisynchronous_model(file, population_size):
         # print(first_attempt)
 
         # start here
+        file.write(f"// Honeybee mass stinging model. A population of bees a_1, ..., a_n defending the hive decide to sting or not.")
+        file.write(f"// Published in Hajnal et al., Data-informed parameter synthesis for population Markov chains, HSB 2019")
+        file.write(f"// Semisynchronous semantics, 2-params")
         file.write(f"dtmc \n \n")
-        file.write(f"const double p;\n")
-        file.write(f"const double q;\n")
+        file.write(f"const double p;  //probability to sting at initial condition\n")
+        file.write(f"const double q;  //probability to sting after sensing the alarm pheromone\n")
         file.write(f"\n")
 
         # module here
@@ -400,9 +406,12 @@ def create_asynchronous_model(file, population_size):
         decimals = math.ceil((math.log(population_size, 10)))
 
         # start here
+        file.write(f"// Honeybee mass stinging model. A population of bees a_1, ..., a_n defending the hive decide to sting or not.\n")
+        file.write(f"// Published in Hajnal et al., Data-informed parameter synthesis for population Markov chains, HSB 2019 \n")
+        file.write(f"// Asynchronous semantics, 2-params")
         file.write(f"dtmc \n \n")
-        file.write(f"const double p;\n")
-        file.write(f"const double q;\n")
+        file.write(f"const double p;  //probability to sting at initial condition\n")
+        file.write(f"const double q;  //probability to sting after sensing the alarm pheromone\n")
         file.write(f"\n")
 
         # module here
@@ -700,9 +709,11 @@ def create_multiparam_synchronous_model(file, population_size):
         # print(first_attempt)
 
         # start here
+        file.write(f"// Honeybee mass stinging model. A population of bees a_1, ..., a_n defending the hive decide to sting or not.\n")
+        file.write(f"// Synchronous semantics, multiparametric")
+        file.write(f"// Published in Hajnal et al., Data-informed parameter synthesis for population Markov chains, HSB 2019 \n")
         file.write(f"dtmc \n \n")
-        file.write(f"const double p;\n")
-
+        file.write(f"const double p;  //probability to sting at initial condition\n")
         for i in range(1, population_size):
             file.write(f"const double q{i:0{decimals}d};\n")
         file.write(f"\n")
@@ -871,8 +882,11 @@ def create_multiparam_semisynchronous_model(file, population_size):
         # print(first_attempt)
 
         # start here
+        file.write(f"// Honeybee mass stinging model. A population of bees a_1, ..., a_n defending the hive decide to sting or not.\n")
+        file.write(f"// Semisynchronous semantics, multiparametric")
+        file.write(f"// Published in Hajnal et al., Data-informed parameter synthesis for population Markov chains, HSB 2019 \n")
         file.write(f"dtmc \n \n")
-        file.write(f"const double p;\n")
+        file.write(f"const double p;  //probability to sting at initial condition\n")
 
         for i in range(1, population_size):
             file.write(f"const double q{i:0{decimals}d};\n")
@@ -1064,8 +1078,11 @@ def create_multiparam_asynchronous_model(file, population_size):
         # print(first_attempt)
 
         # start here
+        file.write(f"// Honeybee mass stinging model. A population of bees a_1, ..., a_n defending the hive decide to sting or not.\n")
+        file.write(f"// Asynchronous semantics, multiparametric")
+        file.write(f"// Published in Hajnal et al., Data-informed parameter synthesis for population Markov chains, HSB 2019 \n")
         file.write(f"dtmc \n \n")
-        file.write(f"const double p;\n")
+        file.write(f"const double p;  //probability to sting at initial condition\n")
 
         for i in range(1, population_size):
             file.write(f"const double q{i:0{decimals}d};\n")
@@ -1366,8 +1383,11 @@ def create_bee_multiparam_synchronous_model(file, population_size):
         # print(first_attempt)
 
         # Model starts here
+        file.write(f"// New Honeybee mass stinging model. A population of bees a_1, ..., a_n defending the hive decide to sting or not.\n")
+        file.write(f"// Synchronous semantics, multiparametric")
         file.write(f"dtmc \n \n")
 
+        file.write(f"r_i - probability to sting when i amount of pheromone present \n")
         for i in range(0, population_size):
             file.write(f"const double r_{i:0{decimals}d};\n")
         file.write(f"\n")
@@ -1530,8 +1550,11 @@ def create_bee_multiparam_semisynchronous_model(file, population_size):
             coefficient = ""
 
         # Model starts here
+        file.write(f"// New Honeybee mass stinging model. A population of bees a_1, ..., a_n defending the hive decide to sting or not.\n")
+        file.write(f"// Semisynchronous semantics, multiparametric")
         file.write(f"dtmc \n \n")
 
+        file.write(f"r_i - probability to sting when i amount of pheromone present \n")
         for i in range(0, population_size):
             file.write(f"const double r_{i:0{decimals}d};\n")
         file.write(f"\n")
@@ -1767,18 +1790,21 @@ def create_rewards_prop():
 
 
 if __name__ == '__main__':
-    for population in [50]:
-        # create_synchronous_model(f"old_bee/synchronous/{population}_synchronous", population)
-        # create_semisynchronous_model(f"old_bee/semisynchronous/{population}_semisynchronous", population)
-        # create_asynchronous_model(f"old_bee/asynchronous/{population}_asynchronous", population)
-        #
-        # create_multiparam_synchronous_model(f"old_bee/synchronous/{population}_multiparam_synchronous", population)
-        # create_multiparam_semisynchronous_model(f"old_bee/semisynchronous/{population}_multiparam_semisynchronous", population)
-        # create_multiparam_asynchronous_model(f"old_bee/asynchronous/{population}_multiparam_asynchronous", population)
+    for population in [2, 3, 5, 10, 15]:
+        # create_synchronous_model(f"bee/synchronous_{population}_bees", population)
+        create_semisynchronous_model(f"bee/semisynchronous_{population}_bees", population)
+        # create_asynchronous_model(f"bee/asynchronous_{population}_bees", population)
+    for population in [2, 3, 4]:
+        # create_multiparam_synchronous_model(f"bee/multiparam_synchronous_{population}_bees", population)
+        create_multiparam_semisynchronous_model(f"bee/multiparam_semisynchronous_{population}_bees", population)
+        # create_multiparam_asynchronous_model(f"bee/multiparam_asynchronous_{population}_bees", population)
 
-        create_bee_multiparam_synchronous_model(f"/home/matej/Git/DiPS/models/{population}_synchronous.pm", population)
+    for population in [2, 3, 5, 10]:
+        # create_bee_multiparam_synchronous_model(f"/home/matej/Git/DiPS/models/{population}_synchronous.pm", population)
         # This is a time consuming operation:
-        #create_bee_multiparam_semisynchronous_model(f"bee/semisynchronous/{population}_semisynchronous", population)
+        # create_bee_multiparam_semisynchronous_model(f"bee/semisynchronous/{population}_semisynchronous", population)
+        pass
 
+    for population in [2, 3, 4, 5, 10, 15]:
         create_properties(population)
     print("Done")

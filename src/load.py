@@ -56,7 +56,7 @@ def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False
         elif tool.lower().startswith("s"):
             file_path = os.path.join(storm_results, file_path)
         else:
-            print("Selected tool unsupported.")
+            print("Loading model checking result. Selected tool unsupported.")
             return False, False
     ## Initialise structures
     f = []
@@ -90,7 +90,7 @@ def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False
             else:
                 break
         if tool == "unknown":
-            print("Tool not recognised")
+            print("Loading model checking result. Tool not recognised.")
             return False, False
 
         ## Parsing results
@@ -184,7 +184,7 @@ def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False
                             try:
                                 rewards.append(str(factor(line)))
                             except TypeError:
-                                print("Error while factorising rewards, used not factorised instead")
+                                print("Loading model checking result. Error while factorising rewards, used not factorised instead")
                                 rewards.append(line)
                                 # os.chdir(cwd)
                             finally:
@@ -199,7 +199,7 @@ def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False
                                 f.append(str(factor(line)))
                             except TypeError:
 
-                                print(f"Error while factorising polynomial f[{i + 1}], used not factorised instead")
+                                print(f"Loading model checking result. Error while factorising polynomial f[{i + 1}], used not factorised instead")
                                 print(line)
                                 f.append(line)
                             finally:
@@ -239,12 +239,12 @@ def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False
                                 unknown.append(parse_interval_bounds(line.split(":")[0]))
                                 # unknown = unknown + (parse_interval_bounds(line.split(":")[0]),)
                             else:
-                                raise Exception(f"Error occurred when reading line {line_index} as a part of Storm refinement")
+                                raise Exception(f"Loading model checking result. Error occurred when reading line {line_index} as a part of Storm refinement")
                         else:  ## 2 params
                             is_ref_lines = True
                             ## Get rid of Result:
                             if "Writing illustration of region check result to a stream is only implemented for two parameters" in line:
-                                raise Exception(f"An error occurred, DiPS parsed 2 parameters but Storm did not.")
+                                raise Exception(f"Loading model checking result. An error occurred, DiPS parsed 2 parameters but Storm did not.")
 
                             ## Beginning or end of refinement
                             if "##########################" in line:
@@ -280,7 +280,7 @@ def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False
                         elif line == "\n":
                             continue
                         else:
-                            raise Exception(f"Error occurred when reading line {line_index} as a part of PRISM refinement")
+                            raise Exception(f"Loading model checking result. Error occurred when reading line {line_index} as a part of PRISM refinement")
 
             line_index = line_index + 1
 
@@ -538,21 +538,21 @@ def load_data(path, silent: bool = False, debug: bool = False):
                 for line in file:
                     line = line[:-1]
                     if debug:
-                        print("Unparsed line: ", line)
+                        print("Unparsed data line: ", line)
                     if "," not in line:
-                        print(colored(f"Comma not in line {line}, skipping this line", "red"))
+                        print(colored(f"Comma not in data line {line}, skipping this line", "red"))
                         continue
                     correct_line = True
                     data = line.split(",")
                     if debug:
-                        print("Parsed line: ", data)
+                        print("Parsed data line: ", data)
 
                     for value in range(len(data)):
                         try:
                             assert isinstance(data, list)
                             data[value] = float(data[value])
                         except ValueError:
-                            print(colored(f"Warning while parsing line number {value + 1}. Expected number, got {type(data[value])}. Skipping this line: {line}", "red"))
+                            print(colored(f"Warning while parsing data line number {value + 1}. Expected number, got {type(data[value])}. Skipping this line: {line}", "red"))
                             correct_line = False
                             break
                     if correct_line:
@@ -600,7 +600,7 @@ def load_all_data(path):
                     try:
                         data[population][value] = float(data[population][value])
                     except:
-                        print("error while parsing population =", population, " i =", value, " of value =", data[population][value])
+                        print("Error while parsing data for population =", population, " i =", value, " of value =", data[population][value])
                         data[population][value] = 0
                     # print(type(D[population][value]))
                 # D[population].append(1-sum(D[population]))
