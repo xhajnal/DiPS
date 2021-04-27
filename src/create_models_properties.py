@@ -26,10 +26,10 @@ def create_synchronous_model(file, population_size):
     Model meaning
     ----------
     Params:
-    population_size (int):  number of agents (agents quantity)
+    population_size (int): number of agents (agents quantity)
     p (float): - probability to succeed in the first attempt
     q (float): - probability to succeed in the second attempt
-    ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
+    ai - state of agent i: -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
     """
 
     if ".pm" not in file:
@@ -56,7 +56,7 @@ def create_synchronous_model(file, population_size):
 
         # start here
         file.write(f"// Honeybee mass stinging model. A population of bees a_1, ..., a_n defending the hive decide to sting or not.\n")
-        file.write(f"// Synchronous semantics, 2-params")
+        file.write(f"// Synchronous semantics, 2-params \n")
         file.write(f"// Published in Hajnal et al., Data-informed parameter synthesis for population Markov chains, HSB 2019 \n")
         file.write(f"dtmc \n \n")
         file.write(f"const double p;  //probability to sting at initial condition\n")
@@ -194,15 +194,15 @@ def create_semisynchronous_model(file, population_size):
 
     Args:
         file (string): filename with extension
-        population_size (int):  agent quantity
+        population_size (int): agent quantity
 
     Model meaning
     ----------
     Params:
-    population_size (int):  number of agents (agents quantity)
+    population_size (int): number of agents (agents quantity)
     p (float): - probability to succeed in the first attempt
     q (float): - probability to succeed in the second attempt
-    ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
+    ai - state of agent i: -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
     """
     if ".pm" not in file:
         file = file + ".pm"
@@ -227,9 +227,9 @@ def create_semisynchronous_model(file, population_size):
         # print(first_attempt)
 
         # start here
-        file.write(f"// Honeybee mass stinging model. A population of bees a_1, ..., a_n defending the hive decide to sting or not.")
-        file.write(f"// Published in Hajnal et al., Data-informed parameter synthesis for population Markov chains, HSB 2019")
-        file.write(f"// Semisynchronous semantics, 2-params")
+        file.write(f"// Honeybee mass stinging model. A population of bees a_1, ..., a_n defending the hive decide to sting or not. \n")
+        file.write(f"// Published in Hajnal et al., Data-informed parameter synthesis for population Markov chains, HSB 2019 \n")
+        file.write(f"// Semisynchronous semantics, 2-params \n")
         file.write(f"dtmc \n \n")
         file.write(f"const double p;  //probability to sting at initial condition\n")
         file.write(f"const double q;  //probability to sting after sensing the alarm pheromone\n")
@@ -408,7 +408,7 @@ def create_asynchronous_model(file, population_size):
         # start here
         file.write(f"// Honeybee mass stinging model. A population of bees a_1, ..., a_n defending the hive decide to sting or not.\n")
         file.write(f"// Published in Hajnal et al., Data-informed parameter synthesis for population Markov chains, HSB 2019 \n")
-        file.write(f"// Asynchronous semantics, 2-params")
+        file.write(f"// Asynchronous semantics, 2-params \n")
         file.write(f"dtmc \n \n")
         file.write(f"const double p;  //probability to sting at initial condition\n")
         file.write(f"const double q;  //probability to sting after sensing the alarm pheromone\n")
@@ -710,7 +710,7 @@ def create_multiparam_synchronous_model(file, population_size):
 
         # start here
         file.write(f"// Honeybee mass stinging model. A population of bees a_1, ..., a_n defending the hive decide to sting or not.\n")
-        file.write(f"// Synchronous semantics, multiparametric")
+        file.write(f"// Synchronous semantics, multiparametric \n")
         file.write(f"// Published in Hajnal et al., Data-informed parameter synthesis for population Markov chains, HSB 2019 \n")
         file.write(f"dtmc \n \n")
         file.write(f"const double p;  //probability to sting at initial condition\n")
@@ -849,15 +849,15 @@ def create_multiparam_semisynchronous_model(file, population_size):
 
     Args:
         file (string): filename with extension
-        population_size (int):  agent quantity
+        population_size (int): agent quantity
 
     Model meaning
     ----------
     Params:
-    population_size (int):  number of agents (agents quantity)
+    population_size (int): number of agents (agents quantity)
     p (float): - probability to succeed in the first attempt
     q (float): - probability to succeed in the second attempt
-    ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
+    ai - state of agent i: -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
     """
     if ".pm" not in file:
         file = file + ".pm"
@@ -883,7 +883,7 @@ def create_multiparam_semisynchronous_model(file, population_size):
 
         # start here
         file.write(f"// Honeybee mass stinging model. A population of bees a_1, ..., a_n defending the hive decide to sting or not.\n")
-        file.write(f"// Semisynchronous semantics, multiparametric")
+        file.write(f"// Semisynchronous semantics, multiparametric \n")
         file.write(f"// Published in Hajnal et al., Data-informed parameter synthesis for population Markov chains, HSB 2019 \n")
         file.write(f"dtmc \n \n")
         file.write(f"const double p;  //probability to sting at initial condition\n")
@@ -1045,15 +1045,15 @@ def create_multiparam_asynchronous_model(file, population_size):
 
     Args:
         file (string): filename with extension
-        population_size (int):  agent quantity
+        population_size (int): agent quantity
 
     Model meaning
     ----------
     Params:
-    population_size (int):  number of agents (agents quantity)
+    population_size (int): number of agents (agents quantity)
     p (float): - probability to succeed in the first attempt
     q (float): - probability to succeed in the second attempt
-    ai - state of agent i:  -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
+    ai - state of agent i: -1:init, 0:total_failure, 1:success, 2:failure_after_first_attempt
     """
     if ".pm" not in file:
         file = file + ".pm"
@@ -1079,7 +1079,7 @@ def create_multiparam_asynchronous_model(file, population_size):
 
         # start here
         file.write(f"// Honeybee mass stinging model. A population of bees a_1, ..., a_n defending the hive decide to sting or not.\n")
-        file.write(f"// Asynchronous semantics, multiparametric")
+        file.write(f"// Asynchronous semantics, multiparametric \n")
         file.write(f"// Published in Hajnal et al., Data-informed parameter synthesis for population Markov chains, HSB 2019 \n")
         file.write(f"dtmc \n \n")
         file.write(f"const double p;  //probability to sting at initial condition\n")
@@ -1352,12 +1352,12 @@ def create_bee_multiparam_synchronous_model(file, population_size):
 
     Args:
         file (string): filename with extension
-        population_size (int):  agent quantity
+        population_size (int): agent quantity
 
     Model meaning
     ----------
     Params:
-    population_size (int):  number of agents (agents quantity)
+    population_size (int): number of agents (agents quantity)
     r_i (float): - probability of success of an agent when i amount of pheromone is present
     """
     if ".pm" not in file:
@@ -1384,7 +1384,7 @@ def create_bee_multiparam_synchronous_model(file, population_size):
 
         # Model starts here
         file.write(f"// New Honeybee mass stinging model. A population of bees a_1, ..., a_n defending the hive decide to sting or not.\n")
-        file.write(f"// Synchronous semantics, multiparametric")
+        file.write(f"// Synchronous semantics, multiparametric \n")
         file.write(f"dtmc \n \n")
 
         file.write(f"r_i - probability to sting when i amount of pheromone present \n")
@@ -1520,12 +1520,12 @@ def create_bee_multiparam_semisynchronous_model(file, population_size):
 
     Args:
         file (string): filename with extension
-        population_size (int):  agent quantity
+        population_size (int): agent quantity
 
     Model meaning
     ----------
     Params:
-    population_size (int):  number of agents (agents quantity)
+    population_size (int): number of agents (agents quantity)
     r_i (float): - probability of success of an agent when i amount of pheromone is present
     """
     if ".pm" not in file:
@@ -1554,7 +1554,7 @@ def create_bee_multiparam_semisynchronous_model(file, population_size):
 
         # Model starts here
         file.write(f"// New Honeybee mass stinging model. A population of bees a_1, ..., a_n defending the hive decide to sting or not.\n")
-        file.write(f"// Semisynchronous semantics, multiparametric")
+        file.write(f"// Semisynchronous semantics, multiparametric \n")
         file.write(f"dtmc \n \n")
 
         file.write(f"r_i - probability to sting when i amount of pheromone present \n")
@@ -1761,7 +1761,7 @@ def create_properties(population_size, file=""):
     For more information see the HSB19 paper.
 
     Args:
-        population_size (int):  agent quantity
+        population_size (int): agent quantity
         file (str or Path): filename with extension
     """
     if os.path.isabs(file):

@@ -1,4 +1,7 @@
-// Honeybee mass stinging model. A population of bees a_1, ..., a_n defending the hive decide to sting or not.// Published in Hajnal et al., Data-informed parameter synthesis for population Markov chains, HSB 2019// Semisynchronous semantics, 2-paramsdtmc 
+// Honeybee mass stinging model. A population of bees a_1, ..., a_n defending the hive decide to sting or not. 
+// Published in Hajnal et al., Data-informed parameter synthesis for population Markov chains, HSB 2019 
+// Semisynchronous semantics, 2-params 
+dtmc 
  
 const double p;  //probability to sting at initial condition
 const double q;  //probability to sting after sensing the alarm pheromone
