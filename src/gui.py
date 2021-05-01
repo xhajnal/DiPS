@@ -823,48 +823,60 @@ class Gui(Tk):
         Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=9, column=7, columnspan=2, pady=4)
 
         # ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=5, rowspan=7, sticky='ns', padx=25, pady=25)
-
+        row = 1
         label62 = Label(frame_left, text="Max dept: ", anchor=W, justify=LEFT)
-        label62.grid(row=1, column=3, padx=0)
+        label62.grid(row=row, column=3, padx=0)
         createToolTip(label62, text='Maximal number of splits, set negative for infinite')
         label63 = Label(frame_left, text="Coverage: ", anchor=W, justify=LEFT)
-        label63.grid(row=2, column=3, padx=0)
+        row += 1
+        label63.grid(row=row, column=3, padx=0)
         createToolTip(label63, text='Proportion of the nonwhite area to be reached')
 
         # label64 = Label(frame_left, text="Epsilon: ", anchor=W, justify=LEFT)
-        # label64.grid(row=3, column=3, padx=0)
+        # row += 1
+        # label64.grid(row=row, column=3, padx=0)
         # createToolTip(label64, text='Minimal size of the rectangle to be checked (if 0 all rectangles are being checked)')
 
         label65 = Label(frame_left, text="Algorithm: ", anchor=W, justify=LEFT)
-        label65.grid(row=3, column=3, padx=0)
+        row += 1
+        label65.grid(row=row, column=3, padx=0)
         createToolTip(label65, text='Choose from algorithms:\n 1-4 - using SMT solvers \n 1 - DFS search \n 2 - BFS search \n 3 - BFS search with example propagation \n 4 - BFS with example and counterexample propagation \n 5 - interval algorithmic \n 6 - parameter lifting')
 
         label66 = Label(frame_left, text="SMT solver: ", anchor=W, justify=LEFT)
-        label66.grid(row=4, column=3, padx=0)
+        row += 1
+        label66.grid(row=row, column=3, padx=0)
         createToolTip(label66, text='When using SMT solver (alg 1-4), two solvers are available, z3 or dreal')
 
         label67 = Label(frame_left, text="Delta for dreal: ", anchor=W, justify=LEFT)
-        label67.grid(row=5, column=3, padx=0)
+        row += 1
+        label67.grid(row=row, column=3, padx=0)
         createToolTip(label67, text='When using dreal solver, delta is used to set solver error boundaries for satisfiability.')
 
         label68 = Label(frame_left, text="Timeout: ", anchor=W, justify=LEFT)
-        label68.grid(row=6, column=3, padx=0)
+        row += 1
+        label68.grid(row=row, column=3, padx=0)
         createToolTip(label68, text='Timeout in seconds. Set 0 for no timeout.')
 
-        label69 = Label(frame_left, text="Single Call Timeout: ", anchor=W, justify=LEFT)
-        label69.grid(row=7, column=3, padx=0)
-        createToolTip(label69, text='Timeout of a single (rectangle) refine call in seconds. Set 0 for no timeout.')
+        ## TODO uncomment this, version for QEST
+        # label69 = Label(frame_left, text="Single Call Timeout: ", anchor=W, justify=LEFT)
+        # row += 1
+        # label69.grid(row=row, column=3, padx=0)
+        # createToolTip(label69, text='Timeout of a single (rectangle) refine call in seconds. Set 0 for no timeout.')
 
         label610 = Label(frame_left, text="Number of cores to use: ", anchor=W, justify=LEFT)
-        label610.grid(row=8, column=3, padx=0)
+        row += 1
+        label610.grid(row=row, column=3, padx=0)
         createToolTip(label610, text='Number of processes running in parallel, set 1 for sequential.')
 
-        presampled_refinement_checkbutton = Checkbutton(frame_left, text=" Use presampled refinement", variable=self.presampled_refinement)
-        presampled_refinement_checkbutton.grid(row=9, column=3, columnspan=2, padx=0)
-        createToolTip(presampled_refinement_checkbutton, text="Uses sampling before first refinement for creating region candidates to refine.")
+        ## TODO uncomment this, version for QEST
+        # presampled_refinement_checkbutton = Checkbutton(frame_left, text=" Use presampled refinement", variable=self.presampled_refinement)
+        # row += 1
+        # presampled_refinement_checkbutton.grid(row=row, column=3, columnspan=2, padx=0)
+        # createToolTip(presampled_refinement_checkbutton, text="Uses sampling before first refinement for creating region candidates to refine.")
 
         sampling_guided_refinement_checkbutton = Checkbutton(frame_left, text=" Use sampling guided refinement", variable=self.sampling_guided_refinement)
-        sampling_guided_refinement_checkbutton.grid(row=10, column=3, columnspan=2, padx=0)
+        row += 1
+        sampling_guided_refinement_checkbutton.grid(row=row, column=3, columnspan=2, padx=0)
         createToolTip(sampling_guided_refinement_checkbutton, text="Before a rectangle is verified, sampling is used to help check satisfiability.")
 
         # iterative_refinement_checkbutton = Checkbutton(frame_left, text="Use iterative refinement (TBD)", variable=self.iterative_refinement)
@@ -880,15 +892,25 @@ class Gui(Tk):
         self.refinement_single_call_timeout_entry = Entry(frame_left)
         self.refinement_cores_entry = Entry(frame_left)
 
-        self.max_dept_entry.grid(row=1, column=4)
-        self.coverage_entry.grid(row=2, column=4)
-        # self.epsilon_entry.grid(row=3, column=4)
-        self.alg_entry.grid(row=3, column=4)
-        self.solver_entry.grid(row=4, column=4)
-        self.delta_entry.grid(row=5, column=4)
-        self.refinement_timeout_entry.grid(row=6, column=4)
-        self.refinement_single_call_timeout_entry.grid(row=7, column=4)
-        self.refinement_cores_entry.grid(row=8, column=4)
+        row2 = 1
+        self.max_dept_entry.grid(row=row2, column=4)
+        row2 += 1
+        self.coverage_entry.grid(row=row2, column=4)
+        # row += 1
+        # self.epsilon_entry.grid(row=row2, column=4)
+        row2 += 1
+        self.alg_entry.grid(row=row2, column=4)
+        row2 += 1
+        self.solver_entry.grid(row=row2, column=4)
+        row2 += 1
+        self.delta_entry.grid(row=row2, column=4)
+        row2 += 1
+        self.refinement_timeout_entry.grid(row=row2, column=4)
+        ## TODO uncomment this, version for QEST
+        # row += 1
+        # self.refinement_single_call_timeout_entry.grid(row=row2, column=4)
+        row2 += 1
+        self.refinement_cores_entry.grid(row=row2, column=4)
 
         self.max_dept_entry.insert(END, '5')
         self.coverage_entry.insert(END, '0.95')
@@ -897,28 +919,35 @@ class Gui(Tk):
         self.solver_entry.current(0)
         self.delta_entry.insert(END, '0.01')
         self.refinement_timeout_entry.insert(END, '3600')
-        self.refinement_single_call_timeout_entry.insert(END, '0')
+        ## TODO uncomment this, version for QEST
+        # self.refinement_single_call_timeout_entry.insert(END, '0')
         self.refinement_cores_entry.insert(END, '1')
 
         exact_refine_button = Button(frame_left, text='DiPS refine', command=self.refine_space)
-        exact_refine_button.grid(row=11, column=3, columnspan=2, pady=4, padx=0)
+        row += 1
+        exact_refine_button.grid(row=row, column=3, columnspan=2, pady=4, padx=0)
         createToolTip(exact_refine_button, text="Run refinement with SMT solver (z3 / dreal) or interval arithmetic.")
 
         prism_refine_button = Button(frame_left, text='PRISM refine', command=self.external_refine_PRISM)
-        prism_refine_button.grid(row=12, column=3, columnspan=1, pady=4, padx=0)
+        row += 1
+        prism_refine_button.grid(row=row, column=3, columnspan=1, pady=4, padx=0)
         createToolTip(prism_refine_button, text="Run approximate refinement using sampling by PRISM.")
 
         storm_refine_button = Button(frame_left, text='Storm refine', command=self.external_refine_Storm)
-        storm_refine_button.grid(row=12, column=4, columnspan=1, pady=4, padx=0)
+        storm_refine_button.grid(row=row, column=4, columnspan=1, pady=4, padx=0)
         createToolTip(storm_refine_button, text="Run parameter lifting, refinement method for models with multi-affine parametrisations, by Storm.")
 
-        ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=13, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
+        row += 1
+        ttk.Separator(frame_left, orient=HORIZONTAL).grid(row=row, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
 
-        Label(frame_left, text="Textual representation of space", anchor=CENTER, justify=CENTER, padx=10).grid(row=14, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
+        row += 1
+        Label(frame_left, text="Textual representation of space", anchor=CENTER, justify=CENTER, padx=10).grid(row=row, column=0, columnspan=15, sticky='nwe', padx=10, pady=4)
         self.space_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_height() * 0.8/19), state=DISABLED)
-        self.space_text.grid(row=15, column=0, columnspan=9, rowspan=2, sticky=W, padx=10)
-        Button(frame_left, text='Extend / Collapse text', command=self.collapse_space_text).grid(row=16, column=3, sticky=S, padx=0, pady=(10, 10))
-        Button(frame_left, text='Export text', command=self.export_space_text).grid(row=16, column=4, sticky=S, padx=0, pady=(10, 10))
+        row += 1
+        self.space_text.grid(row=row, column=0, columnspan=9, rowspan=2, sticky=W, padx=10)
+        row += 1
+        Button(frame_left, text='Extend / Collapse text', command=self.collapse_space_text).grid(row=row, column=3, sticky=S, padx=0, pady=(10, 10))
+        Button(frame_left, text='Export text', command=self.export_space_text).grid(row=row, column=4, sticky=S, padx=0, pady=(10, 10))
 
         frame_right = Frame(page6)
         # frame_right.grid_propagate(0)
@@ -4104,6 +4133,12 @@ class Gui(Tk):
             if not askyesno("Space refinement", "Recursion this deep may cause segmentation fault. Do you want to continue?"):
                 return
 
+        try:
+            single_call_timeout = float(self.refinement_single_call_timeout_entry.get())
+        except Exception as err:
+            print(str(err))
+            single_call_timeout = 0
+
         self.status_set("Space refinement is running ...")
         # print(colored(f"self.space, {self.space.nice_print()}]", "blue"))
 
@@ -4146,7 +4181,7 @@ class Gui(Tk):
                                                  delta=self.delta, gui=self.update_progress_bar if self.show_progress else False,
                                                  show_space=False, iterative=self.iterative_refinement.get(),
                                                  timeout=int(float(self.refinement_timeout_entry.get())),
-                                                 single_call_timeout=float(self.refinement_single_call_timeout_entry.get()),
+                                                 single_call_timeout=single_call_timeout,
                                                  parallel=int(self.refinement_cores_entry.get()))
                 else:
                     assert isinstance(self.constraints, list)
@@ -4158,10 +4193,10 @@ class Gui(Tk):
                                                  delta=self.delta, gui=self.update_progress_bar if self.show_progress else False,
                                                  show_space=False, iterative=self.iterative_refinement.get(),
                                                  timeout=int(float(self.refinement_timeout_entry.get())),
-                                                 single_call_timeout=float(self.refinement_single_call_timeout_entry.get()),
+                                                 single_call_timeout=single_call_timeout,
                                                  parallel=int(self.refinement_cores_entry.get()))
             else:
-                if float(self.refinement_single_call_timeout_entry.get()) > 0:
+                if single_call_timeout > 0:
                     messagebox.showwarning("Refinement settings", "Single call timeout for sequential refinement not implemented")
                     return
                 if self.sampling_guided_refinement.get():
