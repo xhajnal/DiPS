@@ -118,7 +118,7 @@ class ToolTip(object):
         tw.wm_geometry("+%d+%d" % (x, y))
         label = Label(tw, text=text, justify=LEFT,
                       background="#ffffe0", relief=SOLID, borderwidth=1,
-                      font=("tahoma", "8", "normal"))
+                      font=("tahoma", "10", "normal"))
         label.pack(ipadx=1)
 
     def hidetip(self):
@@ -390,11 +390,11 @@ class Gui(Tk):
         debug_checkbutton = Checkbutton(right_frame, text="Extensive output", variable=self.debug)
         debug_checkbutton.grid(row=3, column=2, sticky=W, padx=4)
         mh_metadata_button = Checkbutton(right_frame, text="Show MH metadata plots", variable=self.show_mh_metadata)
-        mh_metadata_button.grid(row=3, column=3, sticky=W, padx=4)
+        mh_metadata_button.grid(row=4, column=0, sticky=W, padx=4)
         createToolTip(mh_metadata_button, text='Check to plot metadata plots of Metropolis-Hastings')
 
         save_as_plain_text_button = Checkbutton(right_frame, text="Save structures as plain text", variable=self.save_as_plain_text)
-        save_as_plain_text_button.grid(row=3, column=4, sticky=W, padx=4)
+        save_as_plain_text_button.grid(row=4, column=1, sticky=W, padx=4)
         createToolTip(save_as_plain_text_button, text='Check to save functions and constraints as text file instead of compressed pickle files')
 
         frame.rowconfigure(0, weight=1)
@@ -425,7 +425,7 @@ class Gui(Tk):
         Button(frame_left, text='Save model', command=self.save_model).grid(row=0, column=1, sticky=W, padx=4, pady=4)  # pack(anchor=W)
         Label(frame_left, text=f"Loaded model file:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, padx=4, pady=4)  # pack(anchor=W)
 
-        self.model_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_width()/2))
+        self.model_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_width()/2), font=("sdadasd", 12))
         # self.model_text.bind("<FocusOut>", self.refresh_model)
         self.model_text.bind("<Key>", lambda x: self.model_text_modified.set(True) if x.char != "" else None)
         # self.model_text.config(state="disabled")
@@ -443,7 +443,7 @@ class Gui(Tk):
         Label(frame_right, text=f"Loaded property file:", anchor=W, justify=LEFT).grid(row=1, column=1, sticky=W,
                                                                                        pady=4)  # pack(anchor=W)
 
-        self.property_text = scrolledtext.ScrolledText(frame_right, width=int(self.winfo_width() / 2), height=int(self.winfo_width()/2))
+        self.property_text = scrolledtext.ScrolledText(frame_right, width=int(self.winfo_width() / 2), height=int(self.winfo_width()/2), font=("sdadasd", 12))
         # self.property_text.bind("<FocusOut>", self.refresh_properties)
         self.property_text.bind("<Key>", lambda x: self.properties_text_modified.set(True) if x.char != "" else None)
         # self.property_text.config(state="disabled")
