@@ -661,7 +661,7 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
 
     ## VISUALISATION
 
-    space.title = f"using max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version}, {solver}"
+    space.title = f"using max_recursion_depth:{globals()['init_recursion_depth']}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version}, {solver}"
     if not sample_size:
         ## If the visualisation of the space did not succeed space_shown = (None, error message)
         if show_space:

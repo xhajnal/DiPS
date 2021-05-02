@@ -410,7 +410,7 @@ def check_deeper_async(region, constraints, recursion_depth, epsilon, coverage, 
     space.refinement_took(time() - start_time)
 
     ## VISUALISATION
-    space.title = f"using max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version}, {solver}"
+    space.title = f"using max_recursion_depth:{globals()['init_recursion_depth']}, min_rec_size:{epsilon}, achieved_coverage:{str(space.get_coverage())}, alg{version}, {solver}"
     if not sample_size:
         ## If the visualisation of the space did not succeed space_shown = (None, error message)
         if show_space:
@@ -1116,11 +1116,11 @@ class Worker(Process):
                     spam = private_check_deeper_parallel_sampled(work, self.constraints, solver=self.solver, delta=self.delta, silent=self.silent, debug=self.debug)
                 elif self.version == 3:
                     print(colored(f"Selecting biggest rectangles method with sampling and passing examples with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not self.silent else None
-                    raise NotImplementedError("So far only alg 2 are implemented for parallel runs.")
+                    raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
                     spam = private_check_deeper_checking_parallel_sampled(work, self.constraints, solver=self.solver, delta=self.delta, silent=self.silent, debug=self.debug)
                 elif self.version == 4:
                     print(colored(f"Selecting biggest rectangles method with sampling and passing examples and counterexamples with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not self.silent else None
-                    raise NotImplementedError("So far only alg 2 are implemented for parallel runs.")
+                    raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
                     spam = private_check_deeper_checking_both_parallel_sampled(work, self.constraints, solver=self.solver, delta=self.delta, silent=self.silent, debug=self.debug)
                 elif self.version == 5:
                     print(colored(f"Selecting biggest rectangles method with sampling and interval arithmetics", "green")) if not self.silent else None
@@ -1131,13 +1131,13 @@ class Worker(Process):
                     spam = private_check_deeper_parallel(work, self.constraints, solver=self.solver, delta=self.delta, silent=self.silent, debug=self.debug)
                 elif self.version == 3:
                     print(colored(f"Selecting biggest rectangles method with sampling and passing examples with {('dreal', 'z3')[solver == 'z3']} solver", "green")) if not self.silent else None
-                    raise NotImplementedError("So far only alg 2 are implemented for parallel runs.")
+                    raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
                     spam = private_check_deeper_checking_parallel(work, self.constraints, solver=self.solver, delta=self.delta, silent=self.silent, debug=self.debug)
                 elif self.version == 4:
                     print(colored(
                         f"Selecting biggest rectangles method with sampling and passing examples and counterexamples with {('dreal', 'z3')[solver == 'z3']} solver",
                         "green")) if not self.silent else None
-                    raise NotImplementedError("So far only alg 2 are implemented for parallel runs.")
+                    raise NotImplementedError("So far only alg 2 and 5 are implemented for parallel runs.")
                     spam = private_check_deeper_checking_both_parallel(work, self.constraints, solver=self.solver, delta=self.delta, silent=self.silent, debug=self.debug)
                 elif self.version == 5:
                     print(colored(f"Selecting biggest rectangles method with sampling and interval arithmetics",

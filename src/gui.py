@@ -152,18 +152,7 @@ def createToolTip(widget, text):
 class Gui(Tk):
     def __init__(self, *args, **kwargs):
 
-        # super().__init__(*args, **kwargs)
-        Tk.__init__(self)
-
-        self.option_add("*Label.Font", "sourcesanspro 14")
-        self.option_add("*Button.Font", "sourcesanspro 13")
-        self.option_add("*Checkbutton.Font", "sourcesanspro 13")
-        self.option_add("*Message.Font", "sourcesanspro 13")
-        self.option_add("*TopLevel.Font", "sourcesanspro 13")
-        self.text_font = TkFont.Font(family="dejavusansmono", size=16)
-
-        self.option_add("*TopLevel.Font", "sourcesanspro 13")
-
+        super().__init__(*args, **kwargs)
 
         if error_occurred is not None:
             print(colored(error_occurred, "red"))
@@ -437,7 +426,7 @@ class Gui(Tk):
         Button(frame_left, text='Save model', command=self.save_model).grid(row=0, column=1, sticky=W, padx=4, pady=4)  # pack(anchor=W)
         Label(frame_left, text=f"Loaded model file:", anchor=W, justify=LEFT).grid(row=1, column=0, sticky=W, padx=4, pady=4)  # pack(anchor=W)
 
-        self.model_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_width()/2), font=("sdadasd", 12))
+        self.model_text = scrolledtext.ScrolledText(frame_left, width=int(self.winfo_width() / 2), height=int(self.winfo_width()/2))
         # self.model_text.bind("<FocusOut>", self.refresh_model)
         self.model_text.bind("<Key>", lambda x: self.model_text_modified.set(True) if x.char != "" else None)
         # self.model_text.config(state="disabled")
@@ -455,7 +444,7 @@ class Gui(Tk):
         Label(frame_right, text=f"Loaded property file:", anchor=W, justify=LEFT).grid(row=1, column=1, sticky=W,
                                                                                        pady=4)  # pack(anchor=W)
 
-        self.property_text = scrolledtext.ScrolledText(frame_right, width=int(self.winfo_width() / 2), height=int(self.winfo_width()/2), font=("sdadasd", 12))
+        self.property_text = scrolledtext.ScrolledText(frame_right, width=int(self.winfo_width() / 2), height=int(self.winfo_width()/2))
         # self.property_text.bind("<FocusOut>", self.refresh_properties)
         self.property_text.bind("<Key>", lambda x: self.properties_text_modified.set(True) if x.char != "" else None)
         # self.property_text.config(state="disabled")
@@ -833,10 +822,11 @@ class Gui(Tk):
         createToolTip(use_optimised_point_button, text="by ticking this Metropolis-Hastings will start search in optimised point.")
 
         Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=9, column=7, columnspan=2, pady=4)
+        Button(frame_left, text='MHMH', command=self.hastings).grid(row=10, column=7, columnspan=2, pady=4)
 
         # ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=5, rowspan=7, sticky='ns', padx=25, pady=25)
         row = 1
-        label62 = Label(frame_left, text="Max dept: ", anchor=W, justify=LEFT)
+        label62 = Label(frame_left, text="Max depth: ", anchor=W, justify=LEFT)
         label62.grid(row=row, column=3, padx=0)
         createToolTip(label62, text='Maximal number of splits, set negative for infinite')
         label63 = Label(frame_left, text="Coverage: ", anchor=W, justify=LEFT)
@@ -894,7 +884,7 @@ class Gui(Tk):
         # iterative_refinement_checkbutton = Checkbutton(frame_left, text="Use iterative refinement (TBD)", variable=self.iterative_refinement)
         # iterative_refinement_checkbutton.grid(row=8, column=3, padx=0)
 
-        self.max_dept_entry = Entry(frame_left)
+        self.max_depth_entry = Entry(frame_left)
         self.coverage_entry = Entry(frame_left)
         # self.epsilon_entry = Entry(frame_left)
         self.alg_entry = ttk.Combobox(frame_left, values=('1', '2', '3', '4', '5'))
@@ -905,7 +895,7 @@ class Gui(Tk):
         self.refinement_cores_entry = Entry(frame_left)
 
         row2 = 1
-        self.max_dept_entry.grid(row=row2, column=4)
+        self.max_depth_entry.grid(row=row2, column=4)
         row2 += 1
         self.coverage_entry.grid(row=row2, column=4)
         # row += 1
@@ -924,7 +914,7 @@ class Gui(Tk):
         row2 += 1
         self.refinement_cores_entry.grid(row=row2, column=4)
 
-        self.max_dept_entry.insert(END, '5')
+        self.max_depth_entry.insert(END, '5')
         self.coverage_entry.insert(END, '0.95')
         # self.epsilon_entry.insert(END, '0')
         self.alg_entry.current(3)
@@ -1148,8 +1138,8 @@ class Gui(Tk):
 
         # Space refinement setting
         self.max_depth = config["max_depth"]
-        self.max_dept_entry.delete(0, 'end')
-        self.max_dept_entry.insert(END, self.max_depth)
+        self.max_depth_entry.delete(0, 'end')
+        self.max_depth_entry.insert(END, self.max_depth)
 
         self.coverage = config["coverage"]
         self.coverage_entry.delete(0, 'end')
@@ -1424,6 +1414,8 @@ class Gui(Tk):
             self.mc_result_text.insert('1.0', f.read())
 
         self.unfold_functions()
+
+        self.functions_file.set(os.path.abspath(self.mc_result_file.get()))
 
         if isinstance(self.functions, dict):
             self.status_set(f"{len(self.functions.keys())} rational functions loaded")
@@ -1768,6 +1760,7 @@ class Gui(Tk):
             self.functions = []
             self.functions_changed = True
             self.functions_file.set(spam)
+            print("self.functions_file", self.functions_file.get())
             self.z3_functions = ""
             self.mc_result_text.delete('1.0', END)
 
@@ -2093,6 +2086,7 @@ class Gui(Tk):
             self.validate_constraints(position="constraints", force=True)
             ## Autosave
             self.save_constraints(os.path.join(self.tmp_dir, "constraints.p"))
+            self.constraints_file.set(os.path.join(self.tmp_dir, "constraints.p"))
         self.status_set("Constraints recalculated and shown.")
 
     def load_constraints(self, file=False, append=False, ask=True):
@@ -4080,7 +4074,7 @@ class Gui(Tk):
         no_max_depth = False
 
         ## Getting values from entry boxes
-        self.max_depth = int(self.max_dept_entry.get())
+        self.max_depth = int(self.max_depth_entry.get())
         if self.max_depth < 0:
             no_max_depth = True
             self.max_depth = 10

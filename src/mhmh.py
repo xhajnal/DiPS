@@ -275,7 +275,7 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
     ## Refinement Visualisation
     print(colored(f"Refinement of MHMH using alg {version} with {solver} solver took {round(time_refinement_took, 2)} seconds", "yellow")) if not silent else None
 
-    space.title = f"using max_recursion_depth:{recursion_depth}, min_rec_size:{epsilon}, achieved_coverage:{space.get_coverage()}, alg{version}, {solver}"
+    space.title = f"using max_recursion_depth:{globals()['init_recursion_depth']}, min_rec_size:{epsilon}, achieved_coverage:{space.get_coverage()}, alg{version}, {solver}"
     if where is not None:
         space_shown = space.show(green=True, red=True, sat_samples=False, unsat_samples=False, save=save, where=where,
                                  show_all=not gui, is_mhmh=True, is_parallel_refinement=parallel)
