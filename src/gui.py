@@ -5,6 +5,7 @@ import time
 import webbrowser
 from platform import system
 from time import time, localtime, strftime
+import tkinter.font as TkFont
 from collections.abc import Iterable
 from copy import deepcopy
 from tkinter import *
@@ -151,7 +152,18 @@ def createToolTip(widget, text):
 class Gui(Tk):
     def __init__(self, *args, **kwargs):
 
-        super().__init__(*args, **kwargs)
+        # super().__init__(*args, **kwargs)
+        Tk.__init__(self)
+
+        self.option_add("*Label.Font", "sourcesanspro 14")
+        self.option_add("*Button.Font", "sourcesanspro 13")
+        self.option_add("*Checkbutton.Font", "sourcesanspro 13")
+        self.option_add("*Message.Font", "sourcesanspro 13")
+        self.option_add("*TopLevel.Font", "sourcesanspro 13")
+        self.text_font = TkFont.Font(family="dejavusansmono", size=16)
+
+        self.option_add("*TopLevel.Font", "sourcesanspro 13")
+
 
         if error_occurred is not None:
             print(colored(error_occurred, "red"))
