@@ -273,7 +273,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.25.5"  ## Version of the gui
+        self.version = "1.25.6"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -1336,7 +1336,7 @@ class Gui(Tk):
             if not file:
                 self.save_data_informed_properties(os.path.join(self.tmp_dir, "data_informed_properties.pctl"))
 
-    def load_functions_file(self, file=False, ask=True, program=False, reset_param_and_intervals=True):
+    def load_functions_file(self, file=False, ask=True, program=False, reset_param_and_intervals=True, autosave=False):
         """ Loads parametric model checking output text file, which contain rational functions, symbolic representation
             of satisfaction/rewards of the model checking. Parses and shows the expressions.
 
@@ -1450,6 +1450,10 @@ class Gui(Tk):
             ## TODO
             # if not file:
             #   self.save_functions(os.path.join(self.tmp_dir, f"functions_{program}"))
+
+        ## AUTOSAVE
+        if (not file) or autosave:
+            self.save_parsed_functions(os.path.join(self.tmp_dir, f"functions.p"))
 
     def load_prism_refinement_output_file(self, file=False, reset_param_and_intervals=True, called_directly=True):
         """ Loads model refinement output text file of PRISM/STORM
@@ -1752,10 +1756,10 @@ class Gui(Tk):
             if Path(spam).suffix == ".txt":
                 egg = parse_functions(spam)
                 if egg[0].startswith("PRISM"):
-                    self.load_functions_file(file=spam, program="prism")
+                    self.load_functions_file(file=spam, program="prism", autosave=True)
                     return
                 elif egg[0].startswith("Storm"):
-                    self.load_functions_file(file=spam, program="storm")
+                    self.load_functions_file(file=spam, program="storm", autosave=True)
                     return
 
             self.functions = []
