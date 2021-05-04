@@ -273,7 +273,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.25.6"  ## Version of the gui
+        self.version = "1.25.7"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -4598,12 +4598,12 @@ class Gui(Tk):
             ## Create constraints
             assert isinstance(self.functions, list)
             assert isinstance(self.data_intervals, list)
-            self.constraints = ineq_to_constraints(self.functions, self.data_intervals, decoupled=True, silent=self.silent.get())
+            self.constraints = ineq_to_constraints(self.functions, self.data_intervals, decoupled=False, silent=self.silent.get())
             if self.debug.get():
                 print("self.constraints", self.constraints)
             if self.z3_functions:
                 assert isinstance(self.z3_functions, list)
-                self.z3_constraints = ineq_to_constraints(self.z3_functions, self.data_intervals, decoupled=True, silent=self.silent.get())
+                self.z3_constraints = ineq_to_constraints(self.z3_functions, self.data_intervals, decoupled=False, silent=self.silent.get())
 
             self.constraints_changed = True
             self.constraints_file.set("")
