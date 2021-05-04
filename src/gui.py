@@ -273,7 +273,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.25.7"  ## Version of the gui
+        self.version = "1.25.8"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -4079,7 +4079,7 @@ class Gui(Tk):
         self.max_depth = int(self.max_dept_entry.get())
         if self.max_depth < 0:
             no_max_depth = True
-            self.max_depth = 10
+            self.max_depth = 3
         self.coverage = float(self.coverage_entry.get())
         # self.epsilon = float(self.epsilon_entry.get())
         self.epsilon = 0  ## no minimal size of hyperrectangle
@@ -4150,40 +4150,6 @@ class Gui(Tk):
         if int(self.max_depth) > 14:
             if not askyesno("MHMH", "Recursion this deep may cause segmentation fault. Do you want to continue?"):
                 return
-
-        ## Check functions / Get function parameters
-        self.validate_parameters(where=self.functions)
-
-        self.status_set("MHMH is running ...")
-        if not self.silent.get():
-            print("functions", self.functions)
-            print("constraints", self.constraints)
-            print("function params", self.parameters)
-            print("data", self.data)
-
-        try:
-            self.cursor_toggle_busy(True)
-
-            ## Progress Bar
-            if self.show_progress:
-                self.new_window = Toplevel(self)
-                Label(self.new_window, text="Refinement progress:", anchor=W, justify=LEFT).pack()
-                Label(self.new_window, textvar=self.progress, anchor=W, justify=LEFT).pack()
-
-                self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
-                self.progress_bar.pack(expand=True, fill=BOTH, side=TOP)
-                self.update_progress_bar(change_to=0, change_by=False)
-
-                self.update()
-
-            ## Refresh of plot before refinement
-            if self.show_quantitative:
-                self.clear_space(warning=not (no_max_depth and self.space.get_coverage() < self.coverage))
-                self.show_quantitative = False
-                show_all = True
-
-        # if not self.validate_space("Metropolis-Hastings"):
-        #     return
 
         if self.space:
             assert isinstance(self.space, space.RefinedSpace)
@@ -4263,7 +4229,7 @@ class Gui(Tk):
         self.max_depth = int(self.max_depth_entry.get())
         if self.max_depth < 0:
             no_max_depth = True
-            self.max_depth = 10
+            self.max_depth = 3
         self.coverage = float(self.coverage_entry.get())
         # self.epsilon = float(self.epsilon_entry.get())
         self.epsilon = 0  ## no minimal size of hyperrectangle

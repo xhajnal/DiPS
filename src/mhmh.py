@@ -257,6 +257,7 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
         print("we added", len(rectangle_to_be_added), "more rectangles")
 
     epsilon = max(epsilon, space.get_volume() / 2 ** (recursion_depth + 1))
+    globals()['init_recursion_depth'] = recursion_depth
     if parallel:
         check_deeper_parallel(space, constraints, recursion_depth=recursion_depth, epsilon=epsilon, coverage=coverage,
                               silent=silent, version=version, sample_size=False, debug=debug, save=save, title="",

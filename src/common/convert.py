@@ -300,6 +300,36 @@ def decouple_constraint(constraint: str, silent: bool = True, debug: bool = Fals
     return new_constraints
 
 
+# def couple_constraints(constraints: str, silent: bool = True, debug: bool = False):
+#     """ couples constrains with the same internal parts into a single constraints
+#
+#     Args:
+#         constraints  (string): properties to be converted
+#         silent (bool): if silent printed output is set to minimum
+#         debug (bool): if True extensive print will be used
+#
+#     Example:
+#         ["-8 <= x+3", "x+3 <= 0"] -> "-8 <= x+3 <= 0"
+#     """
+#     new_constraints = []
+#     pattern = r" < | > | >= | <= | = | => | =<"
+#     match = re.findall(pattern, constraint)
+#     if debug:
+#         print("constraint", constraint)
+#         print("match", match)
+#     if len(match) == 0:
+#         raise Exception(f"No <,>,>=, <=,= symbols in constrain")
+#     elif len(match) == 1:
+#         new_constraints.append(constraint)
+#     elif len(match) == 2:
+#         parts = re.split(pattern, constraint)
+#         new_constraints.append(match[0].join(parts[:2]))
+#         new_constraints.append(match[0].join(parts[1:]))
+#     else:
+#         raise Exception(f"More than two <,>,>=, <=,= symbols in constrain!")
+#     return new_constraints
+
+
 def add_white_spaces(expression):
     """ Adds white spaces in between <,>,=,<=, and >= so it can be easily parsed
     Example:
@@ -352,18 +382,25 @@ def add_white_spaces(expression):
     return expression
 
 
-def normalise_constraint(constraint: str, silent: bool = True, debug: bool = False):
+def normalise_constraint(constraint: str, silent: bool = True, debug: bool = False, all_exp_left=False):
     """ Transforms the constraint into normalised form
 
     Args:
         constraint  (string): constraint to be normalised
         silent (bool): if silent printed output is set to minimum
         debug (bool): if True extensive print will be used
+        all_exp_left (bool): if True puts expression on the left side
 
     Example:
           "0.2 >= p >= 0.1"    --->  "0.1 <= p <= 0.2"
           "0.2 >= p"           --->  "p <= 0.2"
+
+          flip = False
+          "0.2 <= p"           --->  "0.2 <= p"
+          flip = True
+          "0.2 <= p"           --->  "p >= 0.2"
     """
+    ## TODO FLIP
     constraint = add_white_spaces(constraint)
     pattern = r" < | > | >= | <= | = | => | =<"
     match = re.findall(pattern, constraint)

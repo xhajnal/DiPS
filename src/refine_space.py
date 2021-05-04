@@ -14,7 +14,7 @@ from common.model_stuff import find_param
 from rectangle import My_Rectangle
 from sample_space import sample_space as sample
 from space import RefinedSpace
-from common.convert import to_interval, decouple_constraints
+from common.convert import to_interval, decouple_constraints, normalise_constraint
 from common.convert import constraints_to_ineq
 from common.config import load_config
 from common.space_stuff import refine_by, is_in, get_rectangle_volume
@@ -585,12 +585,14 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
                 raise TypeError(f"Type of parameter {param} which was set as {space.types[index]} does not correspond with any known type")
             index = index + 1
 
-    ## Converting constraints to inequalities
+    ## Converting coupled constraints to inequalities
     elif version == 5:
         if isinstance(constraints[0], list):
             egg = constraints
         else:
-            egg = constraints_to_ineq(constraints, silent=silent, debug=debug)
+            decoupled_constraints = decouple_constraints(constraints)
+            decoupled_constraints = [normalise_constraint(item, silent=silent, debug=debug, all_exp_left=True) for item in decoupled_constraints]
+            egg = constraints_to_ineq(decoupled_constraints, silent=silent, debug=debug)
         if not egg:
             return space
     else:
