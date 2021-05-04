@@ -26,10 +26,10 @@ del config
 
 
 def initialise_mhmh(params, parameter_intervals, functions, constraints, data, sample_size, mh_sampling_iterations,
-                    eps=0, sd=0.15, theta_init=False, is_probability=None, where=False, progress=False, burn_in=False,
-                    bins=20, mh_timeout=False, debug=False, metadata=True, draw_plot=False, save=False, silent=True,
-                    recursion_depth=10, epsilon=0.001, delta=0.001, coverage=0.95, version=4, solver="z3", gui=False,
-                    parallel=True, ref_timeout=0):
+                    eps=0, sd=0.15, theta_init=False, is_probability=None, where_mh=False, where_ref=False,
+                    progress=False, burn_in=False, bins=20, mh_timeout=False, debug=False, metadata=True,
+                    draw_plot=False, save=False, silent=True, recursion_depth=10, epsilon=0.001, delta=0.001,
+                    coverage=0.95, version=4, solver="z3", gui=False, parallel=True, ref_timeout=0, mh_result=None):
     """ Initialisation method for MHMH - space refinement with prior splitting based on MH
 
     Args:
@@ -44,7 +44,8 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
         sd (float): variation of walker in parameter space
         theta_init (list of floats): initial parameter point
         is_probability (bool): flag whether functions represent probabilities or not (None for unknown)
-        where (tuple/list or False): output matplotlib sources to output created figure, if False a new will be created
+        where_mh (tuple/list or False): Metropolis-Hastings output matplotlib sources to output created figure, if False a new will be created
+        where_ref (tuple/list or False): Refinement output matplotlib sources to output created figure, if False a new will be created
         progress (Tkinter element or False): function processing progress
         burn_in (number): fraction or count of how many samples will be trimmed from beginning
         bins (int): number of segments per dimension in the output plot
@@ -63,12 +64,14 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
         gui (bool or Callable): called from the graphical user interface
         parallel (int): number of threads to use in parallel for refinement, when True (#cores - 1) is used
         ref_timeout (int): timeout of refinement in seconds (0 for no timeout)
+        mh_result (list or None): (optional) list of accepted points - if not None, this list of accepted points will be used as result of MH
     """
-    ## Run MH
-    mh_result = init_mh(params, parameter_intervals, functions, data, sample_size, mh_sampling_iterations, eps=eps,
-                        sd=sd, theta_init=theta_init, is_probability=is_probability, where=True, progress=progress,
-                        burn_in=burn_in, bins=bins, timeout=mh_timeout, silent=silent, debug=debug, metadata=metadata,
-                        draw_plot=draw_plot)
+    if mh_result is None:
+        ## Run MH
+        mh_result = init_mh(params, parameter_intervals, functions, data, sample_size, mh_sampling_iterations, eps=eps,
+                            sd=sd, theta_init=theta_init, is_probability=is_probability, where=where_mh, progress=progress,
+                            burn_in=burn_in, bins=bins, timeout=mh_timeout, silent=silent, debug=debug, metadata=metadata,
+                            draw_plot=draw_plot)
     if mh_result is False:
         raise Exception("MMHM cannot continue as Metropolis Hasting resulted in no accepted point, consider using more iterations.")
 
@@ -276,8 +279,8 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
     print(colored(f"Refinement of MHMH using alg {version} with {solver} solver took {round(time_refinement_took, 2)} seconds", "yellow")) if not silent else None
 
     space.title = f"using max_recursion_depth:{globals()['init_recursion_depth']}, min_rec_size:{epsilon}, achieved_coverage:{space.get_coverage()}, alg{version}, {solver}"
-    if where is not None:
-        space_shown = space.show(green=True, red=True, sat_samples=False, unsat_samples=False, save=save, where=where,
+    if where_ref is not None:
+        space_shown = space.show(green=True, red=True, sat_samples=False, unsat_samples=False, save=save, where=where_ref,
                                  show_all=not gui, is_mhmh=True, is_parallel_refinement=parallel)
     print(colored(f"The whole MHMH took {round(time_mhmh_took, 2)} seconds", "yellow")) if not silent else None
 
@@ -327,7 +330,7 @@ if __name__ == '__main__':
                                        bins=bins, is_probability=True, constraints=constraints,
                                        metadata=show_matadata, recursion_depth=depth, epsilon=epsilon,
                                        coverage=coverage, version=version, solver=solver, gui=False,
-                                       where=False, parallel=False, mh_timeout=timeout)
+                                       where_ref=False, parallel=False, mh_timeout=timeout)
     print(f"Sequential MHMH took {round_sig(space.time_refinement, 4)} seconds")
     print()
 
@@ -336,7 +339,7 @@ if __name__ == '__main__':
                                          mh_sampling_iterations=10000, eps=0, silent=silent, debug=debug, bins=bins,
                                          is_probability=True, constraints=constraints, metadata=show_matadata,
                                          recursion_depth=depth, epsilon=epsilon, coverage=coverage, version=version,
-                                         solver=solver, gui=False, where=False, parallel=True, mh_timeout=timeout)
+                                         solver=solver, gui=False, where_ref=False, parallel=True, mh_timeout=timeout)
     print(f"Parallel MHMH took {round_sig(space2.time_refinement, 4)} seconds")
     print()
 

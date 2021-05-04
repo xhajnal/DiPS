@@ -354,7 +354,7 @@ def repeat_mhmh(text, parameters, parameter_domains, data, functions, sample_siz
         space, mh_result = initialise_mhmh(parameters, parameter_domains, functions=functions,
                                            constraints=constraints, data=data, sample_size=sample_size,
                                            mh_sampling_iterations=mh_sampling_iterations, theta_init=theta_init,
-                                           eps=eps, is_probability=is_probability, where=where, bins=bins,
+                                           eps=eps, is_probability=is_probability, where_ref=where, bins=bins,
                                            mh_timeout=mhmh_timeout, silent=silent, debug=debug,
                                            metadata=metadata, recursion_depth=recursion_depth,
                                            epsilon=epsilon, coverage=coverage, version=version,

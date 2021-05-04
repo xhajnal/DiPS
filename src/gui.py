@@ -30,6 +30,7 @@ from common.document_wrapper import show_message
 from common.files import pickle_dump, pickle_load
 from common.my_z3 import is_this_z3_function, translate_z3_function, is_this_exponential_function
 from metropolis_hastings import HastingsResults
+from mhmh import initialise_mhmh
 from refine_space_parallel import check_deeper_parallel
 
 error_occurred = None
@@ -822,7 +823,7 @@ class Gui(Tk):
         createToolTip(use_optimised_point_button, text="by ticking this Metropolis-Hastings will start search in optimised point.")
 
         Button(frame_left, text='Metropolis-Hastings', command=self.hastings).grid(row=9, column=7, columnspan=2, pady=4)
-        Button(frame_left, text='MHMH', command=self.hastings).grid(row=10, column=7, columnspan=2, pady=4)
+        Button(frame_left, text='MHMH', command=self.mhmh).grid(row=10, column=7, columnspan=2, pady=4)
 
         # ttk.Separator(frame_left, orient=VERTICAL).grid(row=1, column=5, rowspan=7, sticky='ns', padx=25, pady=25)
         row = 1
@@ -3942,11 +3943,11 @@ class Gui(Tk):
 
         ## TODO transformation back to data and functions from constraints #Hard_task
         if self.functions == "":
-            messagebox.showwarning("Metropolis-Hastings", "Load functions before Metropolis-Hastings.")
+            messagebox.showwarning("Metropolis-Hastings", "Load functions before running Metropolis-Hastings.")
             return
 
         if self.data == []:
-            messagebox.showwarning("Metropolis-Hastings", "Load data before Metropolis-Hastings.")
+            messagebox.showwarning("Metropolis-Hastings", "Load data before running Metropolis-Hastings.")
             return
 
         if self.constraints_changed:
@@ -4001,8 +4002,8 @@ class Gui(Tk):
             assert isinstance(self.data, list)
             assert isinstance(self.functions, list)
             self.mh_results = init_mh(self.parameters, self.parameter_domains, self.functions, self.data,
-                                      int(self.n_samples_entry.get()), int(self.MH_sampling_iterations_entry.get()), 0,
-                                      # float(self.eps_entry.get()), ## setting eps=0,
+                                      int(self.n_samples_entry.get()), int(self.MH_sampling_iterations_entry.get()),
+                                      eps=0, # float(self.eps_entry.get()), ## setting eps=0,
                                       sd=float(self.sd_entry.get()), theta_init=self.parameter_point,
                                       where=[self.page6_figure2, self.page6_b],
                                       progress=self.update_progress_bar if self.show_progress else False,
@@ -4057,6 +4058,187 @@ class Gui(Tk):
         # finally:
         #     self.cursor_toggle_busy(False)
 
+    def mhmh(self):
+        """ Runs MHMH, shows plots"""
+        print("Checking the inputs.")
+        self.check_changes("constraints")
+        self.check_changes("data_intervals")
+        self.check_changes("functions")
+        self.check_changes("data")
+        self.check_changes("data_weights")
+
+        ## Internal setting showing that only newly added part should be visualised
+        show_all = False
+        no_max_depth = False
+
+        ## Getting values from entry boxes
+        self.max_depth = int(self.max_dept_entry.get())
+        if self.max_depth < 0:
+            no_max_depth = True
+            self.max_depth = 10
+        self.coverage = float(self.coverage_entry.get())
+        # self.epsilon = float(self.epsilon_entry.get())
+        self.epsilon = 0  ## no minimal size of hyperrectangle
+        self.delta = float(self.delta_entry.get())
+        if not isinstance(self.space, str):
+            self.space_coverage = float(self.space.get_coverage())
+        else:
+            self.space_coverage = 0
+        if self.data_weights:
+            raise NotImplementedError("Weighted constraints are not Implemented yet")
+
+        print("MHMH ...")
+        self.status_set("MHMH - checking inputs")
+
+        # if self.constraints:
+        #     messagebox.showwarning("Metropolis Hastings", "Data and functions are being used to run Metropolis Hasting, make sure they are in accordance with computed constrains.")
+
+        ## TODO transformation back to data and functions from constraints #Hard_task
+        if self.functions == "":
+            messagebox.showwarning("MHMH", "Load functions before running MHMH.")
+            return
+        assert isinstance(self.functions, list)
+
+        if self.data == []:
+            messagebox.showwarning("MHMH", "Load data before running MHMH.")
+            return
+
+        if self.constraints_changed:
+            messagebox.showwarning("MHMH", "Constraints changed and may not correspond to the functions which are about to be used.")
+
+        if self.constraints == "":
+            messagebox.showwarning("MHMH", "Compute constraints before running MHMH.")
+            return
+        assert isinstance(self.constraints, list)
+
+        ## Checking if all entries filled
+        if self.max_depth == "":
+            messagebox.showwarning("MHMH", "Choose max recursion depth before running running MHMH.")
+            return
+
+        if self.coverage == "":
+            messagebox.showwarning("MHMH", "Choose coverage, nonwhite fraction to reach before running MHMH.")
+            return
+
+        if self.epsilon == "":
+            messagebox.showwarning("MHMH", "Choose epsilon, min rectangle size before running MHMH.")
+            return
+
+        if self.alg_entry.get() == "":
+            messagebox.showwarning("MHMH", "Pick algorithm for the refinement before running MHMH.")
+            return
+
+        if self.space_coverage >= self.coverage:
+            messagebox.showinfo("MHMH", "You already achieved higher coverage than the goal.")
+            return
+
+        if not self.validate_space("MHMH"):
+            return
+
+        if int(self.alg_entry.get()) <= 4 and not self.z3_constraints:
+            for constraint in self.constraints:
+                if is_this_exponential_function(constraint):
+                    if not askyesno("MHMH",
+                                    "Some constraints contain exponential function, we recommend using interval algorithmic (algorithm 5). Do you want to proceed anyway?"):
+                        return
+                    break
+
+        if int(self.max_depth) > 14:
+            if not askyesno("MHMH", "Recursion this deep may cause segmentation fault. Do you want to continue?"):
+                return
+
+        ## Check functions / Get function parameters
+        self.validate_parameters(where=self.functions)
+
+        self.status_set("MHMH is running ...")
+        if not self.silent.get():
+            print("functions", self.functions)
+            print("constraints", self.constraints)
+            print("function params", self.parameters)
+            print("data", self.data)
+
+        try:
+            self.cursor_toggle_busy(True)
+
+            ## Progress Bar
+            if self.show_progress:
+                self.new_window = Toplevel(self)
+                Label(self.new_window, text="Refinement progress:", anchor=W, justify=LEFT).pack()
+                Label(self.new_window, textvar=self.progress, anchor=W, justify=LEFT).pack()
+
+                self.progress_bar = Progressbar(self.new_window, orient=HORIZONTAL, length=100, mode='determinate')
+                self.progress_bar.pack(expand=True, fill=BOTH, side=TOP)
+                self.update_progress_bar(change_to=0, change_by=False)
+
+                self.update()
+
+            ## Refresh of plot before refinement
+            if self.show_quantitative:
+                self.clear_space(warning=not (no_max_depth and self.space.get_coverage() < self.coverage))
+                self.show_quantitative = False
+                show_all = True
+
+        # if not self.validate_space("Metropolis-Hastings"):
+        #     return
+
+        if self.space:
+            assert isinstance(self.space, space.RefinedSpace)
+            if self.parameters != self.space.params:
+                messagebox.showwarning("Metropolis-Hastings", "Space you have obtained does not correspond to functions which are about to be used.")
+        assert isinstance(self.parameters, list)
+
+        if int(self.refinement_cores_entry.get()) > 1:
+            cores = int(self.refinement_cores_entry.get())
+        else:
+            cores = False
+
+        self.coverage = float(self.coverage_entry.get())
+        self.epsilon = 0  ## no minimal size of hyperrectangle
+        self.delta = float(self.delta_entry.get())
+
+        if self.mh_results == "":
+            assert  isinstance(self.mh_results, HastingsResults)
+            rerun_mh = True
+        else:
+            rerun_mh = askyesno("MHMH", "Do you want to rerun Metropolis-Hasting?")
+
+
+        if rerun_mh:
+            self.create_window_to_load_param_point(parameters=self.parameters)
+
+            ## Clear figure
+            self.set_lower_figure(clear=True)
+
+            a = initialise_mhmh(self.parameters, self.parameter_domains, self.functions, self.constraints, self.data,
+                                int(self.n_samples_entry.get()), int(self.MH_sampling_iterations_entry.get()), eps=0,
+                                sd=float(self.sd_entry.get()), theta_init=self.parameter_point, is_probability=True,
+                                where_mh=[self.page6_figure2, self.page6_b], where_ref=[self.page6_figure, self.page6_a],
+                                progress=False, burn_in=float(self.burn_in_entry.get()),
+                                bins=int(float(self.bins_entry.get())),
+                                mh_timeout=int(float(self.mh_timeout_entry.get())), debug=self.debug.get(),
+                                metadata=self.show_mh_metadata.get(), draw_plot=self.draw_plot_window,
+                                save=False, silent=self.silent.get(), recursion_depth=10, epsilon=self.epsilon,
+                                delta=self.delta, coverage=self.coverage,
+                                version=int(self.alg_entry.get()), solver=str(self.solver_entry.get()),
+                                gui=self.update_progress_bar if self.show_progress else False,
+                                parallel=cores, ref_timeout=int(float(self.refinement_timeout_entry.get())), mh_result=None)
+        else:
+            assert isinstance(self.mh_results, HastingsResults)
+            a = initialise_mhmh(self.parameters, self.parameter_domains, self.functions, self.constraints, self.data,
+                                int(self.n_samples_entry.get()), int(self.MH_sampling_iterations_entry.get()), eps=0,
+                                sd=float(self.sd_entry.get()), theta_init=self.parameter_point, is_probability=True,
+                                where_mh=[self.page6_figure2, self.page6_b], where_ref=[self.page6_figure, self.page6_a],
+                                progress=False, burn_in=float(self.burn_in_entry.get()),
+                                bins=int(float(self.bins_entry.get())),
+                                mh_timeout=int(float(self.mh_timeout_entry.get())), debug=self.debug.get(),
+                                metadata=self.show_mh_metadata.get(), draw_plot=self.draw_plot_window,
+                                save=False, silent=self.silent.get(), recursion_depth=10, epsilon=self.epsilon,
+                                delta=self.delta, coverage=self.coverage, version=int(self.alg_entry.get()),
+                                solver=str(self.solver_entry.get()), parallel=cores,
+                                gui=self.update_progress_bar if self.show_progress else False,
+                                ref_timeout=int(float(self.refinement_timeout_entry.get())),
+                                mh_result=self.mh_results.get_accepted())
+
     def refine_space(self):
         """ Refines (Parameter) Space. Plots the results. """
         ## Internal setting showing that only newly added part should be visualised
@@ -4089,19 +4271,19 @@ class Gui(Tk):
 
         ## Checking if all entries filled
         if self.max_depth == "":
-            messagebox.showwarning("Refine space", "Choose max recursion depth before refinement.")
+            messagebox.showwarning("Refine space", "Choose max recursion depth before running refinement.")
             return
 
         if self.coverage == "":
-            messagebox.showwarning("Refine space", "Choose coverage, nonwhite fraction to reach before refinement.")
+            messagebox.showwarning("Refine space", "Choose coverage, nonwhite fraction to reach before running refinement.")
             return
 
         if self.epsilon == "":
-            messagebox.showwarning("Refine space", "Choose epsilon, min rectangle size before refinement.")
+            messagebox.showwarning("Refine space", "Choose epsilon, min rectangle size before running refinement.")
             return
 
         if self.alg_entry.get() == "":
-            messagebox.showwarning("Refine space", "Pick algorithm for the refinement before running.")
+            messagebox.showwarning("Refine space", "Pick algorithm for the refinement before running refinement.")
             return
 
         # if int(self.alg.get()) == 5:
@@ -4114,7 +4296,7 @@ class Gui(Tk):
         # else:
 
         if self.constraints == "":
-            messagebox.showwarning("Refine space", "Load or calculate constraints before refinement.")
+            messagebox.showwarning("Refine space", "Load or calculate constraints before running refinement.")
             return
 
         if self.space_coverage >= self.coverage:
@@ -4132,7 +4314,7 @@ class Gui(Tk):
                     break
 
         if self.presampled_refinement.get() and not(self.space.get_sat_samples() + self.space.get_unsat_samples()):
-            messagebox.showwarning("Refine space", "No sampling to be used, please run it before Presampled refinement.")
+            messagebox.showwarning("Refine space", "No sampling to be used, please run it before running Presampled refinement.")
             return
 
         if int(self.max_depth) > 14:
