@@ -22,28 +22,32 @@ storm_results = spam["storm_results"]
 refinement_results = spam["refinement_results"]
 tmp = spam["tmp"]
 
-model_checker = "storm"  # "either"
-
 ## GENERAL SETTINGS
-# set True for debug mode
+# Set True for debug mode (extensive output)
 debug = False
-# set False for command line print
+# Set False for no command line print (or True for some output)
 silent = True
-# set True to show visualisation
+# Set True to show visualisation(s)
 show_space = False
+
+## RATIONAL FUNCTIONS SETTINGS
+## Parametric Model checker to run/load results from
+model_checker = "storm"  # "prism" for PRISM, "storm" for Storm, and "either" for any of PRISM or Storm
+# Flag whether to use factorised rational functions
+factorise = False
 
 ## REFINEMENT SETTING
 # Refinement timeout (in seconds)
 timeout = 3600
-
 # List of settings of sampling-guided refinement to run
 sample_guided_list = [False, True]  ## [False, True]
-# List of whether to use asynchronous calls refinement to run
+# List of flags whether to use asynchronous calls refinement to run
+# In this test we look only at synchronous check calls using pool.map:
 async_list = [False]  ## [False]
 
 ## INTERVALS SETTINGS
 # Number of samples
-n_samples_list = [3500, 100]
+n_samples_list = [100]
 # Confidence level
 C = 0.95
 
@@ -57,7 +61,7 @@ repetitions = 20
 
 # Setting of each of the models, sizes, properties, etc. is within the section of the respective models
 
-## INTERNAL SETTINGS - Experimental - please do not touch this part
+## INTERNAL SETTINGS - Experimental - please do not alter this part
 sys.setrecursionlimit(4000000)
 default_alg = 2
 factorise = True
@@ -73,12 +77,11 @@ else:
 
 if __name__ == '__main__':
     for n_samples in n_samples_list:
-
         ### BEE MODELS
         # 2-param vs. multi-parametric - False for 2-param, True for #params = #bees
         for multiparam in [False, True]:  ## [False, True]
             # Number of bees
-            for population_size in [2, 3, 4, 5, 10]:  ## [2, 3, 5, 10]
+            for population_size in [2, 3, 4, 5, 10]:  ## [2, 3, 4, 5, 10]
                 for is_async in async_list:
                     for sample_guided in sample_guided_list:
                         if multiparam and population_size == 2:
@@ -92,18 +95,17 @@ if __name__ == '__main__':
                             continue
 
                         print(colored(f"Population size {population_size}", "blue"))
-                        if population_size != 0:
-                            ## LOAD FUNCTIONS
-                            if multiparam:
-                                functions = load_functions(f"bee/multiparam_semisynchronous_{population_size}_bees", debug=debug, source=model_checker)
-                            else:
-                                functions = load_functions(f"bee/semisynchronous_{population_size}_bees", debug=debug, source=model_checker)
+                        ## LOAD FUNCTIONS
+                        if multiparam:
+                            functions = load_functions(f"bee/multiparam_semisynchronous_{population_size}_bees", debug=debug, source=model_checker, factorise=factorise)
+                        else:
+                            functions = load_functions(f"bee/semisynchronous_{population_size}_bees", debug=debug, source=model_checker, factorise=factorise)
 
-                            ## LOAD DATA
-                            if multiparam:
-                                data_set = load_data(os.path.join(data_dir, f"bee/multiparam/data_n={population_size}.csv"), debug=debug)
-                            else:
-                                data_set = load_data(os.path.join(data_dir, f"bee/2-param/data_n={population_size}.csv"), debug=debug)
+                        ## LOAD DATA
+                        if multiparam:
+                            data_set = load_data(os.path.join(data_dir, f"bee/multiparam/data_n={population_size}.csv"), debug=debug)
+                        else:
+                            data_set = load_data(os.path.join(data_dir, f"bee/2-param/data_n={population_size}.csv"), debug=debug)
 
                         ## SETUP PARAMETERS AND THEIR DOMAINS
                         if multiparam:
@@ -120,30 +122,24 @@ if __name__ == '__main__':
                         if debug:
                             print("parameter_domains", parameter_domains)
 
-                        if population_size != 0:
-                            ## COMPUTE CONFIDENCE INTERVALS
-                            ## Intervals with adjusted Wald method used in Hajnal et al. hsb 2019
-                            intervals = create_intervals_hsb(float(C), int(n_samples), data_set)
-                            ## THIS IS AGRESTI-COULL METHOD
-                            # intervals = [create_proportions_interval(float(C), int(n_samples), data_point, method="AC") for data_point in data_set]
-                            if population_size == 2:
-                                print(intervals)
-                            constraints = ineq_to_constraints(functions, intervals, decoupled=True)
-                        else:
-                            parameters = ["p", "q"]
-                            parameter_domains = [[0, 1], [0, 1]]
-                            constraints = ["q+p >= 1.0", "q+p <= 9.0"]
-                            data_set = None
+                        ## COMPUTE CONFIDENCE INTERVALS
+                        ## Intervals with adjusted Wald method used in Hajnal et al. hsb 2019
+                        intervals = create_intervals_hsb(float(C), int(n_samples), data_set)
+                        ## THIS IS AGRESTI-COULL METHOD
+                        # intervals = [create_proportions_interval(float(C), int(n_samples), data_point, method="AC") for data_point in data_set]
+
+                        ## COMPUTE CONSTRAINTS
+                        constraints = ineq_to_constraints(functions, intervals, decoupled=True)
 
                         ## REFINE SPACE
                         for cores in cores_list:
                             if cores == "False4":
                                 alg = 4
-                                alg2 = None
+                                second_alg = None
                                 cores = False
                             else:
                                 alg = default_alg
-                                alg2 = 5
+                                second_alg = 5
 
                             print(f"parallel: {cores},{' async calls,' if is_async else ' map calls,'} sample guided: {sample_guided}, single call timeout: {single_call_timeout}")
                             text = f"dataset {data_set}, confidence level {C}, {n_samples} samples"
@@ -162,14 +158,14 @@ if __name__ == '__main__':
                                 print(colored("This will probably not halt within reasonable time.", "yellow"))
 
                             spam = repeat_refine(text, parameters, parameter_domains, constraints, timeout=timeout, silent=silent,
-                                                 single_call_timeout=single_call_timeout, debug=debug, alg=alg2, solver="z3",
+                                                 single_call_timeout=single_call_timeout, debug=debug, alg=second_alg, solver="z3",
                                                  sample_size=False, sample_guided=sample_guided, repetitions=repetitions, where=where,
                                                  parallel=cores, is_async=is_async)
                             print()
 
-        ### Knuth die
-        # Number of parameters 1,2, or 3 - this pics different model versions
-        for param_count in [1, 2, 3]:
+        ### KNUTH DIE
+        # Number of parameters 1, 2, or 3
+        for param_count in [1, 2, 3]:  # this selects respective model version
 
             ## LOAD FUNCTIONS
             functions = load_functions(f"Knuth/parametric_die_{param_count}_param_BSCCs", debug=debug, source=model_checker)
@@ -201,6 +197,8 @@ if __name__ == '__main__':
             intervals = create_intervals_hsb(float(C), int(n_samples), data_set)
             ## THIS IS AGRESTI-COULL METHOD
             # intervals = [create_proportions_interval(float(C), int(n_samples), data_point, method="AC") for data_point in data_set]
+
+            ## COMPUTE CONSTRAINTS
             constraints = ineq_to_constraints(functions, intervals, decoupled=True)
 
             ## REFINE SPACE
@@ -209,11 +207,11 @@ if __name__ == '__main__':
                     for cores in cores_list:
                         if cores == "False4":
                             alg = 4
-                            alg2 = None
+                            second_alg = None
                             cores = False
                         else:
                             alg = default_alg
-                            alg2 = 5
+                            second_alg = 5
 
                         print(f"parallel: {cores},{' async calls,' if is_async else ' map calls,'} sample guided: {sample_guided}, single call timeout: {single_call_timeout}")
                         text = f"dataset {data_set}, confidence level {C}, {n_samples} samples"
@@ -230,66 +228,7 @@ if __name__ == '__main__':
                                              sample_size=False, sample_guided=sample_guided, repetitions=repetitions, where=where,
                                              parallel=cores, is_async=is_async)
                         spam = repeat_refine(text, parameters, parameter_domains, constraints, timeout=timeout, silent=silent,
-                                             single_call_timeout=single_call_timeout, debug=debug, alg=alg2, solver="z3",
-                                             sample_size=False, sample_guided=sample_guided, repetitions=repetitions, where=where,
-                                             parallel=cores, is_async=is_async)
-                        print()
-
-        ### Bounded Retransmission Protocol (brp model)
-        # Model version, first number is N, number of chunks, second number is MAX, maximum number of retransmissions
-        for version in ["3-2", "16-2"]:
-            ## LOAD FUNCTIONS
-            functions = load_functions(f"brp/brp_{version}", debug=debug, source=model_checker)
-
-            ## LOAD DATA
-            data_set = [0.5]
-
-            ## SETUP PARAMETERS AND THEIR DOMAINS
-            consts, parameters = parse_params_from_model(os.path.join(model_path, f"brp/brp_{version}.pm"), silent=silent)
-
-            if debug:
-                print("parameters", parameters)
-            parameter_domains = []
-            for item in parameters:
-                parameter_domains.append([0, 1])
-            if debug:
-                print("parameter_domains", parameter_domains)
-
-            ## COMPUTE CONFIDENCE INTERVALS
-            ## Intervals with adjusted Wald method used in Hajnal et al. hsb 2019
-            intervals = create_intervals_hsb(float(C), int(n_samples), data_set)
-            ## THIS IS AGRESTI-COULL METHOD
-            # intervals = [create_proportions_interval(float(C), int(n_samples), data_point, method="AC") for data_point in data_set]
-            constraints = ineq_to_constraints(functions, intervals, decoupled=True)
-
-            ## REFINE SPACE
-            for is_async in async_list:
-                for sample_guided in sample_guided_list:
-                    for cores in cores_list:
-                        if cores == "False4":
-                            alg = 4
-                            alg2 = None
-                            cores = False
-                        else:
-                            alg = default_alg
-                            alg2 = 5
-
-                        print(f"parallel: {cores},{' async calls,' if is_async else ' map calls,'} sample guided: {sample_guided}, single call timeout: {single_call_timeout}")
-                        text = f"dataset {data_set}, confidence level {C}, {n_samples} samples"
-                        space = RefinedSpace(parameter_domains, parameters)
-
-                        alg = default_alg
-
-                        spam = repeat_refine(text, parameters, parameter_domains, constraints, timeout=timeout, silent=silent,
-                                             single_call_timeout=single_call_timeout, debug=debug, alg=alg, solver="z3",
-                                             sample_size=False, sample_guided=sample_guided, repetitions=repetitions, where=where,
-                                             parallel=cores, is_async=is_async)
-                        spam = repeat_refine(text, parameters, parameter_domains, constraints, timeout=timeout, silent=silent,
-                                             single_call_timeout=single_call_timeout, debug=debug, alg=alg, solver="dreal",
-                                             sample_size=False, sample_guided=sample_guided, repetitions=repetitions, where=where,
-                                             parallel=cores, is_async=is_async)
-                        spam = repeat_refine(text, parameters, parameter_domains, constraints, timeout=timeout, silent=silent,
-                                             single_call_timeout=single_call_timeout, debug=debug, alg=alg2, solver="z3",
+                                             single_call_timeout=single_call_timeout, debug=debug, alg=second_alg, solver="z3",
                                              sample_size=False, sample_guided=sample_guided, repetitions=repetitions, where=where,
                                              parallel=cores, is_async=is_async)
                         print()

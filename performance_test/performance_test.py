@@ -197,12 +197,13 @@ def compute_functions(model_file, property_file, output_path=False, parameter_do
                    time=True, silent=silent)
 
 
-def repeat_sampling(space, constraints, sample_size, boundaries=None, silent=False, save=False, debug=False,
+def repeat_sampling(parameters, parameter_domains, constraints, sample_size, boundaries=None, silent=False, save=False, debug=False,
                     progress=False, quantitative=False, parallel=True, save_memory=False, repetitions=40, show_space=False):
     """ Runs space sampling
 
-
         Args:
+            parameters (list of strings): list of model parameters
+            parameter_domains (list of pairs): list of intervals to be used for respective parameter
             constraints  (list of strings): array of properties
             sample_size (int): number of samples in dimension
             boundaries (list of intervals): subspace to sample, default is whole space
@@ -216,6 +217,7 @@ def repeat_sampling(space, constraints, sample_size, boundaries=None, silent=Fal
     """
     avrg_time = 0
     for run in range(repetitions):
+        space = RefinedSpace(parameter_domains, parameters)
         sampling = space.grid_sample(constraints, sample_size, boundaries=boundaries, silent=silent, save=save,
                                      debug=debug, progress=progress, quantitative=quantitative, parallel=parallel,
                                      save_memory=save_memory)
@@ -529,8 +531,7 @@ if __name__ == '__main__':
                     if not run_sampling:
                         break
                     print(colored(f"Sampling, dataset {data_set}, grid size {grid_size}, {n_samples[i]} samples"))
-                    space = RefinedSpace(parameter_domains, parameters)
-                    repeat_sampling(space, constraints[i], grid_size, silent=silent, save=False, debug=debug,
+                    repeat_sampling(parameters, parameter_domains, constraints[i], grid_size, silent=silent, save=False, debug=debug,
                                     quantitative=False, parallel=True, repetitions=40)
 
                 ## REFINE SPACE
@@ -743,8 +744,7 @@ if __name__ == '__main__':
                     if not run_sampling:
                         break
                     print(colored(f"Sampling, {'multiparam' if bool(multiparam) else '2-param'} , {population_size} bees, grid size {grid_size}, dataset {data_index+1}, {n_samples[i]} samples"))
-                    space = RefinedSpace(parameter_domains, parameters)
-                    repeat_sampling(space, constraints[i], grid_size, silent=silent, save=False, debug=debug,
+                    repeat_sampling(parameters, parameter_domains, constraints[i], grid_size, silent=silent, save=False, debug=debug,
                                     quantitative=False, parallel=True, repetitions=40)
 
                 ## REFINE SPACE
