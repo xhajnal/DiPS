@@ -14,7 +14,7 @@ from common.model_stuff import find_param
 from rectangle import My_Rectangle
 from sample_space import sample_space as sample
 from space import RefinedSpace
-from common.convert import to_interval, decouple_constraints, normalise_constraint
+from common.convert import to_interval, decouple_constraints, normalise_constraint, put_exp_left
 from common.convert import constraints_to_ineq
 from common.config import load_config
 from common.space_stuff import refine_by, is_in, get_rectangle_volume
@@ -591,7 +591,8 @@ def check_deeper(region, constraints, recursion_depth, epsilon, coverage, silent
             egg = constraints
         else:
             decoupled_constraints = decouple_constraints(constraints)
-            decoupled_constraints = [normalise_constraint(item, silent=silent, debug=debug, all_exp_left=True) for item in decoupled_constraints]
+            decoupled_constraints = [normalise_constraint(item, silent=silent, debug=debug) for item in decoupled_constraints]
+            decoupled_constraints = [put_exp_left(item, silent=silent, debug=debug) for item in decoupled_constraints]
             egg = constraints_to_ineq(decoupled_constraints, silent=silent, debug=debug)
         if not egg:
             return space

@@ -382,25 +382,18 @@ def add_white_spaces(expression):
     return expression
 
 
-def normalise_constraint(constraint: str, silent: bool = True, debug: bool = False, all_exp_left=False):
+def normalise_constraint(constraint: str, silent: bool = True, debug: bool = False):
     """ Transforms the constraint into normalised form
 
     Args:
         constraint  (string): constraint to be normalised
         silent (bool): if silent printed output is set to minimum
         debug (bool): if True extensive print will be used
-        all_exp_left (bool): if True puts expression on the left side
 
     Example:
           "0.2 >= p >= 0.1"    --->  "0.1 <= p <= 0.2"
           "0.2 >= p"           --->  "p <= 0.2"
-
-          flip = False
-          "0.2 <= p"           --->  "0.2 <= p"
-          flip = True
-          "0.2 <= p"           --->  "p >= 0.2"
     """
-    ## TODO FLIP
     constraint = add_white_spaces(constraint)
     pattern = r" < | > | >= | <= | = | => | =<"
     match = re.findall(pattern, constraint)
@@ -427,6 +420,38 @@ def normalise_constraint(constraint: str, silent: bool = True, debug: bool = Fal
         return f"{spam[2]} < {spam[1]} <= {spam[0]}"
 
     return constraint
+
+
+def put_exp_left(constraint: str, silent: bool = True, debug: bool = False):
+    """ put exp of the constraint on the left side
+
+    Args:
+        constraint  (string): constraint to be normalised
+        silent (bool): if silent printed output is set to minimum
+        debug (bool): if True extensive print will be used
+
+    Example:
+          "0.2 <= p"           --->  "p >= 0.2"
+    """
+    pattern = r" < | > | >= | <= | = | => | =<"
+    match = re.findall(pattern, constraint)
+    spam = re.split(pattern, constraint)
+
+    try:
+        float(spam[0])
+        if match == [' >= ']:
+            return f"{spam[1]} <= {spam[0]}"
+        elif match == [' > ']:
+            return f"{spam[1]} < {spam[0]}"
+        elif match == [' = '] and is_float(spam[0]):
+            return f"{spam[1]} = {spam[0]}"
+        elif match == [' <= '] and is_float(spam[0]):
+            return f"{spam[1]} >= {spam[0]}"
+        elif match == [' < '] and is_float(spam[0]):
+            return f"{spam[1]} > {spam[0]}"
+
+    except ValueError:
+        return constraint
 
 
 def split_constraints(constraints):

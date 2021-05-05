@@ -144,6 +144,20 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(normalise_constraint("0.2 = p+q/8"), "p+q/8 = 0.2")
         ## TODO add more tests
 
+    def test_put_exp_left(self):
+        print(colored("Checking alligning the expression to the left side", 'blue'))
+        self.assertEqual(put_exp_left("0.2 > p"), "p < 0.2")
+        self.assertEqual(put_exp_left("0.2 < p"), "p > 0.2")
+        self.assertEqual(put_exp_left("0.2 >= p"), "p <= 0.2")
+        self.assertEqual(put_exp_left("0.2 <= p"), "p >= 0.2")
+        self.assertEqual(put_exp_left("0.2 = p"), "p = 0.2")
+
+        self.assertEqual(put_exp_left("p < 0.2"), "p < 0.2")
+        self.assertEqual(put_exp_left("p > 0.2"), "p > 0.2")
+        self.assertEqual(put_exp_left("p = 0.2"), "p = 0.2")
+        self.assertEqual(put_exp_left("p <= 0.2"), "p <= 0.2")
+        self.assertEqual(put_exp_left("p >= 0.2"), "p >= 0.2")
+
     def test_split_constraints(self):
         print(colored("Checking splitting constraints", 'blue'))
 
