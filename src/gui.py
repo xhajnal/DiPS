@@ -2254,9 +2254,10 @@ class Gui(Tk):
 
                 try:
                     self.show_space(self.show_refinement, self.show_samples, self.show_true_point, show_all=True, prefer_unsafe=self.show_red_in_multidim_refinement.get(), quantitative=self.show_quantitative)
-                except AttributeError:
+                except AttributeError as err:
                     self.space = ""
-                    messagebox.showwarning("Loading space", "Space file corrupted, could not load it.")
+                    print(colored(str(err), "red"))
+                    messagebox.showwarning("Loading space", "Space file is corrupted, could not load it.")
                     return
                 ## Show the space as niceprint()
                 # self.print_space()

@@ -723,7 +723,10 @@ class RefinedSpace:
             return self.rectangles_unknown
         rectangles_unknown = []
         for key in self.rectangles_unknown.keys():
-            rectangles_unknown.extend(list(map(lambda x: x.region, self.rectangles_unknown[key])))
+            try:  ## if Rectangles stored as regions
+                rectangles_unknown.extend(list(map(lambda x: x.region, self.rectangles_unknown[key])))
+            except AttributeError:  ## if simple list stored as regions
+                rectangles_unknown.extend(list(self.rectangles_unknown[key]))
         return rectangles_unknown
 
         ## Old implementation (slower)
