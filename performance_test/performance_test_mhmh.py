@@ -14,7 +14,8 @@ from common.config import load_config
 
 ## SETTINGS
 ## PATHS
-spam = load_config()
+cwd = os.getcwd()
+spam = load_config(os.path.join(cwd, "config.ini"))
 data_dir = spam["data"]
 model_path = spam["models"]
 property_path = spam["properties"]

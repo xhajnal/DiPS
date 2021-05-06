@@ -1,14 +1,27 @@
 import configparser
 import os
+from pathlib import Path
 
 
-def load_config():
+def load_config(path=False):
+    """ Loads config file
+
+    Args
+        path (str or Path): path to the config file, set False for default path
+    """
     config = configparser.ConfigParser()
     workspace = os.path.dirname(__file__)
     current_directory = os.getcwd()
     os.chdir(workspace)
 
-    config.read(os.path.join(workspace, "../../config.ini"))
+    if path is False:
+        config.read(os.path.join(workspace, "../../config.ini"))
+    else:
+        if os.path.isabs(Path(path)):
+            config.read(path)
+        else:
+            config.read(os.path.join(workspace, path))
+
     # config.sections()
 
     if not config.sections():

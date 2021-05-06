@@ -12,7 +12,8 @@ from common.config import load_config
 ### SETTINGS
 
 ## PATHS
-spam = load_config()
+cwd = os.getcwd()
+spam = load_config(os.path.join(cwd, "config.ini"))
 data_dir = spam["data"]
 model_path = spam["models"]
 property_path = spam["properties"]
@@ -115,8 +116,8 @@ if __name__ == '__main__':
                 print(colored(f"Sampling, dataset {data_set}, grid size {grid_size}, {n_samples} samples", "green"))
                 for cores in cores_list:
                     print("parallel:", cores)
-                    # repeat_sampling(parameters, parameter_domains, constraints, grid_size, silent=silent, save=False, debug=debug,
-                    #                 quantitative=False, parallel=cores, repetitions=repetitions, show_space=show_space)
+                    repeat_sampling(parameters, parameter_domains, constraints, grid_size, silent=silent, save=False, debug=debug,
+                                    quantitative=False, parallel=cores, repetitions=repetitions, show_space=show_space)
 
         ### KNUTH DIE
         # Number of parameters 1, 2, or 3
