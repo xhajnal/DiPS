@@ -17,13 +17,14 @@ def load_config(config_file_path=False):
     # print("path", config_file_path)
 
     if config_file_path is False:
-        config_file_path = os.path.join(workspace, "../../config.ini")
+        config_file_path = os.path.realpath(os.path.join(workspace, "../../config.ini"))
     else:
         if os.path.isabs(Path(config_file_path)):
             config_file_path = config_file_path
         else:
             config_file_path = os.path.join(workspace, config_file_path)
 
+    config_file_path = Path(config_file_path)
     config.read(config_file_path)
 
     if not config.sections():
