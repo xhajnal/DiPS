@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 
-def load_config(path=False):
+def load_config(config_file_path=False):
     """ Loads config file
 
     Args
@@ -14,15 +14,17 @@ def load_config(path=False):
     current_directory = os.getcwd()
     os.chdir(workspace)
 
-    if path is False:
-        config.read(os.path.join(workspace, "../../config.ini"))
-    else:
-        if os.path.isabs(Path(path)):
-            config.read(path)
-        else:
-            config.read(os.path.join(workspace, path))
+    # print("path", config_file_path)
 
-    # config.sections()
+    if config_file_path is False:
+        config_file_path = os.path.join(workspace, "../../config.ini")
+    else:
+        if os.path.isabs(Path(config_file_path)):
+            config_file_path = config_file_path
+        else:
+            config_file_path = os.path.join(workspace, config_file_path)
+
+    config.read(config_file_path)
 
     if not config.sections():
         raise Exception("Config file", "Config file, config.ini, not properly loaded.")
@@ -30,12 +32,9 @@ def load_config(path=False):
     prism_path = config.get("mandatory_paths", "prism_path")
 
     cwd = config.get("mandatory_paths", "cwd")
-    if cwd == "":
-        cwd = os.path.normpath(os.path.join(os.path.dirname(__file__), "../.."))
-    if not os.path.isabs(cwd):
-        cwd = os.path.normpath(os.path.join(os.path.dirname(__file__), "../.."))
-    # print("os.path.dirname(__file__)", os.path.dirname(__file__))
-    # print("cwd", cwd)
+
+    if not os.path.isabs(Path(cwd)):
+        cwd = os.path.join(os.path.dirname(config_file_path), cwd)
 
     model_dir = config.get("paths", "models")
     if model_dir == "":
@@ -77,7 +76,6 @@ def load_config(path=False):
         results_dir = os.path.join(cwd, results_dir)
     if not os.path.exists(results_dir):
         os.makedirs(results_dir)
-    # print("results_dir", results_dir)
 
     prism_results = os.path.join(results_dir, "prism_results")
     if not os.path.exists(prism_results):

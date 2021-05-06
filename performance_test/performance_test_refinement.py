@@ -12,7 +12,7 @@ from common.config import load_config
 ### SETTINGS
 
 ## PATHS
-cwd = os.path.dirname(__file__)
+cwd = os.path.dirname(os.path.abspath(__file__))
 spam = load_config(os.path.join(cwd, "config.ini"))
 data_dir = spam["data"]
 model_path = spam["models"]
