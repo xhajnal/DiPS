@@ -273,7 +273,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.25.8"  ## Version of the gui
+        self.version = "1.26.0"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -4077,7 +4077,7 @@ class Gui(Tk):
         no_max_depth = False
 
         ## Getting values from entry boxes
-        self.max_depth = int(self.max_dept_entry.get())
+        self.max_depth = int(self.max_depth_entry.get())
         if self.max_depth < 0:
             no_max_depth = True
             self.max_depth = 3
@@ -4168,47 +4168,66 @@ class Gui(Tk):
         self.delta = float(self.delta_entry.get())
 
         if self.mh_results == "":
-            assert  isinstance(self.mh_results, HastingsResults)
             rerun_mh = True
         else:
             rerun_mh = askyesno("MHMH", "Do you want to rerun Metropolis-Hasting?")
 
-
         if rerun_mh:
-            self.create_window_to_load_param_point(parameters=self.parameters)
+            self.hastings()
 
-            ## Clear figure
-            self.set_lower_figure(clear=True)
+        assert isinstance(self.mh_results, HastingsResults)
+        self.cursor_toggle_busy(True)
+        a, b = initialise_mhmh(self.parameters, self.parameter_domains, self.functions, self.constraints, self.data,
+                               int(self.n_samples_entry.get()), int(self.MH_sampling_iterations_entry.get()), eps=0,
+                               sd=float(self.sd_entry.get()), theta_init=self.parameter_point if rerun_mh else False,
+                               is_probability=True, where_mh=[self.page6_figure2, self.page6_b], where_ref=None,
+                               progress=False, burn_in=float(self.burn_in_entry.get()), debug=self.debug.get(),
+                               bins=int(float(self.bins_entry.get())), mh_timeout=int(float(self.mh_timeout_entry.get())),
+                               metadata=self.show_mh_metadata.get(), draw_plot=self.draw_plot_window,
+                               save=False, silent=self.silent.get(), recursion_depth=10, epsilon=self.epsilon,
+                               delta=self.delta, coverage=self.coverage, version=int(self.alg_entry.get()),
+                               solver=str(self.solver_entry.get()), parallel=cores,
+                               gui=self.update_progress_bar if self.show_progress else False,
+                               ref_timeout=int(float(self.refinement_timeout_entry.get())), mh_result=self.mh_results)
 
-            a = initialise_mhmh(self.parameters, self.parameter_domains, self.functions, self.constraints, self.data,
-                                int(self.n_samples_entry.get()), int(self.MH_sampling_iterations_entry.get()), eps=0,
-                                sd=float(self.sd_entry.get()), theta_init=self.parameter_point, is_probability=True,
-                                where_mh=[self.page6_figure2, self.page6_b], where_ref=[self.page6_figure, self.page6_a],
-                                progress=False, burn_in=float(self.burn_in_entry.get()),
-                                bins=int(float(self.bins_entry.get())),
-                                mh_timeout=int(float(self.mh_timeout_entry.get())), debug=self.debug.get(),
-                                metadata=self.show_mh_metadata.get(), draw_plot=self.draw_plot_window,
-                                save=False, silent=self.silent.get(), recursion_depth=10, epsilon=self.epsilon,
-                                delta=self.delta, coverage=self.coverage,
-                                version=int(self.alg_entry.get()), solver=str(self.solver_entry.get()),
-                                gui=self.update_progress_bar if self.show_progress else False,
-                                parallel=cores, ref_timeout=int(float(self.refinement_timeout_entry.get())), mh_result=None)
+        self.space = a
+        self.show_space(show_refinement=True, show_samples=self.show_samples, show_true_point=self.show_true_point,
+                        prefer_unsafe=self.show_red_in_multidim_refinement.get(), show_all=show_all,
+                        warnings=not (no_max_depth and self.space.get_coverage() < self.coverage),
+                        is_sampling_guided=self.sampling_guided_refinement.get(),
+                        is_parallel_refinement=int(self.refinement_cores_entry.get()) > 1)
+        self.page6_figure.tight_layout()  ## By huypn
+        self.page6_figure.canvas.draw()
+        self.page6_figure.canvas.flush_events()
+
+        ## Autosave figure
+        if self.save.get():
+            time_stamp = str(strftime("%d-%b-%Y-%H-%M-%S", localtime())) + ".png"
+            self.page6_figure.savefig(os.path.join(self.refinement_results, "tmp", f"Space_refinement_{time_stamp}"),
+                                      bbox_inches='tight')
+            print("Figure stored here: ",
+                  os.path.join(self.refinement_results, "tmp", f"Space_refinement_{time_stamp}"))
+            with open(os.path.join(self.refinement_results, "tmp", "figure_to_title.txt"), "a+") as f:
+                f.write(f"Space_refinement_{time_stamp} :\n")
+                f.write(f"      constraints: {self.constraints_file.get()}\n")
+
+        self.print_space()
+
+        self.constraints_changed = False
+        self.space_changed = False
+
+        ## Autosave
+        try:
+            self.save_space(os.path.join(self.tmp_dir, "space.p"))
+        except ValueError as err:
+            print(f"Space could not be loaded, {str(err)}")
+            messagebox.showwarning("Space could not be saved.", str(err))
+
+        if no_max_depth and self.space.get_coverage() < self.coverage:
+            self.refine_space()
         else:
-            assert isinstance(self.mh_results, HastingsResults)
-            a = initialise_mhmh(self.parameters, self.parameter_domains, self.functions, self.constraints, self.data,
-                                int(self.n_samples_entry.get()), int(self.MH_sampling_iterations_entry.get()), eps=0,
-                                sd=float(self.sd_entry.get()), theta_init=self.parameter_point, is_probability=True,
-                                where_mh=[self.page6_figure2, self.page6_b], where_ref=[self.page6_figure, self.page6_a],
-                                progress=False, burn_in=float(self.burn_in_entry.get()),
-                                bins=int(float(self.bins_entry.get())),
-                                mh_timeout=int(float(self.mh_timeout_entry.get())), debug=self.debug.get(),
-                                metadata=self.show_mh_metadata.get(), draw_plot=self.draw_plot_window,
-                                save=False, silent=self.silent.get(), recursion_depth=10, epsilon=self.epsilon,
-                                delta=self.delta, coverage=self.coverage, version=int(self.alg_entry.get()),
-                                solver=str(self.solver_entry.get()), parallel=cores,
-                                gui=self.update_progress_bar if self.show_progress else False,
-                                ref_timeout=int(float(self.refinement_timeout_entry.get())),
-                                mh_result=self.mh_results.get_accepted())
+            self.status_set("Space refinement finished.")
+        self.cursor_toggle_busy(False)
 
     def refine_space(self):
         """ Refines (Parameter) Space. Plots the results. """

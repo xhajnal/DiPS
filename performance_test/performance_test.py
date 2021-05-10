@@ -138,10 +138,9 @@ def load_functions(path, factorise=False, debug=False, source="any"):
         functions = list(map(str, functions))
 
     if debug:
-        # print("functions", functions)
-        print("functions[0]", functions[0])
-    else:
-        print("functions[0]", functions[0])
+        print("Loaded functions", functions)
+    elif not silent:
+        print("First of the loaded functions: functions[0]", functions[0])
     return functions
 
 

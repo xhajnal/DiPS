@@ -80,7 +80,8 @@ if __name__ == '__main__':
                 else:
                     functions = load_functions(f"bee/semisynchronous_{population_size}_bees", debug=debug, source=model_checker, factorise=factorise)
 
-                print("functions", functions)
+                if debug:
+                    print("functions", functions)
 
                 ## LOAD DATA
                 if multiparam:

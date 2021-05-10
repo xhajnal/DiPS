@@ -25,7 +25,7 @@ tmp_dir = config["tmp"]
 del config
 
 
-def initialise_mhmh(params, parameter_intervals, functions, constraints, data, sample_size, mh_sampling_iterations,
+def initialise_mhmh(params, parameter_domains, functions, constraints, data, sample_size, mh_sampling_iterations,
                     eps=0, sd=0.15, theta_init=False, is_probability=None, where_mh=False, where_ref=False,
                     progress=False, burn_in=False, bins=20, mh_timeout=False, debug=False, metadata=True,
                     draw_plot=False, save=False, silent=True, recursion_depth=10, epsilon=0.001, delta=0.001,
@@ -34,7 +34,7 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
 
     Args:
         params (list of strings): parameter names
-        parameter_intervals (list of tuples): domains of parameters
+        parameter_domains (list of tuples): domains of parameters
         functions (list of strings): expressions to be evaluated and compared with data
         constraints  (list of strings): array of (in)equalities
         data (list of floats): measurement values
@@ -64,11 +64,11 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
         gui (bool or Callable): called from the graphical user interface
         parallel (int): number of threads to use in parallel for refinement, when True (#cores - 1) is used
         ref_timeout (int): timeout of refinement in seconds (0 for no timeout)
-        mh_result (list or None): (optional) list of accepted points - if not None, this list of accepted points will be used as result of MH
+        mh_result (HastingsResults or None): (optional) list of accepted points - if not None, this list of accepted points will be used as result of MH
     """
     if mh_result is None:
         ## Run MH
-        mh_result = init_mh(params, parameter_intervals, functions, data, sample_size, mh_sampling_iterations, eps=eps,
+        mh_result = init_mh(params, parameter_domains, functions, data, sample_size, mh_sampling_iterations, eps=eps,
                             sd=sd, theta_init=theta_init, is_probability=is_probability, where=where_mh, progress=progress,
                             burn_in=burn_in, bins=bins, timeout=mh_timeout, silent=silent, debug=debug, metadata=metadata,
                             draw_plot=draw_plot)
@@ -81,7 +81,7 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
 
     ## Create bins
     intervals = []
-    for interval in parameter_intervals:
+    for interval in parameter_domains:
         add_this = []
         for index in range(bins):
             add_this.append([Fraction(index, bins-1)*(interval[1] - interval[0]) + interval[0], Fraction(index+1, bins-1)*(interval[1] - interval[0]) + interval[0]])
@@ -133,12 +133,12 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
         ## print(point)
         indices = []
         for index in range(len(point)):
-            interval_length = parameter_intervals[index][1] - parameter_intervals[index][0]
-            relative_position = (point[index] - parameter_intervals[index][0]) / interval_length
+            interval_length = Fraction(str(parameter_domains[index][1] - parameter_domains[index][0]))
+            relative_position = (point[index] - parameter_domains[index][0]) / interval_length
             relative_interval = relative_position * (bins-1)
 
-            indices.append((Fraction(interval_length, bins-1)*floor(relative_interval) + parameter_intervals[index][0],
-                           Fraction(interval_length, bins-1)*(floor(relative_interval)+1) + parameter_intervals[index][0]))
+            indices.append((Fraction(interval_length, bins-1) * floor(relative_interval) + parameter_domains[index][0],
+                            Fraction(interval_length, bins-1) * (floor(relative_interval)+1) + parameter_domains[index][0]))
         indices = tuple(indices)
         ## print("indices", indices)
         try:
@@ -171,7 +171,7 @@ def initialise_mhmh(params, parameter_intervals, functions, constraints, data, s
     print("We expect to see ", expected_values, "per (hype)rectangle") if not silent else None
 
     ## Initialise and add only rectangles to be refined
-    space = RefinedSpace(parameter_intervals, params)
+    space = RefinedSpace(parameter_domains, params)
     space.rectangles_unknown = {}
     del rectangularised_space
 
