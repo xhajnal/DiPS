@@ -273,7 +273,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.26.0"  ## Version of the gui
+        self.version = "1.27.0"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -4008,7 +4008,7 @@ class Gui(Tk):
             assert isinstance(self.functions, list)
             self.mh_results = init_mh(self.parameters, self.parameter_domains, self.functions, self.data,
                                       int(self.n_samples_entry.get()), int(self.MH_sampling_iterations_entry.get()),
-                                      eps=0, # float(self.eps_entry.get()), ## setting eps=0,
+                                      eps=0,  # float(self.eps_entry.get()), ## setting eps=0,
                                       sd=float(self.sd_entry.get()), theta_init=self.parameter_point,
                                       where=[self.page6_figure2, self.page6_b],
                                       progress=self.update_progress_bar if self.show_progress else False,

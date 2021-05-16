@@ -7,7 +7,7 @@ from socket import gethostname
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import gridspec, rcParams
-from matplotlib.ticker import MaxNLocator
+from matplotlib.ticker import MaxNLocator, FixedLocator
 from matplotlib.figure import Figure
 from bokeh.plotting import gridplot, output_file, show
 import bokeh.plotting.figure as bokeh_figure
@@ -49,7 +49,7 @@ class HastingsResults:
     """ Class to represent Metropolis Hastings results. """
     def __init__(self, params, theta_init, accepted, rejected, observations_count: int, observations_samples_count: int,
                  mh_sampling_iterations: int, eps=0, sd=0.15, burn_in=0.25, pretitle="", title="", bins=20, last_iter=0,
-                 timeout=0, time_it_took=0):
+                 timeout=0, time_it_took=0, alpha=0.95):
         """
         Args:
             params (list of strings): parameter names
@@ -64,6 +64,7 @@ class HastingsResults:
             pretitle (string): title to be put in front of title
             title (string): title of the plot
             bins (int): number of segments in the heatmap plot (used only for 2D param space)
+            alpha (float): alpha aka (1 - confidence level)
         """
         ## Inside variables
         self.params = params
@@ -94,6 +95,7 @@ class HastingsResults:
         self.last_iter = last_iter
         self.timeout = timeout
         self.time_it_took = time_it_took
+        self.alpha = alpha
 
     def get_burn_in(self):
         """ Returns fraction of the burned-in part. """
@@ -637,6 +639,49 @@ class HastingsResults:
         output_file(os.path.join(tmp_dir, f"Trace_of_accepted_points.html"), title=f"Trace_of_accepted_points")
         show(gridplot(plots))  # open a browser
 
+    def compute_hpd(self):
+        """ Computes hpd from the accepted points """
+        self.hpd = compute_hpd_multivariate(self.accepted, len(self.params), self.alpha)
+
+    def show_hpd(self, where=False):
+        """ Shows hpd from the accepted points as error bar """
+        self.compute_hpd()
+
+        intervals = self.hpd
+        print("HDPs: ", intervals)
+        titles = ["param indices", "HPD", "HPDs of accepted points"]
+
+        if where:
+            fig = Figure(figsize=(20, 10))
+            ax = fig.add_subplot(1, 1, 1)
+        else:
+            fig = plt.figure()
+            ax = fig.add_subplot(1, 1, 1)
+
+        ax.xaxis.set_major_locator(FixedLocator(range(1, len(intervals) + 1)))
+        y = []
+        yerr = []
+        for index in (range(1, len(intervals) + 1)):
+            spam = (intervals[index - 1][1] - intervals[index - 1][0])/2
+            y.append(intervals[index - 1][0] + spam)
+            yerr.append(spam)
+
+        print((range(1, len(intervals) + 1)))
+        print(y)
+        print(yerr)
+
+        ax.errorbar((range(1, len(intervals) + 1)), y, yerr=yerr, fmt='.k', capsize=5)
+
+        ax.set_xticks(list(range(1, len(intervals) + 1)))
+        ax.set_xlabel(titles[0])
+        ax.set_ylabel(titles[1])
+        ax.set_title(titles[2])
+
+        if where:
+            where(fig)
+        else:
+            fig.show()
+
 
 ## Now unused
 def sample_functions(functions, data_means):
@@ -1155,6 +1200,11 @@ def init_mh(params, parameter_intervals, functions, data, sample_size: int, mh_s
             globals()["mh_results"].show_iterations(where=draw_plot)
             globals()["mh_results"].show_accepted(where=draw_plot)
 
+    if not where:
+        globals()["mh_results"].show_hpd()
+    else:
+        globals()["mh_results"].show_hpd(where=draw_plot)
+
     ## TODO make a option to set to see the unzoomed space - freaking hard
     ## "Currently hist2d calculates it's own axis limits, and any limits previously set are ignored." (https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.axes.Axes.hist2d.html)
     ## Option 2 - https://stackoverflow.com/questions/29175093/creating-a-log-linear-plot-in-matplotlib-using-hist2d
@@ -1164,3 +1214,45 @@ def init_mh(params, parameter_intervals, functions, data, sample_size: int, mh_s
         return globals()["mh_results"]
     else:
         globals()["mh_results"].show_mh_heatmap(where=where)
+
+
+def compute_hpd_univariate(trace, alpha):
+    """ Computes HPD of univariate distribution
+    Args:
+        trace (list): list of (accepted) points
+        alpha (float): alpha (not confidence level)
+
+    Code was taken from PyMC3 project
+    """
+    n = len(trace)
+    cred_mass = alpha
+    x = np.sort(np.array(trace))
+    interval_idx_inc = int(np.floor(cred_mass * n))
+    n_intervals = n - interval_idx_inc
+    interval_width = x[interval_idx_inc:] - x[:n_intervals]
+
+    if len(interval_width) == 0:
+        raise ValueError("Too few elements for interval calculation")
+
+    min_idx = np.argmin(interval_width)
+    hdi_min = x[min_idx]
+    hdi_max = x[min_idx + interval_idx_inc]
+    return np.array([hdi_min, hdi_max])
+
+
+def compute_hpd_multivariate(trace, particle_dim, alpha=0.95):
+    """ Computes HPD of multivariate distribution
+    Args:
+        trace (list): list of (accepted) points
+        particle_dim (int):
+        alpha (float): alpha (not confidence level)
+
+    @author: Huy
+    @edit: xhajnal
+    """
+    params_hpd = np.zeros((particle_dim, 2))
+    for i in range(0, particle_dim):
+        tracee = trace[:, i]
+        h = compute_hpd_univariate(tracee, alpha)
+        params_hpd[i] = h
+    return params_hpd

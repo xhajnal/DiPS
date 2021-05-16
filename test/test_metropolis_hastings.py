@@ -110,6 +110,26 @@ class MyTestCase(unittest.TestCase):
         data = [0.2, 0.5, 0.3]
         init_mh(params, parameter_intervals, data=data, functions=functions, sample_size=100, mh_sampling_iterations=100, eps=0, debug=True, is_probability=True)
 
+    def test_compute_hpd_univariate(self):
+        print(colored('compute hpd univariate, randomised input - please check manually', 'blue'))
+        from scipy.stats import norm
+        trace = norm.rvs(size=100)
+        print(trace)
+        hpd = compute_hpd_univariate(trace, 0.95)
+        print(hpd)
+
+    def test_compute_hpd_multivariate(self):
+        print(colored('compute hpd univariate, randomised input - please check manually', 'blue'))
+        from scipy.stats import norm
+        dim = 5
+        trace_len = 100
+        trace = np.zeros((trace_len, dim))
+        for i in range(0, dim):
+            trace[:, i] = norm.rvs(size=100)
+        print(trace)
+        hpd = compute_hpd_multivariate(trace, dim, 0.95)
+        print(hpd)
+
 
 if __name__ == '__main__':
     unittest.main()

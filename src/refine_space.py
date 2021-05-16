@@ -171,7 +171,7 @@ def assign_param_types(solver):
         else:
             try:
                 raise Exception(f"Unknown solver: {solver}")
-            except:
+            except NameError:
                 raise Exception("Unknown solver.")
     ## EXAMPLE: p = Real(p)
 
@@ -201,8 +201,8 @@ def check_unsafe(region, constraints, silent: bool = False, called=False, solver
 
     print(f"Checking unsafe {region} using {('dreal', 'z3')[solver == 'z3']} solver, current time is {datetime.datetime.now()}") if not silent else None
 
-    if solver == "z3":  ## avoiding collision name
-        del delta
+    if solver == "z3":
+        del delta  ## avoiding collision name
     elif solver == "dreal":
         if not gIsDrealAvailable:
             raise Exception("Dreal is not properly loaded, install it or use z3 instead, please.")
