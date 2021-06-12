@@ -845,7 +845,7 @@ def check_interval_out(region, constraints, intervals, silent: bool = False, cal
         try:
             # print(mpi(region[i][0], region[i][1]))
             globals()[param] = mpi(region[i][0], region[i][1])
-        except:
+        except Exception:  ## TODO put precise exception
             print(
                 f"Error occurred while region: {region}, with param {globals()[param]} of interval {mpi(region[i][0], region[i][1])}")
 

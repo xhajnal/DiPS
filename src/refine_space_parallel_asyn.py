@@ -1049,7 +1049,7 @@ def check_interval_out_parallel(region, constraints, intervals, silent=False, de
     for index, param in enumerate(glob_parameters):
         try:
             globals()[param] = mpi(region[index][0], region[index][1])
-        except:
+        except Exception:  ## TODO put precise exception
             print(f"Error occurred while region: {region}, with param {globals()[param]} of interval {mpi(region[index][0], region[index][1])}")
 
     ## Check that all prop are in its interval

@@ -41,7 +41,7 @@ def maximize_plot():
             mng.window.state('zoomed')
         else:
             mng.resize(*mng.window.maxsize())
-    except:
+    except Exception:  ## specify exception
         pass
 
 
@@ -247,7 +247,7 @@ class HastingsResults:
                     try:
                         burn_in = (100 - self.not_burn_in)/100  ## Backward compatibility
                         self.burn_in = burn_in
-                    except:
+                    except Exception:  ## TODO put precise exception
                         pass
                     try:
                         if 0 <= self.show <= 1:  ## Backward compatibility
@@ -259,7 +259,7 @@ class HastingsResults:
                         else:
                             burn_in = len(self.accepted) - self.show  ## Backward compatibility
                         self.burn_in = burn_in
-                    except:
+                    except Exception:  ## TODO put precise exception
                         pass
         try:  ## backward compatibility
             if self.mh_sampling_iterations < 0:
@@ -503,7 +503,7 @@ class HastingsResults:
 
         try:
             bins = self.bins
-        except:
+        except Exception:  ## TODO put precise exception
             bins = 20
 
         if where:
@@ -569,7 +569,7 @@ class HastingsResults:
 
         try:
             bins = self.bins
-        except:
+        except Exception:  ## TODO put precise exception
             bins = 20
 
         plots = []

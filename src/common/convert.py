@@ -57,7 +57,7 @@ def is_float(value):
     try:
         float(value)
         return True
-    except Exception:
+    except Exception:  ## TODO specify exception
         return False
 
 

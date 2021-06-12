@@ -2424,7 +2424,7 @@ class Gui(Tk):
 
         try:
             self.new_window.destroy()
-        except:
+        except Exception:  ## TODO put precise exception
             pass
 
         if self.space == "":
@@ -3288,7 +3288,7 @@ class Gui(Tk):
         try:
             self.page3_figure.savefig(os.path.join(self.figures_dir, "tmp", f"{plot_type}_{time_stamp}"), bbox_inches='tight')
             print("Figure stored here: ", os.path.join(self.figures_dir, "tmp", f"{plot_type}_{time_stamp}"))
-        except:
+        except Exception:  ## TODO put precise exception
             print("This figure could not be saved.")
         with open(os.path.join(self.figures_dir, "tmp", "figure_to_title.txt"), "a+") as f:
             f.write(f"{plot_type}_{time_stamp} :\n")
@@ -4058,7 +4058,7 @@ class Gui(Tk):
                 # try:
         #     self.cursor_toggle_busy(True)
         #     init_mh(self.space, self.data, self.functions, int(self.n_samples_entry.get()), int(self.N_obs_entry.get()), int(self.MH_samples_entry.get()), float(self.eps_entry.get()), where=[self.page6_figure2, self.page6_b])
-        # except:
+        # except Exception:  ## TODO put precise exception
         #     messagebox.showerror(sys.exc_info()[1], "Try to check whether the data, functions, and computed constraints are aligned.")
         # finally:
         #     self.cursor_toggle_busy(False)
@@ -4804,7 +4804,7 @@ class Gui(Tk):
             self.mh_results.show_accepted_bokeh()
             # try:
             #     self.mh_results.show_accepted(where=self.draw_plot_window)
-            # except:
+            # except Exception:  ## TODO put precise exception
             #     self.mh_results.show_accepted_bokeh()
 
     def export_acc_points(self, file=False):

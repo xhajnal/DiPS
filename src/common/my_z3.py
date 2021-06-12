@@ -47,7 +47,7 @@ def is_this_python_function(function: str):
             variable = str(err).split("'")[1]
             locals()[variable] = 0
             continue
-        except Exception:
+        except Exception:  ## TODO specify exception
             return False
     return True
     # return "if" in function or "and" in function or "or" in function or "not" in function

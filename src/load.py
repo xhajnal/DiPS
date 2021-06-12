@@ -599,7 +599,7 @@ def load_all_data(path):
                     # print(D[N][value])
                     try:
                         data[population][value] = float(data[population][value])
-                    except:
+                    except Exception:  ## TODO put precise exception
                         print("Error while parsing data for population =", population, " i =", value, " of value =", data[population][value])
                         data[population][value] = 0
                     # print(type(D[population][value]))
