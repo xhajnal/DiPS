@@ -139,7 +139,10 @@ For more information about the methods, please follow the tool paper (submitted)
 ## HOW TO CITE US
 
 <a name="one"> </a>
+[1] Hajnal, M., Šafránek, D., Petrov, T.: DiPS: A Tool for Data-informed Parameter Synthesis for Discrete-Time Stochastic Processes from Multiple-Property Specifications. In: European Performance Engineering Workshop. Springer International Publishing, (2021) (To be published)
+<!---
 [1] Hajnal, M., Nouvian, M., Šafránek, D., Petrov, T.: Data-informed parameter synthesis for population Markov chains. In: Češka, M., Paoletti, N. (eds.) Hybrid Systems Biology. pp. 147-164. Springer International Publishing, Cham (2019)
+-->
 
 *****
 ## ACKNOWLEDGMENT
