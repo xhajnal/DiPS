@@ -1800,21 +1800,28 @@ def create_rewards_prop():
 
 
 if __name__ == '__main__':
+    # Create Old 2-param models
     for population in [2, 3, 5, 10, 15]:
-        # create_synchronous_model(f"bee/synchronous_{population}_bees", population)
-        create_semisynchronous_model(f"bee/semisynchronous_{population}_bees", population)
-        # create_asynchronous_model(f"bee/asynchronous_{population}_bees", population)
-    for population in [3, 4]:
-        # create_multiparam_synchronous_model(f"bee/multiparam_synchronous_{population}_bees", population)
-        create_multiparam_semisynchronous_model(f"bee/multiparam_semisynchronous_{population}_bees", population)
-        # create_multiparam_asynchronous_model(f"bee/multiparam_asynchronous_{population}_bees", population)
+        # create_synchronous_model(f"examples/old_bees/synchronous_{population}_bees", population)
+        create_semisynchronous_model(f"examples/old_bees/semisynchronous_{population}_bees", population)
+        # create_asynchronous_model(f"examples/old_bees/asynchronous_{population}_bees", population)
 
-    for population in [2, 3, 5, 10]:
-        # create_bee_multiparam_synchronous_model(f"/home/matej/Git/DiPS/models/{population}_synchronous.pm", population)
+    # Create Old multiparam models
+    for population in [3, 4]:
+        # create_multiparam_synchronous_model(f"examples/old_bees/multiparam_synchronous_{population}_bees", population)
+        create_multiparam_semisynchronous_model(f"examples/old_bees/multiparam_semisynchronous_{population}_bees", population)
+        # create_multiparam_asynchronous_model(f"examples/old_bees/multiparam_asynchronous_{population}_bees", population)
+
+    # Create New models
+    for population in [2, 3, 5, 10, 15]:
+        create_bee_multiparam_synchronous_model(f"examples/bees/{population}_synchronous.pm", population)
         # This is a time consuming operation:
-        # create_bee_multiparam_semisynchronous_model(f"bee/semisynchronous/{population}_semisynchronous", population)
+        # create_bee_multiparam_semisynchronous_model(f"examples/bees/{population}_semisynchronous", population)
         pass
 
+    # Create properties
     for population in [2, 3, 4, 5, 10, 15]:
-        create_properties(population, os.path.join(model_path, f"bee/prop_{population}_bees.pctl"))
+        create_properties(population, os.path.join(model_path, f"examples/bees/prop_{population}_bees.pctl"))
+        create_properties(population, os.path.join(model_path, f"examples/old_bees/prop_{population}_bees.pctl"))
+
     print("Done")
