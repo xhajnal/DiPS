@@ -7,7 +7,8 @@ author: Matej Hajnal
 3. [Model assuptions](#Model-assuptions)
 4. [Temporal properties](#Temporal-properties)
 5. [Parametric model checking and rational function](#Parametric-model-checking-and-rational-function)
-6. [Analysis](#Analysis)
+6. [Data](#Data)
+7. [Analysis](#Analysis)
 
 ## Introduction 
 Honeybees live in densely populated nests, in which they also gather resources in the form of pollen and honey. 
@@ -103,6 +104,12 @@ as: r_i = r_0 + (Vmax−r_0) / (1+( Km/i)^n).
  This transformation decreases the number of parameters to four: r_0 - basal level, Vmax - saturation level, Km - value at which the hill
 function is at half of the slope, and n - Hill coefficient indicating the slope of the curve.
 
+## Data
+  We have conducted an experiment counting number of stinging bees in the arena as a result of 92 trial. 
+  We caltulate the probability of x number of stinging bees as # of observed trials with x stinging bees / # all trials. 
+  As `data.txt` shows the result distribution as 0 stinging bees, 1 stinging bee, ...  is 
+  
+  [0.2391304348, 0.152173913, 0.2065217391, 0.1195652174, 0.04347826087, 0.1086956522, 0.08695652174, 0.02173913043, 0.02173913043, 0, 0]  
   
 ## Analysis
 Finally, we provide a step-by-step analysis to reproduce the observation presented in the paper. 
