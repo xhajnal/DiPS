@@ -229,7 +229,7 @@ def repeat_sampling(parameters, parameter_domains, constraints, sample_size, bou
 
     avrg_time = avrg_time/repetitions
     if repetitions > 1:
-        print(colored(f"Average time of {repetitions} runs is {round_sig(avrg_time)}", "yellow"))
+        print(colored(f"Sampling: Average time of {repetitions} runs is {round_sig(avrg_time)}", "yellow"))
 
     else:
         print(colored(f"Sampling took {round_sig(avrg_time)}", "yellow"))
@@ -326,7 +326,7 @@ def repeat_refine(text, parameters, parameter_domains, constraints, timeout=0, s
     print()
     avrg_time = avrg_time/repetitions
     if repetitions > 1:
-        print(colored(f"Average time of {repetitions} runs is {round_sig(avrg_time)}", "yellow"))
+        print(colored(f"Refine: Average time of {repetitions} runs is {round_sig(avrg_time)}", "yellow"))
 
     else:
         print(colored(f"Refinement took {round_sig(avrg_time)}", "yellow"))
@@ -382,7 +382,7 @@ def repeat_mhmh(text, parameters, parameter_domains, data, functions, sample_siz
     avrg_whole_time = avrg_whole_time/repetitions
 
     if repetitions > 1:
-        print(colored(f"Average time of {repetitions} runs is {round_sig(avrg_whole_time)}, while MH took {round_sig(avrg_mh_time)} and refine {round_sig(avrg_refine_time)}", "yellow"))
+        print(colored(f"MHMH: Average time of {repetitions} runs is {round_sig(avrg_whole_time)}, while MH took {round_sig(avrg_mh_time)} and refine {round_sig(avrg_refine_time)}", "yellow"))
         print(colored(f"{round_sig(avrg_mh_time)} / {round_sig(avrg_refine_time)} / {round_sig(avrg_whole_time)}", "yellow"))
     else:
         print(colored(f"MHMH took {round_sig(avrg_whole_time)}", "yellow"))
@@ -427,7 +427,7 @@ if __name__ == '__main__':
 
         if test_case == "zeroconf":
             settings = [10]
-            is_probability = False
+            is_probability = True
 
         for constants in settings:
             if test_case == "Knuth":
@@ -498,6 +498,8 @@ if __name__ == '__main__':
 
                 ## COMPUTE INTERVALS
                 n_samples = [100, 1500, 3500]
+                if test_case == "zeroconf":
+                    n_samples = [1000]
 
                 i = 0
                 intervals = []
@@ -511,7 +513,7 @@ if __name__ == '__main__':
                     start_time = time()
                     result_1 = optimize(functions, parameters, parameter_domains, data_set)
                     print(colored(
-                        f"Optimisation, data {data_set}, \nIt took {round_sig(time() - start_time, precision)} seconds", "yellow"))
+                        f"Optimisation, data {data_set}, \n Optimisation took {round_sig(time() - start_time, precision)} seconds", "yellow"))
                     if debug:
                         print(result_1)
 

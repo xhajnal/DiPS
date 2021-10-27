@@ -271,7 +271,6 @@ if __name__ == '__main__':
     silent = True
     debug = False
 
-    ## TODO uncomment following lines to rerun
     for model_type in model_types:
         ## MULTIPARAM
         param_space = np.array([[0.81], [0.92], [0.92], [0.92]])
