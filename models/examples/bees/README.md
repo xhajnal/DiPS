@@ -1,5 +1,5 @@
 # Honeybee mass-stinging defence response
-author: Matej Hajnal
+README author: Matej Hajnal
 
 ## Contents
 1. [Introduction](#Introduction)
@@ -17,7 +17,7 @@ To fend them off, the bees have to band together into a collective stinging atta
 This defensive reaction is typically initiated by (transiently) specialised bees termed guard bees, who monitor the colony's surroundings.
 They react to disturbances by stinging the intruder or by running inside the nest with their stinger extruded and their wings fanning.
 In both cases, their behaviour causes the release of the sting alarm pheromone (SAP), a complex pheromonal blend carried directly on the stinger.
-This chemical signal arouses nearby bees and recruits them to the site of the disturbance, where they decide whether to participate or not in the defensive effort by stinging or otherwise harassing the predator [32, and references therein].
+This chemical signal arouses nearby bees and recruits them to the site of the disturbance, where they decide whether to participate or not in the defensive effort by stinging or otherwise harassing the predator.
 Hence, the SAP plays a major role in amplifying the defensive reaction of the colony so that it reaches critical mass.
 
 In this model, our aim is to better understand how honeybees use the SAP to communicate during defence, in particular by quantifying its effect on the likelihood to sting of individual bees. 
@@ -28,7 +28,7 @@ We propose a mathematical model of the group dynamics, which transparently links
 
 | ![space-1.jpg](https://user-images.githubusercontent.com/23458520/133645103-4735cec6-8490-406c-8ce5-dce59de7c471.png) |
 |:--:|
-| <b> Model  of  three  bees  as  a  parametrised  Markov  Chain.  In  each  state,  a vector  depicting  state  of  the  population  is  shown. Each  bee  agent  tracks  its state  -init before  stimulus,  1  stinging,  and  !i not  stinging  when i amount  of pheromone  is  present,  i.e.A < θ_i.  Transitions,  updates  of  bee  states  whether to sting or not, are parametrised by the probability of stinging when i amountof pheromone is present - ri. When multiple bees are updating their state, we consider this as an independent decision and hence multiply respective terms. Terms such as (r_k−r_i)/(1−r_i) interpret the conditional probability P(A > θ_k \| A < θ_i). </b> |
+| <b> Model  of  three  bees  as  a  parametrised  Markov  Chain.  In  each  state,  a vector  depicting  state  of  the  population  is  shown. Each  bee  agent  tracks  its state  -init before  stimulus,  1  stinging,  and  !i not  stinging  when i amount  of pheromone  is  present,  i.e. A < θ_i.  Transitions,  updates  of  bee  states  whether to sting or not, are parametrised by the probability of stinging when i amountof pheromone is present - r_i. When multiple bees are updating their state, we consider this as an independent decision and hence multiply respective terms. Terms such as (r_i−r_k)/(1−r_k) interpret the conditional probability P(A > θ_i \| A < θ_k). </b> |
 
 
 
@@ -40,8 +40,9 @@ In the second step, to create the set of transitionsin each step we compute the 
 We multiply terms ![image](https://user-images.githubusercontent.com/23458520/133643818-c20082c4-5ed2-43b1-afe4-38a8130cc251.png)
 or ![image](https://user-images.githubusercontent.com/23458520/133643966-3de6fa3a-92ab-4df9-bc8a-f214b5831c0e.png) for each unique !i in the state to create all possible decisions of each bee either to sting or not to sting respectively.
 We multiply each of the terms by a combination number picking number of bees not stinging at alarm pheromone level, !i, to be updated in this transition from all such bees in the state. 
-We leverage abstract description of PRISM language which applies a transition to all possible states, e.g. in a state where there are two bees stinging, other two bees did not sting at pheromone level 0, anotherbee did not sting at level 1, and the rest of the bees decided not to sting at level2, there are three bees to be updated in total, those who did not sting at level0 and 1. 
-Each of the bee decides to either sting or not. 
+  
+We leverage abstract description of PRISM language which applies a transition to all possible states, e.g. in a state where there are two bees stinging, other two bees did not sting at pheromone level 0, anotherbee did not sting at level 1, and the rest of the bees decided not to sting at level 2, there are three bees to be updated in total, those who did not sting at level 0 and level 1. 
+Each bee decides to either sting or not. 
 Let’s say one of the two bees which did not stinging at level 0 decides to sting and the second does not.
 The third bee decides to sting as well. 
 Hence we have a transition to a state with 4 bees stinging and one additional bee which does not sting at alarm pheromone at level 2.
@@ -52,10 +53,10 @@ Transition probability is equal to:
 
 
 ## Model assumptions
-When creating the model, we assumed several facts thanks to the observations and expertise of the biologists.
+When creating the model, we assumed several facts thanks to the observations and expertise of the biologists
 
 ### Degradation of SAP
-The half-life of the SAP seems to be much higher than the time of a bee to respond; hence we do not model its degradation.
+The half-life of the SAP is much higher than the time of a bee to respond; hence we do not model its degradation.
 
 ### Non-decreasing parameter values
 In the transitions of the model, the term encoding the probability of a bee stinging when i amount of pheromone given the bee did not sting at k amount of pheromone:
@@ -112,41 +113,46 @@ function is at half of the slope, and n - Hill coefficient indicating the slope 
   [0.2391304348, 0.152173913, 0.2065217391, 0.1195652174, 0.04347826087, 0.1086956522, 0.08695652174, 0.02173913043, 0.02173913043, 0, 0]  
   
 ## Analysis
-Finally, we provide a step-by-step analysis to reproduce the observation presented in the paper. 
-While each step is decribed in more detail in the tutorial.
+Finally, we provide a step-by-step analysis to reproduce the observation presented in the paper while each step is decribed in more detail in the tutorial - `tutorial.pdf` .
+Framework installation instructions can be found in the `README.md`.
+Both files are available in the DiPS tool main folder or at https://github.com/xhajnal/DiPS.
 
 ### Agnostic model
-- First, we select the `non-decreasing` branch. 
+- First, we select the `non-decreasing` branch - `>> git checkout -b non-decreasing`. 
 - Next, we open DiPS' Graphical User Interface. 
-- In the very first tab the model and temporal properties can be loaded.
-- In the second tab we compute the rational functions.
-- We select installed parametric model checker - PRISM or Storm - and choose to factor the result functions or not.
-- We press Run parametric model checking button and after the procedure is complete, the result rational functions are shown in the editor.
-- We follow the fourth tab Data & Intervals, where we load data file and select 92 samples.
-- We choose 0.9 as the confidence level and Agresti-Coull as a method to compute confidence intervals. 
-- To actually compute them, we press Compute Intervals button. 
-- To compute the optimised point, we select Apply non-decreasing params checkbox and press Optimize parameters button. 
-- After the procedure is complete a new window with the results is shown. 
-- To compute the constraints, we continue to the next tab and we press Calculate constraints button.
-- The constraints will be shown in the editor.
+- In the very first tab the model and temporal properties are loaded - `10_synchronous.pm` and `prop_10_bees.pctl`.
+- In the second tab we compute the rational functions:
+  - We select installed parametric model checker - PRISM or Storm - and choose to factor the result functions or not. 
+  - We press Run parametric model checking button and after the procedure is complete, the result rational functions are shown in the editor.
+- Alternatively to the previous two points, you can load the rational functions, `rational_functions/agnostic_10_bees_factorised.txt`, in the second tab.
+- We follow the fourth tab Data & Intervals, 
+  - Here we load data file, `data.txt`, and select 92 samples.
+  - We choose 0.9 as the confidence level and Agresti-Coull as a method to compute confidence intervals. 
+  - To actually compute them, we press Compute Intervals button. 
+- To compute the optimised point: 
+  - We select Apply non-decreasing params checkbox and press Optimize parameters button. 
+  - After the procedure is complete a new window with the results is shown. 
+- To calculate the constraints, 
+  - we continue to the next tab and we press Calculate constraints button.
+  - The constraints will be shown in the editor.
 - Now we follow to the last tab, where the rest of the analysis of the agnostic model is done. 
 - Sampling and Refinement analysis is here, but due to the dimensionality of the agnostic model, we won't probably be able to obtain reasonable results.
-- We follow with the Metropolis-Hastings analysis - we select reasonable number of iteration (TBA), select Apply non-decreasing params checkbox, and press Metropolis-Hastings button to run the analysis.
-- First, two metadata plots are shown. You can read more about these in the tutorial. 
-- Finally, the main result is shown in the main window of DiPS showing the set of accepted points as a scatter-line plot.
-- We strongly recommend running the analysis with a very low number of iterations to extrapolate the expected time to finish first.
+- Finally,the Metropolis-Hastings analysis - 
+  - select reasonable number of iteration (10,000,000 used), 
+  - select Apply non-decreasing params checkbox, and 
+  - press Metropolis-Hastings button to run the analysis.
+  - First, two metadata plots are shown. You can read more about these in the tutorial. 
+  - Finally, the main result is shown in the main window of DiPS showing the set of accepted points as a scatter-line plot.
+  - We strongly recommend running the analysis with a very low number of iterations to extrapolate the expected time to finish first.
 
 ### Linear and Sigmoidal model
-Here we describe only the parts which are different from the analysis of the agnostic model.
-For this part of the analysis, we can either use non-decreasing branch or the default branch.
-- We unselect the Apply non-decreasing params checkbox in all analyses.
-- First, we directly load the rational functions from a file in the second tab.
-- Second, we run Sampling and refinement in the last tab.
-- TBA
+Here, we describe only the parts which are different from the analysis of the agnostic model.
+For this part of the analysis, we can either use `non-decreasing` branch or the `default` branch.
+- During the analysis, unselect each `apply non-decreasing params` checkbox.
+- First, skip loading of the model and properties and directly load the rational functions from a file in the second tab - `rational_functions/lin_10_bees_factorised.txt` and `rational_functions/sig_4_param_partially_factorised.txt` for the linear and sigmoidal version respectively.
+- Load data and follow the settings in the fourth tab, Data & Intervals, as previously. 
+- Compute the optimised point (unselect the `apply non-decreasing params` checkbox) and calculate the constraints as previously, you need to press the button even when new rational functions are loaded.
+- Repeat the Metropolis-Hastings analysis while unselecting the `apply non-decreasing params` checkbox and choosing right number of iterations (we used 30,000,000 for linear model and 358,287 for the sigmoidal model)
 
-
-
-
-
-
-
+Now, you should be able to replicate all the results.
+This Reproducibility protocol is available on Zenodo including output Metropolis-Hastings result files. 
