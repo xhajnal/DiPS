@@ -153,6 +153,20 @@ For this part of the analysis, we can either use `non-decreasing` branch or the 
 - Load data and follow the settings in the fourth tab, Data & Intervals, as previously. 
 - Compute the optimised point (unselect the `apply non-decreasing params` checkbox) and calculate the constraints as previously, you need to press the button even when new rational functions are loaded.
 - Repeat the Metropolis-Hastings analysis while unselecting the `apply non-decreasing params` checkbox and choosing right number of iterations (we used 30,000,000 for linear model and 358,287 for the sigmoidal model)
+  
+  
+### Model selection
+Model selection is implemented in the R script `model_selection.R`. When sourced, it automatically runs all analyses, prints the outputs in the console, and saves the plots in the same folder.
+  
+As an input, the script uses three files. The first one, `dat_parameters.txt`, contains the optimized parameter values r_i of the agnostic model, parameters r_0 and ∆ of the linear model, and parameters Km, Vmax, n, and r_0 of the sigmoidal model. From these optimized points, the parameter values r_i are computed according to the linear and sigmoidal model described above. The second input file, `dat_functions.txt`, contains the true rational function values, as well as the function values produced by the agnostic, linear, and sigmoidal model.
+  
+The first step in model selection is to compute the residual sum of squares (RSS) for both, linear and sigmoidal, models. The values are compared to real data for the RSS of rational function values and compared to agnostic values for the RSS of parameter values. A third input file `mh_ranges.txt` provides the ranges of values obtained from Metropolis Hastings to normalize the residuals. The weight for each parameter value is computed with min-max normalization and multiplied with the according residual.
+  
+The script then outputs the Akaike Information Criterion (AIC), AIC = n log(RSS/n) + 2k for n observations and k free parameters, for rational function values, parameter values, and normalized parameter values of both models.
+  
+We consider the linear model as the better fitting one because of its lower AIC score and validate its absolute quality next. The script computes the coefficient of determination, R^2 = 1 - RSS/TSS with TSS being the total sum of squares, to test the model’s predictions. R^2 is only evaluated for parameter values and normalized parameter values. Residual plots and Q-Q plots are created and saved to confirm the normality of residuals.
+
+
 
 Now, you should be able to replicate all the results.
 This Reproducibility protocol is available on Zenodo including output Metropolis-Hastings result files. 
