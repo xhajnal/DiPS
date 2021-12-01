@@ -122,26 +122,26 @@ Both files are available in the DiPS tool main folder or at https://github.com/x
 - Next, we open DiPS' Graphical User Interface. 
 - In the very first tab, the model and temporal properties are loaded - `10_synchronous.pm` and `prop_10_bees.pctl`.
 - In the second tab, we compute the rational functions:
- - We select installed parametric model checker - PRISM or Storm - and choose to factor the result functions or not. 
- - We press Run parametric model checking button, and after the procedure is complete, the result rational functions are shown in the editor.
+	- We select installed parametric model checker - PRISM or Storm - and choose to factor the result functions or not.  
+ 	- We press Run parametric model checking button, and after the procedure is complete, the result rational functions are shown in the editor. 
 - Alternatively to the previous two points, you can load the rational functions, `rational_functions/agnostic_10_bees_factorised.txt`, in the second tab.
 - We follow the fourth tab Data & Intervals, 
- - Here, we load the data file, `data.txt`, and select 92 samples.
- - We choose 0.9 as the confidence level and Agresti-Coull as a method to compute confidence intervals. 
- - To actually compute them, we press Compute Intervals button. 
+	- Here, we load the data file, `data.txt`, and select 92 samples.
+	- We choose 0.9 as the confidence level and Agresti-Coull as a method to compute confidence intervals. 
+	- To actually compute them, we press Compute Intervals button. 
 - To compute the optimised point: 
- - We select Apply non-decreasing params checkbox and press Optimise parameters button. 
- - After the procedure is complete, a new window with the results is shown. 
+	- We select Apply non-decreasing params checkbox and press Optimise parameters button. 
+	- After the procedure is complete, a new window with the results is shown. 
 - To calculate the constraints, 
- - we continue to the next tab, and we press Calculate constraints button.
- - The constraints will be shown in the editor.
+	- we continue to the next tab, and we press Calculate constraints button.
+	- The constraints will be shown in the editor.
 - Now, we follow to the last tab, where the rest of the analysis of the agnostic model is done. 
 - Sampling and Refinement analysis is here, but due to the dimensionality of the agnostic model, we won't probably be able to obtain reasonable results.
 - Finally, the Metropolis-Hastings analysis - 
- - select reasonable number of iteration (10,000,000 used), 
- - select Apply non-decreasing params checkbox, and 
- - press the Metropolis-Hastings button to run the analysis.
- - First, two metadata plots are shown. You can read more about these in the tutorial. 
+	- select reasonable number of iteration (10,000,000 used), 
+	- select Apply non-decreasing params checkbox, and 
+	- press the Metropolis-Hastings button to run the analysis.
+	- First, two metadata plots are shown. You can read more about these in the tutorial. 
  - Finally, the main result is shown in the main window of DiPS showing the set of accepted points as a scatter-line plot.
  - We strongly recommend running the analysis with a very low number of iterations to extrapolate the expected time to finish first.
 
