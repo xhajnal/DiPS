@@ -1,5 +1,9 @@
-# Honeybee mass-stinging defence response
-README author: Matej Hajnal, Julia Klein
+# Honeybee mass-stinging defence response protocol
+README authors: Matej Hajnal, Julia Klein
+
+## Prerequisities
+1. [DiPS](https://github.com/xhajnal/DiPS)
+2. [R](https://www.r-project.org/)
 
 ## Contents
 1. [Introduction](#Introduction)
@@ -120,7 +124,7 @@ Both files are available in the DiPS tool main folder or at https://github.com/x
 ### Agnostic model
 - First, we select the `non-decreasing` branch - `>> git checkout -b non-decreasing`. 
 - Next, we open DiPS' Graphical User Interface. 
-- In the very first tab, the model and temporal properties are loaded - `10_synchronous.pm` and `prop_10_bees.pctl`.
+- In the very first tab, load model and temporal properties - `10_synchronous.pm` and `prop_10_bees.pctl`.
 - In the second tab, we compute the rational functions:
 	- We select installed parametric model checker - PRISM or Storm - and choose to factor the result functions or not.  
  	- We press Run parametric model checking button, and after the procedure is complete, the result rational functions are shown in the editor. 
@@ -132,6 +136,7 @@ Both files are available in the DiPS tool main folder or at https://github.com/x
 - To compute the optimised point: 
 	- We select Apply non-decreasing params checkbox and press Optimise parameters button. 
 	- After the procedure is complete, a new window with the results is shown. 
+	- you can compare the result with those we have obtained in the `optimisation_results` folder
 - To calculate the constraints, 
 	- we continue to the next tab, and we press Calculate constraints button.
 	- The constraints will be shown in the editor.
@@ -160,14 +165,18 @@ Model selection is implemented in the R script `model_selection.R`. When sourced
  
 As an input, the script uses three files. The first one, `dat_parameters.txt`, contains the optimised parameter values r_i of the agnostic model, parameters r_0 and ∆ of the linear model, and parameters Km, Vmax, n, and r_0 of the sigmoidal model. From these optimised points, the parameter values r_i are computed according to the linear and sigmoidal models described above. The second input file, `dat_functions.txt`, contains the true rational function values, as well as the function values produced by the agnostic, linear, and sigmoidal model.
  
-The first step in model selection is to compute the residual sum of squares (RSS) for both, linear and sigmoidal, models. The values are compared to real data for the RSS of rational function values and compared to agnostic values for the RSS of parameter values. A third input file `mh_ranges.txt` provides the ranges of values obtained from Metropolis-Hastings to normalise the residuals. The weight for each parameter value is computed with min-max normalisation and multiplied with the according residual.
+The first step in model selection is to compute the residual sum of squares (RSS) for both, linear and sigmoidal, models. The values are compared to real data for the RSS of rational function values and compared to agnostic values for the RSS of parameter values. A third input file, `mh_ranges.txt`, provides the ranges of values obtained from Metropolis-Hastings to normalise the residuals. The weight for each parameter value is computed with min-max normalisation and multiplied with the respective residual.
  
 The script then outputs the Akaike Information Criterion (AIC), AIC = n log(RSS/n) + 2k for n observations and k free parameters, for rational function values, parameter values, and normalised parameter values of both models.
  
 We consider the linear model as the better fitting one because of its lower AIC score and validate its absolute quality next. The script computes the coefficient of determination, R^2 = 1 - RSS/TSS with TSS being the total sum of squares, to test the model's predictions. R^2 is only evaluated for parameter values and normalised parameter values. Residual plots and Q-Q plots are created and saved to confirm the normality of residuals.
 
-
-
+### Sensitivity analysis
+Now we reproduce the sampling-based sensitivity analysis of the optimisation results.
+ - follow `sensitivity_analysis` folder
+- (Optional, advanced) open and edit the main (the lowest part of the files) of `src/sensitivity.py` to change either number of sampled points for each param `sampling_size=10001`, range of 'red' intervals - `in_range_value=1.25`, parameter point, data point, or the function file. 
+ - in this folder, open the command line and run the script `python src/sensitivity.py`, you should have a python installed as a requirement of DiPS. Please run the script from this folder as we import files from `scr` folder
+ - three figures will show up reproducing the figures in the supplementary material Section 5.4
+	
 Now, you should be able to replicate all the results.
-This Reproducibility protocol is available on Zenodo including output Metropolis-Hastings result files. 
 
