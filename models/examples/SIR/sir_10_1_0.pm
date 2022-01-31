@@ -1,0 +1,102 @@
+dtmc
+  const double alpha;
+  const double beta;
+
+module sir_10_1_0 
+	s : [0..11] init 10;
+	i : [0..11] init 1;
+	r : [0..11] init 0;
+ 
+	[] s=10 & i=1 & r=0 -> ((10*alpha)/(10*alpha+11*beta)):(s'=9) & (i'=2) & (r'=0) + ((1*beta)/(10*alpha+11*beta)):(s'=10) & (i'=0) & (r'=1) + ((10*beta)/(10*alpha+11*beta)):(s'=10) & (i'=1) & (r'=0);
+	[] s=9 & i=2 & r=0 -> ((9*alpha)/(10*alpha+11*beta)):(s'=8) & (i'=3) & (r'=0) + ((2*beta)/(10*alpha+11*beta)):(s'=9) & (i'=1) & (r'=1) + ((1*alpha+9*beta)/(10*alpha+11*beta)):(s'=9) & (i'=2) & (r'=0);
+	[] s=8 & i=3 & r=0 -> ((8*alpha)/(10*alpha+11*beta)):(s'=7) & (i'=4) & (r'=0) + ((3*beta)/(10*alpha+11*beta)):(s'=8) & (i'=2) & (r'=1) + ((2*alpha+8*beta)/(10*alpha+11*beta)):(s'=8) & (i'=3) & (r'=0);
+	[] s=7 & i=4 & r=0 -> ((7*alpha)/(10*alpha+11*beta)):(s'=6) & (i'=5) & (r'=0) + ((4*beta)/(10*alpha+11*beta)):(s'=7) & (i'=3) & (r'=1) + ((3*alpha+7*beta)/(10*alpha+11*beta)):(s'=7) & (i'=4) & (r'=0);
+	[] s=6 & i=5 & r=0 -> ((6*alpha)/(10*alpha+11*beta)):(s'=5) & (i'=6) & (r'=0) + ((5*beta)/(10*alpha+11*beta)):(s'=6) & (i'=4) & (r'=1) + ((4*alpha+6*beta)/(10*alpha+11*beta)):(s'=6) & (i'=5) & (r'=0);
+	[] s=5 & i=6 & r=0 -> ((5*alpha)/(10*alpha+11*beta)):(s'=4) & (i'=7) & (r'=0) + ((6*beta)/(10*alpha+11*beta)):(s'=5) & (i'=5) & (r'=1) + ((5*alpha+5*beta)/(10*alpha+11*beta)):(s'=5) & (i'=6) & (r'=0);
+	[] s=4 & i=7 & r=0 -> ((4*alpha)/(10*alpha+11*beta)):(s'=3) & (i'=8) & (r'=0) + ((7*beta)/(10*alpha+11*beta)):(s'=4) & (i'=6) & (r'=1) + ((6*alpha+4*beta)/(10*alpha+11*beta)):(s'=4) & (i'=7) & (r'=0);
+	[] s=3 & i=8 & r=0 -> ((3*alpha)/(10*alpha+11*beta)):(s'=2) & (i'=9) & (r'=0) + ((8*beta)/(10*alpha+11*beta)):(s'=3) & (i'=7) & (r'=1) + ((7*alpha+3*beta)/(10*alpha+11*beta)):(s'=3) & (i'=8) & (r'=0);
+	[] s=2 & i=9 & r=0 -> ((2*alpha)/(10*alpha+11*beta)):(s'=1) & (i'=10) & (r'=0) + ((9*beta)/(10*alpha+11*beta)):(s'=2) & (i'=8) & (r'=1) + ((8*alpha+2*beta)/(10*alpha+11*beta)):(s'=2) & (i'=9) & (r'=0);
+	[] s=1 & i=10 & r=0 -> ((1*alpha)/(10*alpha+11*beta)):(s'=0) & (i'=11) & (r'=0) + ((10*beta)/(10*alpha+11*beta)):(s'=1) & (i'=9) & (r'=1) + ((9*alpha+1*beta)/(10*alpha+11*beta)):(s'=1) & (i'=10) & (r'=0);
+	[] s=0 & i=11 & r=0 -> ((11*beta)/(10*alpha+11*beta)):(s'=0) & (i'=10) & (r'=1) + ((10*alpha)/(10*alpha+11*beta)):(s'=0) & (i'=11) & (r'=0);
+	[] s=0 & i=10 & r=1 -> ((10*beta)/(10*alpha+11*beta)):(s'=0) & (i'=9) & (r'=2) + ((10*alpha+1*beta)/(10*alpha+11*beta)):(s'=0) & (i'=10) & (r'=1);
+	[] s=0 & i=9 & r=2 -> ((9*beta)/(10*alpha+11*beta)):(s'=0) & (i'=8) & (r'=3) + ((10*alpha+2*beta)/(10*alpha+11*beta)):(s'=0) & (i'=9) & (r'=2);
+	[] s=0 & i=8 & r=3 -> ((8*beta)/(10*alpha+11*beta)):(s'=0) & (i'=7) & (r'=4) + ((10*alpha+3*beta)/(10*alpha+11*beta)):(s'=0) & (i'=8) & (r'=3);
+	[] s=0 & i=7 & r=4 -> ((7*beta)/(10*alpha+11*beta)):(s'=0) & (i'=6) & (r'=5) + ((10*alpha+4*beta)/(10*alpha+11*beta)):(s'=0) & (i'=7) & (r'=4);
+	[] s=0 & i=6 & r=5 -> ((6*beta)/(10*alpha+11*beta)):(s'=0) & (i'=5) & (r'=6) + ((10*alpha+5*beta)/(10*alpha+11*beta)):(s'=0) & (i'=6) & (r'=5);
+	[] s=0 & i=5 & r=6 -> ((5*beta)/(10*alpha+11*beta)):(s'=0) & (i'=4) & (r'=7) + ((10*alpha+6*beta)/(10*alpha+11*beta)):(s'=0) & (i'=5) & (r'=6);
+	[] s=0 & i=4 & r=7 -> ((4*beta)/(10*alpha+11*beta)):(s'=0) & (i'=3) & (r'=8) + ((10*alpha+7*beta)/(10*alpha+11*beta)):(s'=0) & (i'=4) & (r'=7);
+	[] s=0 & i=3 & r=8 -> ((3*beta)/(10*alpha+11*beta)):(s'=0) & (i'=2) & (r'=9) + ((10*alpha+8*beta)/(10*alpha+11*beta)):(s'=0) & (i'=3) & (r'=8);
+	[] s=0 & i=2 & r=9 -> ((2*beta)/(10*alpha+11*beta)):(s'=0) & (i'=1) & (r'=10) + ((10*alpha+9*beta)/(10*alpha+11*beta)):(s'=0) & (i'=2) & (r'=9);
+	[] s=0 & i=1 & r=10 -> ((1*beta)/(10*alpha+11*beta)):(s'=0) & (i'=0) & (r'=11) + ((10*alpha+10*beta)/(10*alpha+11*beta)):(s'=0) & (i'=1) & (r'=10);
+	[] s=1 & i=9 & r=1 -> ((1*alpha)/(10*alpha+11*beta)):(s'=0) & (i'=10) & (r'=1) + ((9*beta)/(10*alpha+11*beta)):(s'=1) & (i'=8) & (r'=2) + ((9*alpha+2*beta)/(10*alpha+11*beta)):(s'=1) & (i'=9) & (r'=1);
+	[] s=1 & i=8 & r=2 -> ((1*alpha)/(10*alpha+11*beta)):(s'=0) & (i'=9) & (r'=2) + ((8*beta)/(10*alpha+11*beta)):(s'=1) & (i'=7) & (r'=3) + ((9*alpha+3*beta)/(10*alpha+11*beta)):(s'=1) & (i'=8) & (r'=2);
+	[] s=1 & i=7 & r=3 -> ((1*alpha)/(10*alpha+11*beta)):(s'=0) & (i'=8) & (r'=3) + ((7*beta)/(10*alpha+11*beta)):(s'=1) & (i'=6) & (r'=4) + ((9*alpha+4*beta)/(10*alpha+11*beta)):(s'=1) & (i'=7) & (r'=3);
+	[] s=1 & i=6 & r=4 -> ((1*alpha)/(10*alpha+11*beta)):(s'=0) & (i'=7) & (r'=4) + ((6*beta)/(10*alpha+11*beta)):(s'=1) & (i'=5) & (r'=5) + ((9*alpha+5*beta)/(10*alpha+11*beta)):(s'=1) & (i'=6) & (r'=4);
+	[] s=1 & i=5 & r=5 -> ((1*alpha)/(10*alpha+11*beta)):(s'=0) & (i'=6) & (r'=5) + ((5*beta)/(10*alpha+11*beta)):(s'=1) & (i'=4) & (r'=6) + ((9*alpha+6*beta)/(10*alpha+11*beta)):(s'=1) & (i'=5) & (r'=5);
+	[] s=1 & i=4 & r=6 -> ((1*alpha)/(10*alpha+11*beta)):(s'=0) & (i'=5) & (r'=6) + ((4*beta)/(10*alpha+11*beta)):(s'=1) & (i'=3) & (r'=7) + ((9*alpha+7*beta)/(10*alpha+11*beta)):(s'=1) & (i'=4) & (r'=6);
+	[] s=1 & i=3 & r=7 -> ((1*alpha)/(10*alpha+11*beta)):(s'=0) & (i'=4) & (r'=7) + ((3*beta)/(10*alpha+11*beta)):(s'=1) & (i'=2) & (r'=8) + ((9*alpha+8*beta)/(10*alpha+11*beta)):(s'=1) & (i'=3) & (r'=7);
+	[] s=1 & i=2 & r=8 -> ((1*alpha)/(10*alpha+11*beta)):(s'=0) & (i'=3) & (r'=8) + ((2*beta)/(10*alpha+11*beta)):(s'=1) & (i'=1) & (r'=9) + ((9*alpha+9*beta)/(10*alpha+11*beta)):(s'=1) & (i'=2) & (r'=8);
+	[] s=1 & i=1 & r=9 -> ((1*alpha)/(10*alpha+11*beta)):(s'=0) & (i'=2) & (r'=9) + ((1*beta)/(10*alpha+11*beta)):(s'=1) & (i'=0) & (r'=10) + ((9*alpha+10*beta)/(10*alpha+11*beta)):(s'=1) & (i'=1) & (r'=9);
+	[] s=2 & i=8 & r=1 -> ((2*alpha)/(10*alpha+11*beta)):(s'=1) & (i'=9) & (r'=1) + ((8*beta)/(10*alpha+11*beta)):(s'=2) & (i'=7) & (r'=2) + ((8*alpha+3*beta)/(10*alpha+11*beta)):(s'=2) & (i'=8) & (r'=1);
+	[] s=2 & i=7 & r=2 -> ((2*alpha)/(10*alpha+11*beta)):(s'=1) & (i'=8) & (r'=2) + ((7*beta)/(10*alpha+11*beta)):(s'=2) & (i'=6) & (r'=3) + ((8*alpha+4*beta)/(10*alpha+11*beta)):(s'=2) & (i'=7) & (r'=2);
+	[] s=2 & i=6 & r=3 -> ((2*alpha)/(10*alpha+11*beta)):(s'=1) & (i'=7) & (r'=3) + ((6*beta)/(10*alpha+11*beta)):(s'=2) & (i'=5) & (r'=4) + ((8*alpha+5*beta)/(10*alpha+11*beta)):(s'=2) & (i'=6) & (r'=3);
+	[] s=2 & i=5 & r=4 -> ((2*alpha)/(10*alpha+11*beta)):(s'=1) & (i'=6) & (r'=4) + ((5*beta)/(10*alpha+11*beta)):(s'=2) & (i'=4) & (r'=5) + ((8*alpha+6*beta)/(10*alpha+11*beta)):(s'=2) & (i'=5) & (r'=4);
+	[] s=2 & i=4 & r=5 -> ((2*alpha)/(10*alpha+11*beta)):(s'=1) & (i'=5) & (r'=5) + ((4*beta)/(10*alpha+11*beta)):(s'=2) & (i'=3) & (r'=6) + ((8*alpha+7*beta)/(10*alpha+11*beta)):(s'=2) & (i'=4) & (r'=5);
+	[] s=2 & i=3 & r=6 -> ((2*alpha)/(10*alpha+11*beta)):(s'=1) & (i'=4) & (r'=6) + ((3*beta)/(10*alpha+11*beta)):(s'=2) & (i'=2) & (r'=7) + ((8*alpha+8*beta)/(10*alpha+11*beta)):(s'=2) & (i'=3) & (r'=6);
+	[] s=2 & i=2 & r=7 -> ((2*alpha)/(10*alpha+11*beta)):(s'=1) & (i'=3) & (r'=7) + ((2*beta)/(10*alpha+11*beta)):(s'=2) & (i'=1) & (r'=8) + ((8*alpha+9*beta)/(10*alpha+11*beta)):(s'=2) & (i'=2) & (r'=7);
+	[] s=2 & i=1 & r=8 -> ((2*alpha)/(10*alpha+11*beta)):(s'=1) & (i'=2) & (r'=8) + ((1*beta)/(10*alpha+11*beta)):(s'=2) & (i'=0) & (r'=9) + ((8*alpha+10*beta)/(10*alpha+11*beta)):(s'=2) & (i'=1) & (r'=8);
+	[] s=3 & i=7 & r=1 -> ((3*alpha)/(10*alpha+11*beta)):(s'=2) & (i'=8) & (r'=1) + ((7*beta)/(10*alpha+11*beta)):(s'=3) & (i'=6) & (r'=2) + ((7*alpha+4*beta)/(10*alpha+11*beta)):(s'=3) & (i'=7) & (r'=1);
+	[] s=3 & i=6 & r=2 -> ((3*alpha)/(10*alpha+11*beta)):(s'=2) & (i'=7) & (r'=2) + ((6*beta)/(10*alpha+11*beta)):(s'=3) & (i'=5) & (r'=3) + ((7*alpha+5*beta)/(10*alpha+11*beta)):(s'=3) & (i'=6) & (r'=2);
+	[] s=3 & i=5 & r=3 -> ((3*alpha)/(10*alpha+11*beta)):(s'=2) & (i'=6) & (r'=3) + ((5*beta)/(10*alpha+11*beta)):(s'=3) & (i'=4) & (r'=4) + ((7*alpha+6*beta)/(10*alpha+11*beta)):(s'=3) & (i'=5) & (r'=3);
+	[] s=3 & i=4 & r=4 -> ((3*alpha)/(10*alpha+11*beta)):(s'=2) & (i'=5) & (r'=4) + ((4*beta)/(10*alpha+11*beta)):(s'=3) & (i'=3) & (r'=5) + ((7*alpha+7*beta)/(10*alpha+11*beta)):(s'=3) & (i'=4) & (r'=4);
+	[] s=3 & i=3 & r=5 -> ((3*alpha)/(10*alpha+11*beta)):(s'=2) & (i'=4) & (r'=5) + ((3*beta)/(10*alpha+11*beta)):(s'=3) & (i'=2) & (r'=6) + ((7*alpha+8*beta)/(10*alpha+11*beta)):(s'=3) & (i'=3) & (r'=5);
+	[] s=3 & i=2 & r=6 -> ((3*alpha)/(10*alpha+11*beta)):(s'=2) & (i'=3) & (r'=6) + ((2*beta)/(10*alpha+11*beta)):(s'=3) & (i'=1) & (r'=7) + ((7*alpha+9*beta)/(10*alpha+11*beta)):(s'=3) & (i'=2) & (r'=6);
+	[] s=3 & i=1 & r=7 -> ((3*alpha)/(10*alpha+11*beta)):(s'=2) & (i'=2) & (r'=7) + ((1*beta)/(10*alpha+11*beta)):(s'=3) & (i'=0) & (r'=8) + ((7*alpha+10*beta)/(10*alpha+11*beta)):(s'=3) & (i'=1) & (r'=7);
+	[] s=4 & i=6 & r=1 -> ((4*alpha)/(10*alpha+11*beta)):(s'=3) & (i'=7) & (r'=1) + ((6*beta)/(10*alpha+11*beta)):(s'=4) & (i'=5) & (r'=2) + ((6*alpha+5*beta)/(10*alpha+11*beta)):(s'=4) & (i'=6) & (r'=1);
+	[] s=4 & i=5 & r=2 -> ((4*alpha)/(10*alpha+11*beta)):(s'=3) & (i'=6) & (r'=2) + ((5*beta)/(10*alpha+11*beta)):(s'=4) & (i'=4) & (r'=3) + ((6*alpha+6*beta)/(10*alpha+11*beta)):(s'=4) & (i'=5) & (r'=2);
+	[] s=4 & i=4 & r=3 -> ((4*alpha)/(10*alpha+11*beta)):(s'=3) & (i'=5) & (r'=3) + ((4*beta)/(10*alpha+11*beta)):(s'=4) & (i'=3) & (r'=4) + ((6*alpha+7*beta)/(10*alpha+11*beta)):(s'=4) & (i'=4) & (r'=3);
+	[] s=4 & i=3 & r=4 -> ((4*alpha)/(10*alpha+11*beta)):(s'=3) & (i'=4) & (r'=4) + ((3*beta)/(10*alpha+11*beta)):(s'=4) & (i'=2) & (r'=5) + ((6*alpha+8*beta)/(10*alpha+11*beta)):(s'=4) & (i'=3) & (r'=4);
+	[] s=4 & i=2 & r=5 -> ((4*alpha)/(10*alpha+11*beta)):(s'=3) & (i'=3) & (r'=5) + ((2*beta)/(10*alpha+11*beta)):(s'=4) & (i'=1) & (r'=6) + ((6*alpha+9*beta)/(10*alpha+11*beta)):(s'=4) & (i'=2) & (r'=5);
+	[] s=4 & i=1 & r=6 -> ((4*alpha)/(10*alpha+11*beta)):(s'=3) & (i'=2) & (r'=6) + ((1*beta)/(10*alpha+11*beta)):(s'=4) & (i'=0) & (r'=7) + ((6*alpha+10*beta)/(10*alpha+11*beta)):(s'=4) & (i'=1) & (r'=6);
+	[] s=5 & i=5 & r=1 -> ((5*alpha)/(10*alpha+11*beta)):(s'=4) & (i'=6) & (r'=1) + ((5*beta)/(10*alpha+11*beta)):(s'=5) & (i'=4) & (r'=2) + ((5*alpha+6*beta)/(10*alpha+11*beta)):(s'=5) & (i'=5) & (r'=1);
+	[] s=5 & i=4 & r=2 -> ((5*alpha)/(10*alpha+11*beta)):(s'=4) & (i'=5) & (r'=2) + ((4*beta)/(10*alpha+11*beta)):(s'=5) & (i'=3) & (r'=3) + ((5*alpha+7*beta)/(10*alpha+11*beta)):(s'=5) & (i'=4) & (r'=2);
+	[] s=5 & i=3 & r=3 -> ((5*alpha)/(10*alpha+11*beta)):(s'=4) & (i'=4) & (r'=3) + ((3*beta)/(10*alpha+11*beta)):(s'=5) & (i'=2) & (r'=4) + ((5*alpha+8*beta)/(10*alpha+11*beta)):(s'=5) & (i'=3) & (r'=3);
+	[] s=5 & i=2 & r=4 -> ((5*alpha)/(10*alpha+11*beta)):(s'=4) & (i'=3) & (r'=4) + ((2*beta)/(10*alpha+11*beta)):(s'=5) & (i'=1) & (r'=5) + ((5*alpha+9*beta)/(10*alpha+11*beta)):(s'=5) & (i'=2) & (r'=4);
+	[] s=5 & i=1 & r=5 -> ((5*alpha)/(10*alpha+11*beta)):(s'=4) & (i'=2) & (r'=5) + ((1*beta)/(10*alpha+11*beta)):(s'=5) & (i'=0) & (r'=6) + ((5*alpha+10*beta)/(10*alpha+11*beta)):(s'=5) & (i'=1) & (r'=5);
+	[] s=6 & i=4 & r=1 -> ((6*alpha)/(10*alpha+11*beta)):(s'=5) & (i'=5) & (r'=1) + ((4*beta)/(10*alpha+11*beta)):(s'=6) & (i'=3) & (r'=2) + ((4*alpha+7*beta)/(10*alpha+11*beta)):(s'=6) & (i'=4) & (r'=1);
+	[] s=6 & i=3 & r=2 -> ((6*alpha)/(10*alpha+11*beta)):(s'=5) & (i'=4) & (r'=2) + ((3*beta)/(10*alpha+11*beta)):(s'=6) & (i'=2) & (r'=3) + ((4*alpha+8*beta)/(10*alpha+11*beta)):(s'=6) & (i'=3) & (r'=2);
+	[] s=6 & i=2 & r=3 -> ((6*alpha)/(10*alpha+11*beta)):(s'=5) & (i'=3) & (r'=3) + ((2*beta)/(10*alpha+11*beta)):(s'=6) & (i'=1) & (r'=4) + ((4*alpha+9*beta)/(10*alpha+11*beta)):(s'=6) & (i'=2) & (r'=3);
+	[] s=6 & i=1 & r=4 -> ((6*alpha)/(10*alpha+11*beta)):(s'=5) & (i'=2) & (r'=4) + ((1*beta)/(10*alpha+11*beta)):(s'=6) & (i'=0) & (r'=5) + ((4*alpha+10*beta)/(10*alpha+11*beta)):(s'=6) & (i'=1) & (r'=4);
+	[] s=7 & i=3 & r=1 -> ((7*alpha)/(10*alpha+11*beta)):(s'=6) & (i'=4) & (r'=1) + ((3*beta)/(10*alpha+11*beta)):(s'=7) & (i'=2) & (r'=2) + ((3*alpha+8*beta)/(10*alpha+11*beta)):(s'=7) & (i'=3) & (r'=1);
+	[] s=7 & i=2 & r=2 -> ((7*alpha)/(10*alpha+11*beta)):(s'=6) & (i'=3) & (r'=2) + ((2*beta)/(10*alpha+11*beta)):(s'=7) & (i'=1) & (r'=3) + ((3*alpha+9*beta)/(10*alpha+11*beta)):(s'=7) & (i'=2) & (r'=2);
+	[] s=7 & i=1 & r=3 -> ((7*alpha)/(10*alpha+11*beta)):(s'=6) & (i'=2) & (r'=3) + ((1*beta)/(10*alpha+11*beta)):(s'=7) & (i'=0) & (r'=4) + ((3*alpha+10*beta)/(10*alpha+11*beta)):(s'=7) & (i'=1) & (r'=3);
+	[] s=8 & i=2 & r=1 -> ((8*alpha)/(10*alpha+11*beta)):(s'=7) & (i'=3) & (r'=1) + ((2*beta)/(10*alpha+11*beta)):(s'=8) & (i'=1) & (r'=2) + ((2*alpha+9*beta)/(10*alpha+11*beta)):(s'=8) & (i'=2) & (r'=1);
+	[] s=8 & i=1 & r=2 -> ((8*alpha)/(10*alpha+11*beta)):(s'=7) & (i'=2) & (r'=2) + ((1*beta)/(10*alpha+11*beta)):(s'=8) & (i'=0) & (r'=3) + ((2*alpha+10*beta)/(10*alpha+11*beta)):(s'=8) & (i'=1) & (r'=2);
+	[] s=9 & i=1 & r=1 -> ((9*alpha)/(10*alpha+11*beta)):(s'=8) & (i'=2) & (r'=1) + ((1*beta)/(10*alpha+11*beta)):(s'=9) & (i'=0) & (r'=2) + ((1*alpha+10*beta)/(10*alpha+11*beta)):(s'=9) & (i'=1) & (r'=1);
+	[] s=0 & i=0 & r=11 -> (s'=0) & (i'=0) & (r'=11);
+	[] s=1 & i=0 & r=10 -> (s'=1) & (i'=0) & (r'=10);
+	[] s=2 & i=0 & r=9 -> (s'=2) & (i'=0) & (r'=9);
+	[] s=3 & i=0 & r=8 -> (s'=3) & (i'=0) & (r'=8);
+	[] s=4 & i=0 & r=7 -> (s'=4) & (i'=0) & (r'=7);
+	[] s=5 & i=0 & r=6 -> (s'=5) & (i'=0) & (r'=6);
+	[] s=6 & i=0 & r=5 -> (s'=6) & (i'=0) & (r'=5);
+	[] s=7 & i=0 & r=4 -> (s'=7) & (i'=0) & (r'=4);
+	[] s=8 & i=0 & r=3 -> (s'=8) & (i'=0) & (r'=3);
+	[] s=9 & i=0 & r=2 -> (s'=9) & (i'=0) & (r'=2);
+	[] s=10 & i=0 & r=1 -> (s'=10) & (i'=0) & (r'=1); 
+endmodule
+
+label "bscc_0_0_11" = s=0 & i=0 & r=11 ;
+label "bscc_1_0_10" = s=1 & i=0 & r=10 ;
+label "bscc_2_0_9" = s=2 & i=0 & r=9 ;
+label "bscc_3_0_8" = s=3 & i=0 & r=8 ;
+label "bscc_4_0_7" = s=4 & i=0 & r=7 ;
+label "bscc_5_0_6" = s=5 & i=0 & r=6 ;
+label "bscc_6_0_5" = s=6 & i=0 & r=5 ;
+label "bscc_7_0_4" = s=7 & i=0 & r=4 ;
+label "bscc_8_0_3" = s=8 & i=0 & r=3 ;
+label "bscc_9_0_2" = s=9 & i=0 & r=2 ;
+label "bscc_10_0_1" = s=10 & i=0 & r=1 ;
+
+// Number of states: 77
+// Number of BSCCs: 11
