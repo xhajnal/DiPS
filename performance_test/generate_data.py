@@ -1,5 +1,5 @@
 import sys
-import time
+from time import time
 import os
 import socket
 import numpy
@@ -71,7 +71,8 @@ def generate_all_data_two_param(agents_quantities, dic_fun, p_v=None, q_v=None):
 
 
 def generate_experiments_and_data(model_types, n_samples, populations, dimension_sample_size, sim_length=False,
-                                  modular_param_space=None, input_folder=False, output_folder=False, silent=False, debug=False):
+                                  modular_param_space=None, input_folder=False, output_folder=False, silent=False,
+                                  debug=False):
     """ Generate experiment data for given settings
 
     Args:
@@ -126,7 +127,7 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
             if not os.path.isfile(model):
                 model = os.path.join(model_path, (model_type + "_" + str(population_size) + "bees.pm"))
             if not os.path.isfile(model):
-                raise Exception("Model file not found")
+                raise Exception("Model file not found", model)
 
             # A bad way how to deal with model without N
             if isinstance(population_size, str):
@@ -182,15 +183,18 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
 
                     ## More profound path name here
                     ## path_file = f"path_{model_type}{N}_{max_sample}_{parameter_values}.txt"
-                    path_file = os.path.join(output_folder, "dump_file_{}_{}_{}_{}.txt".format(model_type, population_size, max_sample, str(time.time()).replace(".", "")))
+                    path_file = os.path.join(output_folder,
+                                             "dump_file_{}_{}_{}_{}.txt".format(model_type, population_size, max_sample,
+                                                                                str(time.time()).replace(".", "")))
                     # print(path_file)
 
                     ## Here is the PRISM called
                     if not silent:
-                        print(f"calling: \n {model} -const {prism_parameter_values} -simpath {str(sim_length)} {path_file}")
+                        print(
+                            f"calling: \n {model} -const {prism_parameter_values} -simpath {str(sim_length)} {path_file}")
                     call_prism(f"{model} -const {prism_parameter_values} -simpath {str(sim_length)} {path_file}",
                                silent=silent, prism_output_path=os.path.join(os.getcwd(), "results/prism_results"))
-                   
+
                     ## Parse the dump file
                     # print("curr dir:", os.getcwd())
                     with open(path_file, "rt") as file:
@@ -215,7 +219,8 @@ def generate_experiments_and_data(model_types, n_samples, populations, dimension
                     ## A bad way how to deal with files without N
                     for i in range(population_size + 1):
                         data[model_type][population_size][n_sample][column_values].append(len(list(
-                            filter(lambda x: x == i, experiments[model_type][population_size][n_sample][column_values]))) / n_sample)
+                            filter(lambda x: x == i,
+                                   experiments[model_type][population_size][n_sample][column_values]))) / n_sample)
                 print("states: ", experiments[model_type][population_size][max_sample][column_values])
 
     print(colored(f"  It took {socket.gethostname()} {time.time() - start_time} seconds to run", "yellow"))
@@ -237,7 +242,8 @@ def generate_experiments(model_types, n_samples, populations, dimension_sample_s
         debug (bool): if True extensive print will be used
     """
     return generate_experiments_and_data(model_types, n_samples, populations, dimension_sample_size,
-                                         sim_length=sim_length, modular_param_space=modular_param_space, silent=silent, debug=debug)[0]
+                                         sim_length=sim_length, modular_param_space=modular_param_space, silent=silent,
+                                         debug=debug)[0]
 
 
 def generate_data(model_types, n_samples, populations, dimension_sample_size,
@@ -255,13 +261,16 @@ def generate_data(model_types, n_samples, populations, dimension_sample_size,
         debug (bool): if True extensive print will be used
     """
     return generate_experiments_and_data(model_types, n_samples, populations, dimension_sample_size,
-                                         sim_length=sim_length, modular_param_space=modular_param_space, silent=silent, debug=debug)[1]
+                                         sim_length=sim_length, modular_param_space=modular_param_space, silent=silent,
+                                         debug=debug)[1]
 
 
 if __name__ == '__main__':
     import numpy as np
 
     ### Honeybee
+    use_case = "Honeybee"
+    print(colored(f"Use_case {use_case}", "yellow"))
     model_types = ["semisynchronous"]
     populations = [2, 3, 4, 5, 10, 15]
     # populations = [3]
@@ -271,17 +280,19 @@ if __name__ == '__main__':
     silent = True
     debug = False
 
-    for model_type in model_types:
-        ## MULTIPARAM
-        param_space = np.array([[0.81], [0.92], [0.92], [0.92]])
-        population = 4
-        multiparam = "multiparam"
-        Experiments_multiparam, Data_multiparam = generate_experiments_and_data([f"{multiparam}_{model_type}"], n_samples, [population], dimension_sample_size, input_folder=os.path.join(model_path, "bee"), modular_param_space=param_space, silent=silent)
-        print(Data_multiparam)
-
-    raise Exception()
+    ## TODO uncomment following lines to rerun
+    # print("running", use_case)
+    # for model_type in model_types:
+    #     ## MULTIPARAM
+    #     param_space = np.array([[0.81], [0.92], [0.92], [0.92]])
+    #     population = 4
+    #     multiparam = "multiparam"
+    #     Experiments_multiparam, Data_multiparam = generate_experiments_and_data([f"{multiparam}_{model_type}"], n_samples, [population], dimension_sample_size, input_folder=os.path.join(model_path, "old_bees"), modular_param_space=param_space, silent=silent)
+    #     print(Data_multiparam)
 
     ### Knuth Die
+    use_case = "Knuth Die"
+    print(colored(f"Use_case {use_case}", "yellow"))
     ## Settings
     model = "Knuth/parametric_die.pm"
     prism_parameter_values = "p=0.1"
@@ -290,6 +301,7 @@ if __name__ == '__main__':
     sim_length = 100
 
     ## TODO uncomment following lines to rerun
+    # print("running", use_case)
     # path_file = "brokolica.txt"
     # values = {}
     # for i in range(n_samples):
@@ -310,12 +322,14 @@ if __name__ == '__main__':
     #         else:
     #             values[value] = values[value] + 1
     # print(values)
+    # # Remove auxiliary simulation file
     # os.remove(os.path.join(os.getcwd(), "results/prism_results", path_file))
     data = [6, 11, 68, 8, 97, 810]
     data = [item / n_samples for item in data]
-    print("data", data)
+    print("Obtained data", data)
 
     ### Knuth Die with 3params, author Tatjana Petrov
+    print(colored(f"Use_case {use_case}", "yellow"))
     ## Settings
     model = "Knuth/parametric_die_3_params.pm"
     prism_parameter_values = "p1=0.4,p2=0.7,p3=0.5"
@@ -324,6 +338,7 @@ if __name__ == '__main__':
     sim_length = 100
 
     ## TODO uncomment following lines to rerun
+    # print("running", use_case)
     # path_file = "zemiak.txt"
     # values = {}
     # for i in range(n_samples):
@@ -344,25 +359,28 @@ if __name__ == '__main__':
     #         else:
     #             values[value] = values[value] + 1
     # print(values)
+    # # Remove auxiliary simulation file
     # os.remove(os.path.join(os.getcwd(), "results/prism_results", path_file))
     data = [208, 81, 100, 254, 261, 96]
 
     # Get expected value
     observations = []
     for index, item in enumerate(data):
-        observations.extend([index+1]*item)
-    print(observations)
+        observations.extend([index + 1] * item)
+    print("observations:", observations)
     print(len(observations), "observations")
     import scipy.stats as st
+
     a = st.t.interval(0.95, len(observations) - 1, loc=np.mean(observations), scale=st.sem(observations))
     print("mean", np.mean(observations))
     print("confidence intervals for expected roll", a)
 
     # data = [item/n_samples for item in data]
-    print("data", data)
+    print("Obtained data", data)
 
-
-    ## 50 bees
+    ## 20 bees
+    use_case = "20 bees"
+    print(colored(f"Use_case {use_case}", "yellow"))
     model = "../20_synchronous.pm"
     prism_parameter_values = "r_00=0.1,r_01=0.103,r_02=0.106,r_03=0.109,r_04=0.112,r_05=0.115,r_06=0.118,r_07=0.121,r_08=0.124,r_09=0.127,r_10=0.13,r_11=0.133,r_12=0.136,r_13=0.139,r_14=0.142,r_15=0.145,r_16=0.148,r_17=0.151,r_18=0.154,r_19=0.157"
     n_samples = 3000
@@ -370,6 +388,7 @@ if __name__ == '__main__':
     sim_length = 1000
 
     ## TODO uncomment following lines to rerun
+    # print("running", use_case)
     # path_file = "skorica.txt"
     # values = {}
     # for i in range(n_samples):
@@ -395,10 +414,12 @@ if __name__ == '__main__':
     #             values[value] = values[value] + 1
     # print()
     # print(values)
+    # # Remove auxiliary simulation file
     # os.remove(os.path.join(os.getcwd(), "results/prism_results", path_file))
 
-    data = [363/n_samples, 720/n_samples, 827/n_samples, 577/n_samples, 304/n_samples, 146/n_samples, 41/n_samples, 16/n_samples, 6/n_samples, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-
+    data = [363 / n_samples, 720 / n_samples, 827 / n_samples, 577 / n_samples, 304 / n_samples, 146 / n_samples,
+            41 / n_samples, 16 / n_samples, 6 / n_samples, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    ## TODO uncomment following lines to rerun
     import matplotlib.pyplot as plt
     import numpy as np
 
@@ -410,10 +431,14 @@ if __name__ == '__main__':
     plt.xticks(x)
     plt.bar(x, y)
     # plt.xticks(x, ('Bill', 'Fred', 'Mary', 'Sue'))
-    plt.show()
-    print("data", data)
+
+    ## TODO uncomment following line to show the plot
+    # plt.show()
+    print("Obtained data", data)
 
     ### Zeroconf
+    use_case = "Zeroconf"
+    print(colored(f"Use_case {use_case}", "yellow"))
     ## Settings
     model = "zeroconf/zeroconf-10.pm"
     prism_parameter_values = "p=0.8,q=0.8"
@@ -422,6 +447,7 @@ if __name__ == '__main__':
     sim_length = 10000000
 
     ## TODO uncomment following lines to rerun
+    # print("running", use_case)
     # path_file = "krupica.txt"
     # values = {}
     # for i in range(n_samples):
@@ -442,12 +468,99 @@ if __name__ == '__main__':
     #         else:
     #             values[value] = values[value] + 1
     # print(values)
+    # # Remove auxiliary simulation file
     # os.remove(os.path.join(os.getcwd(), "results/prism_results", path_file))
     data = [684, 316]
-    data = [item/n_samples for item in data]
-    print("data", data)
+    data = [item / n_samples for item in data]
+    print("Obtained data", data)
+
+    ### Huy's Zeroconf
+    use_case = "Huy's Zeroconf"
+
+    print(colored(f"Use_case {use_case}", "yellow"))
+    ## Settings
+    model = "zeroconf/Huys/Huys_Zeroconf_4.pm"
+    prism_parameter_values = "p=0.105547,q=0.449658"
+    n_samples = 10000
+    silent = True
+    sim_length = 10000000
+
+    ## TODO uncomment following lines to rerun
+    # print("running", use_case)
+    # start_time = time()
+    # path_file = "Huiho_krupica.txt"
+    # values = {}
+    # for i in range(n_samples):
+    #     # print(f"calling: \n {model} -const {prism_parameter_values} -simpath {str(sim_length)} {path_file}")
+    #     call_prism(f"{model} -const {prism_parameter_values} -simpath {str(sim_length)} {path_file}",
+    #                silent=silent, prism_output_path=os.path.join(os.getcwd(), "results/prism_results"))
+    #     with open(os.path.join(os.getcwd(), "results/prism_results", path_file)) as file:
+    #         lines = file.readlines()
+    #         # print(lines)
+    #         last_line = lines[-1]
+    #         # print()
+    #         # print("last_line", last_line)
+    #         value = parse_numbers(last_line)[-1]
+    #         # print()
+    #         # print("value", value)
+    #         if value not in values.keys():
+    #             values[value] = 1
+    #         else:
+    #             values[value] = values[value] + 1
+    # print(f"It took {time() - start_time} seconds")
+    # print(values)
+    # # Remove auxiliary simulation file
+    # os.remove(os.path.join(os.getcwd(), "results/prism_results", path_file))
+
+    data = [0.0001, 0.9999]
+    data = [item / n_samples for item in data]
+    print("Obtained data", data)
+
+    ### SIR
+    use_case = "Huy's SIR"
+
+    print(colored(f"Use_case {use_case}", "yellow"))
+    ## Settings
+    model = "SIR/sir_5_1_0.pm"
+    prism_parameter_values = "alpha=0.034055,beta=0.087735"
+    n_samples = 1
+    silent = True
+    sim_length = 10000000
+
+    ## TODO uncomment following lines to rerun
+    # print("running", use_case)
+    # start_time = time()
+    # path_file = "Huiho_psenicaa.txt"
+    # values = {}
+    # for i in range(n_samples):
+    #     # print(f"calling: \n {model} -const {prism_parameter_values} -simpath {str(sim_length)} {path_file}")
+    #     call_prism(f"{model} -const {prism_parameter_values} -simpath {str(sim_length)} {path_file}",
+    #                silent=silent, prism_output_path=os.path.join(os.getcwd(), "results/prism_results"))
+    #     with open(os.path.join(os.getcwd(), "results/prism_results", path_file)) as file:
+    #         lines = file.readlines()
+    #         # print(lines)
+    #         last_line = lines[-1]
+    #         # print()
+    #         # print("last_line", last_line)
+    #         value = parse_numbers(last_line)[-1]
+    #         # print()
+    #         # print("value", value)
+    #         if value not in values.keys():
+    #             values[value] = 1
+    #         else:
+    #             values[value] = values[value] + 1
+    # print(f"It took {time() - start_time} seconds")
+    # print(values)
+    # # Remove auxiliary simulation file
+    # # os.remove(os.path.join(os.getcwd(), "results/prism_results", path_file))
+
+    data = [0.1098, 0.1377, 0.1296, 0.1312, 0.1466, 0.3451]  ## in order from 6 to 1
+    data = [item / n_samples for item in data]
+    print("Obtained data", data)
 
     ### Honeybee
+    use_case = "Honeybees extended"
+    print(colored(f"Use_case {use_case}", "yellow"))
     model_types = ["semisynchronous"]
     populations = [2, 3, 4, 5, 10, 15]
     # populations = [3]
