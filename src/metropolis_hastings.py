@@ -48,8 +48,8 @@ def maximize_plot():
 class HastingsResults:
     """ Class to represent Metropolis Hastings results. """
     def __init__(self, params, theta_init, accepted, rejected, observations_count: int, observations_samples_count: int,
-                 mh_sampling_iterations: int, eps=0, sd=0.15, burn_in=0.25, pretitle="", title="", bins=20, last_iter=0,
-                 timeout=0, time_it_took=0):
+                 mh_sampling_iterations: int, eps=0, sd=0.15, burn_in=0.25, as_scatter=False, pretitle="", title="", bins=20, last_iter=0,
+                 timeout=0, time_it_took=0, true_point=False, parameter_intervals=None):
         """
         Args:
             params (list of strings): parameter names
@@ -64,6 +64,8 @@ class HastingsResults:
             pretitle (string): title to be put in front of title
             title (string): title of the plot
             bins (int): number of segments in the heatmap plot (used only for 2D param space)
+            true_point (point): The true value in the parameter space
+            parameter_intervals (list of pairs): Pairs of domains of respective parameter
         """
         ## Inside variables
         self.params = params
@@ -90,10 +92,22 @@ class HastingsResults:
         self.pretitle = pretitle
 
         self.bins = bins
+        self.as_scatter = as_scatter
 
         self.last_iter = last_iter
         self.timeout = timeout
         self.time_it_took = time_it_took
+
+        self.parameter_intervals = parameter_intervals
+
+        ## SET THE TRUE POINT
+        if true_point:
+            if len(true_point) is len(self.params):
+                self.true_point = true_point
+            else:
+                raise Exception(f"The dimension of the given true point ({len(true_point)}) does not match")
+        else:
+            self.true_point = False
 
     def get_burn_in(self):
         """ Returns fraction of the burned-in part. """
@@ -196,6 +210,14 @@ class HastingsResults:
         """ Sets bins, used in the plots. """
         self.bins = bins
 
+    def set_as_scatter(self, as_scatter):
+        """ Sets as_scatter, used in plots"""
+        self.as_scatter = as_scatter
+
+    def set_true_point(self, true_point):
+        """ Sets true point """
+        self.true_point = true_point
+
     def get_acc_as_a_list(self):
         """ Returns accepted points in a list. """
         return self.accepted.tolist()
@@ -204,7 +226,40 @@ class HastingsResults:
         """ Returns rejected points in a list. """
         return self.rejected.tolist()
 
-    def show_mh_heatmap(self, where=False, bins=False, burn_in=None, as_scatter=False, debug=False):
+    def fix_missing_parameter_domains(self):
+        """ Backward compatibility fix for missing attribute of parameter domains/intervals """
+        self.parameter_intervals = []
+        for param_index, param in enumerate(self.params):
+            curr_min = float("inf")
+            curr_max = float("-inf")
+
+            # try:
+            #     spam = self.accepted + self.rejected
+            # except TypeError as err:
+            #     if self.accepted is None:
+            #         spam = self.rejected
+            #     elif self.rejected is None:
+            #         spam = self.accepted
+            #     else:
+            #         raise err
+
+            for point in self.accepted:
+                point = point[param_index]
+                if point < curr_min:
+                    curr_min = point
+                if point > curr_max:
+                    curr_max = point
+
+            for point in self.rejected:
+                point = point[param_index]
+                if point < curr_min:
+                    curr_min = point
+                if point > curr_max:
+                    curr_max = point
+
+            self.parameter_intervals.append([curr_min, curr_max])
+
+    def show_mh_heatmap(self, where=False, bins=False, burn_in=None, as_scatter=False, debug=False, show_true_point=False):
         """ Visualises the result of Metropolis Hastings as a heatmap
 
         Args:
@@ -213,6 +268,7 @@ class HastingsResults:
             burn_in (number or None): discards the fraction/number of accepted points, None - use class value (to trim burn-in period)
             as_scatter (bool): Sets the plot to scatter plot even for 2D output
             debug (bool): if True extensive print will be used
+            show_true_point (bool): if True, true point will be shown
 
         @author: xhajnal
         @edit: denis
@@ -226,7 +282,7 @@ class HastingsResults:
 
         ## Backwards compatibility
         if len(self.params) == len(self.accepted[0]):
-            print("old data")
+            print("old data type")
             indices = np.linspace(1, len(self.accepted), num=len(self.accepted))
             indices = np.array(list(map(lambda x: [x], indices)))
             self.accepted = np.hstack((self.accepted, indices))
@@ -286,6 +342,7 @@ class HastingsResults:
 
         ## Multidimensional case
         if len(self.params) > 3 or as_scatter:
+            ## TODO TRUE POINT
             if where:
                 fig = where[0]
                 ax = where[1]
@@ -332,28 +389,52 @@ class HastingsResults:
                 maximize_plot()
                 plt.show()
         elif len(self.params) == 2:
+            ## TODO delete this
+            # self.true_point = [0.4, 0.6]
+            # show_true_point = True
             if where:
                 plt.hist2d(self.accepted[keep_index:, 0], self.accepted[keep_index:, 1], bins=self.bins)
+                if show_true_point and self.true_point:
+                    print(type, self.true_point)
+                    assert isinstance(self.true_point, list)
+                    where[1] = plt.plot(self.true_point[0], self.true_point[1], 'o', markersize=8, color='k')
+                    where[1] = plt.plot(self.true_point[0], self.true_point[1], 'o', markersize=6, color='w', label='true point')
+                    plt.legend()
+
                 plt.xlabel(self.params[0])
                 plt.ylabel(self.params[1])
                 plt.title(wrapper.wrap(self.title))
                 where[1] = plt.colorbar()
                 where[1].set_label('# of accepted points per bin', rotation=270, labelpad=20)
+
                 return where[0], where[1]
             else:
                 plt.figure(figsize=(12, 6))
                 plt.hist2d(self.accepted[keep_index:, 0], self.accepted[keep_index:, 1], bins=self.bins)
+                if show_true_point and self.true_point:
+                    assert isinstance(self.true_point, list)
+                    plt.plot(self.true_point[0], self.true_point[1], 'o', markersize=8, color='k')
+                    plt.plot(self.true_point[0], self.true_point[1], 'o', markersize=6, color='w', label='true point')
+                    plt.legend()
                 figure = plt.colorbar()
                 plt.xlabel(self.params[0])
                 plt.ylabel(self.params[1])
                 plt.title(self.title)
+                plt.legend()
                 figure.ax.set_ylabel('# of accepted points per bin', rotation=270, labelpad=20)
                 maximize_plot()
                 plt.show()
-        else:
+        else:  ## 1-Dimensional
             spam = np.ones(len(self.accepted[keep_index:, 0]))
             if where:
                 plt.hist2d(self.accepted[keep_index:, 0], spam, bins=self.bins)
+                # TODO CHECK THIS
+                if show_true_point and self.true_point:
+                    assert isinstance(self.true_point, list)
+                    where[1] = plt.plot(self.true_point[0], self.true_point[1], 'o', markersize=8, color='k')
+                    where[1] = plt.plot(self.true_point[0], self.true_point[1], 'o', markersize=6, color='w',
+                                        label='true point')
+                    plt.legend()
                 plt.xlabel(self.params[0])
                 plt.ylabel("")
                 plt.title(wrapper.wrap(self.title))
@@ -363,6 +444,12 @@ class HastingsResults:
             else:
                 plt.figure(figsize=(12, 6))
                 plt.hist2d(self.accepted[keep_index:, 0], spam, bins=self.bins)
+                # TODO CHECK THIS
+                if show_true_point and self.true_point:
+                    assert isinstance(self.true_point, list)
+                    plt.plot(self.true_point[0], self.true_point[1], 'o', markersize=8, color='k')
+                    plt.plot(self.true_point[0], self.true_point[1], 'o', markersize=6, color='w', label='true point')
+                    plt.legend()
                 figure = plt.colorbar()
                 plt.xlabel(self.params[0])
                 plt.ylabel("")
@@ -672,7 +759,7 @@ def get_truncated_normal(mean=0.0, sd=1.0, low=0.0, upp=10.0):
 
 
 def transition_model(theta, parameter_intervals, sd=0.15):
-    """" Defines how to walk around the parameter space, set a new point,
+    """ Defines how to walk around the parameter space, set a new point,
     using normal distribution around the old point.
 
     Args:
@@ -1044,14 +1131,15 @@ def metropolis_hastings(params, parameter_intervals, param_init, functions, data
 
 
 def init_mh(params, parameter_intervals, functions, data, sample_size: int, mh_sampling_iterations: int, eps=0,
-            sd=0.15, theta_init=False, is_probability=None, where=False, progress=False, burn_in=False, bins=20, timeout=0,
-            parallel=False, silent=False, debug=False, metadata=True, draw_plot=False):
-    """ Initialisation method for Metropolis Hastings
+            sd=0.15, theta_init=False, true_point=False, is_probability=None, where=False, progress=False, burn_in=False,
+            bins=20, timeout=0, parallel=False, silent=False, debug=False, metadata=True, draw_plot=False):
+    """ Initialisation method for Metropolis-Hastings
 
     Args:
         params (list of strings): parameter names
         parameter_intervals (list of tuples): domains of parameters
         theta_init (list of floats): initial parameter point
+        true_point (point): The true value in the parameter space
         functions (list of strings): expressions to be evaluated and compared with data
         data (list of floats): measurement values
         sample_size (int): total number of observations in data
@@ -1076,10 +1164,10 @@ def init_mh(params, parameter_intervals, functions, data, sample_size: int, mh_s
     ## Internal settings
     start_time = time()
     globals()["start_time"] = start_time
-
-    ##                        HastingsResults(params, theta_init, accepted, rej observations_count, observations_samples_count, MH_sampling_iterations, eps, burn_in, pretitle, title, bins, last_iter,  timeout, time_it_took, rescale):
-    globals()["mh_results"] = HastingsResults(params, theta_init, [], [], sample_size, sample_size, mh_sampling_iterations, eps, burn_in=burn_in, title="", bins=bins, last_iter=0, timeout=timeout)
-
+    globals()["mh_results"] = HastingsResults(params, theta_init, [], [], sample_size, sample_size,
+                                              mh_sampling_iterations, eps, burn_in=burn_in, title="", bins=bins,
+                                              last_iter=0, timeout=timeout, true_point=true_point,
+                                              parameter_intervals=parameter_intervals)
     # print("Parameter point", theta_true)
 
     ## If no starting point given
@@ -1120,6 +1208,7 @@ def init_mh(params, parameter_intervals, functions, data, sample_size: int, mh_s
     #     print("samples", samples)
     #
     #     data = np.array(samples)[np.random.randint(0, sample_size, sample_size)]
+
     print("data", data) if not silent else None
     print("Initial parameter point: ", theta_init) if not silent else None
 

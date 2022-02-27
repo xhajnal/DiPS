@@ -42,7 +42,8 @@ class RefinedSpace:
         title (string): text to added in the end of the Figure titles, CASE STUDY STANDARD: f"model: {model_type}, population = {population}, sample_size = {sample_size},  \n Dataset = {dataset}, alpha={alpha}, #samples={n_samples}"
     """
 
-    def __init__(self, region, params, types=None, rectangles_sat=False, rectangles_unsat=False, rectangles_unknown=None, sat_samples=None, unsat_samples=None, dist_samples=False, true_point=False, title=False, prefer_unsafe=False):
+    def __init__(self, region, params, types=None, rectangles_sat=False, rectangles_unsat=False, rectangles_unknown=None,
+                 sat_samples=None, unsat_samples=None, dist_samples=False, true_point=False, title=False, prefer_unsafe=False):
         """ (hyper)rectangles is a list of intervals, point is a list of numbers
         Args:
             region (list of intervals or tuple of intervals): whole space
@@ -295,7 +296,6 @@ class RefinedSpace:
             else:
                 fig = plt.figure()
                 axes = fig.add_subplot(111, aspect='equal')
-                # fig.
             axes.set_xlabel(self.params[0])
 
             ## Set axis ranges

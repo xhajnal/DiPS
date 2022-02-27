@@ -249,7 +249,8 @@ class Gui(Tk):
         ## Space visualisation settings
         self.show_samples = None  ## flag telling whether to show samples
         self.show_refinement = None  ## flag telling whether to show refinement
-        self.show_true_point = None  ## flag telling whether to show true point
+        self.show_space_true_point = None  ## flag telling whether to show true point
+        self.show_mh_true_point = None  ## flag telling whether to show true point
         self.show_quantitative = None  ## flag telling whether to show quantitative sampling
         self.show_red_in_multidim_refinement = BooleanVar()  ## Chooses whether to show unsafe space over safe space in multidimensional plot
         self.show_red_in_multidim_refinement.set(False)
@@ -958,7 +959,7 @@ class Gui(Tk):
         # frame_right.columnconfigure(1, weight=1)
         frame_right.pack(side=RIGHT, fill=BOTH, anchor=W)
 
-        Button(frame_right, text='Set True point', command=self.set_true_point).grid(row=0, column=0, padx=(4, 4), pady=7)
+        Button(frame_right, text='Set True point', command=self.set_true_point_space).grid(row=0, column=0, padx=(4, 4), pady=7)
         Button(frame_right, text='Open space', command=self.load_space).grid(row=1, column=0, padx=(4, 4), pady=7)
 
         open_ref_file_button = Button(frame_right, text='Open PRISM refinement result', command=self.load_prism_refinement_output_file)
@@ -973,14 +974,15 @@ class Gui(Tk):
         Button(frame_right, text='Delete space', command=self.refresh_space).grid(row=5, column=0, padx=(4, 4), pady=7)
         Button(frame_right, text='Customize Plot', command=self.customize_refinement_results).grid(row=6, column=0, padx=(4, 4), pady=7)
 
-        Button(frame_right, text='Load MH Results', command=self.load_mh_results).grid(row=7, column=0, padx=(4, 4), pady=7)
-        Button(frame_right, text='Save MH Results', command=self.save_mh_results).grid(row=8, column=0, padx=(4, 4), pady=7)
-        Button(frame_right, text='Delete MH Results', command=self.refresh_mh).grid(row=9, column=0, padx=(4, 4), pady=7)
+        Button(frame_right, text='Set True point', command=self.set_true_point_mh).grid(row=7, column=0, padx=(4, 4), pady=7)
+        Button(frame_right, text='Load MH Results', command=self.load_mh_results).grid(row=8, column=0, padx=(4, 4), pady=7)
+        Button(frame_right, text='Save MH Results', command=self.save_mh_results).grid(row=9, column=0, padx=(4, 4), pady=7)
+        Button(frame_right, text='Delete MH Results', command=self.refresh_mh).grid(row=10, column=0, padx=(4, 4), pady=7)
 
-        Button(frame_right, text='Customize Plots', command=self.customize_mh_results).grid(row=10, column=0, padx=(4, 4), pady=0)
-        Button(frame_right, text='Show MH iterations', command=self.show_mh_iterations).grid(row=11, column=0, padx=(4, 4), pady=0)
-        Button(frame_right, text='Show Acc points', command=self.show_mh_acc_points).grid(row=12, column=0, padx=(4, 4), pady=0)
-        Button(frame_right, text='Export Acc points', command=self.export_acc_points).grid(row=13, column=0, padx=(4, 4), pady=0)
+        Button(frame_right, text='Customize Plots', command=self.customize_mh_results).grid(row=11, column=0, padx=(4, 4), pady=0)
+        Button(frame_right, text='Show MH iterations', command=self.show_mh_iterations).grid(row=12, column=0, padx=(4, 4), pady=0)
+        Button(frame_right, text='Show Acc points', command=self.show_mh_acc_points).grid(row=13, column=0, padx=(4, 4), pady=0)
+        Button(frame_right, text='Export Acc points', command=self.export_acc_points).grid(row=14, column=0, padx=(4, 4), pady=0)
 
         frame_right.columnconfigure(0, weight=1)
         frame_right.rowconfigure(0, weight=1)
@@ -1578,7 +1580,7 @@ class Gui(Tk):
                         self.clear_space()
                         self.show_refinement = True
                         self.show_refinement = False
-                        self.show_true_point = False
+                        self.show_space_true_point = False
                         self.show_space(show_refinement=True, show_samples=False, show_true_point=False,
                                         prefer_unsafe=self.show_red_in_multidim_refinement.get(),
                                         title=f"Approximate refinement, achieved_coverage:{round(self.space.get_coverage(), 3)}, solver: {program}")
@@ -1599,7 +1601,7 @@ class Gui(Tk):
 
                     self.show_refinement = True
                     self.show_refinement = False
-                    self.show_true_point = False
+                    self.show_space_true_point = False
                     self.show_space(show_refinement=True, show_samples=False, show_true_point=False, prefer_unsafe=self.show_red_in_multidim_refinement.get(),
                                     title=f"Parameter lifting, achieved_coverage:{round(self.space.get_coverage(), 3)}, solver: {program}")
                     self.page6_figure.tight_layout()  ## By huypn
@@ -2247,13 +2249,13 @@ class Gui(Tk):
                 # self.show_refinement = messagebox.askyesno("Loaded space", "Do you want to visualise refinement (safe & unsafe regions)?")
                 self.show_refinement = True
                 if self.space.true_point is not None:
-                    self.show_true_point = True
+                    self.show_space_true_point = True
                     # self.show_true_point = messagebox.askyesno("Loaded space", "Do you want to show the true point?")
                 else:
-                    self.show_true_point = False
+                    self.show_space_true_point = False
 
                 try:
-                    self.show_space(self.show_refinement, self.show_samples, self.show_true_point, show_all=True, prefer_unsafe=self.show_red_in_multidim_refinement.get(), quantitative=self.show_quantitative)
+                    self.show_space(self.show_refinement, self.show_samples, self.show_space_true_point, show_all=True, prefer_unsafe=self.show_red_in_multidim_refinement.get(), quantitative=self.show_quantitative)
                 except AttributeError as err:
                     self.space = ""
                     print(colored(str(err), "red"))
@@ -2311,19 +2313,19 @@ class Gui(Tk):
             self.mh_results: HastingsResults = pickle_load(spam)
             self.hastings_file.set(spam)
 
-            ## Clear figure
-            self.page6_figure2.clf()
-            self.page6_b = self.page6_figure2.add_subplot(111)
-            self.page6_figure2.canvas.draw()
-            self.page6_figure2.canvas.flush_events()
+            ## Backward compatibility: true point
+            if not hasattr(self.mh_results, "true_point"):
+                self.mh_results.true_point = False
 
-            egg = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b])
+            ## Backward compatibility: parameter intervals
+            if not hasattr(self.mh_results, "parameter_intervals"):
+                self.mh_results.fix_missing_parameter_domains()
 
-            self.page6_figure2, self.page6_b = egg
-            self.page6_figure2.tight_layout()
-            self.page6_figure2.canvas.draw()
-            self.page6_figure2.canvas.flush_events()
-            self.update()
+            ## Backward compatibility: as scatter
+            if not hasattr(self.mh_results, "as_scatter"):
+                self.mh_results.set_as_scatter(False)
+
+            self.refresh_mh_figure(self.mh_results.bins, self.mh_results.burn_in, self.mh_results.as_scatter, True)
 
             ## Autosave
             if not file:
@@ -2419,7 +2421,30 @@ class Gui(Tk):
             except TclError:
                 return
 
-    def set_true_point(self):
+    def set_true_point_mh(self):
+        """ Sets the true point for MH """
+        try:
+            self.new_window.destroy()
+        except:
+            pass
+
+        if self.mh_results == "" or self.mh_results is None:
+            print("No MH results. Cannot set the true point.")
+            messagebox.showwarning("Edit True point", "Load/create MH results first.")
+            return
+        else:
+            assert isinstance(self.mh_results, HastingsResults)
+
+            self.parameter_domains = self.mh_results.parameter_intervals
+            self.create_window_to_load_param_point(parameters=self.mh_results.params, opt=True)
+            # self.mh_results.true_point = self.parameter_point
+            self.mh_results.set_true_point(self.parameter_point)
+            print("Setting the mh true point as:", self.parameter_point)
+            self.show_mh_true_point = True
+
+            self.refresh_mh_figure(self.mh_results.bins, self.mh_results.burn_in, self.mh_results.as_scatter, self.show_mh_true_point)
+
+    def set_true_point_space(self):
         """ Sets the true point of the space """
 
         try:
@@ -2428,8 +2453,8 @@ class Gui(Tk):
             pass
 
         if self.space == "":
-            print("No space loaded. Cannot set the true_point.")
-            messagebox.showwarning("Edit True point", "Load space first.")
+            print("No space. Cannot set the true point.")
+            messagebox.showwarning("Edit True point", "Load/create space first.")
             return
         else:
             # print(self.space.nice_print())
@@ -2443,7 +2468,7 @@ class Gui(Tk):
             self.parameter_domains = self.space.region
             self.create_window_to_load_param_point(parameters=self.space.params, opt=True)
             self.space.true_point = self.parameter_point
-            self.show_true_point = True
+            self.show_space_true_point = True
 
             self.print_space()
             figure, axis = self.space.show_true_point(where=[self.page6_figure, self.page6_a], hide_legend=self.hide_legend_refinement.get())
@@ -3222,7 +3247,7 @@ class Gui(Tk):
         self.status_set("Plotting functions in a given point.")
 
         if self.functions == "":
-            pass  ## TODO TODO
+            pass  ## TODO
 
         if self.functions == "":
             messagebox.showwarning("Plotting functions in a given point.", "Load the functions first, please.")
@@ -3828,7 +3853,7 @@ class Gui(Tk):
 
         self.show_refinement = True
         self.show_samples = True
-        self.show_space(show_refinement=True, show_samples=True, show_true_point=self.show_true_point, prefer_unsafe=self.show_red_in_multidim_refinement.get())
+        self.show_space(show_refinement=True, show_samples=True, show_true_point=self.show_space_true_point, prefer_unsafe=self.show_red_in_multidim_refinement.get())
 
         self.show_quantitative = False
 
@@ -3908,7 +3933,7 @@ class Gui(Tk):
 
         self.print_space()
 
-        self.show_space(show_refinement=False, show_samples=False, show_true_point=self.show_true_point, prefer_unsafe=self.show_red_in_multidim_refinement.get(), quantitative=True)
+        self.show_space(show_refinement=False, show_samples=False, show_true_point=self.show_space_true_point, prefer_unsafe=self.show_red_in_multidim_refinement.get(), quantitative=True)
 
         ## Autosave figure
         if self.save.get():
@@ -4016,7 +4041,7 @@ class Gui(Tk):
                                       burn_in=float(self.burn_in_entry.get()), is_probability=True,
                                       timeout=int(float(self.mh_timeout_entry.get())), draw_plot=self.draw_plot_window,
                                       metadata=self.show_mh_metadata.get())
-            spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b])
+            spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b], show_true_point=self.show_mh_true_point)
 
             if spam[0] is not False:
                 self.page6_figure2, self.page6_b = spam
@@ -4191,7 +4216,7 @@ class Gui(Tk):
                                ref_timeout=int(float(self.refinement_timeout_entry.get())), mh_result=self.mh_results)
 
         self.space = a
-        self.show_space(show_refinement=True, show_samples=self.show_samples, show_true_point=self.show_true_point,
+        self.show_space(show_refinement=True, show_samples=self.show_samples, show_true_point=self.show_space_true_point,
                         prefer_unsafe=self.show_red_in_multidim_refinement.get(), show_all=show_all,
                         warnings=not (no_max_depth and self.space.get_coverage() < self.coverage),
                         is_sampling_guided=self.sampling_guided_refinement.get(),
@@ -4416,7 +4441,7 @@ class Gui(Tk):
                 messagebox.showinfo("Space refinement", spam[1])
         else:
             self.space = spam
-            self.show_space(show_refinement=True, show_samples=self.show_samples, show_true_point=self.show_true_point,
+            self.show_space(show_refinement=True, show_samples=self.show_samples, show_true_point=self.show_space_true_point,
                             prefer_unsafe=self.show_red_in_multidim_refinement.get(), show_all=show_all,
                             warnings=not(no_max_depth and self.space.get_coverage() < self.coverage),
                             is_sampling_guided=self.sampling_guided_refinement.get(),
@@ -4687,7 +4712,7 @@ class Gui(Tk):
             if self.space != "":
                 assert isinstance(self.space, space.RefinedSpace)
                 if len(self.space.params) > 2:
-                    self.show_space(self.show_refinement, self.show_samples, self.show_true_point, show_all=True, prefer_unsafe=self.show_red_in_multidim_refinement.get())
+                    self.show_space(self.show_refinement, self.show_samples, self.show_space_true_point, show_all=True, prefer_unsafe=self.show_red_in_multidim_refinement.get())
         finally:
             try:
                 self.new_window.destroy()
@@ -4756,25 +4781,7 @@ class Gui(Tk):
             burn_in = float(self.burn_in_entry_2.get())
             as_scatter = bool(self.show_mh_as_scatter.get())
 
-            ## Clear figure
-            self.page6_figure2.clf()
-            self.page6_b = self.page6_figure2.add_subplot(111)
-            self.page6_figure2.canvas.draw()
-            self.page6_figure2.canvas.flush_events()
-
-            assert isinstance(self.mh_results, HastingsResults)
-            self.mh_results.set_burn_in(burn_in)
-            self.mh_results.set_bins(bins)
-            spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b], bins=bins, burn_in=burn_in, as_scatter=as_scatter)
-
-            if spam[0] is not False:
-                self.page6_figure2, self.page6_b = spam
-                self.page6_figure2.tight_layout()
-                self.page6_figure2.canvas.draw()
-                self.page6_figure2.canvas.flush_events()
-                self.update()
-            else:
-                pass
+            self.refresh_mh_figure(bins, burn_in, as_scatter, self.show_mh_true_point)
         finally:
             try:
                 self.new_window.destroy()
@@ -4783,6 +4790,33 @@ class Gui(Tk):
                 self.progress.set("0%")
             except TclError:
                 return
+            except AttributeError:  ##  for set mh true point
+                return
+
+    def refresh_mh_figure(self, bins, burn_in, as_scatter, show_true_point):
+        """ Refreshes MH figure """
+        assert isinstance(self.mh_results, HastingsResults)
+
+        ## Clear figure
+        self.page6_figure2.clf()
+        self.page6_b = self.page6_figure2.add_subplot(111)
+        self.page6_figure2.canvas.draw()
+        self.page6_figure2.canvas.flush_events()
+
+        self.mh_results.set_burn_in(burn_in)
+        self.mh_results.set_bins(bins)
+        self.mh_results.set_as_scatter(as_scatter)
+        spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b], bins=bins, burn_in=burn_in,
+                                               as_scatter=as_scatter, show_true_point=show_true_point)
+
+        if spam[0] is not False:
+            self.page6_figure2, self.page6_b = spam
+            self.page6_figure2.tight_layout()
+            self.page6_figure2.canvas.draw()
+            self.page6_figure2.canvas.flush_events()
+            self.update()
+        else:
+            pass
 
     def show_mh_iterations(self):
         """ Create Scatter plot showing accepted and rejected points in its given order. """
