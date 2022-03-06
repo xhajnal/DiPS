@@ -46,6 +46,16 @@ if workspace == "":
 sys.path.append(workspace)
 
 
+def custom_paste(event):
+    """ Fixes 'copy-pasting to Entry doesn't remove selected text' """
+    try:
+        event.widget.delete("sel.first", "sel.last")
+    except:
+        pass
+    event.widget.insert("insert", event.widget.clipboard_get())
+    return "break"
+
+
 def do_config():
     """ Validates, set up config and creates directories from the config if not existing """
     config.read(os.path.join(workspace, "../config.ini"))
@@ -154,6 +164,9 @@ class Gui(Tk):
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
+
+        ## Fix copy does not delete selected text problem
+        self.bind_class("Entry", "<<Paste>>", custom_paste)
 
         if error_occurred is not None:
             print(colored(error_occurred, "red"))
