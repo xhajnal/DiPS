@@ -523,7 +523,7 @@ if __name__ == '__main__':
     ## Settings
     model = "SIR/sir_5_1_0.pm"
     prism_parameter_values = "alpha=0.034055,beta=0.087735"
-    n_samples = 1
+    n_samples = 10000
     silent = True
     sim_length = 10000000
 
@@ -554,8 +554,11 @@ if __name__ == '__main__':
     # # Remove auxiliary simulation file
     # # os.remove(os.path.join(os.getcwd(), "results/prism_results", path_file))
 
-    data = [0.1098, 0.1377, 0.1296, 0.1312, 0.1466, 0.3451]  ## in order from 6 to 1
+    # data = [0.1098, 0.1377, 0.1296, 0.1312, 0.1466, 0.3451]  ## in order from 6 to 1 ## wrong old model
+    exact_probs = [0.2746887629856223, 0.1292460318901584, 0.08158486526511617, 0.07315190727423651, 0.10128347308717214, 0.34004495949769376]
+    data = [0.2721, 0.1316, 0.0871, 0.0719, 0.1021, 0.3352]  ## in order from 6 to 1
     data = [item / n_samples for item in data]
+    print("Exact probabilities computed with PRISM", exact_probs)
     print("Obtained data", data)
 
     ### Honeybee
