@@ -49,7 +49,7 @@ class HastingsResults:
     """ Class to represent Metropolis Hastings results. """
     def __init__(self, params, theta_init, accepted, rejected, observations_count: int, observations_samples_count: int,
                  mh_sampling_iterations: int, eps=0, sd=0.15, burn_in=0.25, as_scatter=False, pretitle="", title="", bins=20, last_iter=0,
-                 timeout=0, time_it_took=0, true_point=False, parameter_intervals=None):
+                 timeout=0, time_it_took=0, true_point=False, opt_point=False, parameter_intervals=None):
         """
         Args:
             params (list of strings): parameter names
@@ -64,7 +64,8 @@ class HastingsResults:
             pretitle (string): title to be put in front of title
             title (string): title of the plot
             bins (int): number of segments in the heatmap plot (used only for 2D param space)
-            true_point (point): The true value in the parameter space
+            true_point (point): The true value in the parameter space - only to be shown on the plot
+            opt_point (point): Point obtained by the optimisation method - only to be shown on the plot
             parameter_intervals (list of pairs): Pairs of domains of respective parameter
         """
         ## Inside variables
@@ -108,6 +109,15 @@ class HastingsResults:
                 raise Exception(f"The dimension of the given true point ({len(true_point)}) does not match")
         else:
             self.true_point = False
+
+        ## SET THE OPTIMISED POINT
+        if opt_point:
+            if len(opt_point) is len(self.params):
+                self.opt_point = opt_point
+            else:
+                raise Exception(f"The dimension of the given optimised point ({len(opt_point)}) does not match")
+        else:
+            self.opt_point = False
 
     def get_burn_in(self):
         """ Returns fraction of the burned-in part. """
@@ -218,6 +228,10 @@ class HastingsResults:
         """ Sets true point """
         self.true_point = true_point
 
+    def set_opt_point(self, opt_point):
+        """ Sets optimised point """
+        self.opt_point = opt_point
+
     def get_acc_as_a_list(self):
         """ Returns accepted points in a list. """
         return self.accepted.tolist()
@@ -259,7 +273,7 @@ class HastingsResults:
 
             self.parameter_intervals.append([curr_min, curr_max])
 
-    def show_mh_heatmap(self, where=False, bins=False, burn_in=None, as_scatter=False, debug=False, show_true_point=False):
+    def show_mh_heatmap(self, where=False, bins=False, burn_in=None, as_scatter=False, debug=False, show_true_point=False, show_opt_point=False):
         """ Visualises the result of Metropolis Hastings as a heatmap
 
         Args:
@@ -269,6 +283,7 @@ class HastingsResults:
             as_scatter (bool): Sets the plot to scatter plot even for 2D output
             debug (bool): if True extensive print will be used
             show_true_point (bool): if True, true point will be shown
+            show_opt_point (bool): if True, optimised point will be shown
 
         @author: xhajnal
         @edit: denis
@@ -401,6 +416,13 @@ class HastingsResults:
                     where[1] = plt.plot(self.true_point[0], self.true_point[1], 'o', markersize=6, color='w', label='true point')
                     plt.legend()
 
+                if show_opt_point and self.opt_point:
+                    print(type, self.opt_point)
+                    assert isinstance(self.opt_point, list)
+                    where[1] = plt.plot(self.opt_point[0], self.opt_point[1], 'o', markersize=8, color='k')
+                    where[1] = plt.plot(self.opt_point[0], self.opt_point[1], 'o', markersize=6, color='m', label='optimised point')
+                    plt.legend()
+
                 plt.xlabel(self.params[0])
                 plt.ylabel(self.params[1])
                 plt.title(wrapper.wrap(self.title))
@@ -415,6 +437,11 @@ class HastingsResults:
                     assert isinstance(self.true_point, list)
                     plt.plot(self.true_point[0], self.true_point[1], 'o', markersize=8, color='k')
                     plt.plot(self.true_point[0], self.true_point[1], 'o', markersize=6, color='w', label='true point')
+                    plt.legend()
+                if show_opt_point and self.opt_point:
+                    assert isinstance(self.opt_point, list)
+                    plt.plot(self.opt_point[0], self.opt_point[1], 'o', markersize=8, color='k')
+                    plt.plot(self.opt_point[0], self.opt_point[1], 'o', markersize=6, color='m', label='true point')
                     plt.legend()
                 figure = plt.colorbar()
                 plt.xlabel(self.params[0])
@@ -435,6 +462,12 @@ class HastingsResults:
                     where[1] = plt.plot(self.true_point[0], self.true_point[1], 'o', markersize=6, color='w',
                                         label='true point')
                     plt.legend()
+                if show_opt_point and self.opt_point:
+                    assert isinstance(self.opt_point, list)
+                    where[1] = plt.plot(self.opt_point[0], self.opt_point[1], 'o', markersize=8, color='k')
+                    where[1] = plt.plot(self.opt_point[0], self.opt_point[1], 'o', markersize=6, color='m',
+                                        label='true point')
+                    plt.legend()
                 plt.xlabel(self.params[0])
                 plt.ylabel("")
                 plt.title(wrapper.wrap(self.title))
@@ -449,6 +482,12 @@ class HastingsResults:
                     assert isinstance(self.true_point, list)
                     plt.plot(self.true_point[0], self.true_point[1], 'o', markersize=8, color='k')
                     plt.plot(self.true_point[0], self.true_point[1], 'o', markersize=6, color='w', label='true point')
+                    plt.legend()
+                if show_opt_point and self.opt_point:
+                    assert isinstance(self.opt_point, list)
+                    plt.plot(self.opt_point[0], self.opt_point[1], 'o', markersize=8, color='k')
+                    plt.plot(self.opt_point[0], self.opt_point[1], 'o', markersize=6, color='m',
+                             label='true point')
                     plt.legend()
                 figure = plt.colorbar()
                 plt.xlabel(self.params[0])
@@ -1131,7 +1170,7 @@ def metropolis_hastings(params, parameter_intervals, param_init, functions, data
 
 
 def init_mh(params, parameter_intervals, functions, data, sample_size: int, mh_sampling_iterations: int, eps=0,
-            sd=0.15, theta_init=False, true_point=False, is_probability=None, where=False, progress=False, burn_in=False,
+            sd=0.15, theta_init=False, true_point=False, opt_point=False, is_probability=None, where=False, progress=False, burn_in=False,
             bins=20, timeout=0, parallel=False, silent=False, debug=False, metadata=True, draw_plot=False):
     """ Initialisation method for Metropolis-Hastings
 
@@ -1139,7 +1178,8 @@ def init_mh(params, parameter_intervals, functions, data, sample_size: int, mh_s
         params (list of strings): parameter names
         parameter_intervals (list of tuples): domains of parameters
         theta_init (list of floats): initial parameter point
-        true_point (point): The true value in the parameter space
+        true_point (point): The true value in the parameter space - only to be shown on the plot
+        opt_point (point): Point obtained by the optimisation method - only to be shown on the plot
         functions (list of strings): expressions to be evaluated and compared with data
         data (list of floats): measurement values
         sample_size (int): total number of observations in data
@@ -1166,7 +1206,7 @@ def init_mh(params, parameter_intervals, functions, data, sample_size: int, mh_s
     globals()["start_time"] = start_time
     globals()["mh_results"] = HastingsResults(params, theta_init, [], [], sample_size, sample_size,
                                               mh_sampling_iterations, eps, burn_in=burn_in, title="", bins=bins,
-                                              last_iter=0, timeout=timeout, true_point=true_point,
+                                              last_iter=0, timeout=timeout, true_point=true_point, opt_point=opt_point,
                                               parameter_intervals=parameter_intervals)
     # print("Parameter point", theta_true)
 

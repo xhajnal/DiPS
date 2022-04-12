@@ -281,6 +281,7 @@ class Gui(Tk):
 
         ## Saving settings
         self.save_as_plain_text = BooleanVar()  ## Flag to save structures as txt instead of pickled
+        self.show_opt_point = BooleanVar()  ## Flag whether to show optimised point on figures
         self.save_as_plain_text.set(True)
         ## Save Figures
         self.save = BooleanVar()  ## True if saving on
@@ -325,7 +326,7 @@ class Gui(Tk):
         self.progress_time.set("0")
 
     def gui_init(self):
-        """ Initialisation procedure of GUI"""
+        """ Initialisation procedure of GUI """
         ## GUI INIT
         self.title('DiPS')
         self.iconphoto(True, PhotoImage(file=os.path.join(workspace, "../icon.png")))
@@ -412,6 +413,10 @@ class Gui(Tk):
         save_as_plain_text_button = Checkbutton(right_frame, text="Save structures as plain text", variable=self.save_as_plain_text)
         save_as_plain_text_button.grid(row=4, column=1, sticky=W, padx=4)
         createToolTip(save_as_plain_text_button, text='Check to save functions and constraints as text file instead of compressed pickle files')
+
+        save_as_plain_text_button = Checkbutton(right_frame, text="Show opt point", variable=self.show_opt_point)
+        save_as_plain_text_button.grid(row=4, column=2, sticky=W, padx=4)
+        createToolTip(save_as_plain_text_button, text='Check to show obtained optimised point on the plots of MH and refinement method.')
 
         frame.rowconfigure(0, weight=1)
         frame.columnconfigure(0, weight=1)
@@ -2338,7 +2343,7 @@ class Gui(Tk):
             if not hasattr(self.mh_results, "as_scatter"):
                 self.mh_results.set_as_scatter(False)
 
-            self.refresh_mh_figure(self.mh_results.bins, self.mh_results.burn_in, self.mh_results.as_scatter, True)
+            self.refresh_mh_figure(self.mh_results.bins, self.mh_results.burn_in, self.mh_results.as_scatter, True, self.show_opt_point.get())
 
             ## Autosave
             if not file:
@@ -2451,11 +2456,12 @@ class Gui(Tk):
             self.parameter_domains = self.mh_results.parameter_intervals
             self.create_window_to_load_param_point(parameters=self.mh_results.params, opt=True)
             # self.mh_results.true_point = self.parameter_point
-            self.mh_results.set_true_point(self.parameter_point)
+            self.mh_true_point = self.parameter_point
+            self.mh_results.set_true_point(self.mh_true_point)
             print("Setting the mh true point as:", self.parameter_point)
             self.show_mh_true_point = True
 
-            self.refresh_mh_figure(self.mh_results.bins, self.mh_results.burn_in, self.mh_results.as_scatter, self.show_mh_true_point)
+            self.refresh_mh_figure(self.mh_results.bins, self.mh_results.burn_in, self.mh_results.as_scatter, self.show_mh_true_point, self.show_opt_point.get())
 
     def set_true_point_space(self):
         """ Sets the true point of the space """
@@ -4044,6 +4050,7 @@ class Gui(Tk):
             ## This progress is passed as whole to update the thing inside the called function
             assert isinstance(self.data, list)
             assert isinstance(self.functions, list)
+
             self.mh_results = init_mh(self.parameters, self.parameter_domains, self.functions, self.data,
                                       int(self.n_samples_entry.get()), int(self.MH_sampling_iterations_entry.get()),
                                       eps=0, # float(self.eps_entry.get()), ## setting eps=0,
@@ -4054,7 +4061,13 @@ class Gui(Tk):
                                       burn_in=float(self.burn_in_entry.get()), is_probability=True,
                                       timeout=int(float(self.mh_timeout_entry.get())), draw_plot=self.draw_plot_window,
                                       metadata=self.show_mh_metadata.get())
-            spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b], show_true_point=self.show_mh_true_point)
+
+            assert isinstance(self.mh_results, HastingsResults)
+            if self.show_opt_point.get():
+                self.mh_results.set_opt_point(self.optimised_param_point)
+            if self.show_mh_true_point:
+                self.mh_results.set_true_point(self.mh_true_point)
+            spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b], show_true_point=self.show_mh_true_point, show_opt_point=self.show_opt_point.get())
 
             if spam[0] is not False:
                 self.page6_figure2, self.page6_b = spam
@@ -4794,7 +4807,7 @@ class Gui(Tk):
             burn_in = float(self.burn_in_entry_2.get())
             as_scatter = bool(self.show_mh_as_scatter.get())
 
-            self.refresh_mh_figure(bins, burn_in, as_scatter, self.show_mh_true_point)
+            self.refresh_mh_figure(bins, burn_in, as_scatter, self.show_mh_true_point, self.show_opt_point.get())
         finally:
             try:
                 self.new_window.destroy()
@@ -4806,7 +4819,7 @@ class Gui(Tk):
             except AttributeError:  ##  for set mh true point
                 return
 
-    def refresh_mh_figure(self, bins, burn_in, as_scatter, show_true_point):
+    def refresh_mh_figure(self, bins, burn_in, as_scatter, show_true_point, show_opt_point):
         """ Refreshes MH figure """
         assert isinstance(self.mh_results, HastingsResults)
 
@@ -4820,7 +4833,7 @@ class Gui(Tk):
         self.mh_results.set_bins(bins)
         self.mh_results.set_as_scatter(as_scatter)
         spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b], bins=bins, burn_in=burn_in,
-                                               as_scatter=as_scatter, show_true_point=show_true_point)
+                                               as_scatter=as_scatter, show_true_point=show_true_point, show_opt_point=show_opt_point)
 
         if spam[0] is not False:
             self.page6_figure2, self.page6_b = spam
