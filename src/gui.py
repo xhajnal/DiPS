@@ -1,6 +1,8 @@
 import copy
 import pickle
 import os
+import re
+import sys
 import time
 import webbrowser
 from platform import system
@@ -1600,7 +1602,7 @@ class Gui(Tk):
                         self.show_refinement = False
                         self.show_space_true_point = False
                         self.show_space(show_refinement=True, show_samples=False, show_true_point=False,
-                                        prefer_unsafe=self.show_red_in_multidim_refinement.get(),
+                                        show_opt_point=False, prefer_unsafe=self.show_red_in_multidim_refinement.get(),
                                         title=f"Approximate refinement, achieved_coverage:{round(self.space.get_coverage(), 3)}, solver: {program}")
 
                         self.space.remove_white(self.parameter_domains)
@@ -1620,7 +1622,8 @@ class Gui(Tk):
                     self.show_refinement = True
                     self.show_refinement = False
                     self.show_space_true_point = False
-                    self.show_space(show_refinement=True, show_samples=False, show_true_point=False, prefer_unsafe=self.show_red_in_multidim_refinement.get(),
+                    self.show_space(show_refinement=True, show_samples=False, show_true_point=False,
+                                    show_opt_point=False, prefer_unsafe=self.show_red_in_multidim_refinement.get(),
                                     title=f"Parameter lifting, achieved_coverage:{round(self.space.get_coverage(), 3)}, solver: {program}")
                     self.page6_figure.tight_layout()  ## By huypn
                     self.page6_figure.canvas.draw()
@@ -2273,7 +2276,10 @@ class Gui(Tk):
                     self.show_space_true_point = False
 
                 try:
-                    self.show_space(self.show_refinement, self.show_samples, self.show_space_true_point, show_all=True, prefer_unsafe=self.show_red_in_multidim_refinement.get(), quantitative=self.show_quantitative)
+                    self.show_space(show_refinement=self.show_refinement, show_samples=self.show_samples,
+                                    show_true_point=self.show_space_true_point, show_opt_point=self.show_opt_point.get(),
+                                    show_all=True, prefer_unsafe=self.show_red_in_multidim_refinement.get(),
+                                    quantitative=self.show_quantitative)
                 except AttributeError as err:
                     self.space = ""
                     print(colored(str(err), "red"))
@@ -2378,24 +2384,25 @@ class Gui(Tk):
 
     def clear_space(self, warning=True):
         """ Will clear the space plot """
-        self.show_space(False, False, False, clear=True, warnings=warning)
+        self.show_space(False, False, False, False, clear=True, warnings=warning)
 
-    def show_space(self, show_refinement, show_samples, show_true_point, clear=False, show_all=False,
+    def show_space(self, show_refinement, show_samples, show_true_point, show_opt_point, clear=False, show_all=False,
                    prefer_unsafe=False, quantitative=False, title="", warnings=True, is_parallel_refinement=False,
                    is_presampled=False, is_mhmh=False, is_sampling_guided=False):
         """ Visualises the space in the plot.
 
         Args:
-            show_refinement (bool): if True refinement is shown
-            show_samples (bool): if True samples are shown
-            show_true_point (bool): if True the true point is shown
+            show_refinement (bool): if True refinement is shown in the plot
+            show_samples (bool): if True samples are shown in the plot
+            show_true_point (bool): if True the true point is shown in the plot
+            show_opt_point (bool): if True teh optimised point is shown in the plot
             clear (bool): if True the plot is cleared
-            show_all (bool):  if True, not only newly added rectangles are shown
+            show_all (bool):  if True, not only newly added rectangles are shown in the plot
             prefer_unsafe: if True unsafe space is shown in multidimensional space instead of safe
             quantitative (bool): if True show far is the point from satisfying / not satisfying the constraints
-            title (string): adding title to plot
+            title (string): adding title to the plot
             warnings (bool): if False will not show any warnings
-            is_parallel_refinement (int):  number of cores used for refinement
+            is_parallel_refinement (int): number of cores used for refinement
             is_presampled (bool): if True it will mark the refinement as presampled
             is_mhmh (bool): if True it will mark the refinement as MHMH, used MH to presampled/precut space
             is_sampling_guided (bool): flag whether refinement was sampling-guided
@@ -2406,12 +2413,18 @@ class Gui(Tk):
             if not self.space == "":
                 if not clear:
                     assert isinstance(self.space, space.RefinedSpace)
+                    ## SHOW OPTIMISED POINT
+                    if self.show_opt_point:
+                        if self.optimised_param_point:
+                            self.space.opt_point = self.optimised_param_point
+
                     self.print_space()
                     figure, axis = self.space.show(green=show_refinement, red=show_refinement, sat_samples=show_samples,
                                                    unsat_samples=show_samples, true_point=show_true_point, save=False,
-                                                   where=[self.page6_figure, self.page6_a], show_all=show_all,
-                                                   prefer_unsafe=prefer_unsafe, quantitative=quantitative, title=title,
-                                                   hide_legend=self.hide_legend_refinement.get(), is_parallel_sampling=True,
+                                                   opt_point=show_opt_point, where=[self.page6_figure, self.page6_a],
+                                                   show_all=show_all, prefer_unsafe=prefer_unsafe, title=title,
+                                                   quantitative=quantitative, is_parallel_sampling=True,
+                                                   hide_legend=self.hide_legend_refinement.get(),
                                                    hide_title=self.hide_title_refinement.get(),
                                                    is_sampling_guided=is_sampling_guided, is_presampled=is_presampled,
                                                    is_parallel_refinement=is_parallel_refinement, is_mhmh=is_mhmh)
@@ -2484,13 +2497,22 @@ class Gui(Tk):
                 except ValueError:
                     print(colored("Could not remove true point", "red"))
                     pass
+            if self.space.opt_point:
+                try:
+                    self.space.opt_point_object.remove()
+                except ValueError:
+                    print(colored("Could not remove true point", "red"))
+                    pass
             self.parameter_domains = self.space.region
             self.create_window_to_load_param_point(parameters=self.space.params, opt=True)
             self.space.true_point = self.parameter_point
             self.show_space_true_point = True
 
             self.print_space()
-            figure, axis = self.space.show_true_point(where=[self.page6_figure, self.page6_a], hide_legend=self.hide_legend_refinement.get())
+            figure, axis = self.space.show_points(where=[self.page6_figure, self.page6_a],
+                                                  hide_legend=self.hide_legend_refinement.get(),
+                                                  show_true_point=self.show_space_true_point,
+                                                  show_opt_point=self.show_opt_point.get())
 
             ## If no plot provided
             if figure is None:
@@ -3872,7 +3894,8 @@ class Gui(Tk):
 
         self.show_refinement = True
         self.show_samples = True
-        self.show_space(show_refinement=True, show_samples=True, show_true_point=self.show_space_true_point, prefer_unsafe=self.show_red_in_multidim_refinement.get())
+        self.show_space(show_refinement=True, show_samples=True, show_true_point=self.show_space_true_point,
+                        show_opt_point=self.show_opt_point.get(), prefer_unsafe=self.show_red_in_multidim_refinement.get())
 
         self.show_quantitative = False
 
@@ -3952,7 +3975,9 @@ class Gui(Tk):
 
         self.print_space()
 
-        self.show_space(show_refinement=False, show_samples=False, show_true_point=self.show_space_true_point, prefer_unsafe=self.show_red_in_multidim_refinement.get(), quantitative=True)
+        self.show_space(show_refinement=False, show_samples=False, show_true_point=self.show_space_true_point,
+                        show_opt_point=self.show_opt_point.get(), prefer_unsafe=self.show_red_in_multidim_refinement.get(),
+                        quantitative=True)
 
         ## Autosave figure
         if self.save.get():
@@ -4243,8 +4268,8 @@ class Gui(Tk):
 
         self.space = a
         self.show_space(show_refinement=True, show_samples=self.show_samples, show_true_point=self.show_space_true_point,
-                        prefer_unsafe=self.show_red_in_multidim_refinement.get(), show_all=show_all,
-                        warnings=not (no_max_depth and self.space.get_coverage() < self.coverage),
+                        show_opt_point=self.show_opt_point.get(), prefer_unsafe=self.show_red_in_multidim_refinement.get(),
+                        show_all=show_all, warnings=not (no_max_depth and self.space.get_coverage() < self.coverage),
                         is_sampling_guided=self.sampling_guided_refinement.get(),
                         is_parallel_refinement=int(self.refinement_cores_entry.get()) > 1)
         self.page6_figure.tight_layout()  ## By huypn
@@ -4468,8 +4493,8 @@ class Gui(Tk):
         else:
             self.space = spam
             self.show_space(show_refinement=True, show_samples=self.show_samples, show_true_point=self.show_space_true_point,
-                            prefer_unsafe=self.show_red_in_multidim_refinement.get(), show_all=show_all,
-                            warnings=not(no_max_depth and self.space.get_coverage() < self.coverage),
+                            show_opt_point=self.show_opt_point.get(), prefer_unsafe=self.show_red_in_multidim_refinement.get(),
+                            show_all=show_all, warnings=not(no_max_depth and self.space.get_coverage() < self.coverage),
                             is_sampling_guided=self.sampling_guided_refinement.get(),
                             is_parallel_refinement=int(self.refinement_cores_entry.get()) > 1)
             self.page6_figure.tight_layout()  ## By huypn
@@ -4738,7 +4763,9 @@ class Gui(Tk):
             if self.space != "":
                 assert isinstance(self.space, space.RefinedSpace)
                 if len(self.space.params) > 2:
-                    self.show_space(self.show_refinement, self.show_samples, self.show_space_true_point, show_all=True, prefer_unsafe=self.show_red_in_multidim_refinement.get())
+                    self.show_space(self.show_refinement, self.show_samples, self.show_space_true_point,
+                                    show_opt_point=self.show_opt_point.get(), show_all=True,
+                                    prefer_unsafe=self.show_red_in_multidim_refinement.get())
         finally:
             try:
                 self.new_window.destroy()

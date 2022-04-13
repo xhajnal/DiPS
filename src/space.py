@@ -38,12 +38,12 @@ class RefinedSpace:
         rectangles_unknown (list of (hyper)rectangles): unknown (white) space
         sat_samples: (list of points): satisfying points
         unsat_samples: (list of points): unsatisfying points
-        true_point (point): The true value in the parameter space
+        true_point (point): The true value on the parameter space
         title (string): text to added in the end of the Figure titles, CASE STUDY STANDARD: f"model: {model_type}, population = {population}, sample_size = {sample_size},  \n Dataset = {dataset}, alpha={alpha}, #samples={n_samples}"
     """
 
     def __init__(self, region, params, types=None, rectangles_sat=False, rectangles_unsat=False, rectangles_unknown=None,
-                 sat_samples=None, unsat_samples=None, dist_samples=False, true_point=False, title=False, prefer_unsafe=False):
+                 sat_samples=None, unsat_samples=None, dist_samples=False, true_point=False, opt_point=False, title=False, prefer_unsafe=False):
         """ (hyper)rectangles is a list of intervals, point is a list of numbers
         Args:
             region (list of intervals or tuple of intervals): whole space
@@ -55,7 +55,8 @@ class RefinedSpace:
             sat_samples (list of points): satisfying points
             unsat_samples (list of points): unsatisfying points
             dist_samples (dictionary): points in param space to distance of not satisfying the constraints
-            true_point (point): The true value in the parameter space
+            true_point (point): The true value in the parameter space, only to be shown on the plot
+            opt_point (point): The optimised parametrisation, only to be shown on the plot
             title (string): text to added in the end of the Figure titles, CASE STUDY STANDARD: f"model: {model_type}, population = {population}, sample_size = {sample_size},  \n Dataset = {dataset}, alpha={alpha}, #samples={n_samples}"
             prefer_unsafe: if True unsafe space is shown in multidimensional space instead of safe
 
@@ -208,6 +209,15 @@ class RefinedSpace:
         else:
             self.true_point = False
 
+        ## SET THE OPTIMISED POINT
+        if opt_point:
+            if len(opt_point) is len(self.params):
+                self.opt_point = opt_point
+            else:
+                raise Exception(f"The dimension of the given true point ({len(opt_point)}) does not match")
+        else:
+            self.opt_point = False
+
         ## SET TITLE SUFFIX
         if title:
             self.title = title
@@ -225,12 +235,13 @@ class RefinedSpace:
         self.prefer_unsafe = prefer_unsafe
 
         self.true_point_object = []
+        self.opt_point_object = []
 
         ## TEXT WRAPPER
         self.wrapper = DocumentWrapper(width=70)
 
     def show(self, title="", green=True, red=True, sat_samples=False, unsat_samples=False, quantitative=False,
-             true_point=True, save=False, where=False, show_all=True, prefer_unsafe=None, is_parallel_sampling=False,
+             true_point=True, opt_point=True, save=False, where=False, show_all=True, prefer_unsafe=None, is_parallel_sampling=False,
              is_parallel_refinement=False, is_presampled=False, is_mhmh=False, is_sampling_guided=False,
              hide_legend=False, hide_title=False):
         """ Visualises the space.
@@ -242,7 +253,8 @@ class RefinedSpace:
             sat_samples (bool): if True showing sat samples
             unsat_samples (bool): if True showing unsat samples
             quantitative (bool): if True show sampling with how far is the point from satisfying / not satisfying the constraints
-            true_point (bool): if True showing true point
+            true_point (bool): if True showing true point  on the plot
+            opt_point (bool): if True showing optimised point on the plot
             save (bool): if True, the output is saved
             where (tuple/list): output matplotlib sources to output created figure
             show_all (bool): if True, not only newly added rectangles are shown
@@ -268,10 +280,15 @@ class RefinedSpace:
 
         legend_objects, legend_labels = [], []
 
-        if true_point and self.true_point:
-            self.show_true_point(where=where, is_inside_of_show=True)
-            legend_objects.append(plt.scatter([], [], facecolor='white', edgecolor='blue', label="true_point"))
-            legend_labels.append("true point")
+        if (true_point and self.true_point) or (opt_point and self.opt_point):
+            self.show_points(where=where, is_inside_of_show=True, show_true_point=true_point, show_opt_point=opt_point)
+
+            if true_point and self.true_point:
+                legend_objects.append(plt.scatter([], [], facecolor='white', edgecolor='blue', label="true_point"))
+                legend_labels.append("true point")
+            if opt_point and self.opt_point:
+                legend_objects.append(plt.scatter([], [], facecolor='white', edgecolor='cyan', label="true_point"))
+                legend_labels.append("optimised point")
 
         if not self.sat_samples:
             sat_samples = False
@@ -595,8 +612,7 @@ class RefinedSpace:
                         ax.autoscale()
                         title = self.wrapper.wrap(f"Refinement,\n Domains of respective parameter of safe subspace.\nparam names: {self.params}\nparam types: {self.types}\nboundaries: {self.region}\nachieved coverage: {self.get_coverage()}.\nLast refinement took {socket.gethostname()} {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole time.")
                         fig, ax = visualise_by_param(self.rectangles_sat, title=title, where=[fig, ax])
-                        if true_point:
-                            self.show_true_point(where=[fig, ax], is_inside_of_show=True, hide_legend=hide_legend)
+                        self.show_points(where=[fig, ax], is_inside_of_show=True, hide_legend=hide_legend, show_true_point=true_point, show_opt_point=opt_point)
                         return fig, ax
                     elif not self.rectangles_sat or (self.rectangles_unsat and prefer_unsafe):
                         if self.rectangles_unsat:  ## If any rectangles to be visualised
@@ -608,8 +624,7 @@ class RefinedSpace:
                             ax.autoscale()
                             title = self.wrapper.wrap(f"Refinement,\n Domains of respective parameter of unsafe subspace.\nparam names: {self.params}\nparam types: {self.types}\nboundaries: {self.region}\nachieved coverage: {self.get_coverage()}.\nLast refinement took {socket.gethostname()} {round(self.time_last_refinement, 2)} of {round(self.time_refinement, 2)} sec. whole time.")
                             fig, ax = visualise_by_param(self.rectangles_unsat, colour='red', title=title, where=[fig, ax])
-                            if true_point:
-                                self.show_true_point(where=[fig, ax], is_inside_of_show=True, hide_legend=hide_legend)
+                            self.show_points(where=[fig, ax], is_inside_of_show=True, hide_legend=hide_legend, show_true_point=true_point, show_opt_point=opt_point)
                             return fig, ax
                     else:
                         return None, "While refining multidimensional space no red or green area found, no reasonable plot to be shown."
@@ -629,26 +644,44 @@ class RefinedSpace:
                         else:
                             print("No unsat rectangles so far, nothing to show")
 
-    def show_true_point(self, where=False, is_inside_of_show=False, hide_legend=False):
-        """ Showing true point
+    def show_points(self, where=False, is_inside_of_show=False, hide_legend=False, show_true_point=False, show_opt_point=False):
+        """ Showing true and optimised point
 
         Args:
             where (tuple/list): output matplotlib sources to output created figure
             is_inside_of_show (bool): if True not painting the plot
             hide_legend (bool): if True no legend will be shown
+            show_true_point (bool): if True showing true point on the plot
+            show_opt_point (bool): if True showing optimised point on the plot
             """
-        if self.true_point:
-            assert isinstance(self.true_point, list)
+        ## IF NO TRUE POINT DO NOT SHOW IT
+        if not self.true_point:
+            show_true_point = False
+
+        ## IF NO OPT POINT DO NOT SHOW IT
+        if not self.opt_point:
+            show_opt_point = False
+
+        if show_true_point or show_opt_point:
+            ## VALIDATION CHECK
+            if self.true_point:
+                assert isinstance(self.true_point, list)
+            if self.opt_point:
+                assert isinstance(self.opt_point, list)
             if where:
                 fig = where[0]
                 ax = where[1]
             else:
                 fig, ax = plt.subplots()
 
+            ## ADD LEGENDS
             legend_objects, legend_labels = [], []
-
-            legend_objects.append(plt.scatter([], [], facecolor='white', edgecolor='blue', label="true_point"))
-            legend_labels.append("true point")
+            if show_true_point:
+                legend_objects.append(plt.scatter([], [], facecolor='white', edgecolor='blue', label="true_point"))
+                legend_labels.append("true point")
+            if show_opt_point:
+                legend_objects.append(plt.scatter([], [], facecolor='white', edgecolor='cyan', label="opt_point"))
+                legend_labels.append("optimised point")
             if self.sat_samples or self.unsat_samples:
                 legend_objects.append(plt.scatter([], [], c="green", alpha=0.5))
                 legend_labels.append("sat")
@@ -664,30 +697,54 @@ class RefinedSpace:
 
             max_region_size = self.region[0][1] - self.region[0][0]
             if len(self.params) == 1:
-                self.true_point_object = plt.Circle((self.true_point[0], 0), max_region_size/75, color='blue', fill=False, label="true_point")
+                if show_true_point:
+                    self.true_point_object = plt.Circle((self.true_point[0], 0), max_region_size/75, color='blue', fill=False, label="true_point")
+                self.opt_point_object = plt.Circle((self.opt_point[0], 0), max_region_size/75, color='cyan', fill=False, label="opt_point")
 
                 if where:
-                    ax.add_artist(self.true_point_object)
+                    if show_true_point:
+                        ax.add_artist(self.true_point_object)
+                    ax.add_artist(self.opt_point_object)
                 else:
-                    plt.gcf().gca().add_artist(self.true_point_object)
+                    if show_true_point:
+                        plt.gcf().gca().add_artist(self.true_point_object)
+                    plt.gcf().gca().add_artist(self.opt_point_object)
+
             elif len(self.params) == 2:
                 max_region_size = max(max_region_size, self.region[1][1] - self.region[1][0])
                 if (len(self.sat_samples) + len(self.unsat_samples)) == 0 or len(self.region) == 0:
                     size_correction = 0.01 * max_region_size
                 else:
                     size_correction = min(1 / (len(self.sat_samples) + len(self.unsat_samples)) ** (1 / len(self.region)), 0.01)
-                self.true_point_object = plt.Circle((self.true_point[0], self.true_point[1]), size_correction * 1, color='blue', fill=False, label="true_point")
+                if show_true_point:
+                    self.true_point_object = plt.Circle((self.true_point[0], self.true_point[1]), size_correction * 1, color='blue', fill=False, label="true_point")
+                if show_opt_point:
+                    self.opt_point_object = plt.Circle((self.opt_point[0], self.opt_point[1]), size_correction * 1, color='cyan', fill=False, label="opt_point")
                 if where:
-                    ax.add_artist(self.true_point_object)
+                    if show_true_point:
+                        ax.add_artist(self.true_point_object)
+                    if show_opt_point:
+                        ax.add_artist(self.opt_point_object)
                 else:
-                    plt.gcf().gca().add_artist(self.true_point_object)
+                    if show_true_point:
+                        plt.gcf().gca().add_artist(self.true_point_object)
+                    if show_opt_point:
+                        plt.gcf().gca().add_artist(self.opt_point_object)
             else:
                 ## Multidim true point
                 ## TODO maybe not working without GUI
                 x_axis = list(range(1, len(self.params) + 1))
-                self.true_point_object = ax.scatter(x_axis, self.true_point, marker='$o$', label="true_point", color="blue")
+                if show_true_point:
+                    self.true_point_object = ax.scatter(x_axis, self.true_point, marker='$o$', label="true_point", color="blue")
+                if show_opt_point:
+                    self.opt_point_object = ax.scatter(x_axis, self.opt_point, marker='$o$', label="opt_point", color="cyan")
+
                 ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-                ax.plot(x_axis, self.true_point, color="blue")
+                if show_true_point:
+                    ax.plot(x_axis, self.true_point, color="blue")
+                if show_opt_point:
+                    ax.plot(x_axis, self.opt_point, color="cyan")
+
             if not hide_legend:
                 ax.legend(legend_objects, legend_labels, loc='upper left', fontsize='small')
             if not is_inside_of_show:
