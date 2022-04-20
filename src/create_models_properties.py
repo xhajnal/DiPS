@@ -1387,7 +1387,7 @@ def create_bee_multiparam_synchronous_model(file, population_size):
         file.write(f"// Synchronous semantics, multiparametric \n")
         file.write(f"dtmc \n \n")
 
-        file.write(f"r_i - probability to sting when i amount of pheromone present \n")
+        file.write(f"// r_i - probability to sting when i amount of pheromone present \n")
         for i in range(0, population_size):
             file.write(f"const double r_{i:0{decimals}d};\n")
         file.write(f"\n")
