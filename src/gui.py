@@ -290,7 +290,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.27.2"  ## Version of the gui
+        self.version = "1.27.4"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -2261,7 +2261,24 @@ class Gui(Tk):
                 if self.space == "" or self.space == []:
                     return
 
-                ## Back compatibility
+                ## Backward compatibility: true_point
+                if not hasattr(self.space, "true_point"):
+                    self.space.set_true_point(False)
+
+                ## Backward compatibility: opt_point
+                if not hasattr(self.space, "opt_point"):
+                    if self.optimised_param_point:
+                        proceed = askyesno("Loading space",
+                                           "Space you are about to load does not have an optimised point store. Do you want to show the one obtained?")
+                        if proceed:
+                            self.space.opt_point = self.optimised_param_point
+                        else:
+                            self.space.opt_point = False
+                    else:
+                        self.space.opt_point = False
+                print("simsala bim")
+
+                ## Backward compatibility
                 self.space.update()
 
                 ## Ask if you want to visualise the space
@@ -2356,7 +2373,7 @@ class Gui(Tk):
             ## Backward compatibility: opt_point
             if not hasattr(self.mh_results, "opt_point"):
                 if self.optimised_param_point:
-                    proceed = askyesno("Loading MH result", "MH result you are about to load does not have an optimised point store. Do you want to show obtained?")
+                    proceed = askyesno("Loading MH result", "MH result you are about to load does not have an optimised point store. Do you want to show the one obtained?")
                     if proceed:
                         self.mh_results.set_opt_point(self.optimised_param_point)
                     else:
@@ -5147,7 +5164,7 @@ class Gui(Tk):
         self.parameter_domains = region
         del self.parameter_domains_entries
         self.button_pressed.set(True)
-        if not self.silent.get():
+        if self.debug.get():
             if self.space:
                 print("Space: ", self.space)
 
