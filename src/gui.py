@@ -290,7 +290,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.26.0"  ## Version of the gui
+        self.version = "1.27.1"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -2348,6 +2348,21 @@ class Gui(Tk):
             ## Backward compatibility: as scatter
             if not hasattr(self.mh_results, "as_scatter"):
                 self.mh_results.set_as_scatter(False)
+
+            ## Backward compatibility: true_point
+            if not hasattr(self.mh_results, "true_point"):
+                self.mh_results.set_true_point(False)
+
+            ## Backward compatibility: opt_point
+            if not hasattr(self.mh_results, "opt_point"):
+                if self.optimised_param_point:
+                    proceed = askyesno("Loading MH result", "MH result you are about to load does not have an optimised point store. Do you want to show obtained?")
+                    if proceed:
+                        self.mh_results.set_opt_point(self.optimised_param_point)
+                    else:
+                        self.mh_results.set_opt_point(False)
+                else:
+                    self.mh_results.set_opt_point(False)
 
             self.refresh_mh_figure(self.mh_results.bins, self.mh_results.burn_in, self.mh_results.as_scatter, True, self.show_opt_point.get())
 
