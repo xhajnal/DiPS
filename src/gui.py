@@ -290,7 +290,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.27.1"  ## Version of the gui
+        self.version = "1.27.2"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -2379,7 +2379,7 @@ class Gui(Tk):
             clear (bool): if True the text is cleared
         """
         if not self.space == "":
-            if not self.silent.get() and not clear:
+            if self.debug.get() and not clear:
                 print("space: ", self.space)
                 print()
                 print("Space nice print:")
