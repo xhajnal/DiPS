@@ -6,7 +6,6 @@ from typing import Iterable
 
 import numpy as np
 from mpmath import mpi
-from sympy import Intersection, Interval, EmptySet, FiniteSet
 
 from common.mathematics import cartesian_product
 from common.rectangle import My_Rectangle
