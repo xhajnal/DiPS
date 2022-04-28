@@ -1,4 +1,6 @@
 import random
+from math import sqrt
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -161,6 +163,7 @@ def eval_and_show(functions, parameter_value, parameters=False, data=False, data
                 distance = distance + (eval(functions[index]) - data[index])**2
             except IndexError as error:
                 raise Exception(f"Unable to show the intervals on the plot. Number of data point ({len(data)}) is not equal to number of functions ({len(functions)}).")
+        distance = sqrt(distance)
         title = f"{title}\n L2 Distance: {distance}"
 
     if where:
