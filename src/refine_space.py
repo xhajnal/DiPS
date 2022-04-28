@@ -11,7 +11,7 @@ from mpmath import mpi
 ## Importing my code
 from common.solver_parser import pass_models_to_sons
 from common.model_stuff import find_param
-from rectangle import My_Rectangle
+from common.rectangle import My_Rectangle
 from sample_space import sample_space as sample
 from space import RefinedSpace
 from common.convert import to_interval, decouple_constraints, normalise_constraint, put_exp_left

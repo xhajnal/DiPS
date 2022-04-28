@@ -17,7 +17,7 @@ from common.space_stuff import get_rectangle_volume
 from sample_n_visualise import visualise_by_param  ## Multidimensional refinement proxy
 from common.document_wrapper import DocumentWrapper  ## Text wrapper for figure tight layout
 from common.config import load_config
-from rectangle import My_Rectangle
+from common.rectangle import My_Rectangle
 
 spam = load_config()
 results_dir = spam["results"]

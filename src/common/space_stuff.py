@@ -9,7 +9,7 @@ from mpmath import mpi
 from sympy import Intersection, Interval, EmptySet, FiniteSet
 
 from common.mathematics import cartesian_product
-from rectangle import My_Rectangle
+from common.rectangle import My_Rectangle
 
 
 def rectangular_hull(points):
