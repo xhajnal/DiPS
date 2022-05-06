@@ -2,7 +2,7 @@ import _queue
 import datetime
 import socket
 from platform import system
-from time import strftime, localtime, time, sleep
+from time import strftime, localtime, time
 from collections.abc import Iterable
 import copy
 from mpmath import mpi
@@ -16,10 +16,9 @@ from multiprocessing import Process
 import refine_space
 from common.convert import decouple_constraints, constraints_to_ineq
 from common.solver_parser import pass_models_to_sons
-from common.space_stuff import is_in, refine_by, split_by_longest_dimension, rectangular_hull, expand_rectangle, \
-    split_by_all_dimensions, split_by_samples
+from common.space_stuff import split_by_longest_dimension, split_by_samples
 from common.model_stuff import find_param
-from rectangle import My_Rectangle
+from common.rectangle import My_Rectangle
 from refine_space import private_presample
 from sample_space import sample_region
 from space import RefinedSpace
