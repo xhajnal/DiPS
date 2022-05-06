@@ -49,6 +49,10 @@ def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False
     if refinement:
         factorize = False
 
+    if tool is False or tool is None:
+        tool = "unknown"
+        # print("selecting the tool as unknown")
+
     ## Setting the current directory
     if not Path(file_path).is_absolute():
         if tool.lower().startswith("p"):
@@ -85,8 +89,13 @@ def load_mc_result(file_path, tool="unknown", factorize=True, rewards_only=False
                 # print(line)
                 if line.lower().startswith("prism"):
                     tool = "prism"
+                    # print("selecting prism")
                 elif line.lower().startswith("storm"):
                     tool = "storm"
+                    # print("selecting storm")
+                else:
+                    # print("not selecting any program")
+                    raise SyntaxError("It seems that the files is neither PRISM nor Storm result file. Could not continue.")
             else:
                 break
         if tool == "unknown":
