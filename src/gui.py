@@ -5,6 +5,7 @@ import re
 import sys
 import time
 import webbrowser
+from _socket import gethostname
 from platform import system
 from time import time, localtime, strftime
 import tkinter.font as TkFont
@@ -290,7 +291,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.27.4"  ## Version of the gui
+        self.version = "1.27.5"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -3567,7 +3568,8 @@ class Gui(Tk):
 
             start_time = time()
             result = optimize(self.functions, self.parameters, self.parameter_domains, self.data, weights=self.data_weights, debug=self.debug.get())
-            print(colored(f"Optimisation took {time() - start_time} seconds", "yellow"))
+            self.optimisation_time = time() - start_time
+            print(colored(f"Optimisation took {self.optimisation_time} seconds", "yellow"))
         except Exception as error:
             messagebox.showerror("Optimize", f"Error occurred during Optimization: {error}")
             raise error
@@ -3598,9 +3600,10 @@ class Gui(Tk):
         Label(window, text=f"Data point: ").grid(row=i); i += 1
 
         if self.data_weights:
-            Label(window, text=f"Weights: ").grid(row=i)
-            i = i + 1
-        Label(window, text=f"Distance: ").grid(row=i)
+            Label(window, text=f"Weights: ").grid(row=i); i = i + 1
+        Label(window, text=f"Distance: ").grid(row=i); i += 1
+        Label(window, text=f"Time it took: ").grid(row=i)
+
 
         i = 1
         var = StringVar()
@@ -3635,6 +3638,13 @@ class Gui(Tk):
         ent = Entry(window, state='readonly', textvariable=var, width=width, relief='flat', readonlybackground='white', fg='black')
         ent.grid(row=i, column=1); i += 1
 
+        var = StringVar()
+        var.set(str(self.optimisation_time) + "s")
+        ent = Entry(window, state='readonly', textvariable=var, width=width, relief='flat', readonlybackground='white',
+                    fg='black')
+        ent.grid(row=i, column=1);
+        i += 1
+
         save_optimisation_button = Button(window, text="Save Result", command=self.save_optimisation_result)
         save_optimisation_button.grid(row=i, column=1)
 
@@ -3645,9 +3655,11 @@ class Gui(Tk):
         print("Parameter domains: ", self.parameter_domains)
         print("Function values: ", self.optimised_function_value)
         print("Data points: ", self.data)
+        print()
         if self.data_weights:
             print("Weights: ", self.data_weights)
         print("Distance: ", self.optimised_distance)
+        print(f"It took {gethostname()} {round(self.optimisation_time, 2)} second(s)")
 
     def save_optimisation_result(self, file=False):
         """ Stores optimisation results as a file
@@ -3679,6 +3691,7 @@ class Gui(Tk):
             if self.data_weights:
                 f.write(f"Weights: {self.data_weights} \n")
             f.write(f"Distance: {self.optimised_distance} \n")
+            f.write(f"\n It took {gethostname()} {round(self.optimisation_time, 2)} second(s)")
 
     ## First, it asks whether it is changed, then selects (text, file, text) accordingly
     def check_changes(self, what):
