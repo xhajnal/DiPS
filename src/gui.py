@@ -292,7 +292,7 @@ class Gui(Tk):
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.27.7"  ## Version of the gui
+        self.version = "1.27.8"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -2385,7 +2385,7 @@ class Gui(Tk):
                         self.mh_results.set_opt_point(False)
                 else:
                     self.mh_results.set_opt_point(False)
-
+            # def refresh_mh_figure(self, bins, burn_in, as_scatter, show_true_point, show_opt_point):
             self.refresh_mh_figure(self.mh_results.bins, self.mh_results.burn_in, self.mh_results.as_scatter, True, self.show_opt_point.get())
 
             ## Autosave
@@ -2452,7 +2452,9 @@ class Gui(Tk):
                     assert isinstance(self.space, space.RefinedSpace)
                     ## SHOW OPTIMISED POINT
                     if self.show_opt_point.get():
+                        # print("ticker to show opt point is on")
                         if self.optimised_param_point:
+                            # print("the optimised point exists")
                             self.space.opt_point = self.optimised_param_point
 
 
@@ -2547,6 +2549,15 @@ class Gui(Tk):
             self.show_space_true_point = True
 
             self.print_space()
+
+            ## SHOW OPTIMISED POINT
+            if self.show_opt_point.get():
+                # print("ticker to show opt point is on")
+                if self.optimised_param_point:
+                    # print("the optimised point exists")
+                    self.space.opt_point = self.optimised_param_point
+
+
             figure, axis = self.space.show_points(where=[self.page6_figure, self.page6_a],
                                                   hide_legend=self.hide_legend_refinement.get(),
                                                   show_true_point=self.show_space_true_point,
@@ -3379,6 +3390,7 @@ class Gui(Tk):
 
         if not self.silent.get():
             print(f"Using point", self.parameter_point)
+            # print(f"Result point", self.)
         self.status_set("Sampling functions done.")
 
     def save_functions_plot(self, plot_type):
@@ -4909,6 +4921,10 @@ class Gui(Tk):
         self.mh_results.set_burn_in(burn_in)
         self.mh_results.set_bins(bins)
         self.mh_results.set_as_scatter(as_scatter)
+
+        ## TODO ak wheter to replace if new or not same
+        self.mh_results.opt_point = self.optimised_param_point
+
         spam = self.mh_results.show_mh_heatmap(where=[self.page6_figure2, self.page6_b], bins=bins, burn_in=burn_in,
                                                as_scatter=as_scatter, show_true_point=show_true_point, show_opt_point=show_opt_point)
 
