@@ -285,13 +285,14 @@ class Gui(Tk):
         ## Saving settings
         self.save_as_plain_text = BooleanVar()  ## Flag to save structures as txt instead of pickled
         self.show_opt_point = BooleanVar()  ## Flag whether to show optimised point on figures
+        self.show_opt_point.set(True)
         self.save_as_plain_text.set(True)
         ## Save Figures
         self.save = BooleanVar()  ## True if saving on
         self.save.set(True)
 
         ## General Settings
-        self.version = "1.27.6"  ## Version of the gui
+        self.version = "1.27.7"  ## Version of the gui
         self.silent = BooleanVar()  ## Sets the command line output to minimum
         self.debug = BooleanVar()  ## Sets the command line output to maximum
 
@@ -1159,6 +1160,9 @@ class Gui(Tk):
         self.sample_size_entry.insert(END, grid_size)
 
         self.store_unsat_samples = config["store_unsat_samples"]
+
+        ## Common space nad MH setting
+        self.show_opt_point.set(config["show_opt_point"])
 
         # Space refinement setting
         self.max_depth = config["max_depth"]
@@ -2447,9 +2451,10 @@ class Gui(Tk):
                 if not clear:
                     assert isinstance(self.space, space.RefinedSpace)
                     ## SHOW OPTIMISED POINT
-                    if self.show_opt_point:
+                    if self.show_opt_point.get():
                         if self.optimised_param_point:
                             self.space.opt_point = self.optimised_param_point
+
 
                     self.print_space()
                     figure, axis = self.space.show(green=show_refinement, red=show_refinement, sat_samples=show_samples,

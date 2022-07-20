@@ -17,6 +17,7 @@ def load_config(config_file_path=False):
     # print("path", config_file_path)
 
     if config_file_path is False:
+        # print(os.path.join(workspace, "../../config.ini"))
         config_file_path = os.path.realpath(os.path.join(workspace, "../../config.ini"))
     else:
         if os.path.isabs(Path(config_file_path)):
@@ -247,6 +248,13 @@ def load_config(config_file_path=False):
         my_config["show_mh_metadata"] = show_mh_metadata
     except configparser.NoOptionError:
         my_config["show_mh_metadata"] = True
+
+    try:
+        show_opt_point = config.get("settings", "show_opt_point").lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh']
+        my_config["show_opt_point"] = show_opt_point
+    except configparser.NoOptionError:
+        # print("show_opt_point not loaded" )
+        my_config["show_opt_point"] = True
 
     os.chdir(current_directory)
 
